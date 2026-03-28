@@ -7,7 +7,25 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,viewport-fit=cover">
 <meta name="theme-color" content="#050810">
 <title>μ'search</title>
-<link rel="stylesheet" href="quantum-theme.css">
+<link rel="stylesheet" href="quantum-theme.css" id="mueee-quantum-theme-css">
+<script>
+(function(){
+  var b = '';
+  var h = location.hostname;
+  var p = location.pathname;
+  if (
+    (h === 'qbitos.github.io' && p.indexOf('/mu.eee/') !== -1) ||
+    h === 'mueee.qbitos.ai' ||
+    h === 'mu.eee.qbitos.ai'
+  )
+    b = 'https://qbitos.github.io/uvspeed/web/';
+  window.__MUEEE_PANE_BASE__ = b;
+  if (b) {
+    var l = document.getElementById('mueee-quantum-theme-css');
+    if (l) l.href = b + 'quantum-theme.css';
+  }
+})();
+</script>
 <style>
 html,body{min-height:100%;height:100%;margin:0;}
 #mueee-shell{min-height:100dvh;height:100%;display:flex;flex-direction:column;background:var(--qp-bg);color:var(--qp-text);}
@@ -61,7 +79,7 @@ html,body{min-height:100%;height:100%;margin:0;}
   </header>
   <div id="mueee-rainbow" class="mueee-rainbow" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
   <div class="mueee-frame-wrap" aria-live="polite">
-    <iframe id="mueee-frame-search" class="on" title="Search" src="search.html" fetchpriority="high"></iframe>
+    <iframe id="mueee-frame-search" class="on" title="Search" data-src="search.html" fetchpriority="high"></iframe>
     <iframe id="mueee-frame-history" title="History" loading="lazy" data-src="history.html"></iframe>
     <iframe id="mueee-frame-pad" title="GridPad" loading="lazy" data-src="pad-datatable.html"></iframe>
     <iframe id="mueee-frame-kbatch" title="Kbatch" loading="lazy" data-src="kbatch.html"></iframe>
@@ -82,7 +100,12 @@ html,body{min-height:100%;height:100%;margin:0;}
     <div id="mueee-throughline-bar" class="mueee-throughline-bar"></div>
   </footer>
 </div>
-<script src="mueee-throughline-spine.js"></script>
+<script>
+(function(){
+  var b = window.__MUEEE_PANE_BASE__ || '';
+  document.write('<script src="' + (b ? b + 'mueee-throughline-spine.js' : 'mueee-throughline-spine.js') + '"><\/script>');
+})();
+</script>
 <script>
 (function () {
   'use strict';
@@ -158,6 +181,24 @@ html,body{min-height:100%;height:100%;margin:0;}
     gridlock: 'gridlock.html',
     notes: 'notes.html'
   };
+  var MUEEE_PANE_BASE = window.__MUEEE_PANE_BASE__ || '';
+  function mueeeAbs(u) {
+    if (!u) return u;
+    if (/^[a-z][a-z0-9+.-]*:/i.test(u)) return u;
+    var base = MUEEE_PANE_BASE || '';
+    if (u.charAt(0) === '/') u = u.slice(1);
+    return base + u;
+  }
+  Object.keys(frames).forEach(function (k) {
+    var el = frames[k];
+    var src = el.getAttribute('src');
+    var ds = el.getAttribute('data-src');
+    if (src) el.src = mueeeAbs(src);
+    if (ds) el.setAttribute('data-src', mueeeAbs(ds));
+  });
+  Object.keys(PANE_URL).forEach(function (k) {
+    PANE_URL[k] = mueeeAbs(PANE_URL[k]);
+  });
   function iframeLoaded(el) {
     if (!el) return false;
     if (el.dataset.mueeeLoaded === '1') return true;
@@ -221,7 +262,7 @@ html,body{min-height:100%;height:100%;margin:0;}
       urls.forEach(function (u) {
         var link = document.createElement('link');
         link.rel = 'prefetch';
-        link.href = u;
+        link.href = mueeeAbs(u);
         document.head.appendChild(link);
       });
     };
@@ -333,7 +374,7 @@ html,body{min-height:100%;height:100%;margin:0;}
     );
   })();
   activatePane('search');
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+  if ('serviceWorker' in navigator && !window.__MUEEE_PANE_BASE__) navigator.serviceWorker.register('sw.js').catch(function () {});
 })();
 </script>
 </body>
