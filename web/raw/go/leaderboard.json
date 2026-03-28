@@ -1,0 +1,6 @@
+{
+  "schema": "ugrad-go-leaderboard-v1",
+  "game": "go",
+  "note": "Placeholder for public HTTP feed. Authoritative live state is go-ugrad.html + BroadcastChannel('ugrad-go-board'); persist with Worker+D1 or export JSONL from hub.",
+  "rows": []
+}

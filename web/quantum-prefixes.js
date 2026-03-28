@@ -1745,6 +1745,29 @@
             // If user has a manual override, use it; otherwise follow system
             var initial = (userOverride === 'yes' && saved) ? saved : systemPref;
 
+            // Iframe / embed chrome: parent shell owns theme UI — skip fixed ☀☾ bar (avoids duplicate + overlap)
+            var embedChrome = false;
+            try {
+                embedChrome = document.documentElement.classList.contains('qp-embed-chrome') || window.parent !== window;
+            } catch (e) {}
+            if (embedChrome) {
+                _ensureThemeChannel();
+                _applyTheme(initial);
+                if (root.matchMedia) {
+                    try {
+                        root.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
+                            try {
+                                var override = localStorage.getItem('qp-theme-override');
+                                if (override !== 'yes') {
+                                    _applyTheme(e.matches ? 'light' : 'dark');
+                                }
+                            } catch (ex) {}
+                        });
+                    } catch (e) {}
+                }
+                return;
+            }
+
             // Create side-by-side ☀ ☾ toggle — top-right, no circle
             _themeToggleEl = document.createElement('div');
             _themeToggleEl.id = 'qp-theme-toggle';

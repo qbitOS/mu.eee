@@ -1,0 +1,295 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!-- Copyright (c) 2026 qbitOS / ugrad.ai. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Source: https://github.com/qbitOS/uvspeed -->
+<!-- Provenance: ai-created-control-envelope -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Astral Fast Toolbench</title>
+  <style>
+    :root {
+      --bg: #071022;
+      --panel: #0c1b32;
+      --line: #1f3358;
+      --ink: #dbeafe;
+      --muted: #98aac9;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --bad: #ef4444;
+      --accent: #60a5fa;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: radial-gradient(circle at top, #11284c 0%, var(--bg) 58%);
+      color: var(--ink);
+      font-family: Inter, "SF Pro Text", "Segoe UI", Roboto, Arial, sans-serif;
+      min-height: 100vh;
+    }
+    .app { width: min(1240px, 96vw); margin: 22px auto; display: grid; gap: 12px; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+      padding: 12px;
+    }
+    .head { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+    h1 { margin: 0; font-size: 24px; letter-spacing: 0.02em; }
+    .muted { color: var(--muted); font-size: 12px; }
+    .chips { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--muted);
+      background: #0b1a30;
+    }
+    .grid { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1.2fr; gap: 8px; }
+    .row { display: contents; }
+    .cell {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #0b1930;
+      padding: 8px;
+      font-size: 12px;
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .cell code { color: #bfdbfe; }
+    .tools { margin-top: 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+    button {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #102447;
+      color: var(--ink);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 8px 10px;
+    }
+    button:hover { border-color: #3b82f6; }
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #09172d;
+      color: #dbeafe;
+      padding: 10px;
+      font-size: 12px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      resize: vertical;
+    }
+    .status-ok { color: var(--ok); }
+    .status-warn { color: var(--warn); }
+    .status-bad { color: var(--bad); }
+    @media (max-width: 920px) {
+      .grid { grid-template-columns: 1fr; }
+      .cell { min-height: 36px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="card">
+      <div class="head">
+        <h1>astral fast toolbench</h1>
+        <div class="chips">
+          <span class="chip">standalone app</span>
+          <span class="chip">desktop fast lane</span>
+          <span class="chip">audits missing tools</span>
+        </div>
+      </div>
+      <div class="muted">Covers Astral runtime + repo tools from rg, bat, hyperfine, maturin/PyO3, biome, and prefect lanes.</div>
+    </div>
+
+    <div class="card">
+      <div class="grid" id="tool-grid"></div>
+      <div class="tools">
+        <button id="btn-build-check">Build Verify Pack</button>
+        <button id="btn-build-install">Build Install Pack</button>
+        <button id="btn-copy-pack">Copy Pack</button>
+        <button id="btn-copy-bench">Copy Hyperfine Bench Pack</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="muted" id="coverage-line">Coverage pending...</div>
+      <textarea id="pack-output" spellcheck="false"></textarea>
+      <div class="tools">
+        <button id="btn-open-tester">Open ugrad Prompt Tester</button>
+        <button id="btn-clear-state">Reset Local Status</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="quantum-prefixes.js"></script>
+  <script src="qbit-dac.js"></script>
+  <script src="qbit-steno.js"></script>
+  <script src="qbit-preflight.js"></script>
+  <script src="history-search-engine.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    // ===== QUANTUM PREFIX LIVE SYNC =====
+    try {
+      if (window.QuantumPrefixes && window.QuantumPrefixes.requestStateSync) {
+        window.QuantumPrefixes.requestStateSync();
+      }
+      if (window.QuantumPrefixes && window.QuantumPrefixes.broadcastState) {
+        window.QuantumPrefixes.broadcastState('astral-fast-toolbench', { ts: Date.now(), app: 'astral-fast-toolbench' });
+      }
+    } catch (_) {}
+
+    try {
+      var _ironLine = new BroadcastChannel('iron-line');
+      _ironLine.postMessage({ type: 'astral-fast-toolbench-ready', source: 'astral-fast-toolbench', ts: Date.now() });
+      _ironLine.close();
+    } catch (_) {}
+    try {
+      var _historyBus = new BroadcastChannel('history-search');
+      _historyBus.postMessage({ type: 'astral-fast-toolbench-ready', source: 'astral-fast-toolbench', ts: Date.now() });
+      _historyBus.close();
+    } catch (_) {}
+
+    try {
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+    } catch (_) {}
+
+    var LS = 'astral-fast-toolbench-state-v1';
+    var TOOLS = [
+      { key: 'uv', label: 'Astral uv', role: 'python runner', verify: 'uv --version', install: 'brew install uv' },
+      { key: 'ruff', label: 'Astral ruff', role: 'lint fast lane', verify: 'uv run ruff --version', install: 'uv tool install ruff' },
+      { key: 'ty', label: 'Astral ty', role: 'type checker', verify: 'uvx ty --version', install: 'uv tool install ty' },
+      { key: 'hatch', label: 'hatch', role: 'compat env lane', verify: 'hatch --version', install: 'uv tool install hatch' },
+      { key: 'pyx', label: 'pyx (future)', role: 'future package handler', verify: 'echo "pyx check: future lane"', install: 'open https://astral.sh/pyx' },
+      { key: 'rg', label: 'ripgrep', role: 'search engine', verify: 'rg --version', install: 'brew install ripgrep' },
+      { key: 'bat', label: 'bat', role: 'file viewer', verify: 'bat --version', install: 'brew install bat' },
+      { key: 'hyperfine', label: 'hyperfine', role: 'benchmark cli', verify: 'hyperfine --version', install: 'brew install hyperfine' },
+      { key: 'maturin', label: 'maturin', role: 'PyO3 wheel build', verify: 'maturin --version', install: 'uv tool install maturin' },
+      { key: 'pyo3', label: 'PyO3 lane', role: 'Rust-Python bridge', verify: 'cargo search pyo3 | head -n 1', install: 'cargo add pyo3' },
+      { key: 'biome', label: 'Biome', role: 'web formatter/linter', verify: 'npx @biomejs/biome --version', install: 'npm install --save-dev --save-exact @biomejs/biome' },
+      { key: 'prefect', label: 'Prefect', role: 'workflow orchestration', verify: 'uv run python -c "import prefect; print(prefect.__version__)"', install: 'uv add prefect' }
+    ];
+
+    function loadState() {
+      try {
+        var raw = localStorage.getItem(LS);
+        if (!raw) return {};
+        var parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+      } catch (_) {
+        return {};
+      }
+    }
+
+    var state = loadState();
+    var grid = document.getElementById('tool-grid');
+    var out = document.getElementById('pack-output');
+    var coverageLine = document.getElementById('coverage-line');
+
+    function saveState() {
+      try { localStorage.setItem(LS, JSON.stringify(state)); } catch (_) {}
+    }
+
+    function makeCell(html) {
+      var d = document.createElement('div');
+      d.className = 'cell';
+      d.innerHTML = html;
+      return d;
+    }
+
+    function render() {
+      grid.innerHTML = '';
+      grid.appendChild(makeCell('<strong>Tool</strong>'));
+      grid.appendChild(makeCell('<strong>Role</strong>'));
+      grid.appendChild(makeCell('<strong>Status</strong>'));
+      grid.appendChild(makeCell('<strong>Commands</strong>'));
+      TOOLS.forEach(function (t) {
+        var has = !!state[t.key];
+        var statusClass = has ? 'status-ok' : 'status-warn';
+        var statusText = has ? 'present' : 'missing';
+        var check = '<label><input type="checkbox" data-tool="' + t.key + '"' + (has ? ' checked' : '') + '> mark present</label>';
+        grid.appendChild(makeCell('<code>' + t.label + '</code>'));
+        grid.appendChild(makeCell(t.role));
+        grid.appendChild(makeCell('<span class="' + statusClass + '">' + statusText + '</span>'));
+        grid.appendChild(makeCell(check + ' | verify: <code>' + t.verify + '</code>'));
+      });
+      var total = TOOLS.length;
+      var present = TOOLS.filter(function (t) { return !!state[t.key]; }).length;
+      var missing = total - present;
+      var cls = missing === 0 ? 'status-ok' : (missing <= 3 ? 'status-warn' : 'status-bad');
+      coverageLine.innerHTML = 'Coverage <span class="' + cls + '">' + present + '/' + total + '</span> | missing: ' + missing;
+      Array.prototype.forEach.call(grid.querySelectorAll('input[type="checkbox"][data-tool]'), function (el) {
+        el.addEventListener('change', function () {
+          var k = el.getAttribute('data-tool');
+          state[k] = !!el.checked;
+          saveState();
+          render();
+        });
+      });
+    }
+
+    function buildVerifyPack() {
+      return TOOLS.map(function (t) { return t.verify; }).join('\n');
+    }
+
+    function buildInstallPack() {
+      return TOOLS.filter(function (t) { return !state[t.key]; }).map(function (t) {
+        return '# ' + t.label + '\n' + t.install;
+      }).join('\n\n');
+    }
+
+    function buildHyperfinePack() {
+      return [
+        'hyperfine --warmup 2 "rg -n \\"TODO\\" web/"',
+        'hyperfine --warmup 2 "uv run ruff check src/01-core/"',
+        'hyperfine --warmup 1 "uvx ty check src/01-core/"',
+        'hyperfine --warmup 1 "cargo test --manifest-path crates/prefix-engine/Cargo.toml -- --nocapture"'
+      ].join('\n');
+    }
+
+    function copyText(text) {
+      if (!text) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).catch(function () {});
+      }
+    }
+
+    document.getElementById('btn-build-check').addEventListener('click', function () {
+      out.value = buildVerifyPack();
+      copyText(out.value);
+    });
+    document.getElementById('btn-build-install').addEventListener('click', function () {
+      out.value = buildInstallPack() || '# no missing tools';
+      copyText(out.value);
+    });
+    document.getElementById('btn-copy-pack').addEventListener('click', function () {
+      copyText(out.value);
+    });
+    document.getElementById('btn-copy-bench').addEventListener('click', function () {
+      out.value = buildHyperfinePack();
+      copyText(out.value);
+    });
+    document.getElementById('btn-open-tester').addEventListener('click', function () {
+      window.location.href = 'ugrad-model-lab.html';
+    });
+    document.getElementById('btn-clear-state').addEventListener('click', function () {
+      state = {};
+      saveState();
+      render();
+      out.value = '';
+    });
+
+    out.value = buildVerifyPack();
+    render();
+  })();
+  </script>
+</body>
+</html>

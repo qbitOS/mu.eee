@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>qbit raw</title>
+<link rel="icon" href="../icons/favicon.ico" sizes="any">
+<link rel="icon" href="../icons/qbit-favicon-32.png" type="image/png" sizes="32x32">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#000;color:#c9d1d9;font:13px/1.5 'SF Mono','Fira Code',monospace;overflow:hidden;color-scheme:dark}
+#a{display:flex;flex-direction:column;height:100vh;contain:layout}
+#l{display:flex;gap:1px;padding:2px 12px;font-size:10px;user-select:none;flex-shrink:0}
+.ll{padding:1px 5px;border-radius:2px;cursor:pointer;color:#484f58;letter-spacing:.5px}.ll:hover{color:#c9d1d9}.ll.on{color:#c9a84c}
+#o{flex:1;overflow-y:auto;padding:8px 12px;white-space:pre-wrap;word-break:break-word;contain:content;content-visibility:auto}
+#o::-webkit-scrollbar{width:3px}#o::-webkit-scrollbar-thumb{background:#161b22}
+#s{display:flex;gap:10px;padding:2px 12px;border-top:1px solid #0d1117;font-size:10px;color:#484f58;flex-shrink:0;user-select:none}
+#p{display:flex;align-items:center;gap:4px;padding:4px 12px;border-top:1px solid #0d1117;flex-shrink:0}
+#p b{color:#c9a84c;font-weight:400;user-select:none}
+#p input{flex:1;background:0 0;border:0;color:#c9d1d9;font:inherit;outline:0;caret-color:#c9a84c}
+.pfx{min-width:3ch;text-align:right;font-size:11px;color:#484f58;user-select:none}
+.gt{display:inline-block;min-width:3ch;text-align:right;margin-right:1ch;user-select:none;font-size:12px}
+.g{color:#3fb950}.y{color:#c9a84c}.r{color:#f85149}.c{color:#58a6ff}.d{color:#484f58}.m{color:#bc8cff}.o{color:#d29922}
+.pj .ln:nth-child(odd){background:#04060a}.pj .ln:nth-child(even){background:#080c12}
+.ln{padding:0 0 0 2px;min-height:1.5em}
+.nb{color:#1a2233;background:#040810}
+.nb-fill{color:#151d2a}
+#cp{display:none;position:fixed;top:15%;left:50%;transform:translateX(-50%);width:340px;max-width:90vw;background:#0d1117;border:1px solid #30363d;border-radius:8px;z-index:100;box-shadow:0 8px 32px #000a}
+#cp.open{display:block}#cp input{width:100%;padding:8px 12px;background:0 0;border:0;border-bottom:1px solid #21262d;color:#c9d1d9;font:inherit;outline:0;caret-color:#c9a84c}
+#cp-ls{max-height:240px;overflow-y:auto}.cp-i{padding:5px 12px;cursor:pointer;color:#8b949e;font-size:12px;display:flex;justify-content:space-between}
+.cp-i:hover,.cp-i.sel{background:#161b22;color:#c9d1d9}.cp-i b{color:#484f58;font-weight:400;font-size:10px}
+.cmd{cursor:pointer}.cmd:hover{text-decoration:underline}
+@media(max-width:600px){html,body{font-size:12px}#o{padding:6px 8px}#p{padding:4px 8px}}
+</style>
+</head>
+<body>
+<div id="a">
+<div id="l"><span class="ll on" data-h="qbit-raw">⚡0</span><span class="ll" data-h="qbit-search">◉1</span><span class="ll" data-h="nterminal">△2</span><span class="ll" data-h="quantum-gutter">◇3</span><span class="ll" data-h="quantum-notepad">▣4</span><span class="ll" data-h="qbit-studio">◈5</span><span class="ll" data-h="qbit-medical">✚6</span><span class="ll" data-h="history">◎7</span></div>
+<div id="o"></div>
+<div id="s"><span id="sc">cov:—</span><span id="sd">dac:tracks</span><span id="sg">· glue</span><span id="sw">· watch</span><span id="sp">· pj</span></div>
+<div id="p"><span class="pfx" id="pfx"></span><b id="pb">qbit ❯</b><input id="i" spellcheck="false" autocomplete="off"></div>
+</div>
+<div id="cp"><input id="cp-in" placeholder="command..." spellcheck="false"><div id="cp-ls"></div></div>
+<span data-qp-theme-host style="display:none"></span>
+<script defer src="quantum-prefixes.js"></script>
+<script defer src="qbit-dac.js"></script>
+<script defer src="qbit-steno.js"></script>
+<script>
+(function(){
+var T0=performance.now(),S0=Date.now(),NW=false,PJ=false,totL=0,clsL=0;
+var O=document.getElementById('o'),I=document.getElementById('i');
+var PFX=document.getElementById('pfx'),PB=document.getElementById('pb');
+var SC=document.getElementById('sc'),SD=document.getElementById('sd');
+var SG=document.getElementById('sg'),SW=document.getElementById('sw'),SP=document.getElementById('sp');
+var H=[];try{H=JSON.parse(localStorage.getItem('qr-h')||'[]')}catch(e){}
+var hi=-1,_raf=0;
+var PCLS={'n:':'o','+1:':'d','-n:':'m','+0:':'c','0:':'c','-1:':'r','+n:':'y','+2:':'g','-0:':'m','+3:':'o','1:':'c'};
+
+function w(h){var d=document.createElement('div');d.className='ln';d.innerHTML=h;O.appendChild(d);if(!_raf){_raf=1;requestAnimationFrame(function(){O.scrollTop=O.scrollHeight;_raf=0})}}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function ln(t,c){w(c?'<span class="'+c+'">'+esc(t)+'</span>':esc(t))}
+function pad(n,l){var s=String(n);while(s.length<l)s=' '+s;return s}
+
+function lang(code){
+if(/^#!/.test(code))return'shell';
+if(/\bdef\s|\bimport\s\w|\bfrom\s\w/.test(code))return'python';
+if(/\bfn\s|\blet\s+mut|\bimpl\s/.test(code))return'rust';
+if(/\bfunc\s|\bpackage\s/.test(code))return'go';
+if(/<[a-z]|<\//.test(code))return'html';
+return'javascript'}
+
+function wg(line,lg){
+var QP=window.QuantumPrefixes;
+if(!QP){w('<span class="gt d">  </span>'+esc(line));return}
+var c=QP.classifyLine(line,lg||'javascript');
+var sym=c.sym||'  ',cls=PCLS[c.sym]||'d';
+w('<span class="gt '+cls+'">'+pad(sym,3)+'</span>'+esc(line))}
+
+function wpj(line,lg,idx){
+if(!PJ){wg(line,lg);return}
+var QP=window.QuantumPrefixes;
+var c=QP?QP.classifyLine(line,lg||'javascript'):{sym:'',cls:'',category:''};
+var sym=c.sym||'  ',cls=PCLS[c.sym]||'d';
+var trimmed=line.trim();
+if(!trimmed){
+var fill=pjFill(idx,c);
+w('<span class="gt '+cls+'">'+esc(sym)+'</span><span class="nb">'+fill+'</span>')
+}else{
+var out=pjLine(line,idx,c);
+w('<span class="gt '+cls+'">'+esc(sym)+'</span>'+out)}}
+
+function pjLine(line,idx,c){
+var PW=80,out='',pos=0,len=line.length;
+for(var i=0;i<len;i++){
+var ch=line[i];
+if(ch===' '||ch==='\t'){
+out+='<span class="nb-fill">░</span>';pos++
+}else{out+=esc(ch);pos++}}
+var tail=PW-pos;
+if(tail>0){
+var meta=pjMeta(idx,c);
+var fill='';for(var j=0;j<tail;j++){
+if(j<meta.length)fill+=meta[j];else fill+='░'}
+out+='<span class="nb-fill">'+esc(fill)+'</span>'}
+return out}
+
+function pjFill(idx,c){
+var cat=c.category||'default',gate=GATES[c.sym]||'I';
+var coord='q:['+((idx*7)%11)+','+(idx%8)+','+(idx%5)+']';
+var meta='░░░'+cat+':'+idx+' '+gate+' '+coord+' ';
+var PW=80,out='';
+for(var i=0;i<PW;i++){if(i<meta.length)out+=meta[i];else out+='░'}
+return out}
+
+function pjMeta(idx,c){
+var gate=GATES[c.sym]||'I',cat=(c.category||'')[0]||'d';
+return '░'+cat+':'+gate+':'+idx+'░'}
+
+var GATES={'n:':'SWAP','+1:':'H','-n:':'M','+0:':'Rz','0:':'I','-1:':'X','+n:':'T','+2:':'CZ','-0:':'S','+3:':'Y','1:':'CNOT'}
+
+function interleave(a,b){
+var r='',al=a.length,bl=b.length,ml=Math.max(al,bl);
+for(var i=0;i<ml;i++){if(i<al)r+=a[i];if(i<bl)r+=b[i]}return r}
+
+function deinterleave(s,lenA){
+var a='',b='';
+for(var i=0,ai=0,bi=0;i<s.length;){
+if(ai<lenA){a+=s[i++];ai++}
+if(i<s.length){b+=s[i++];bi++}}
+return[a,b]}
+
+function nbloatAnalyze(code){
+var lines=code.split('\n'),total=code.length,blank=0,blankLines=0,trailWS=0;
+for(var i=0;i<lines.length;i++){
+var l=lines[i];
+if(!l.trim()){blankLines++;blank+=l.length+1}
+else{var t=l.length-l.replace(/\s+$/,'').length;if(t>0){trailWS+=t}}}
+return{totalBytes:total,blankBytes:blank+trailWS,blankLines:blankLines,totalLines:lines.length,
+trailWS:trailWS,ratio:total?(blank+trailWS)/total:0,
+fillable:blankLines,fillCapacity:blankLines*60}}
+
+function cov(code,lg){
+var QP=window.QuantumPrefixes;if(!QP)return;
+var m=QP.prefixMetadata(code,lg||'javascript');
+totL+=m.totalLines;clsL+=m.classifiedLines;
+var pct=totL?Math.round(clsL/totL*100):0;
+SC.innerHTML='cov:<span class="g">'+pct+'%</span>'}
+
+function stat(){
+var qp=!!window.QuantumPrefixes,dac=!!window.QbitDAC;
+SG.innerHTML='<span class="'+(qp&&dac?'g':'d')+'">'+(qp&&dac?'✓':'·')+'</span> glue';
+SW.innerHTML='<span class="'+(NW?'g':'d')+'">'+(NW?'⌁':'·')+'</span> watch';
+SP.innerHTML='<span class="'+(PJ?'g':'d')+'">'+(PJ?'▤':'·')+'</span> pj'}
+
+var C={
+help:function(){
+w('<span class="y">commands</span> <span class="d">· click to run · ⌘K palette · ⌘1-8 layers</span>');
+w('  <span class="d">── core ──</span>');
+w('  <span class="c cmd">help</span>      <span class="d">commands</span>        <span class="c cmd">clear</span>     <span class="d">clear</span>');
+w('  <span class="c cmd">speed</span>     <span class="d">benchmark</span>       <span class="c cmd">version</span>   <span class="d">system</span>');
+w('  <span class="c cmd">uptime</span>    <span class="d">session</span>         <span class="c cmd">date</span>      <span class="d">timestamp</span>');
+w('  <span class="c cmd">echo</span>      <span class="d">print</span>           <span class="c cmd">eval</span>      <span class="d">run JS</span>');
+w('  <span class="d">── iron line ──</span>');
+w('  <span class="c cmd">layers</span>    <span class="d">L0-L7</span>           <span class="c cmd">apps</span>      <span class="d">all apps</span>');
+w('  <span class="c cmd">pipeline</span>  <span class="d">data flow</span>       <span class="c cmd">loop</span>      <span class="d">event loop</span>');
+w('  <span class="c cmd">tether</span>    <span class="d">cross-app</span>       <span class="c cmd">open</span>      <span class="d">app/URL</span>');
+w('  <span class="d">── build ──</span>');
+w('  <span class="c cmd">build</span>     <span class="d">pipeline</span>        <span class="c cmd">test</span>      <span class="d">suites</span>');
+w('  <span class="c cmd">lint</span>      <span class="d">linters</span>         <span class="c cmd">deploy</span>    <span class="d">steps</span>');
+w('  <span class="c cmd">config</span>    <span class="d">project</span>');
+w('  <span class="d">── quantum ──</span>');
+w('  <span class="c cmd">gutter</span>    <span class="d">classify code</span>   <span class="c cmd">prefix</span>    <span class="d">line info</span>');
+w('  <span class="c cmd">stripe</span>    <span class="d">token colors</span>    <span class="c cmd">dac</span>       <span class="d">DAC codec</span>');
+w('  <span class="c cmd">coverage</span>  <span class="d">prefix stats</span>   <span class="c cmd">watch</span>     <span class="d">night watch</span>');
+w('  <span class="c cmd">gluelam</span>   <span class="d">module status</span>');
+w('  <span class="d">── v4 ──</span>');
+w('  <span class="c cmd">pajama</span>    <span class="d">stripped fills</span>  <span class="c cmd">nbloat</span>    <span class="d">whitespace map</span>');
+w('  <span class="c cmd">interleave</span> <span class="d">merge strings</span>  <span class="c cmd">deinterleave</span> <span class="d">split</span>');
+w('  <span class="d">── steno ──</span>');
+w('  <span class="c cmd">steno</span>     <span class="d">encode/decode/analyze/hex/pipeline — steganographic codec</span>');
+w('  <span class="d">── μgrad ──</span>');
+w('  <span class="c cmd">ugrad</span>     <span class="d">status</span>          <span class="c cmd">train</span>     <span class="d">single gen</span>');
+w('  <span class="c cmd">bg</span>        <span class="d">start/stop</span>      <span class="c cmd">ugrad miami</span> <span class="d">QASM 120Q</span>');
+w('  <span class="c cmd">ugrad r5</span>  <span class="d">μcortical</span>       <span class="c cmd">ugrad r6</span>  <span class="d">μorganoid DNA</span>');
+w('  <span class="c cmd">ugrad r1</span>  <span class="d">tensor engine</span>   <span class="c cmd">ugrad r0</span>  <span class="d">scalar engine</span>')},
+
+clear:function(){O.innerHTML=''},
+cls:function(){O.innerHTML=''},
+echo:function(a){ln(a.join(' '))},
+date:function(){ln(new Date().toISOString(),'c')},
+whoami:function(){ln('{.qbit} raw v4.1 — L0 iron line terminal · pajama · nbloat · steno','y')},
+
+uptime:function(){
+var s=Math.floor((Date.now()-S0)/1000),m=Math.floor(s/60),h=Math.floor(m/60);
+ln(h+'h '+m%60+'m '+s%60+'s','g')},
+
+version:function(){
+w('<span class="y">{.qbit} raw v4.0</span>');
+ln('  cores: '+navigator.hardwareConcurrency,'d');
+ln('  mem:   '+(navigator.deviceMemory||'?')+'GB','d');
+ln('  lang:  '+navigator.language,'d');
+ln('  mode:  pajama='+(PJ?'on':'off')+' watch='+(NW?'on':'off'),'d')},
+
+eval:function(a,r){
+if(!a.length){ln('usage: eval <expr>','d');return}
+try{var v=eval(r.substring(r.indexOf(' ')+1));
+if(typeof v==='string'&&v.indexOf('\n')>=0){
+var lg=lang(v);v.split('\n').forEach(function(l,i){wpj(l,lg,i)});cov(v,lg)
+}else ln(String(v),'g')}catch(e){ln(e.message,'r')}},
+
+speed:function(){
+w('<span class="y">⚡ speed v4</span>');
+var tmp=document.createElement('div'),d0=performance.now(),i,f=document.createDocumentFragment();
+for(i=0;i<1000;i++){var s=document.createElement('s');s.textContent=i;f.appendChild(s)}
+tmp.appendChild(f);
+var dom=performance.now()-d0;
+var m0=performance.now(),x=0.0;for(i=0;i<1e6;i++)x+=Math.sqrt(i);
+var math=performance.now()-m0;
+var s0=performance.now(),ar=new Array(1e4);for(i=0;i<1e4;i++)ar[i]='q';ar.join('');
+var str=performance.now()-s0;
+var j0=performance.now();for(i=0;i<1000;i++)JSON.parse(JSON.stringify({a:1,b:[2,3]}));
+var json=performance.now()-j0;
+var tot=dom+math+str+json,cnt=3011e3;
+function p(n){return pad(n.toFixed(1),6)}
+w('  <span class="g">dom    1K frag   '+p(dom)+'ms</span>');
+w('  <span class="g">math   1M sqrt   '+p(math)+'ms</span>');
+w('  <span class="g">string 10K alloc '+p(str)+'ms</span>');
+w('  <span class="g">json   1K rt     '+p(json)+'ms</span>');
+var QP=window.QuantumPrefixes,DAC=window.QbitDAC;
+if(QP){var p0=performance.now();
+for(i=0;i<1000;i++)QP.classifyLine('function hello(){return 42}','javascript');
+var pfx=performance.now()-p0;tot+=pfx;cnt+=1e3;
+w('  <span class="g">prefix 1K class  '+p(pfx)+'ms</span>')}
+if(DAC&&DAC.dacTracks){var t0=performance.now();
+for(i=0;i<1000;i++)DAC.dacTracks('if(x){\n  y++;\n}','javascript');
+var dact=performance.now()-t0;tot+=dact;cnt+=1e3;
+w('  <span class="g">dac    1K tracks '+p(dact)+'ms</span>')}
+var nb0=performance.now();
+var sample='function a(){\n  \n  const x=42;\n  \n  if(x){\n    \n    return x;\n  }\n  \n}\n';
+for(i=0;i<1000;i++)nbloatAnalyze(sample);
+var nbt=performance.now()-nb0;tot+=nbt;cnt+=1e4;
+w('  <span class="g">nbloat 1K scan   '+p(nbt)+'ms</span>');
+var il0=performance.now();
+for(i=0;i<1e4;i++)interleave('commander','abc defg');
+var ilt=performance.now()-il0;tot+=ilt;cnt+=1e4;
+w('  <span class="g">intrlv 10K merge '+p(ilt)+'ms</span>');
+w('  <span class="y">total            '+p(tot)+'ms</span>');
+var rate=cnt/tot|0;
+w('  <span class="c">rate  '+rate+' ops/ms</span>');
+w('  <span class="y">'+(tot<15?'🔥🔥 ULTRA':tot<20?'🔥 on fire':tot<50?'⚡ blazing':tot<100?'✓ fast':'⚠ slow')+'</span>')},
+
+pajama:function(a){
+if(a[0]==='off'){PJ=false;O.classList.remove('pj');stat();ln('· pajama off','d');return}
+PJ=!PJ;
+if(PJ)O.classList.add('pj');else O.classList.remove('pj');
+stat();
+if(PJ){
+w('<span class="g">▤ pajama — full whitespace fill active</span>');
+w('<span class="d">  every ░ = whitespace carrying quantum data</span>');
+w('<span class="d">  spaces → ░  blank lines → scope:gate:coord  trailing → metadata</span>');
+var sample='function hello() {\n\n  const x = 42;\n\n  if (x > 0) {\n\n    for (let i = 0; i < x; i++) {\n      console.log(i);\n    }\n\n  }\n\n  return x;\n}\n';
+w('<span class="y">⌁ stripped pajama:</span>');
+var lines=sample.split('\n'),lg='javascript';
+for(var i=0;i<lines.length;i++)wpj(lines[i],lg,i);
+cov(sample,lg);
+var nb=nbloatAnalyze(sample);
+w('<span class="o">  '+nb.blankLines+' blank lines filled · '+nb.blankBytes+' bytes → quantum coords</span>');
+w('<span class="d">  type</span> <span class="c cmd">pajama</span> <span class="d">to toggle · combines with</span> <span class="c cmd">watch</span> <span class="d">+</span> <span class="c cmd">gutter</span>')
+}else{w('<span class="d">· pajama off</span>')}},
+
+nbloat:function(a,r){
+w('<span class="y">nbloat — whitespace density scanner</span>');
+if(a[0]==='project'){
+var files=[
+{name:'qbit-raw.html',lines:465,blank:12,trail:0},
+{name:'qbit-raw-v1.html',lines:262,blank:8,trail:3},
+{name:'qbit-raw-v2.html',lines:416,blank:15,trail:5},
+{name:'qbit-search.html',lines:1707,blank:89,trail:22},
+{name:'quantum-notepad.html',lines:3800,blank:210,trail:45},
+{name:'terminal.html',lines:2900,blank:156,trail:38},
+{name:'hexbench.html',lines:2200,blank:120,trail:28}];
+var tl=0,tb=0,tt=0;
+w('  <span class="d">file'+Array(25).join(' ')+'lines  blank  trail  ratio</span>');
+for(var i=0;i<files.length;i++){var f=files[i];
+var ratio=((f.blank+f.trail)/f.lines*100).toFixed(1);
+tl+=f.lines;tb+=f.blank;tt+=f.trail;
+w('  <span class="c">'+f.name+Array(Math.max(1,28-f.name.length)).join(' ')+'</span>'+
+pad(f.lines,5)+'  '+pad(f.blank,5)+'  '+pad(f.trail,5)+'  <span class="'+(ratio>10?'o':ratio>5?'y':'g')+'">'+pad(ratio,5)+'%</span>')}
+w('  <span class="d">'+Array(29).join('─')+'</span>');
+w('  <span class="y">total'+Array(24).join(' ')+'</span>'+pad(tl,5)+'  '+pad(tb,5)+'  '+pad(tt,5)+'  <span class="o">'+((tb+tt)/tl*100).toFixed(1)+'%</span>');
+w('');
+w('  <span class="g">fillable capacity: '+(tb*60)+' bytes of quantum data</span>');
+w('  <span class="d">pajama mode fills every blank line with coordinates, scope, depth</span>');
+return}
+if(!a.length||a[0]==='self'){
+var self='function hello() {\n  \n  const x = 42;\n  \n  if (x > 0) {\n    for (let i = 0; i < x; i++) {\n      console.log(i);\n    }\n  }\n  \n  return x;\n}\n';
+var nb=nbloatAnalyze(self);
+w('  <span class="d">total bytes:</span>    <span class="c">'+nb.totalBytes+'</span>');
+w('  <span class="d">blank bytes:</span>    <span class="o">'+nb.blankBytes+'</span>');
+w('  <span class="d">blank lines:</span>    <span class="o">'+nb.blankLines+'</span> <span class="d">/ '+nb.totalLines+'</span>');
+w('  <span class="d">trailing ws:</span>    <span class="o">'+nb.trailWS+'</span>');
+w('  <span class="d">waste ratio:</span>    <span class="'+(nb.ratio>.1?'r':nb.ratio>.05?'o':'g')+'">'+(nb.ratio*100).toFixed(1)+'%</span>');
+w('  <span class="d">fill capacity:</span>  <span class="g">'+nb.fillCapacity+' bytes</span>');
+w('');
+w('  <span class="y">⌁ with pajama fill:</span>');
+var lines=self.split('\n'),lg='javascript';
+for(var i=0;i<lines.length;i++)wpj(lines[i],lg,i);
+cov(self,lg);
+w('');
+w('  <span class="g">every blank line now carries: scope, depth, gate, quantum coord</span>');
+w('  <span class="d">type</span> <span class="c cmd">nbloat</span> <span class="c">project</span> <span class="d">for full scan</span>');
+return}
+var code=r.substring(r.indexOf(' ')+1);
+if(code.indexOf('\n')>=0){
+var nb=nbloatAnalyze(code);
+w('  <span class="d">bytes:</span> <span class="c">'+nb.totalBytes+'</span> <span class="d">blank:</span> <span class="o">'+nb.blankBytes+'</span> <span class="d">ratio:</span> <span class="'+(nb.ratio>.1?'r':'g')+'">'+(nb.ratio*100).toFixed(1)+'%</span>');
+w('  <span class="d">fillable:</span> <span class="g">'+nb.blankLines+' lines → '+nb.fillCapacity+' bytes</span>');
+var lines=code.split('\n'),lg=lang(code);
+for(var i=0;i<lines.length;i++)wpj(lines[i],lg,i);cov(code,lg)
+}else{ln('paste multi-line code to analyze','d')}},
+
+interleave:function(a,r){
+if(a.length<2){ln('usage: interleave <string1> <string2>','d');
+w('  <span class="d">example:</span> <span class="c cmd">interleave</span> <span class="g">commander "abc defg"</span>');
+w('  <span class="d">result:</span>  <span class="y">acbocmmeafngder</span>');return}
+var s1=a[0],s2=a.slice(1).join(' ');
+var merged=interleave(s1,s2);
+w('<span class="y">⌁ interleave</span>');
+w('  <span class="d">A:</span> <span class="c">'+esc(s1)+'</span> <span class="d">('+s1.length+')</span>');
+w('  <span class="d">B:</span> <span class="c">'+esc(s2)+'</span> <span class="d">('+s2.length+')</span>');
+w('  <span class="d">→:</span> <span class="y">'+esc(merged)+'</span> <span class="d">('+merged.length+')</span>');
+var vis='  ';
+for(var i=0,ai=0,bi=0;i<merged.length;i++){
+if(ai<s1.length&&merged[i]===s1[ai]){vis+='<span class="c">'+esc(merged[i])+'</span>';ai++}
+else{vis+='<span class="o">'+esc(merged[i])+'</span>';bi++}}
+w(vis+' <span class="d">blue=A orange=B</span>');
+var split=deinterleave(merged,s1.length);
+w('  <span class="d">↩:</span> <span class="c">'+esc(split[0])+'</span> + <span class="o">'+esc(split[1])+'</span> <span class="'+(split[0]===s1&&split[1]===s2?'g':'r')+'">'+(split[0]===s1&&split[1]===s2?'✓ round-trip':'✗ mismatch')+'</span>')},
+
+deinterleave:function(a,r){
+if(a.length<2){ln('usage: deinterleave <merged> <lenA>','d');return}
+var merged=a[0],lenA=parseInt(a[1])||Math.ceil(a[0].length/2);
+var split=deinterleave(merged,lenA);
+w('<span class="y">⌁ deinterleave</span>');
+w('  <span class="d">in:</span> <span class="y">'+esc(merged)+'</span>');
+w('  <span class="d">A:</span>  <span class="c">'+esc(split[0])+'</span>');
+w('  <span class="d">B:</span>  <span class="o">'+esc(split[1])+'</span>')},
+
+layers:function(){
+w('<span class="y">iron line</span>');
+var L=[['L0','speed','qbit-raw',1],['L1','search','qbit-search',0],
+['L2','commander','nterminal',0],['L3','quantum','quantum-gutter',0],
+['L4','notepad','quantum-notepad',0],['L5','rndr','qbit-studio',0],
+['L6','medical','qbit-medical',0],['L7','persona','history',0]];
+for(var i=0;i<L.length;i++){var l=L[i],tag=l[3]?' <span class="y">← here</span>':'';
+w('  <span class="c">'+l[0]+'</span> '+l[1]+Array(13-l[1].length).join(' ')+'<span class="d">'+l[2]+'.html</span>'+tag)}},
+
+apps:function(){
+var a=['quantum-notepad','hexbench','terminal','nterminal','qbit-search','qbit-raw',
+'qbit-raw-v1','qbit-raw-v2','qbit-raw-v3','qbit-studio','qbit-medical','qbit-globe',
+'hexcast','hexcast-send','research-lab','archflow','github-dashboard','launcher',
+'grid','feed','questcast','sponsor','jawta-audio','numsy','brothernumsy','kbatch',
+'blackwell','quantum-gutter','freya','freya-landing','history','search','qa','uvqbit','plan-viewer'];
+w('<span class="y">'+a.length+' apps</span>');
+for(var i=0;i<a.length;i+=4){var r='  ';
+for(var j=i;j<Math.min(i+4,a.length);j++){var n=a[j];r+='<span class="c">'+n+Array(Math.max(1,21-n.length)).join(' ')+'</span>'}
+w(r)}},
+
+build:function(){
+w('<span class="y">build</span>');
+w('  <span class="c">nu scripts/build.nu all</span>     <span class="d">everything</span>');
+w('  <span class="c">nu scripts/build.nu wasm</span>    <span class="d">WASM</span>');
+w('  <span class="c">bash scripts/build-wasm.sh</span>  <span class="d">Rust→WASM</span>');
+w('  <span class="c">cargo tauri build</span>           <span class="d">desktop</span>')},
+
+test:function(){
+w('<span class="y">test</span>');
+w('  <span class="c">nu scripts/test.nu all</span>             <span class="d">all</span>');
+w('  <span class="c">cargo test -p uvspeed-prefix-engine</span> <span class="d">Rust</span>');
+w('  <span class="c">uv run pytest</span>                      <span class="d">Python</span>')},
+
+lint:function(){
+w('<span class="y">lint</span>');
+w('  <span class="c">uv run ruff check .</span>          <span class="d">Python</span>');
+w('  <span class="c">cargo clippy -- -D warnings</span>  <span class="d">Rust</span>');
+w('  <span class="c">cargo fmt --check</span>            <span class="d">fmt</span>')},
+
+deploy:function(){
+w('<span class="y">deploy</span>');
+var s=['pre.nu audit','version-sync','cargo test','uv run pytest',
+'clippy','ruff check','build wasm','build tauri','git tag','git push'];
+for(var i=0;i<s.length;i++)w('  <span class="d">'+(i<9?' ':'')+(i+1)+'.</span> <span class="c">'+s[i]+'</span>')},
+
+config:function(){
+w('<span class="y">config</span>');
+w('  <span class="d">project</span>  <span class="c">uvspeed</span>');
+w('  <span class="d">apps</span>     <span class="c">37</span>');
+w('  <span class="d">langs</span>    <span class="c">59</span>');
+w('  <span class="d">rust</span>     <span class="c">1.93+</span>');
+w('  <span class="d">python</span>   <span class="c">3.13 (uv)</span>');
+w('  <span class="d">tauri</span>    <span class="c">2.x</span>');
+w('  <span class="d">pajama</span>   <span class="c">'+(PJ?'on':'off')+'</span>');
+w('  <span class="d">watch</span>    <span class="c">'+(NW?'on':'off')+'</span>')},
+
+open:function(a){
+if(!a.length){ln('usage: open <app|URL>','d');return}
+var t=a[0];
+if(t.indexOf('http')===0){window.open(t,'_blank');ln('→ '+t,'g');return}
+var m={notepad:'quantum-notepad',bench:'hexbench',term:'terminal',search:'qbit-search',
+raw:'qbit-raw',studio:'qbit-studio',med:'qbit-medical',globe:'qbit-globe',
+gutter:'quantum-gutter',dash:'github-dashboard',lab:'research-lab'};
+var f=(m[t]||t)+'.html';window.open(f,'_blank');ln('→ '+f,'g')},
+
+pipeline:function(){
+w('<span class="y">pipeline</span>');
+w('  <span class="c">L0</span> input → <span class="c">L1</span> search → <span class="c">L2</span> cmd → <span class="c">L3</span> quantum');
+w('  <span class="c">L4</span> notepad → <span class="c">L5</span> render → <span class="c">L6</span> med → <span class="c">L7</span> persona')},
+
+loop:function(){
+w('<span class="y">event loop</span>');
+w('  <span class="d">broadcast</span> <span class="g">connected</span>');
+w('  <span class="d">history</span>   <span class="g">'+H.length+'</span>');
+w('  <span class="d">session</span>   <span class="g">'+((Date.now()-S0)/1000|0)+'s</span>');
+w('  <span class="d">prefix</span>   <span class="g">'+(window.QuantumPrefixes?'✓':'· pending')+'</span>');
+w('  <span class="d">dac</span>      <span class="g">'+(window.QbitDAC?'✓':'· pending')+'</span>');
+w('  <span class="d">watch</span>    <span class="g">'+(NW?'⌁ active':'· off')+'</span>');
+w('  <span class="d">pajama</span>   <span class="g">'+(PJ?'▤ active':'· off')+'</span>')},
+
+tether:function(a){
+if(!a.length){ln('usage: tether <app> <msg>','d');return}
+bc.postMessage({type:'command',source:'qbit-raw',target:a[0],command:a.slice(1).join(' ')});
+ln('→ '+a[0],'g')},
+
+gutter:function(a,r){
+var QP=window.QuantumPrefixes;
+if(!QP){ln('quantum-prefixes.js pending','r');return}
+if(!a.length){
+var sample='#!/usr/bin/env node\nimport fs from "fs";\nclass App {\n  constructor(){\n    this.x=42;\n  }\n  run(){\n    if(this.x>0){\n      for(let i=0;i<this.x;i++){\n        console.log(i);\n      }\n    }\n    return this.x;\n  }\n}\ntry {\n  new App().run();\n} catch(e){\n  console.error(e);\n}';
+w('<span class="y">⌁ quantum gutter'+(PJ?' + pajama':'')+'</span>');
+var lines=sample.split('\n'),lg='javascript';
+for(var i=0;i<lines.length;i++){PJ?wpj(lines[i],lg,i):wg(lines[i],lg)}
+cov(sample,lg);return}
+var code=r.substring(r.indexOf(' ')+1),lg=lang(code);
+if(code.indexOf('\n')>=0){code.split('\n').forEach(function(l,i){PJ?wpj(l,lg,i):wg(l,lg)})}
+else{PJ?wpj(code,lg,0):wg(code,lg)}cov(code,lg)},
+g:function(a,r){C.gutter(a,r)},
+
+prefix:function(a,r){
+var QP=window.QuantumPrefixes;
+if(!QP){ln('quantum-prefixes.js pending','r');return}
+if(!a.length){ln('usage: prefix <line of code>','d');return}
+var code=r.substring(r.indexOf(' ')+1),lg=lang(code);
+var c=QP.classifyLine(code,lg);
+w('<span class="'+(PCLS[c.sym]||'d')+'">'+pad(c.sym||'—',3)+'</span> '+esc(code));
+w('  <span class="d">category:</span> <span class="c">'+(c.category||'default')+'</span>');
+w('  <span class="d">class:</span>    <span class="c">'+(c.cls||'none')+'</span>');
+w('  <span class="d">lang:</span>     <span class="c">'+lg+'</span>')},
+pfx:function(a,r){C.prefix(a,r)},
+
+stripe:function(a,r){
+var DAC=window.QbitDAC;
+if(!DAC||!DAC.dacStripe){ln('qbit-dac.js pending','r');return}
+if(!a.length){
+var samples=['const x = Math.sqrt(42);','def hello(name): return f"hi {name}"','fn main() { let x = vec![1,2,3]; }'];
+w('<span class="y">⌁ token stripe</span>');
+samples.forEach(function(s){
+var tk=DAC.dacStripe(s,lang(s)),out='  ';
+tk.forEach(function(t){var cl=t.type==='keyword'?'m':t.type==='number'?'o':t.type==='operator'?'r':t.type==='string'?'g':'c';
+out+='<span class="'+cl+'">'+esc(t.text)+'</span>'});w(out)});return}
+var code=r.substring(r.indexOf(' ')+1);
+var tk=DAC.dacStripe(code,lang(code)),out='';
+tk.forEach(function(t){var cl=t.type==='keyword'?'m':t.type==='number'?'o':t.type==='operator'?'r':t.type==='string'?'g':'c';
+out+='<span class="'+cl+'">'+esc(t.text)+'</span>'});w(out)},
+
+coverage:function(){
+w('<span class="y">coverage</span>');
+w('  <span class="d">total lines:</span>      <span class="c">'+totL+'</span>');
+w('  <span class="d">classified:</span>       <span class="c">'+clsL+'</span>');
+var pct=totL?Math.round(clsL/totL*100):0;
+w('  <span class="d">coverage:</span>         <span class="'+(pct>70?'g':pct>40?'y':'r')+'">'+pct+'%</span>');
+w('  <span class="d">symbols:</span>          <span class="c">n: +1: -n: +0: 0: -1: +n: +2: -0: +3: 1:</span>');
+w('  <span class="d">categories:</span>       <span class="c">11</span>');
+w('  <span class="d">languages:</span>        <span class="c">59 supported</span>')},
+cov:function(){C.coverage()},
+
+watch:function(){
+NW=!NW;
+PB.textContent=NW?'qbit ⌁':'qbit ❯';
+stat();
+if(NW){
+w('<span class="g">⌁ night watch — active</span>');
+w('<span class="d">  live prefix in prompt · gutter on commands · paste to classify</span>');
+w('<span class="d">  type</span> <span class="c cmd">watch</span> <span class="d">again to disable</span>')
+}else{w('<span class="d">· night watch off</span>')}},
+
+gluelam:function(){
+w('<span class="y">gluelam — shared modules</span>');
+var mods=[
+['quantum-prefixes.js',!!window.QuantumPrefixes,'prefix engine · 59 langs · 11 symbols'],
+['qbit-dac.js',!!window.QbitDAC,'DAC+ · tracks · stripes · codec'],
+['qbit-steno.js',!!window.QbitSteno,'steno · 13 Unicode spaces · 19-bit encoding'],
+['BroadcastChannel',!!bc,'hexterm cross-app channel'],
+['quantum-prefixes BC',!!_qpBC,'prefix state sync'],
+['localStorage',true,'history · settings · state'],
+['serviceWorker','serviceWorker'in navigator,'sw.js · 37 apps cached']];
+for(var i=0;i<mods.length;i++){var m=mods[i];
+w('  <span class="'+(m[1]?'g':'r')+'">'+(m[1]?'✓':'✗')+'</span> <span class="c">'+m[0]+'</span>');
+w('    <span class="d">'+m[2]+'</span>')}},
+
+dac:function(a){
+var QP=window.QuantumPrefixes,DAC=window.QbitDAC;
+if(!a.length){
+w('<span class="y">dac — dimensional addressing codec</span>');
+w('  <span class="c cmd">dac</span> <span class="c">stats</span>    <span class="d">coverage</span>');
+w('  <span class="c cmd">dac</span> <span class="c">run</span>      <span class="d">classify</span>');
+w('  <span class="c cmd">dac</span> <span class="c">tracks</span>   <span class="d">depth</span>');
+w('  <span class="c cmd">dac</span> <span class="c">stripe</span>   <span class="d">tokens</span>');
+w('  <span class="c cmd">dac</span> <span class="c">mode X</span>   <span class="d">switch</span>');return}
+var s=a[0];
+if(s==='stats'){
+if(!QP){ln('pending','r');return}
+var m=QP.prefixMetadata('function hello(){\n  const x=42;\n  if(x>0){\n    console.log(x);\n  }\n  return x;\n}\n','javascript');
+w('<span class="g">coverage: '+m.coverage+'</span>');
+w('<span class="d">lines: '+m.totalLines+' · classified: '+m.classifiedLines+'</span>');
+if(m.prefixCounts)Object.keys(m.prefixCounts).forEach(function(k){
+if(m.prefixCounts[k])w('  <span class="'+(PCLS[k]||'d')+'">'+pad(k,3)+' × '+m.prefixCounts[k]+'</span>')})
+}else if(s==='run'){
+if(!QP){ln('pending','r');return}
+var sample='#!/usr/bin/env node\nimport fs from "fs";\nfunction main(){\n  const x=42;\n  if(x>0){\n    for(let i=0;i<10;i++){\n      console.log(i);\n    }\n  }\n  return x;\n}';
+w('<span class="y">⌁ gutter classify</span>');
+sample.split('\n').forEach(function(l,i){PJ?wpj(l,'javascript',i):wg(l,'javascript')});
+cov(sample,'javascript')
+}else if(s==='tracks'){
+if(!DAC||!DAC.dacTracks){ln('qbit-dac.js pending','r');return}
+var code='function outer(){\n  if(true){\n    for(let i=0;i<10;i++){\n      try{\n        console.log(i);\n      }catch(e){\n        throw e;\n      }\n    }\n  }\n}';
+w('<span class="y">⌁ depth tracks</span>');
+DAC.dacTracks(code,'javascript').forEach(function(r){var b='';for(var i=0;i<r.depth;i++)b+='│';
+w('<span class="d">'+pad(r.depth,2)+'</span> <span class="y">'+b+'</span>'+esc(r.line))})
+}else if(s==='stripe'){C.stripe(a.slice(1),a.slice(1).join(' '))
+}else if(s==='mode'){
+if(!DAC){ln('qbit-dac.js pending','r');return}
+var mode=a[1]||'tracks';DAC.dacMode(mode);ln('mode → '+mode,'g');
+SD.textContent='dac:'+mode
+}else ln('? dac '+s,'r')},
+
+steno:function(a,r){
+var ST=window.QbitSteno;
+if(!ST){ln('qbit-steno.js pending','r');return}
+if(!a.length){
+w('<span class="y">steno — steganographic quantum codec</span>');
+w('  <span class="c">steno encode</span>   <span class="d">encode sample with DAC in whitespace</span>');
+w('  <span class="c">steno decode</span>   <span class="d">extract hidden data from steno code</span>');
+w('  <span class="c">steno analyze</span>  <span class="d">whitespace capacity report</span>');
+w('  <span class="c">steno hex</span>      <span class="d">hexdump comparison</span>');
+w('  <span class="c">steno pipeline</span> <span class="d">Iron Line 10-stage encoding</span>');
+w('  <span class="c">steno round</span>    <span class="d">full round-trip test</span>');return}
+var sub=a[0];
+if(sub==='encode'){
+var sample='function hello() {\n  const x = 42;\n  if (x > 0) {\n    for (let i = 0; i < x; i++) {\n      console.log(i);\n    }\n  }\n  return x;\n}';
+var result=ST.stenoEncode(sample,'javascript',{layer:0});
+w('<span class="y">⌁ steno encode</span>');
+w('<span class="d">  13 Unicode space variants · 19 bits/line · every space carries data</span>');
+var lines=result.code.split('\n');
+for(var i=0;i<lines.length;i++){
+var m=result.meta[i],sym=m.sym||' ',cls=PCLS[m.sym]||'d';
+w('<span class="gt '+cls+'">'+pad(sym,3)+'</span>'+esc(lines[i]))}
+w('<span class="g">  encoded: '+result.stats.encodedLines+'/'+result.stats.totalLines+' lines · '+result.stats.usedSpaces+' spaces used · '+result.stats.totalBits+' bits</span>');
+w('<span class="d">  utilization: '+result.stats.utilization+'% of whitespace capacity</span>')
+}else if(sub==='decode'){
+var sample='function hello() {\n  const x = 42;\n  if (x > 0) {\n    console.log(x);\n  }\n  return x;\n}';
+var enc=ST.stenoEncode(sample,'javascript',{layer:0});
+var dec=ST.stenoDecode(enc.code);
+w('<span class="y">⌁ steno decode — hidden data extracted</span>');
+for(var i=0;i<dec.meta.length;i++){var m=dec.meta[i];
+if(m){w('  <span class="d">L'+pad(i+1,2)+'</span> <span class="'+(PCLS[m.sym]||'d')+'">'+pad(m.sym||'—',3)+'</span> gate:<span class="c">'+m.gate+'</span> d:'+m.depth+' L'+m.layer+' <span class="d">'+m.category+'</span>')
+}else{w('  <span class="d">L'+pad(i+1,2)+'</span> <span class="d">— (not enough whitespace)</span>')}}
+w('<span class="g">  '+dec.encoded+'/'+dec.lines+' lines decoded</span>')
+}else if(sub==='analyze'){
+var sample='function hello() {\n  const x = 42;\n  \n  if (x > 0) {\n    for (let i = 0; i < x; i++) {\n      console.log(i);\n    }\n  }\n  \n  return x;\n}';
+var an=ST.stenoAnalyze(sample);
+w('<span class="y">⌁ steno analyze — whitespace capacity</span>');
+w('  <span class="d">total bytes:</span>     <span class="c">'+an.totalBytes+'</span>');
+w('  <span class="d">total spaces:</span>    <span class="c">'+an.totalSpaces+'</span> <span class="d">('+(an.wasteRatio)+'% of file)</span>');
+w('  <span class="d">blank lines:</span>     <span class="o">'+an.blankLines+'</span>');
+w('  <span class="d">encodable lines:</span> <span class="g">'+an.encodableLines+'</span> <span class="d">('+an.encodablePct+'%)</span>');
+w('  <span class="d">capacity:</span>        <span class="g">'+an.capacityBits+' bits</span> <span class="d">('+an.capacityBytes+' bytes)</span>');
+w('  <span class="d">DAC records:</span>     <span class="c">'+an.dacRecords+' × 19 bits = '+an.dacBits+' bits</span>');
+w('  <span class="d">utilization:</span>     <span class="'+(parseFloat(an.utilizationPct)>50?'g':'o')+'">'+an.utilizationPct+'%</span>')
+}else if(sub==='hex'){
+var orig='function hello() { return 42; }';
+var enc=ST.stenoEncode(orig,'javascript',{layer:0});
+var hex=ST.stenoHex(orig,enc.code);
+w('<span class="y">⌁ steno hex — byte-level diff</span>');
+w('  <span class="d">total bytes:</span>  <span class="c">'+hex.totalBytes+'</span>');
+w('  <span class="d">changed:</span>      <span class="o">'+hex.changedBytes+'</span> <span class="d">('+hex.changePct+'%)</span>');
+for(var i=0;i<Math.min(hex.diffs.length,15);i++){var d=hex.diffs[i];
+w('  <span class="d">pos '+pad(d.pos,3)+'</span>  U+<span class="r">'+d.original+'</span> → U+<span class="g">'+d.encoded+'</span>  <span class="d">val:'+d.decodedValue+'</span>')}
+w('<span class="d">  every changed byte now carries DAC data invisibly</span>')
+}else if(sub==='pipeline'){
+var sample='function hello() {\n  return 42;\n}';
+var pipe=ST.stenoPipeline(sample,'javascript');
+w('<span class="y">⌁ iron line pipeline — 10 stages with steno</span>');
+for(var i=0;i<pipe.stages.length;i++){var s=pipe.stages[i];
+w('  <span class="c">L'+s.layer+'</span> <span class="y">'+s.name+Array(Math.max(1,22-s.name.length)).join(' ')+'</span><span class="d">'+s.fields+'</span>')}
+w('<span class="g">  overhead: '+pipe.pipelineOverhead+'</span>');
+w('<span class="c">  cortical: '+pipe.corticalLoop+'</span>')
+}else if(sub==='round'){
+var orig='function hello() {\n  const x = 42;\n  if (x > 0) return x;\n  return -1;\n}';
+w('<span class="y">⌁ steno round-trip test</span>');
+var t0=performance.now();
+var enc=ST.stenoEncode(orig,'javascript',{layer:0});
+var dec=ST.stenoDecode(enc.code);
+var stripped=ST.stenoStrip(enc.code);
+var rt=performance.now()-t0;
+var match=stripped===orig;
+w('  <span class="d">original:</span>  <span class="c">'+orig.length+' bytes</span>');
+w('  <span class="d">encoded:</span>   <span class="c">'+enc.code.length+' bytes</span> <span class="d">(Δ '+(enc.code.length-orig.length)+')</span>');
+w('  <span class="d">decoded:</span>   <span class="c">'+dec.encoded+'/'+dec.lines+' lines with metadata</span>');
+w('  <span class="d">stripped:</span>  <span class="c">'+stripped.length+' bytes</span>');
+w('  <span class="d">match:</span>     <span class="'+(match?'g':'r')+'">'+(match?'✓ perfect round-trip':'✗ MISMATCH')+'</span>');
+w('  <span class="d">time:</span>      <span class="g">'+rt.toFixed(2)+'ms</span>');
+if(dec.meta[0]){var m=dec.meta[0];
+w('  <span class="d">line 1:</span>    <span class="'+(PCLS[m.sym]||'d')+'">'+m.sym+'</span> '+m.gate+' d:'+m.depth+' L'+m.layer+' '+m.category)}
+}else ln('? steno '+sub,'r')}
+};
+
+// ===== μgrad Worker Integration =====
+var ugW=null,ugState={active:false,gen:0,bgGens:0,weights:null,arch:[2,8,8,1],dataset:'xor',engine:'r0'};
+function ugWorker(){
+if(ugW)return ugW;
+ugW=new Worker('ugrad-worker.js');
+ugW.onmessage=function(e){var d=e.data;
+if(d.type==='ready')w('<span class="g">⚛ μgrad worker ready</span> <span class="d">'+d.capabilities.join(', ')+'</span>');
+else if(d.type==='generation'){ugState.gen=d.gen;ugState.weights=d.weights;
+w('<span class="g">⚛ G'+d.gen+'</span> <span class="d">'+d.engine+' · loss='+d.loss.toFixed(6)+' · acc='+(d.acc*100).toFixed(0)+'% · '+d.ms.toFixed(0)+'ms'+(d.bg?' · bg':'')+' · '+d.dataset+'</span>')}
+else if(d.type==='progress'){}
+else if(d.type==='bg-started'){ugState.active=true;w('<span class="g">⬡ μgrad bg:</span> <span class="cy">ACTIVE</span> <span class="d">— Worker thread, no throttling</span>')}
+else if(d.type==='bg-stopped'){ugState.active=false;ugState.bgGens=d.bgGens;
+w('<span class="y">⬡ μgrad bg:</span> <span class="d">stopped · '+d.bgGens+' gens · '+(d.elapsed/1000).toFixed(1)+'s</span>')}
+else if(d.type==='converged')w('<span class="g">⚛ CONVERGED</span> <span class="d">G'+d.gen+' · loss='+d.loss.toFixed(6)+'</span>')
+else if(d.type==='curriculum')w('<span class="cy">⚛ curriculum:</span> <span class="d">→ '+d.dataset+' · '+d.arch.join('→')+'</span>')
+else if(d.type==='quantum-miami'){w('<span class="c">═══ IBM Miami · Nighthawk r1 · 120Q ═══</span>');
+w('<span class="d">  '+d.gateCount+' gates on '+d.nQ+' qubits · cal: '+d.cal+'</span>');
+w('<span class="d">  physical: '+d.physQ.map(function(q){return'$'+q}).join(', ')+'</span>');
+navigator.clipboard.writeText(d.qasm).then(function(){w('<span class="g">✓ QASM copied</span>')},function(){w('<span class="d">QASM generated ('+d.qasm.length+' chars)</span>')})}
+else if(d.type==='cortical'){w('<span class="cy">⚛ μcortical L0→L7</span> <span class="d">'+d.elapsed.toFixed(3)+'ms'+(d.withinBudget?' ✓':'⚠ >24ms')+'</span>');
+w('  <span class="d">L3 cortex='+d.layers.L3.toFixed(4)+' L4 predict='+d.layers.L4+' L5 feedback='+d.layers.L5+' L7 phase='+d.layers.L7.toFixed(4)+'</span>')}
+else if(d.type==='organoid'){w('<span class="m">⚛ μorganoid DNA cycle</span>');
+w('  <span class="d">'+d.dnaLength+' bases · '+d.mutations+' mutations · child acc='+(d.childAcc*100).toFixed(0)+'%</span>');
+w('  <span class="d">'+d.dna+'</span>')}
+else if(d.type==='status'){w('<span class="y">⚛ μgrad status</span>');
+w('  <span class="d">bg='+d.bgActive+' · G'+d.gen+' · '+d.engine+' · '+d.dataset+' · arch='+d.arch.join('→')+'</span>')}
+else if(d.type==='vqe-started')w('<span class="cy">⚛ VQE started:</span> <span class="d">'+d.nQ+'Q · '+d.layers+' layers · '+d.bonds+' bonds · '+d.maxIter+' iters</span>')
+else if(d.type==='vqe-progress'){}
+else if(d.type==='vqe-result'){w('<span class="g">⚛ VQE converged</span>');
+w('  <span class="d">energy: '+d.energy.toFixed(6)+' · '+d.iterations+' iters · '+d.ms.toFixed(0)+'ms</span>');
+w('  <span class="d">'+d.nParams+' params · '+d.gateCount+' gates · '+d.nQ+'Q × '+d.layers+' layers</span>');
+navigator.clipboard.writeText(d.qasm).then(function(){w('<span class="g">✓ VQE QASM copied</span>')},function(){})}
+else if(d.type==='qbt-started')w('<span class="cy">⚛ QBT '+d.mode+':</span> <span class="d">Mach='+d.mach+' alt='+d.alt+(d.altName?' ('+d.altName+')':'')+'</span>')
+else if(d.type==='qbt-progress'){}
+else if(d.type==='qbt-result'){w('<span class="g">⚛ QBT converged</span>');
+w('  <span class="d">Mach '+d.mach+' · '+d.altName+' ('+d.altMeters+'m)</span>');
+w('  <span class="d">energy: '+d.energy.toFixed(4)+' · shock: <span class="y">'+d.shock+'</span> · '+d.iterations+' iters</span>');
+w('  <span class="d">ρ='+d.density+' kg/m³ · g='+d.gravity+' m/s² · T='+d.temp+'K</span>');
+w('  <span class="d">data integrity: '+(d.dataIntegrity*100).toFixed(0)+'%'+(d.blackout?' <span class="r">⚠ PLASMA BLACKOUT</span>':'')+'</span>')}
+else if(d.type==='qbt-sweep'){w('<span class="g">⚛ QBT sweep complete</span> <span class="d">'+d.results.length+' configs · '+d.ms.toFixed(0)+'ms</span>');
+w('  <span class="d">Mach    Alt             E        Shock     Data</span>');
+for(var ri=0;ri<d.results.length;ri++){var r=d.results[ri];w('  <span class="d">'+String(r.mach).padEnd(8)+r.altName.padEnd(16)+r.energy.toFixed(3).padStart(8)+'  '+r.shock.padEnd(10)+(r.blackout?'<span class="r">BLACKOUT</span>':(r.dataIntegrity*100).toFixed(0)+'%')+'</span>')}}
+else if(d.type==='qas-started')w('<span class="cy">⚛ QAS '+d.mode+':</span> <span class="d">'+(d.azimuth!==undefined?'az='+d.azimuth+'° el='+d.elevation+'° ':'')+'freq='+d.freq+'Hz</span>')
+else if(d.type==='qas-result'){w('<span class="g">⚛ QAS converged</span> <span class="d">'+d.iterations+' iters · '+d.ms.toFixed(0)+'ms</span>');
+w('  <span class="d">source: az='+d.azimuth+'° el='+d.elevation+'° freq='+d.freq+'Hz room='+d.roomSize+'m</span>');
+w('  <span class="cy">binaural:</span> ILD='+d.binaural.ild_dB+'dB ITD='+d.binaural.itd_us+'μs');
+w('  <span class="cy">dispersion:</span> ω='+d.dispersion.omega.toFixed(4)+' v_group='+d.dispersion.vGroup.toFixed(4)+' v_phase='+d.dispersion.vPhase.toFixed(4));
+w('  <span class="cy">channels:</span> L='+d.channels.L_ILD+' R='+d.channels.R_ILD)}
+else if(d.type==='qas-sweep'){w('<span class="g">⚛ QAS spatial sweep</span> <span class="d">'+d.results.length+' angles · '+d.ms.toFixed(0)+'ms · '+d.freq+'Hz</span>');
+w('  <span class="d">  Az°    ILD(dB)  ITD(μs)  Left   Right  Energy</span>');
+for(var ri=0;ri<d.results.length;ri++){var r=d.results[ri];w('  <span class="d">'+String(r.azimuth).padStart(4)+'°   '+String(r.ild_dB).padStart(6)+'  '+String(r.itd_us).padStart(7)+'  '+r.L+'  '+r.R+'  '+r.energy.toFixed(3)+'</span>')}}
+else if(d.type==='audio-cv-result'){w('<span class="g">⚛ Audio CV</span> <span class="d">frame #'+d.frame+' · '+d.ms.toFixed(1)+'ms</span>');
+w('  <span class="cy">control vectors:</span> energy='+d.cv.energy.toFixed(3)+' centroid='+d.cv.centroid.toFixed(1)+' flux='+d.cv.flux.toFixed(3)+' flatness='+d.cv.flatness.toFixed(3));
+w('  <span class="cy">bands:</span> sub='+d.cv.sub.toFixed(2)+' bass='+d.cv.bass.toFixed(2)+' mid='+d.cv.mid.toFixed(2)+' pres='+d.cv.pres.toFixed(2)+' air='+d.cv.air.toFixed(2));
+w('  <span class="cy">quantum:</span> E='+d.energy.toFixed(4)+' qubits=['+d.qubits.map(function(q){return q.toFixed(2)}).join(',')+']');
+w('  <span class="cy">spatial:</span> ILD='+d.spatial.ild_dB+'dB ITD='+d.spatial.itd_us+'μs L='+d.spatial.L_ILD+' R='+d.spatial.R_ILD);
+try{var bc=new BroadcastChannel('quantum-loopback');bc.postMessage({type:'audio-cv',source:'qbit-raw',frame:d.frame,cv:d.cv,qubits:d.qubits,energy:d.energy,spatial:d.spatial});bc.close()}catch(e){}}
+else if(d.type==='error')w('<span class="r">⚛ '+d.msg+'</span>')};
+ugW.onerror=function(e){w('<span class="r">⚛ worker error:</span> <span class="d">'+e.message+'</span>')};
+return ugW}
+
+C.ugrad=function(a){var sub=a[0]||'status';
+if(sub==='train'){ugWorker().postMessage({type:'train',arch:ugState.arch,lr:0.05,epochs:500,dataset:ugState.dataset,engine:ugState.engine,weights:ugState.weights,gen:ugState.gen})}
+else if(sub==='bg'||sub==='background'){var s2=a[1]||'start';
+if(s2==='start'||s2==='on')ugWorker().postMessage({type:'bg-start',arch:ugState.arch,lr:0.05,epochs:500,dataset:ugState.dataset,engine:ugState.engine,weights:ugState.weights,gen:ugState.gen});
+else if(s2==='stop'||s2==='off')ugWorker().postMessage({type:'bg-stop'});
+else ugWorker().postMessage({type:'status'})}
+else if(sub==='miami'||sub==='qpu')ugWorker().postMessage({type:'quantum-miami',arch:ugState.arch,weights:ugState.weights,gen:ugState.gen})
+else if(sub==='vqe'){var vLayers=parseInt(a[1])||3,vIters=parseInt(a[2])||30;ugWorker().postMessage({type:'vqe',patch:'11q',layers:vLayers,maxIter:vIters,lr:0.1,J:1.0,h:0.5})}
+else if(sub==='qbt'||sub==='ballistic'||sub==='mach'){var qbtSub=a[1]||'';if(qbtSub==='sweep')ugWorker().postMessage({type:'qbt',sweep:true,maxIter:30});else{var m=parseFloat(a[1])||1.0,al=parseInt(a[2])||0;ugWorker().postMessage({type:'qbt',mach:m,alt:al,maxIter:40})}}
+else if(sub==='qas'||sub==='binaural'||sub==='surround'){var qasSub=a[1]||'';if(qasSub==='sweep')ugWorker().postMessage({type:'qas',sweep:true,freq:parseFloat(a[2])||1000,roomSize:parseFloat(a[3])||5,maxIter:25});else{var az=parseFloat(a[1])||0,el=parseFloat(a[2])||0,fr=parseFloat(a[3])||1000;ugWorker().postMessage({type:'qas',azimuth:az,elevation:el,freq:fr,roomSize:5,maxIter:30})}}
+else if(sub==='audio'||sub==='cv'||sub==='pipe'){w('<span class="cy">⚛ Audio CV pipe</span> <span class="d">use qbit-studio Audio CV tab for live visualizer</span>');w('<span class="d">  ugrad audio demo — sends test FFT frame to worker</span>');var testBands=new Float32Array(64);for(var ti=0;ti<64;ti++)testBands[ti]=Math.random()*0.5;ugWorker().postMessage({type:'audio-cv',bands:testBands,azimuth:parseFloat(a[1])||0,elevation:parseFloat(a[2])||0,freq:parseFloat(a[3])||1000,roomSize:5,frame:0})}
+else if(sub==='cortical'||sub==='r5')ugWorker().postMessage({type:'cortical',weights:ugState.weights,dataset:ugState.dataset,gen:ugState.gen})
+else if(sub==='organoid'||sub==='r6'||sub==='dna')ugWorker().postMessage({type:'organoid',weights:ugState.weights,dataset:ugState.dataset,arch:ugState.arch,gen:ugState.gen})
+else if(sub==='r1'){ugState.engine='r1';w('<span class="g">⚛ engine: R1 Tensor</span>')}
+else if(sub==='r0'){ugState.engine='r0';w('<span class="g">⚛ engine: R0 Scalar</span>')}
+else if(sub==='xor'||sub==='circle'||sub==='spiral'||sub==='and'||sub==='or'){ugState.dataset=sub;ugState.weights=null;w('<span class="g">⚛ dataset: '+sub+'</span>')}
+else ugWorker().postMessage({type:'status'})};
+C.train=function(){C.ugrad(['train'])};
+C.bg=function(a){C.ugrad(['bg'].concat(a||[]))};
+
+document.addEventListener('visibilitychange',function(){
+if(document.hidden&&ugState.active){}
+else if(!document.hidden&&ugState.bgGens>0)w('<span class="g">⬡ tab visible</span> <span class="d">— '+ugState.bgGens+' μgrad gens completed in bg</span>')});
+
+function exec(raw){
+var r=raw.trim();if(!r)return;
+if(r==='!!'&&H.length){exec(H[0]);return}
+H.unshift(r);if(H.length>500)H.length=500;hi=-1;
+try{localStorage.setItem('qr-h',JSON.stringify(H.slice(0,100)))}catch(e){}
+if(NW&&window.QuantumPrefixes){
+var cl=window.QuantumPrefixes.classifyLine(r,lang(r));
+var sym=cl.sym||'  ',cc=PCLS[cl.sym]||'d';
+w('<span class="gt '+cc+'">'+pad(sym,3)+'</span><span class="d">❯</span> '+esc(r))
+}else{w('<span class="d">❯</span> '+esc(r))}
+var p=r.split(/\s+/),cmd=p[0].toLowerCase(),args=p.slice(1);
+var fn=C[cmd];
+if(fn)try{fn(args,r)}catch(e){ln(e.message,'r')}
+else ln('? '+cmd,'r')}
+
+I.addEventListener('keydown',function(e){
+if(e.key==='Enter'){exec(I.value);I.value='';PFX.textContent=''}
+else if(e.key==='ArrowUp'){e.preventDefault();if(hi<H.length-1)I.value=H[++hi]}
+else if(e.key==='ArrowDown'){e.preventDefault();hi>0?I.value=H[--hi]:(hi=-1,I.value='')}
+else if(e.key==='l'&&e.ctrlKey){e.preventDefault();O.innerHTML=''}
+else if(e.key==='c'&&e.ctrlKey){I.value='';PFX.textContent='';w('<span class="d">^C</span>')}
+else if(e.key==='Tab'){e.preventDefault();
+var v=I.value.trim().toLowerCase();if(!v)return;
+var m=Object.keys(C).filter(function(k){return k.indexOf(v)===0});
+if(m.length===1)I.value=m[0]+' ';
+else if(m.length>1)w('<span class="d">'+m.join('  ')+'</span>')}});
+
+I.addEventListener('input',function(){
+var QP=window.QuantumPrefixes;if(!QP){PFX.textContent='';return}
+var v=I.value.trim();if(!v){PFX.textContent='';PFX.className='pfx';return}
+var c=QP.classifyLine(v,lang(v));
+PFX.textContent=c.sym||'';PFX.className='pfx '+(PCLS[c.sym]||'d')});
+
+I.addEventListener('paste',function(e){
+if(!NW)return;
+var text=(e.clipboardData||window.clipboardData).getData('text');
+if(text.indexOf('\n')<0)return;
+e.preventDefault();
+var lines=text.split('\n'),lg=lang(text);
+w('<span class="y">⌁ night watch — '+lines.length+' lines · '+lg+(PJ?' · pajama':'')+'</span>');
+for(var i=0;i<lines.length;i++){PJ?wpj(lines[i],lg,i):wg(lines[i],lg)}
+cov(text,lg)});
+
+O.addEventListener('click',function(e){var t=e.target.closest('.cmd');
+if(t){var cmd=t.textContent.trim().toLowerCase();if(C[cmd]){exec(cmd);return}}I.focus()});
+
+document.getElementById('l').addEventListener('click',function(e){
+var t=e.target.closest('.ll');if(!t||t.classList.contains('on'))return;
+window.open(t.dataset.h+'.html','_blank')});
+
+var cpI,cpL,cpE,cpOn=false,cpSel=0,cpBuilt=false;
+var cpDesc={help:'commands',clear:'clear',speed:'benchmark',layers:'L0-L7',dac:'DAC',
+apps:'all',build:'pipeline',test:'suites',lint:'linters',deploy:'steps',config:'project',
+open:'app',pipeline:'flow',loop:'status',tether:'cross',echo:'print',date:'time',
+uptime:'session',version:'system',whoami:'id',eval:'JS',gutter:'classify',
+prefix:'line',stripe:'tokens',coverage:'stats',watch:'night watch',gluelam:'modules',
+pajama:'fills',nbloat:'whitespace',interleave:'merge',deinterleave:'split',steno:'quantum codec',
+ugrad:'μgrad AI',train:'single gen',bg:'background'};
+function cpInit(){
+if(cpBuilt)return;cpBuilt=true;
+cpE=document.getElementById('cp');cpI=document.getElementById('cp-in');cpL=document.getElementById('cp-ls');
+cpI.addEventListener('input',function(){cpSel=0;cpFilter(cpI.value)});
+cpI.addEventListener('keydown',function(e){var items=cpL.querySelectorAll('.cp-i');
+if(e.key==='ArrowDown'){e.preventDefault();cpSel=Math.min(cpSel+1,items.length-1)}
+else if(e.key==='ArrowUp'){e.preventDefault();cpSel=Math.max(cpSel-1,0)}
+else if(e.key==='Enter'){e.preventDefault();if(items[cpSel]){exec(items[cpSel].dataset.cmd);cpToggle()}return}
+else if(e.key==='Escape'){e.preventDefault();cpToggle();return}else return;
+items.forEach(function(it,i){it.className='cp-i'+(i===cpSel?' sel':'')});
+if(items[cpSel])items[cpSel].scrollIntoView({block:'nearest'})});
+cpL.addEventListener('click',function(e){var t=e.target.closest('.cp-i');if(!t)return;exec(t.dataset.cmd);cpToggle()})}
+function cpToggle(){cpInit();cpOn=!cpOn;cpE.className=cpOn?'open':'';
+if(cpOn){cpI.value='';cpFilter('');cpI.focus();cpSel=0}else I.focus()}
+function cpFilter(q){
+var keys=Object.keys(C).filter(function(k){return k!=='cls'&&k!=='g'&&k!=='pfx'&&k!=='cov'});
+if(q)keys=keys.filter(function(k){return k.indexOf(q.toLowerCase())>=0});
+cpL.innerHTML='';keys.forEach(function(k,i){var d=document.createElement('div');
+d.className='cp-i'+(i===cpSel?' sel':'');d.dataset.cmd=k;
+d.innerHTML=k+'<b>'+(cpDesc[k]||'')+'</b>';cpL.appendChild(d)})}
+
+document.addEventListener('keydown',function(e){
+if(cpBuilt&&e.target===cpI)return;
+var LL=['qbit-raw','qbit-search','nterminal','quantum-gutter','quantum-notepad','qbit-studio','qbit-medical','history'];
+if((e.metaKey||e.ctrlKey)&&e.key>='1'&&e.key<='8'){e.preventDefault();
+var idx=parseInt(e.key)-1;if(LL[idx]!=='qbit-raw')window.open(LL[idx]+'.html','_blank');return}
+if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();cpToggle();return}
+if(e.key==='Escape'){if(cpOn)cpToggle();else I.focus();return}
+if(e.key==='PageUp'){e.preventDefault();O.scrollTop-=O.clientHeight*.8}
+if(e.key==='PageDown'){e.preventDefault();O.scrollTop+=O.clientHeight*.8}});
+
+var bc=new BroadcastChannel('hexterm');
+bc.onmessage=function(e){if(e.data&&e.data.type==='command')exec(e.data.command)};
+var _qpBC=new BroadcastChannel('quantum-prefixes');
+// ===== QUANTUM PREFIX LIVE SYNC =====
+_qpBC.onmessage=function(e){
+if(e.data&&e.data.type==='state-request'&&window.QuantumPrefixes)
+window.QuantumPrefixes.broadcastState('qbit-raw',{})};
+window.addEventListener('load',function(){
+if(window.QuantumPrefixes){window.QuantumPrefixes.broadcastState('qbit-raw',{active:true});window.QuantumPrefixes.requestStateSync()}stat()});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+
+var boot=(performance.now()-T0).toFixed(1);
+w('<span class="y">{.qbit} raw</span> <span class="d">v4.1 · '+boot+'ms · gluelam '+(window.QuantumPrefixes?'✓':'⏳')+' · steno '+(window.QbitSteno?'✓':'⏳')+'</span>');
+w('<span class="d">L0 ·</span> <span class="c cmd">help</span> <span class="d">·</span> <span class="c cmd">steno</span> <span class="d">·</span> <span class="c cmd">pajama</span> <span class="d">·</span> <span class="c cmd">nbloat</span> <span class="d">· ⌘K · ⌘1-8</span>');
+w('');
+I.focus()
+})()
+
+</script>
+</body>
+</html>

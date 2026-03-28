@@ -28,6 +28,8 @@ a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
 
 /* ── Header ── */
 #header{padding:env(safe-area-inset-top,12px) var(--mueee-title-bar-padding-x) 0;background:var(--mueee-logo-bar-bg);border-bottom:1px solid var(--mueee-logo-bar-border);backdrop-filter:saturate(140%) blur(12px);-webkit-backdrop-filter:saturate(140%) blur(12px);}
+html.qp-embed-chrome #header{backdrop-filter:none;-webkit-backdrop-filter:none;background:linear-gradient(180deg,var(--bg2) 0%,var(--bg3) 100%);border-bottom:1px solid var(--border);}
+:root.light html.qp-embed-chrome #header{background:linear-gradient(180deg,#f1f5f9 0%,#e8edf4 100%);border-bottom:1px solid rgba(15,23,42,.12);}
 #header .logo-row{display:flex;align-items:center;gap:8px;padding:0;flex-wrap:wrap;min-height:var(--mueee-title-bar-min-height);box-sizing:border-box;}
 #header .logo{font-family:var(--mono);font-size:16px;font-weight:800;background:linear-gradient(135deg,#7c3aed,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 #header .ver{font-family:var(--mono);font-size:9px;color:var(--dim);}
@@ -37,10 +39,14 @@ a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
 
 /* ── Tabs (in header — same light bar as logo) ── */
 #header .header-mode-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-left:4px;}
+html.qp-embed-chrome #header .header-mode-tabs{gap:8px;row-gap:8px;margin-left:8px;}
 #header .logo-row{align-items:center;}
 .mode-tab{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:8px;border:1px solid var(--border);color:var(--muted);cursor:pointer;background:var(--bg);transition:all .15s;}
 .mode-tab:hover{color:var(--text);}
 .mode-tab.active{color:var(--cyan);border-color:var(--cyan);background:var(--bg);font-weight:600;}
+html.qp-embed-chrome #header .mode-tab{padding:6px 12px;background:var(--bg);border-color:var(--border);}
+:root.light html.qp-embed-chrome #header .mode-tab{background:#fff;border-color:rgba(15,23,42,.14);box-shadow:0 1px 2px rgba(15,23,42,.05);}
+:root.light html.qp-embed-chrome #header .mode-tab.active{color:var(--cyan);border-color:rgba(8,145,178,.45);background:#f8fafc;}
 
 /* ── Search composer (dock: AI/Freya + standalone Search — hidden in mueee iframe for Search) ── */
 #search-dock{padding:10px 16px 12px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;}
@@ -88,26 +94,32 @@ html.qp-embed-chrome #search-dock.embed-min-search #search-composer{display:none
 #timeline{height:44px;border-bottom:1px solid var(--border);background:var(--bg);}
 #tl-canvas{width:100%;height:100%;display:block;}
 
-/* ── Left spine rail: vertical rainbow + timeline + connectors ── */
+/* ── Left spine rail: thin vertical ribbon + timeline (connectors = horizontal strip in main) ── */
 .search-panel-body{display:flex;flex:1;min-height:0;flex-direction:row;align-items:stretch;}
 .search-panel-main{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;}
-#spine-rail{display:flex;flex-direction:row;align-items:stretch;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);transition:min-width .22s ease,width .22s ease;}
-.rainbow-vertical{display:flex;flex-direction:column;width:8px;min-width:8px;flex-shrink:0;}
-.rainbow-vertical span{flex:1;min-height:6px;width:100%;}
-#timeline-v-wrap{width:34px;min-width:26px;flex:1;min-height:100px;position:relative;border-right:1px solid var(--border);}
+#spine-rail{display:flex;flex-direction:row;align-items:stretch;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);transition:min-width .22s ease,width .22s ease;min-width:0;}
+.rainbow-vertical{display:flex;flex-direction:column;width:3px;min-width:3px;flex-shrink:0;}
+.rainbow-vertical span{flex:1;min-height:4px;width:100%;}
+#timeline-v-wrap{width:28px;min-width:24px;flex:1;min-height:80px;max-width:36px;position:relative;border-right:1px solid var(--border);}
 #tl-canvas-v{display:block;width:100%;height:100%;}
-#connectors{display:flex;flex-direction:column;padding:8px 6px;gap:5px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;width:min(168px,26vw);min-width:96px;flex-shrink:0;background:transparent;border:none;}
-#connectors::-webkit-scrollbar{width:4px;}
+/* Horizontal connector strip + idle auto-hide */
+.connectors-row-wrap{flex-shrink:0;position:relative;z-index:2;transition:opacity .2s ease;}
+.connectors-row{display:flex;flex-direction:row;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg3);max-height:min(120px,22vh);transition:max-height .28s ease,opacity .22s ease,padding .22s ease;}
+.connectors-row-wrap.connectors-wrap--idle .connectors-row{max-height:0;padding-top:0;padding-bottom:0;opacity:0;overflow:hidden;margin:0;border:none;pointer-events:none;}
+.connectors-row-wrap.connectors-wrap--idle.connectors-wrap--pinned .connectors-row{max-height:min(120px,22vh);padding:6px 10px;opacity:1;pointer-events:auto;border-bottom:1px solid var(--border);}
+.connectors-row-wrap.connectors-wrap--idle:not(.connectors-wrap--pinned)::before{content:'';display:block;height:6px;background:linear-gradient(90deg,#7c3aed,#06b6d4,#a78bfa,#22d3ee,#8b5cf6,#34d399);cursor:pointer;opacity:.92;}
+.connectors-row-wrap.connectors-wrap--idle:not(.connectors-wrap--pinned):hover::before{opacity:1;}
+#connectors{display:flex;flex-direction:row;flex-wrap:nowrap;align-items:center;gap:6px;padding:0;overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;flex:1;min-width:0;background:transparent;border:none;}
+#connectors::-webkit-scrollbar{height:4px;}
+.connectors-pin{flex-shrink:0;font-family:var(--mono);font-size:9px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--muted);cursor:pointer;line-height:1;}
+.connectors-pin:hover{color:var(--cyan);border-color:var(--cyan);}
+.connectors-pin[aria-pressed="true"]{color:var(--cyan);border-color:rgba(6,182,212,.35);background:var(--bg);}
 .spine-rail-toggle{flex-shrink:0;width:22px;min-width:22px;align-self:stretch;margin:0;padding:4px 2px;border:none;border-left:1px solid var(--border);background:var(--bg3);color:var(--muted);cursor:pointer;font-size:11px;line-height:1.2;border-radius:0;}
 .spine-rail-toggle:hover{color:var(--cyan);background:var(--bg);}
 #spine-rail.spine-rail--collapsed{min-width:22px;width:22px;overflow:hidden;}
 #spine-rail.spine-rail--collapsed .rainbow-vertical,
-#spine-rail.spine-rail--collapsed #timeline-v-wrap,
-#spine-rail.spine-rail--collapsed #connectors{display:none!important;}
-@media(max-width:700px){
-  #connectors{width:min(140px,32vw);min-width:88px;}
-}
-.cpill{font-family:var(--mono);font-size:10px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);color:var(--muted);cursor:pointer;white-space:normal;flex-shrink:0;transition:all .15s;background:var(--bg);width:100%;box-sizing:border-box;text-align:left;}
+#spine-rail.spine-rail--collapsed #timeline-v-wrap{display:none!important;}
+.cpill{font-family:var(--mono);font-size:10px;padding:5px 9px;border-radius:8px;border:1px solid var(--border);color:var(--muted);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;background:var(--bg);width:auto;box-sizing:border-box;text-align:center;}
 .cpill:hover{color:var(--text);border-color:#334155;}
 .cpill.active{color:var(--cyan);border-color:rgba(6,182,212,.3);}
 .cpill.loading{color:#fbbf24;border-color:rgba(251,191,36,.3);animation:pulse .8s ease infinite alternate;}
@@ -403,7 +415,7 @@ a.dv-ml-a-ref{color:#a78bfa;}
     .sc-prompt-row{flex-direction:column;}
     #search-input{width:100%;padding:10px 12px;font-size:13px;min-height:52px;}
     #search-btn{width:100%;padding:10px 16px;font-size:12px;align-self:stretch;}
-    #connectors{padding:4px 12px;gap:3px;}
+    .connectors-row{padding:4px 8px;}
     .cpill{font-size:9px;padding:3px 8px;}
     #results{padding:8px 12px;gap:6px;}
     .result{padding:10px 12px;width:100% !important;}
@@ -479,10 +491,15 @@ html.qp-embed-chrome #theme-toggle{display:none!important;}
             <div id="spine-rail" class="spine-rail">
                 <div class="rainbow mueee-rainbow rainbow-vertical" role="presentation"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
                 <div id="timeline-v-wrap"><canvas id="tl-canvas-v"></canvas></div>
-                <aside id="connectors" aria-label="Data connectors"></aside>
-                <button type="button" id="spine-rail-toggle" class="spine-rail-toggle" aria-expanded="true" title="Collapse connector rail">&#x25C0;</button>
+                <button type="button" id="spine-rail-toggle" class="spine-rail-toggle" aria-expanded="true" title="Collapse ribbon &amp; timeline">&#x25C0;</button>
             </div>
             <div class="search-panel-main">
+                <div id="connectors-wrap" class="connectors-row-wrap">
+                    <div class="connectors-row" id="connectors-row">
+                        <aside id="connectors" aria-label="Data connectors"></aside>
+                        <button type="button" id="connectors-pin" class="connectors-pin" aria-pressed="false" title="Pin connector strip open (disable auto-hide)">pin</button>
+                    </div>
+                </div>
                 <div id="results">
                     <div class="empty"><div class="big">&#x1F50D;</div>Search across Wikipedia, arXiv, Sacred Texts,<br>PubChem, Wayback Machine, Open Library & more.<br><br><span style="font-family:var(--mono);font-size:10px;color:var(--accent);">Works offline-first. No account needed.</span></div>
                 </div>
@@ -611,11 +628,11 @@ html.qp-embed-chrome #theme-toggle{display:none!important;}
             <div class="sc-toolbar">
                 <label class="sc-lbl" for="prompt-model">Model</label>
                 <select id="prompt-model" aria-label="Model or search depth">
-                    <option value="auto">Auto — match connectors to query</option>
-                    <option value="fast">Fast — minimal context</option>
-                    <option value="balanced">Balanced — default depth</option>
-                    <option value="deep">Deep — slower, richer snippets</option>
-                    <option value="code">Code &amp; technical</option>
+                    <option value="auto" title="Auto — match connectors to query">auto</option>
+                    <option value="fast" title="Fast — minimal context">fast</option>
+                    <option value="balanced" title="Balanced — default depth">equal</option>
+                    <option value="deep" title="Deep — slower, richer snippets">deep</option>
+                    <option value="code" title="Code &amp; technical">code</option>
                 </select>
                 <button type="button" class="sc-btn-attach" id="prompt-add-doc" title="Attach plain text or Markdown">+ Add document</button>
                 <input type="file" id="prompt-file-input" multiple accept=".txt,.md,.markdown,text/plain,text/markdown" hidden>
@@ -944,7 +961,8 @@ document.querySelectorAll('.mode-tab').forEach(tab => {
         if (activeMode === 'hub') initHubCatalog();
         // Show/hide search-specific elements
         if (activeMode === 'ai') aiRefresh();
-        $('connectors').style.display = activeMode === 'search' ? '' : 'none';
+        var cwrap = $('connectors-wrap');
+        if (cwrap) cwrap.style.display = activeMode === 'search' ? '' : 'none';
         var tlr = $('timeline-v-wrap');
         if (tlr) tlr.style.display = activeMode === 'search' ? '' : 'none';
         var srr = $('spine-rail');
@@ -990,7 +1008,7 @@ function initSpineRailToggle() {
         rail.classList.toggle('spine-rail--collapsed', collapsed);
         btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
         btn.innerHTML = collapsed ? '&#x25B6;' : '&#x25C0;';
-        btn.title = collapsed ? 'Expand connector rail' : 'Collapse connector rail';
+        btn.title = collapsed ? 'Expand ribbon & timeline' : 'Collapse ribbon & timeline';
         try { localStorage.setItem('search-spine-rail-collapsed', collapsed ? '1' : '0'); } catch (e) {}
         requestAnimationFrame(function () { initTimeline(); });
     }
@@ -1000,6 +1018,49 @@ function initSpineRailToggle() {
     btn.addEventListener('click', function () {
         apply(!rail.classList.contains('spine-rail--collapsed'));
     });
+}
+
+function initConnectorsRowIdle() {
+    var wrap = $('connectors-wrap');
+    var panel = $('search-panel');
+    var pinBtn = $('connectors-pin');
+    if (!wrap || !panel) return;
+    var idleMs = 5000;
+    var timer = null;
+    function isPinned() {
+        try { return localStorage.getItem('search-connectors-pinned') === '1'; } catch (e) { return false; }
+    }
+    function applyPinned(on) {
+        wrap.classList.toggle('connectors-wrap--pinned', on);
+        if (pinBtn) pinBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    }
+    applyPinned(isPinned());
+    if (pinBtn) pinBtn.addEventListener('click', function () {
+        var next = !wrap.classList.contains('connectors-wrap--pinned');
+        try { localStorage.setItem('search-connectors-pinned', next ? '1' : '0'); } catch (e) {}
+        applyPinned(next);
+        wrap.classList.remove('connectors-wrap--idle');
+        scheduleIdle();
+    });
+    function scheduleIdle() {
+        clearTimeout(timer);
+        if (wrap.classList.contains('connectors-wrap--pinned')) return;
+        timer = setTimeout(function () {
+            wrap.classList.add('connectors-wrap--idle');
+        }, idleMs);
+    }
+    function wake() {
+        clearTimeout(timer);
+        wrap.classList.remove('connectors-wrap--idle');
+        scheduleIdle();
+    }
+    panel.addEventListener('mousemove', function () {
+        if (wrap.classList.contains('connectors-wrap--idle')) wake();
+        else scheduleIdle();
+    });
+    wrap.addEventListener('mouseenter', wake);
+    wrap.addEventListener('focusin', wake);
+    scheduleIdle();
 }
 
 function initTimeline(){
@@ -1893,6 +1954,7 @@ initPromptComposer();
    INIT
    ══════════════════════════════════════════════════════ */
 initSpineRailToggle();
+initConnectorsRowIdle();
 initTimeline();
 buildPills();
 syncSearchStatusBar();

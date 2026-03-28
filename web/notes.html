@@ -1,0 +1,965 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!-- Tonnetz / ship path: plans/isomorphic-gluelam-unified-path.plan.md — pathway row notes (P1). Funnel = blocks array order; export must converge on isomorphic-export-facet-v1 (same trajectory as pad-datatable). -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<script>try{if(window.parent!==window)document.documentElement.classList.add('qp-embed-chrome');}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Notes — iterative surface</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+<link rel="stylesheet" href="quantum-theme.css">
+<link rel="stylesheet" href="search-staff-bar.css">
+<style>
+html{height:100%;margin:0;}
+html,body{background:var(--qp-bg);color:var(--qp-text);font-family:system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.55;}
+body{
+  display:flex;flex-direction:column;margin:0;
+  min-height:100vh;min-height:100dvh;
+  max-height:100vh;max-height:100dvh;
+  overflow-x:hidden;overflow-y:hidden;
+  box-sizing:border-box;
+}
+html.qp-embed-chrome{height:100%;overflow:hidden;}
+html.qp-embed-chrome body{height:100%;max-height:none;min-height:0;}
+.nt-top{
+  flex-shrink:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  min-height:var(--mueee-title-bar-min-height);padding:0 var(--mueee-title-bar-padding-x);box-sizing:border-box;
+  border-bottom:1px solid var(--mueee-logo-bar-border);
+  background:var(--mueee-logo-bar-bg);
+  backdrop-filter:saturate(140%) blur(12px);
+  -webkit-backdrop-filter:saturate(140%) blur(12px);
+}
+.nt-rainbow,.nt-iron-line{flex-shrink:0;}
+.nt-top-lead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;flex:1;}
+.nt-theme-host{display:flex;align-items:center;flex-shrink:0;line-height:1}
+#qp-theme-toggle{position:static!important;top:auto!important;right:auto!important;z-index:auto!important}
+html.qp-embed-chrome #qp-theme-toggle{display:none!important}
+.nt-brand{margin:0;font:800 14px 'SF Mono',ui-monospace,monospace;background:linear-gradient(135deg,#c9a84c,#56d4dd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.nt-badge{font:600 9px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--qp-text-muted);}
+.nt-main{
+  flex:1 1 0;min-width:0;min-height:0;max-width:1280px;width:100%;margin:0 auto;padding:12px 14px 20px;
+  box-sizing:border-box;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;
+}
+.nt-iron-line{height:2px;background:linear-gradient(90deg,#c9a84c,#56d4dd,#58a6ff,#a78bfa,#34d399);opacity:.85;flex-shrink:0;}
+.nt-scene-header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px;margin-bottom:10px;border:1px solid var(--qp-border);border-radius:12px;background:var(--qp-bg-secondary);}
+.nt-scene-title{font:800 11px ui-monospace,monospace;color:var(--qp-accent);letter-spacing:.12em;text-transform:uppercase;flex-shrink:0;}
+.nt-scene-tabs{display:flex;flex-wrap:wrap;gap:4px;flex:1;justify-content:center;align-items:center;}
+.nt-scene-tabs button{font:600 10px ui-monospace,monospace;color:var(--qp-text-muted);background:rgba(88,166,255,.06);border:1px solid var(--qp-border);padding:5px 12px;border-radius:6px;cursor:pointer;letter-spacing:.02em;transition:color .15s,border-color .15s,background .15s;}
+.nt-scene-tabs button:hover{color:var(--qp-accent);border-color:rgba(88,166,255,.35);}
+.nt-scene-tabs button.active{color:var(--qp-accent);border-color:rgba(201,168,76,.45);background:rgba(201,168,76,.08);}
+.nt-body{display:flex;flex:1;min-height:0;gap:0;align-items:stretch;border:1px solid var(--qp-border);border-radius:14px;overflow:hidden;background:var(--qp-bg-secondary);}
+.nt-notebook-col{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column;}
+.nt-rd-cell-toolbar{display:flex;gap:4px;padding:8px 10px;border-bottom:1px solid var(--qp-border);flex-wrap:wrap;align-items:center;background:var(--qp-bg-tertiary);}
+.nt-rd-cell-toolbar.nt-hidden{display:none;}
+.nt-rd-cell-toolbar button{font:600 10px ui-monospace,monospace;color:var(--qp-text-muted);background:var(--qp-bg-secondary);border:1px solid var(--qp-border);padding:4px 10px;border-radius:6px;cursor:pointer;}
+.nt-rd-cell-toolbar button:hover{color:var(--qp-accent);border-color:var(--qp-accent);}
+.nt-rd-cell-toolbar .nt-tb-spacer{flex:1;min-width:8px;}
+.nt-rd-cell-toolbar .nt-layout-btn{padding:4px 8px;font-size:13px;line-height:1;}
+.nt-rd-cell-toolbar .nt-layout-btn.active{color:var(--qp-accent);border-color:rgba(88,166,255,.4);}
+.nt-blocks{display:flex;flex-direction:column;gap:8px;padding:10px 10px 14px;flex:1 1 auto;min-height:0;}
+.nt-blocks.split-view{flex-direction:row;flex-wrap:wrap;}
+.nt-blocks.split-view .nt-cell{width:calc(50% - 4px);}
+.nt-cell{background:var(--qp-bg);border:1px solid var(--qp-border);border-radius:10px;overflow:hidden;transition:border-color .15s;}
+.nt-cell:focus-within{border-color:rgba(88,166,255,.35);}
+.nt-cell-head{display:flex;align-items:center;padding:5px 10px;gap:8px;border-bottom:1px solid var(--qp-border);background:var(--qp-bg-tertiary);}
+.nt-cell-prefix{font:800 10px ui-monospace,monospace;min-width:28px;text-align:center;padding:2px 6px;border-radius:4px;line-height:1.2;}
+.nt-cell-prefix.nt-p-md{background:rgba(63,185,80,.2);color:#3fb950;}
+.nt-cell-prefix.nt-p-code{background:rgba(88,166,255,.2);color:#58a6ff;}
+.nt-cell-prefix.nt-p-math{background:rgba(210,168,255,.18);color:#d2a8ff;}
+.nt-cell-prefix.nt-p-qasm{background:#1e293b;color:#e2e8f0;border:1px solid #334155;}
+.nt-cell-type{font:700 9px ui-monospace,monospace;color:var(--qp-accent);letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border:1px solid var(--qp-border);border-radius:4px;cursor:pointer;background:var(--qp-bg);}
+.nt-cell-type:hover{border-color:var(--qp-accent);}
+.nt-cell-spacer{flex:1;}
+.nt-cell-run{font:600 9px ui-monospace,monospace;color:var(--qp-text-muted);background:rgba(88,166,255,.08);border:1px solid rgba(88,166,255,.2);padding:2px 10px;border-radius:4px;cursor:pointer;}
+.nt-cell-run:hover{color:#58a6ff;border-color:rgba(88,166,255,.45);}
+.nt-cell-del{font-size:14px;color:var(--qp-text-muted);cursor:pointer;background:none;border:none;padding:0 6px;line-height:1;opacity:.6;}
+.nt-cell-del:hover{opacity:1;color:#f85149;}
+.nt-cell textarea.nt-cell-input{width:100%;display:block;min-height:100px;max-height:45vh;box-sizing:border-box;padding:10px 12px;border:none;resize:vertical;background:transparent;color:var(--qp-text);font:13px/1.55 ui-monospace,monospace;outline:none;}
+.nt-cell-output{padding:8px 12px;font:11px/1.5 ui-monospace,monospace;color:var(--qp-text-muted);border-top:1px solid var(--qp-border);background:rgba(0,0,0,.12);white-space:pre-wrap;max-height:140px;overflow-y:auto;display:none;}
+.nt-cell-output.has-output{display:block;}
+.nt-cell-output .out-ok{color:#3fb950}.nt-cell-output .out-err{color:#f85149}
+.nt-side-rail{flex:0 0 280px;max-width:100%;overflow-y:auto;padding:10px 12px;border-left:1px solid var(--qp-border);background:var(--qp-bg-tertiary);display:none;flex-direction:column;gap:8px;}
+.nt-side-rail.visible{display:flex;}
+.nt-math-section{margin-bottom:4px;}
+.nt-math-section h4{font:700 11px ui-serif,Georgia,serif;color:var(--qp-accent);letter-spacing:.04em;margin:0 0 6px;padding-bottom:4px;border-bottom:1px solid var(--qp-border);}
+.nt-math-item{font:11px ui-monospace,monospace;color:var(--qp-text-muted);padding:5px 8px;border-radius:6px;cursor:pointer;display:flex;align-items:center;gap:8px;}
+.nt-math-item:hover{background:rgba(88,166,255,.08);color:var(--qp-text);}
+.nt-math-item .mi-sym{color:var(--qp-accent);min-width:32px;text-align:center;font-weight:700;}
+.nt-gate-card{background:var(--qp-bg);border:1px solid var(--qp-border);border-radius:8px;padding:8px 10px;cursor:pointer;transition:border-color .15s,background .15s;}
+.nt-gate-card:hover{border-color:var(--qp-accent);background:rgba(88,166,255,.06);}
+.nt-gate-card .gc-head{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;}
+.nt-gate-card .gc-prefix{font:800 10px ui-monospace,monospace;min-width:26px;}
+.nt-gate-card .gc-name{font:600 10px ui-monospace,monospace;color:var(--qp-accent);}
+.nt-gate-card .gc-badge{font:600 8px ui-monospace,monospace;padding:1px 6px;border-radius:3px;border:1px solid;margin-left:auto;}
+.nt-gate-card .gc-desc{font:10px/1.45 ui-monospace,monospace;color:var(--qp-text-muted);}
+.nt-gate-card .gc-matrix{font:9px ui-monospace,monospace;color:rgba(201,168,76,.55);margin-top:4px;}
+.nt-ctx h4{font:700 11px ui-serif,Georgia,serif;color:var(--qp-accent);margin:0 0 6px;}
+.nt-ctx a{font:11px ui-monospace,monospace;color:var(--qp-accent);text-decoration:none;display:block;padding:3px 0;}
+.nt-ctx a:hover{text-decoration:underline;}
+.nt-ctx .ctx-state{font:11px ui-monospace,monospace;color:var(--qp-text-muted);line-height:1.55;}
+.nt-hero{border:1px solid var(--qp-border);border-radius:12px;padding:12px 16px;background:var(--qp-bg-secondary);margin-bottom:12px;}
+.nt-hero h1{margin:0;font-size:15px;font-weight:700;color:var(--qp-text);}
+.nt-hero p{margin:.4em 0 0;font-size:12px;color:var(--qp-text-muted);}
+.nt-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:8px;}
+.nt-toolbar button{
+  font:600 11px ui-monospace,monospace;padding:6px 12px;border-radius:8px;border:1px solid var(--qp-border);
+  background:var(--qp-bg-tertiary);color:var(--qp-accent);cursor:pointer;
+}
+.nt-toolbar button:hover{border-color:var(--qp-accent);background:var(--qp-bg-hover);}
+.nt-toolbar .nt-hint{margin-left:auto;font-size:11px;color:var(--qp-text-muted);}
+.nt-glue-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px;padding:10px 12px;border-top:1px solid var(--qp-border);background:var(--qp-bg);}
+.nt-glue-toolbar button,.nt-glue-toolbar select{font:600 11px ui-monospace,monospace;padding:6px 10px;border-radius:8px;border:1px solid var(--qp-border);background:var(--qp-bg-secondary);color:var(--qp-accent);cursor:pointer;}
+.nt-glue-toolbar button:hover{border-color:var(--qp-accent);background:var(--qp-bg-hover);}
+.nt-glue-toolbar select{color:var(--qp-text);}
+.nt-glue-label{font:600 11px ui-monospace,monospace;color:var(--qp-text-muted);margin-right:4px;}
+.nt-glue-panel{margin:0 10px 10px;padding:12px 14px;border:1px solid var(--qp-border);border-radius:10px;background:var(--qp-bg);font:12px/1.5 ui-monospace,monospace;color:var(--qp-text);max-height:200px;overflow:auto;display:none;}
+.nt-glue-panel.nt-show{display:block;}
+.nt-glue-panel h3{margin:0 0 8px;font-size:11px;font-weight:700;color:var(--qp-accent);text-transform:uppercase;letter-spacing:.06em;}
+.nt-glue-panel .pre{color:var(--qp-text-muted);white-space:pre-wrap;word-break:break-word;font-size:11px;}
+[data-theme="light"] .nt-cell-prefix.nt-p-qasm{background:#f1f5f9;color:#0f172a;border-color:#cbd5e1;}
+@media (max-width:900px){
+  .nt-body{flex-direction:column;}
+  .nt-side-rail{flex:1 1 auto;border-left:none;border-top:1px solid var(--qp-border);max-height:40vh;}
+  .nt-blocks.split-view .nt-cell{width:100%;}
+}
+.nt-section{margin-bottom:18px;border:1px solid var(--qp-border);border-radius:12px;padding:16px 18px;background:var(--qp-bg-secondary);}
+.nt-section h2{margin:0 0 10px;font-size:13px;font-weight:700;color:var(--qp-accent);text-transform:uppercase;letter-spacing:.06em;}
+.nt-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;}
+.nt-links a{
+  display:inline-block;padding:8px 12px;border-radius:8px;border:1px solid var(--qp-border);background:var(--qp-bg-tertiary);
+  color:var(--qp-accent);text-decoration:none;font:600 12px ui-monospace,monospace;
+}
+.nt-links a:hover{border-color:var(--qp-accent);background:var(--qp-bg-hover);}
+.nt-note{font-size:12px;color:var(--qp-text-muted);margin-top:12px;padding-top:12px;border-top:1px solid var(--qp-border);}
+.nt-rainbow .r1{background:#c9a84c}.nt-rainbow .r2{background:#56d4dd}.nt-rainbow .r3{background:#58a6ff}
+.nt-rainbow .r4{background:#a78bfa}.nt-rainbow .r5{background:#34d399}.nt-rainbow .r6{background:#64748b}
+.nt-funnel-btn{color:var(--qp-accent);border-color:rgba(201,168,76,.35)!important;}
+.nt-funnel-btn:hover{background:rgba(201,168,76,.1)!important;}
+.nt-blocks.split-view .nt-cell{position:relative;}
+.nt-blocks.split-view .nt-cell::after{
+  content:'';position:absolute;right:-5px;top:50%;width:0;height:0;border:5px solid transparent;border-left:6px solid rgba(88,166,255,.35);
+  transform:translateY(-50%);pointer-events:none;opacity:.65;display:none;
+}
+.nt-blocks.split-view .nt-cell:nth-child(odd):not(:last-child)::after{display:block;}
+@media(max-width:900px){.nt-blocks.split-view .nt-cell::after{display:none!important;}}
+#status-bar{
+  display:flex;align-items:center;min-height:22px;background:var(--mueee-status-bar-bg);border-top:1px solid var(--mueee-status-bar-border);
+  padding:0 10px;padding-bottom:max(0px,env(safe-area-inset-bottom));gap:12px;font-size:.5625rem;font-family:ui-monospace,monospace;
+  color:var(--mueee-status-bar-text);flex-shrink:0;box-sizing:border-box;
+}
+#status-bar .val{color:var(--mueee-status-bar-accent);}
+#status-bar .spacer{flex:1;}
+</style>
+</head>
+<body>
+<header class="nt-top mueee-title-bar">
+  <div class="nt-top-lead">
+    <p class="nt-brand">Notes</p>
+    <span class="nt-badge">Iterative · local · throughline</span>
+  </div>
+  <span data-qp-theme-host class="nt-theme-host" title="Light / dark"></span>
+</header>
+<div class="iron-search-staff" data-iron-search-staff>
+  <form class="iron-search-staff-form" action="search.html" method="get" autocomplete="off">
+    <span class="iron-search-staff-label" title="Iron Line code handoff to Search">Code</span>
+    <select name="model" class="iron-search-staff-model" aria-label="Code depth (Search)">
+      <option value="auto">Auto</option>
+      <option value="fast">Fast</option>
+      <option value="balanced">Balanced</option>
+      <option value="deep">Deep</option>
+      <option value="code">Code</option>
+    </select>
+    <input type="search" name="q" class="iron-search-staff-q" placeholder="Iron Line search…" enterkeyhint="search" />
+    <button type="submit" class="iron-search-staff-go">Search</button>
+  </form>
+</div>
+<div class="rainbow mueee-rainbow nt-rainbow" aria-hidden="true"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+<div class="nt-iron-line" aria-hidden="true" title="Iron Line"></div>
+
+<main class="nt-main">
+  <section class="nt-hero">
+    <h1>Quantum Geographic Codex — Notes</h1>
+    <p>
+      Same <strong>notebook chrome</strong> as uvQbit (prefix gutter badges, Math Ref, Gates &amp; stacks, gluelam). Turn on <strong>split view</strong> (◫) for two columns, then <strong>▶ Funnel</strong>: cells run in <strong>row-major</strong> order (left→right, top→bottom); each step receives the previous cell’s plain output as <code>funnel</code> and <code>prev</code> in CODE cells. <strong>▶ All</strong> runs every cell independently. Iron Line + quantum-prefix sync stay live.
+    </p>
+  </section>
+
+  <div class="nt-scene-header">
+    <span class="nt-scene-title">◆ Notes</span>
+    <div class="nt-scene-tabs" id="nt-scene-tabs" role="tablist">
+      <button type="button" role="tab" data-tab="workpad">Workpad</button>
+      <button type="button" role="tab" class="active" data-tab="notebook">Notebook</button>
+      <button type="button" role="tab" data-tab="math">Math Ref</button>
+      <button type="button" role="tab" data-tab="gates">Gates &amp; Stacks</button>
+      <button type="button" role="tab" data-tab="context">Context</button>
+    </div>
+  </div>
+
+  <div class="nt-body">
+    <div class="nt-notebook-col">
+      <div id="nt-toolbar-wp" class="nt-rd-cell-toolbar nt-hidden" aria-label="Workpad">
+        <button type="button" id="nt-wp-add-note" title="Add note">+ Note</button>
+        <button type="button" id="nt-wp-add-qasm" title="Add QASM">+ QASM</button>
+        <button type="button" id="nt-wp-add-code" title="Add code">+ Code</button>
+        <span class="nt-tb-spacer"></span>
+        <button type="button" id="nt-wp-run-all" title="Run all (independent)">▸ All</button>
+        <button type="button" id="nt-wp-run-funnel" title="Funnel pipeline">▸ Funnel</button>
+        <button type="button" id="nt-toggle-glue" title="Gluelam panels">☰ Gluelam</button>
+      </div>
+      <div id="nt-toolbar-nb" class="nt-rd-cell-toolbar" aria-label="Notebook">
+        <button type="button" id="nt-add-md" title="Markdown">+ MD</button>
+        <button type="button" id="nt-add-code" title="Code">+ Code</button>
+        <button type="button" id="nt-add-math" title="Math">+ Math</button>
+        <button type="button" id="nt-add-qasm" title="QASM">+ QASM</button>
+        <span class="nt-tb-spacer"></span>
+        <button type="button" class="nt-layout-btn" id="nt-toggle-split" title="Side-by-side">&#9636;</button>
+        <button type="button" class="nt-layout-btn" id="nt-run-all" title="Run all cells (independent)">&#9654; All</button>
+        <button type="button" class="nt-layout-btn nt-funnel-btn" id="nt-run-funnel" title="Funnel: row-major (2-col) — each cell gets prior output as funnel / prev">&#9654; Funnel</button>
+        <button type="button" id="nt-toggle-glue2" title="Gluelam panels">☰</button>
+      </div>
+
+      <div class="nt-blocks" id="nt-blocks" aria-live="polite"></div>
+
+      <div id="nt-glue-wrap" class="nt-glue-wrap" style="display:none">
+        <div class="nt-toolbar">
+          <button type="button" id="nt-export">Export .md</button>
+          <button type="button" id="nt-clear" title="Clear all blocks">Clear all</button>
+          <span class="nt-hint" id="nt-status">ready</span>
+        </div>
+        <div class="nt-glue-toolbar" aria-label="Quantum gluelam">
+          <span class="nt-glue-label">Gluelam</span>
+          <button type="button" id="nt-gutter" title="prefixMetadata + broadcast">Gutter</button>
+          <button type="button" id="nt-dac" title="dacComplexity + DAC stats">DAC</button>
+          <button type="button" id="nt-steno-btn" title="qbitCodec.encode">Steno</button>
+          <button type="button" id="nt-preflight-btn" title="QbitPreflight on QASM block">Preflight</button>
+          <button type="button" id="nt-export-prefixed" title="downloadWithPrefixes">Prefixed</button>
+          <button type="button" id="nt-export-qbit" title="qbitCodec.wrap">.qbit</button>
+          <button type="button" id="nt-export-json" title="wrapJsonExport">JSON</button>
+          <span class="nt-glue-label">export lang</span>
+          <select id="nt-default-lang" title="Default language hint for combined export">
+            <option value="markdown" selected>markdown</option>
+            <option value="javascript">javascript</option>
+            <option value="python">python</option>
+            <option value="qasm">qasm</option>
+            <option value="html">html</option>
+            <option value="shell">shell</option>
+          </select>
+        </div>
+        <div id="nt-panel-gutter" class="nt-glue-panel" role="region" aria-label="Gutter metadata"><h3>Quantum gutter</h3><div class="pre" id="nt-panel-gutter-body"></div></div>
+        <div id="nt-panel-dac" class="nt-glue-panel" role="region" aria-label="DAC"><h3>DAC + complexity</h3><div class="pre" id="nt-panel-dac-body"></div></div>
+        <div id="nt-panel-preflight" class="nt-glue-panel" role="region" aria-label="Preflight"><h3>Preflight</h3><div class="pre" id="nt-panel-preflight-body"></div></div>
+        <div id="nt-panel-steno" class="nt-glue-panel" role="region" aria-label="Steno"><h3>Steno / codec</h3><div class="pre" id="nt-panel-steno-body"></div></div>
+      </div>
+    </div>
+    <aside id="nt-math-ref" class="nt-side-rail" aria-label="Math reference"></aside>
+    <aside id="nt-gate-cards" class="nt-side-rail" aria-label="Gates and stacks"></aside>
+    <aside id="nt-context" class="nt-side-rail nt-ctx" aria-label="Context"></aside>
+  </div>
+
+  <section class="nt-section">
+    <h2>Surface links</h2>
+    <p style="margin:0 0 8px;font-size:13px;color:var(--qp-text-muted);">Same μ chrome as Gridlock — open any tab in <code>mueee.html</code> or deep-link here.</p>
+    <div class="nt-links">
+      <a href="search.html">Search</a>
+      <a href="history.html">History</a>
+      <a href="pad-datatable.html">GridPad</a>
+      <a href="gridlock.html">Gridlock</a>
+      <a href="qbit-globe.html">QPU</a>
+      <a href="uvqbit.html">uvQbit</a>
+      <a href="mueee.html">mueee</a>
+    </div>
+    <p class="nt-note">Gluelam: <code>quantum-prefixes.js</code> + <code>qbit-dac.js</code> + <code>qbit-steno.js</code> + <code>qbit-preflight.js</code> · BroadcastChannel <code>quantum-prefixes</code>, <code>iron-line</code>, <code>hexterm</code>, <code>qbit-dac</code>.</p>
+  </section>
+</main>
+
+<div id="status-bar" role="status" aria-live="polite">
+  <span>notes</span>
+  <span>|</span>
+  <span>blocks: <span class="val" id="nt-sb-count">0</span></span>
+  <span>|</span>
+  <span>cov: <span class="val" id="nt-sb-cov">—</span></span>
+  <span class="spacer"></span>
+  <span id="nt-sb-net">offline</span>
+  <span>|</span>
+  <span>v3</span>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script src="qbit-preflight.js"></script>
+<script>
+(function () {
+  'use strict';
+  var STORE = 'uvspeed-notes-surface-v3';
+  var STORE_V2 = 'uvspeed-notes-surface-v2';
+  var LEGACY = 'uvspeed-notes-surface-v1';
+  var CELL_TYPES = ['md', 'code', 'math', 'qasm'];
+  var TYPE_COLORS = { md: '#3fb950', code: '#58a6ff', math: '#d2a8ff', qasm: '#f0883e' };
+  var TYPE_PREFIXES = { md: '+1:', code: '0:', math: '+0:', qasm: '-n:' };
+  var blocksEl = document.getElementById('nt-blocks');
+  var statusEl = document.getElementById('nt-status');
+  var countEl = document.getElementById('nt-sb-count');
+  var covEl = document.getElementById('nt-sb-cov');
+  var mathRefEl = document.getElementById('nt-math-ref');
+  var gateCardsEl = document.getElementById('nt-gate-cards');
+  var ctxEl = document.getElementById('nt-context');
+  var glueWrap = document.getElementById('nt-glue-wrap');
+  var tabName = 'notebook';
+  var blocks = [];
+  var bcIron = null;
+  var bcHex = null;
+  var bcDac = null;
+  var metaTimer = null;
+
+  try { bcIron = new BroadcastChannel('iron-line'); } catch (e1) {}
+  try { bcHex = new BroadcastChannel('hexterm'); } catch (e2) {}
+  try { bcDac = new BroadcastChannel('qbit-dac'); } catch (e3) {}
+
+  function uid() { return 'n' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+  function defaultLang() {
+    var s = document.getElementById('nt-default-lang');
+    return s && s.value ? s.value : 'markdown';
+  }
+
+  function langFromBlock(b) {
+    var t = b.type || 'md';
+    if (t === 'md' || t === 'math') return 'markdown';
+    if (t === 'qasm') return 'qasm';
+    return 'javascript';
+  }
+
+  function badgePrefix(b) {
+    if ((b.type || 'md') === 'md' && /^\s*#/.test(b.text || '')) return '#';
+    return TYPE_PREFIXES[b.type || 'md'] || '+1:';
+  }
+
+  function prefixBadgeClass(b) {
+    var t = b.type || 'md';
+    if (t === 'md' && /^\s*#/.test(b.text || '')) return 'nt-p-md';
+    return t === 'code' ? 'nt-p-code' : t === 'math' ? 'nt-p-math' : t === 'qasm' ? 'nt-p-qasm' : 'nt-p-md';
+  }
+
+  function combinedText() {
+    return blocks.map(function (b) { return b.text || ''; }).join('\n\n');
+  }
+
+  function ironPing(op, payload) {
+    if (!bcIron) return;
+    try {
+      bcIron.postMessage({ source: 'notes-surface', layer: 'L4', op: op, payload: payload || {}, ts: Date.now() });
+    } catch (e) {}
+  }
+
+  function showPanel(id, on) {
+    var p = document.getElementById(id);
+    if (p) p.classList.toggle('nt-show', !!on);
+  }
+
+  function pctClassified(meta) {
+    if (!meta || !meta.totalLines) return 0;
+    return Math.round((meta.classifiedLines / meta.totalLines) * 100);
+  }
+
+  function broadcastQuantum(meta) {
+    var QP = window.QuantumPrefixes;
+    if (!QP || !QP.broadcastState || !meta) return;
+    try {
+      QP.broadcastState('notes-surface', {
+        coverage: pctClassified(meta),
+        totalLines: meta.totalLines,
+        classifiedLines: meta.classifiedLines,
+        prefixCounts: meta.prefixCounts || {},
+        role: 'iterative-notes',
+        sourceApp: 'notes.html'
+      });
+    } catch (e) {}
+  }
+
+  function scheduleMetaPush() {
+    clearTimeout(metaTimer);
+    metaTimer = setTimeout(function () {
+      var QP = window.QuantumPrefixes;
+      if (!QP || !QP.prefixMetadata) return;
+      var text = combinedText();
+      var hint = defaultLang();
+      var lang = QP.detectLanguage ? QP.detectLanguage(text, hint) : hint;
+      var meta = QP.prefixMetadata(text, lang);
+      if (covEl) covEl.textContent = meta.totalLines ? pctClassified(meta) + '%' : '—';
+      broadcastQuantum(meta);
+    }, 350);
+  }
+
+  function save() {
+    try {
+      var toStore = blocks.map(function (b) {
+        var o = { id: b.id, text: b.text, t: b.t, type: b.type, lang: b.lang };
+        if (b.output) o.output = b.output;
+        return o;
+      });
+      localStorage.setItem(STORE, JSON.stringify(toStore));
+      if (countEl) countEl.textContent = String(blocks.length);
+      if (statusEl) statusEl.textContent = 'saved ' + new Date().toLocaleTimeString();
+      scheduleMetaPush();
+    } catch (e) {
+      if (statusEl) statusEl.textContent = 'save failed';
+    }
+  }
+
+  function migrateBlock(b) {
+    if (b.type && CELL_TYPES.indexOf(b.type) >= 0) return;
+    var l = b.lang || 'markdown';
+    if (l === 'qasm') b.type = 'qasm';
+    else if (l === 'markdown') b.type = 'md';
+    else b.type = 'code';
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE) || localStorage.getItem(STORE_V2) || localStorage.getItem(LEGACY);
+      if (raw) {
+        var d = JSON.parse(raw);
+        if (Array.isArray(d)) blocks = d;
+      }
+    } catch (e) {}
+    blocks.forEach(function (b) {
+      migrateBlock(b);
+      if (!b.lang) b.lang = langFromBlock(b);
+    });
+    if (!blocks.length) {
+      blocks = [{ id: uid(), text: '# Research Notes\n', t: Date.now(), type: 'md', lang: 'markdown' }];
+    }
+  }
+
+  function removeBlock(id) {
+    blocks = blocks.filter(function (b) { return b.id !== id; });
+    if (!blocks.length) {
+      blocks = [{ id: uid(), text: '', t: Date.now(), type: 'md', lang: 'markdown' }];
+    }
+    render();
+  }
+
+  function escHTML(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function renderMathText(expr) {
+    return String(expr)
+      .replace(/\\pi|pi|π/gi, 'π')
+      .replace(/\\alpha/g, 'α').replace(/\\beta/g, 'β').replace(/\\gamma/g, 'γ')
+      .replace(/\\theta/g, 'θ').replace(/\\phi/g, 'φ').replace(/\\psi/g, 'ψ')
+      .replace(/\|0>/g, '|0⟩').replace(/\|1>/g, '|1⟩')
+      .replace(/\|psi>/gi, '|ψ⟩').replace(/\|phi>/gi, '|φ⟩')
+      .replace(/\\otimes/g, '⊗').replace(/\\hbar/g, 'ℏ').replace(/\\infty/g, '∞');
+  }
+
+  function execCell(b, el, opts) {
+    opts = opts || {};
+    var funnelIn = opts.funnelIn != null ? String(opts.funnelIn) : '';
+    var out = el.querySelector('.nt-cell-output');
+    if (!out) return;
+    try {
+      var result = '';
+      var t = b.type || 'md';
+      var plain = '';
+      var fin = funnelIn.length
+        ? '<span class="out-ok" style="opacity:.85">funnel in (' + funnelIn.length + ' chars) · </span>'
+        : '';
+      if (t === 'code') {
+        var fn = new Function('Math', 'funnel', 'prev', '"use strict";\n' + (b.text || ''));
+        var r = fn(Math, funnelIn, funnelIn);
+        plain = r !== undefined && r !== null ? String(r) : '';
+        result = fin + (r !== undefined
+          ? '<span class="out-ok">' + escHTML(String(r)) + '</span>'
+          : '<span class="out-ok">✓</span>');
+      } else if (t === 'math') {
+        var rendered = renderMathText(b.text || '');
+        plain = rendered;
+        result = fin + '<span class="out-ok">' + rendered + '</span>';
+        if (funnelIn) plain = 'in:' + funnelIn.slice(0, 120) + (funnelIn.length > 120 ? '…' : '') + ' | ' + plain;
+      } else if (t === 'qasm') {
+        var lines = (b.text || '').split('\n');
+        var gates = 0, qregs = 0, cregs = 0;
+        lines.forEach(function (l) {
+          l = l.trim();
+          if (/^(h|x|y|z|cx|cz|s|t|rx|ry|rz|swap|ccx|measure)\s/i.test(l)) gates++;
+          if (/^qreg/i.test(l)) qregs++;
+          if (/^creg/i.test(l)) cregs++;
+        });
+        plain = 'QASM qreg:' + qregs + ' creg:' + cregs + ' gates:' + gates;
+        result = fin + '<span class="out-ok">QASM: ' + qregs + ' qreg · ' + cregs + ' creg · ' + gates + ' gates</span>';
+        if (funnelIn) plain = plain + ' | in:' + funnelIn.slice(0, 80);
+      } else {
+        var QP = window.QuantumPrefixes;
+        if (QP && QP.prefixMetadata) {
+          var meta = QP.prefixMetadata(b.text || '', 'markdown');
+          plain = 'md ' + meta.classifiedLines + '/' + meta.totalLines + ' · ' + pctClassified(meta) + '%';
+          result = fin + '<span class="out-ok">' + meta.totalLines + ' lines · ' + meta.classifiedLines + ' classified · ' + pctClassified(meta) + '%</span>';
+        } else {
+          plain = 'md ' + (b.text || '').split('\n').length + ' lines';
+          result = fin + '<span class="out-ok">' + (b.text || '').split('\n').length + ' lines</span>';
+        }
+        if (funnelIn) plain = plain + ' | in:' + funnelIn.slice(0, 80);
+      }
+      b._lastPlain = plain;
+      b.output = result;
+      out.innerHTML = result;
+      out.classList.add('has-output');
+    } catch (err) {
+      b._lastPlain = 'Error: ' + err.message;
+      b.output = '<span class="out-err">Error: ' + escHTML(err.message) + '</span>';
+      out.innerHTML = b.output;
+      out.classList.add('has-output');
+    }
+    save();
+  }
+
+  function bindCellInput(ta, b, art) {
+    ta.addEventListener('input', function () {
+      b.text = ta.value;
+      b.t = Date.now();
+      var pre = art.querySelector('.nt-cell-prefix');
+      if (pre) {
+        pre.textContent = badgePrefix(b);
+        pre.className = 'nt-cell-prefix ' + prefixBadgeClass(b);
+      }
+      save();
+    });
+    ta.addEventListener('keydown', function (e) {
+      if (e.key === ' ' || e.key === 'Spacebar') e.stopPropagation();
+      if (e.key === 'Tab') { e.preventDefault(); var s = ta.selectionStart, en = ta.selectionEnd; ta.value = ta.value.substring(0, s) + '  ' + ta.value.substring(en); ta.selectionStart = ta.selectionEnd = s + 2; }
+      if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); execCell(b, art); }
+    });
+  }
+
+  function placeholderFor(b) {
+    var t = b.type || 'md';
+    if (t === 'md') return 'Markdown notes…';
+    if (t === 'math') return 'Math expression (e.g. sin(π/4), |ψ⟩ = α|0⟩ + β|1⟩)';
+    if (t === 'qasm') return 'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[2];\ncreg c[2];\nh q[0];';
+    return 'JavaScript — return a value; with ▶ Funnel, prev/funnel = prior cell output';
+  }
+
+  function render() {
+    if (!blocksEl) return;
+    blocksEl.innerHTML = '';
+    blocks.forEach(function (b) {
+      var art = document.createElement('article');
+      art.className = 'nt-cell';
+      art.setAttribute('data-id', b.id);
+      var head = document.createElement('div');
+      head.className = 'nt-cell-head';
+      var prefix = document.createElement('span');
+      prefix.className = 'nt-cell-prefix ' + prefixBadgeClass(b);
+      prefix.textContent = badgePrefix(b);
+      var typeBtn = document.createElement('span');
+      typeBtn.className = 'nt-cell-type';
+      typeBtn.textContent = (b.type || 'md').toUpperCase();
+      typeBtn.title = 'Cycle type';
+      typeBtn.addEventListener('click', function () {
+        var idx = CELL_TYPES.indexOf(b.type || 'md');
+        b.type = CELL_TYPES[(idx + 1) % CELL_TYPES.length];
+        b.lang = langFromBlock(b);
+        typeBtn.textContent = b.type.toUpperCase();
+        prefix.textContent = badgePrefix(b);
+        prefix.className = 'nt-cell-prefix ' + prefixBadgeClass(b);
+        ta.placeholder = placeholderFor(b);
+        save();
+      });
+      var spacer = document.createElement('span');
+      spacer.className = 'nt-cell-spacer';
+      head.appendChild(prefix);
+      head.appendChild(typeBtn);
+      head.appendChild(spacer);
+      if ((b.type || 'md') !== 'md') {
+        var runBtn = document.createElement('button');
+        runBtn.type = 'button';
+        runBtn.className = 'nt-cell-run';
+        runBtn.textContent = '▸ Run';
+        runBtn.addEventListener('click', function () { execCell(b, art); });
+        head.appendChild(runBtn);
+      } else {
+        var runMd = document.createElement('button');
+        runMd.type = 'button';
+        runMd.className = 'nt-cell-run';
+        runMd.textContent = '▸ Gutter';
+        runMd.title = 'Classify / gutter stats';
+        runMd.addEventListener('click', function () { execCell(b, art); });
+        head.appendChild(runMd);
+      }
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'nt-cell-del';
+      del.textContent = '×';
+      del.addEventListener('click', function () { removeBlock(b.id); });
+      head.appendChild(del);
+      var ta = document.createElement('textarea');
+      ta.className = 'nt-cell-input';
+      ta.value = b.text || '';
+      ta.placeholder = placeholderFor(b);
+      bindCellInput(ta, b, art);
+      var out = document.createElement('div');
+      out.className = 'nt-cell-output' + (b.output ? ' has-output' : '');
+      if (b.output) out.innerHTML = b.output;
+      art.appendChild(head);
+      art.appendChild(ta);
+      art.appendChild(out);
+      blocksEl.appendChild(art);
+    });
+    save();
+  }
+
+  function addBlock(type) {
+    var t = type || 'md';
+    blocks.push({ id: uid(), text: '', t: Date.now(), type: t, lang: langFromBlock({ type: t }) });
+    render();
+  }
+
+  function findQasmText() {
+    for (var i = 0; i < blocks.length; i++) {
+      var t = blocks[i].text || '';
+      if (blocks[i].type === 'qasm' || /OPENQASM/i.test(t)) return t;
+    }
+    return '';
+  }
+
+  function switchNotesTab(name) {
+    tabName = name || 'notebook';
+    var wpBar = document.getElementById('nt-toolbar-wp');
+    var nbBar = document.getElementById('nt-toolbar-nb');
+    var isWorkpad = tabName === 'workpad';
+    if (wpBar) wpBar.classList.toggle('nt-hidden', !isWorkpad);
+    if (nbBar) nbBar.classList.toggle('nt-hidden', isWorkpad);
+    if (mathRefEl) mathRefEl.classList.toggle('visible', tabName === 'math');
+    if (gateCardsEl) gateCardsEl.classList.toggle('visible', tabName === 'gates');
+    if (ctxEl) ctxEl.classList.toggle('visible', tabName === 'context');
+  }
+
+  function toggleGlue() {
+    if (!glueWrap) return;
+    var hidden = glueWrap.style.display === 'none';
+    glueWrap.style.display = hidden ? 'block' : 'none';
+  }
+
+  function updateContextPanel() {
+    if (!ctxEl) return;
+    ctxEl.innerHTML = '<h4>Notes surface</h4><div class="ctx-state">Tab: ' + tabName + '<br>Blocks: ' + blocks.length + '<br>Funnel: row-major 2-col · <code>prev</code>/<code>funnel</code> in code<br>Iron Line · L4 notepad lane</div>' +
+      '<h4 style="margin-top:10px">Quick links</h4>' +
+      '<a href="https://quantum.ibm.com" target="_blank" rel="noopener">IBM Quantum</a>' +
+      '<a href="https://openqasm.com" target="_blank" rel="noopener">OpenQASM</a>' +
+      '<a href="https://docs.quantum.ibm.com" target="_blank" rel="noopener">Qiskit docs</a>' +
+      '<a href="uvqbit.html">uvQbit</a><a href="history.html">History</a>';
+  }
+
+  function initMathRef() {
+    if (!mathRefEl) return;
+    var sections = [
+      { title: 'Quantum States', items: [
+        { sym: '|ψ⟩', label: 'Superposition', insert: '|ψ⟩ = α|0⟩ + β|1⟩' },
+        { sym: '|Φ⁺⟩', label: 'Bell state', insert: '|Φ⁺⟩ = (|00⟩ + |11⟩)/√2' },
+        { sym: '⟨ψ|', label: 'Bra', insert: '⟨ψ|' },
+        { sym: '⊗', label: 'Tensor', insert: '⊗' },
+        { sym: 'ℏ', label: 'ℏ', insert: 'ℏ' }
+      ]},
+      { title: 'Gates (Unitary)', items: [
+        { sym: 'H', label: 'Hadamard', insert: 'H' },
+        { sym: 'X', label: 'Pauli-X', insert: 'X' },
+        { sym: 'CX', label: 'CNOT', insert: 'CX' },
+        { sym: 'Rₓ', label: 'Rx', insert: 'Rx(θ)' }
+      ]}
+    ];
+    sections.forEach(function (sec) {
+      var div = document.createElement('div');
+      div.className = 'nt-math-section';
+      div.innerHTML = '<h4>' + sec.title + '</h4>';
+      sec.items.forEach(function (it) {
+        var row = document.createElement('div');
+        row.className = 'nt-math-item';
+        row.innerHTML = '<span class="mi-sym">' + it.sym + '</span><span>' + escHTML(it.label) + '</span>';
+        row.addEventListener('click', function () {
+          var last = blocks[blocks.length - 1];
+          if (!last) { addBlock('math'); last = blocks[blocks.length - 1]; }
+          var el = blocksEl.querySelector('[data-id="' + last.id + '"] .nt-cell-input');
+          if (el) {
+            var s = el.selectionStart || el.value.length;
+            el.value = el.value.substring(0, s) + it.insert + el.value.substring(s);
+            last.text = el.value;
+            last.t = Date.now();
+            el.focus();
+            save();
+          }
+        });
+        div.appendChild(row);
+      });
+      mathRefEl.appendChild(div);
+    });
+  }
+
+  function initGateCards() {
+    if (!gateCardsEl) return;
+    var GATE_DATA = [
+      { prefix: '0:', name: 'Hadamard', sym: 'H', cat: 'Single', color: '#58a6ff', desc: 'Equal superposition.', matrix: '1/√2 [[1,1],[1,-1]]' },
+      { prefix: '+n:', name: 'CNOT', sym: 'CX', cat: 'Multi', color: '#3fb950', desc: 'Entangles two qubits.', matrix: '4×4' },
+      { prefix: '-n:', name: 'Measure', sym: 'M', cat: 'Readout', color: '#da3633', desc: 'Born rule collapse.', matrix: '—' }
+    ];
+    var h = document.createElement('div');
+    h.className = 'nt-math-section';
+    h.innerHTML = '<h4>Prefix ↔ gate</h4><p style="margin:0 0 8px;font-size:10px;color:var(--qp-text-muted)">Gluelam: quantum gutter symbols align with Iron Line gates.</p>';
+    gateCardsEl.appendChild(h);
+    GATE_DATA.forEach(function (item) {
+      var card = document.createElement('div');
+      card.className = 'nt-gate-card';
+      card.innerHTML = '<div class="gc-head"><span class="gc-prefix" style="color:' + item.color + '">' + item.prefix + '</span><span class="gc-name">' + item.sym + ' ' + item.name + '</span><span class="gc-badge" style="color:' + item.color + ';border-color:' + item.color + '">' + item.cat + '</span></div><div class="gc-desc">' + item.desc + '</div><div class="gc-matrix">' + item.matrix + '</div>';
+      card.addEventListener('click', function () {
+        var last = blocks[blocks.length - 1];
+        if (!last) { addBlock('code'); last = blocks[blocks.length - 1]; }
+        var el = blocksEl.querySelector('[data-id="' + last.id + '"] .nt-cell-input');
+        if (el) {
+          var ins = item.sym;
+          var s = el.selectionStart || el.value.length;
+          el.value = el.value.substring(0, s) + ins + el.value.substring(s);
+          last.text = el.value;
+          save();
+        }
+      });
+      gateCardsEl.appendChild(card);
+    });
+  }
+
+  document.querySelectorAll('#nt-scene-tabs [data-tab]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('#nt-scene-tabs [data-tab]').forEach(function (b) { b.classList.remove('active'); });
+      btn.classList.add('active');
+      switchNotesTab(btn.getAttribute('data-tab'));
+      updateContextPanel();
+    });
+  });
+
+  document.getElementById('nt-add-md').addEventListener('click', function () { addBlock('md'); });
+  document.getElementById('nt-add-code').addEventListener('click', function () { addBlock('code'); });
+  document.getElementById('nt-add-math').addEventListener('click', function () { addBlock('math'); });
+  document.getElementById('nt-add-qasm').addEventListener('click', function () { addBlock('qasm'); });
+  document.getElementById('nt-wp-add-note').addEventListener('click', function () { addBlock('md'); });
+  document.getElementById('nt-wp-add-qasm').addEventListener('click', function () { addBlock('qasm'); });
+  document.getElementById('nt-wp-add-code').addEventListener('click', function () { addBlock('code'); });
+  document.getElementById('nt-toggle-split').addEventListener('click', function () {
+    if (!blocksEl) return;
+    blocksEl.classList.toggle('split-view');
+    this.classList.toggle('active', blocksEl.classList.contains('split-view'));
+  });
+  function runAllRunnable() {
+    blocks.forEach(function (b) {
+      var el = blocksEl.querySelector('[data-id="' + b.id + '"]');
+      if (el) execCell(b, el);
+    });
+    ironPing('run-all', { mode: 'parallel', n: blocks.length });
+  }
+
+  function runFunnelPipeline() {
+    var prev = '';
+    blocks.forEach(function (b, idx) {
+      var el = blocksEl.querySelector('[data-id="' + b.id + '"]');
+      if (el) execCell(b, el, { funnelIn: prev });
+      prev = b._lastPlain != null ? String(b._lastPlain) : '';
+    });
+    if (statusEl) statusEl.textContent = 'funnel · ' + blocks.length + ' steps';
+    ironPing('funnel', { steps: blocks.length, grid: blocksEl && blocksEl.classList.contains('split-view') ? '2col' : '1col' });
+    if (bcHex) try { bcHex.postMessage({ type: 'notes-funnel', n: blocks.length, source: 'notes-surface' }); } catch (e) {}
+  }
+
+  document.getElementById('nt-run-all').addEventListener('click', runAllRunnable);
+  document.getElementById('nt-run-funnel').addEventListener('click', runFunnelPipeline);
+  document.getElementById('nt-wp-run-all').addEventListener('click', runAllRunnable);
+  document.getElementById('nt-wp-run-funnel').addEventListener('click', runFunnelPipeline);
+  ['nt-toggle-glue', 'nt-toggle-glue2'].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('click', toggleGlue);
+  });
+
+  document.getElementById('nt-default-lang').addEventListener('change', function () {
+    if (statusEl) statusEl.textContent = 'export lang → ' + defaultLang();
+  });
+  document.getElementById('nt-clear').addEventListener('click', function () {
+    if (!confirm('Remove all note blocks on this device?')) return;
+    blocks = [{ id: uid(), text: '', t: Date.now(), type: 'md', lang: 'markdown' }];
+    render();
+    save();
+  });
+  document.getElementById('nt-export').addEventListener('click', function () {
+    var md = '# Notes export\n\n' + blocks.map(function (b, i) {
+      return '## Block ' + (i + 1) + ' (' + (b.type || 'md') + ')\n\n' + (b.text || '').trim() + '\n';
+    }).join('\n');
+    var blob = new Blob([md], { type: 'text/markdown;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'notes-surface-' + new Date().toISOString().slice(0, 10) + '.md';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    if (bcHex) try { bcHex.postMessage({ type: 'notes-export', fmt: 'md', source: 'notes-surface' }); } catch (e) {}
+  });
+
+  document.getElementById('nt-gutter').addEventListener('click', function () {
+    var QP = window.QuantumPrefixes;
+    if (!QP) return;
+    var text = combinedText();
+    var hint = defaultLang();
+    var lang = QP.detectLanguage ? QP.detectLanguage(text, hint) : hint;
+    var meta = QP.prefixMetadata(text, lang);
+    var body = document.getElementById('nt-panel-gutter-body');
+    var lines = [
+      'language: ' + lang,
+      'classified: ' + meta.classifiedLines + ' / ' + meta.totalLines + ' lines (' + pctClassified(meta) + '%)',
+      'prefixCounts: ' + JSON.stringify(meta.prefixCounts || {}, null, 2)
+    ];
+    if (body) body.textContent = lines.join('\n');
+    showPanel('nt-panel-gutter', true);
+    broadcastQuantum(meta);
+    ironPing('prefix-classify', { coverage: pctClassified(meta), totalLines: meta.totalLines });
+  });
+
+  document.getElementById('nt-dac').addEventListener('click', function () {
+    var dacCx = window.dacComplexity;
+    var text = combinedText();
+    var lang = defaultLang();
+    var body = document.getElementById('nt-panel-dac-body');
+    if (typeof window.prefixDAC === 'function') window.prefixDAC(text, lang, 'notes-surface');
+    var parts = [];
+    if (dacCx) {
+      var cx = dacCx(text, lang);
+      parts.push('complexity: ' + (cx && cx.score));
+      parts.push('maxDepth: ' + (cx && cx.maxDepth));
+      parts.push('printsInLoops: ' + (cx && cx.printsInLoops ? cx.printsInLoops.length : 0));
+    }
+    if (typeof window.dacStats === 'function') {
+      var st = window.dacStats();
+      parts.push('dacStats: ' + JSON.stringify(st, null, 2));
+    }
+    if (body) body.textContent = parts.join('\n\n');
+    showPanel('nt-panel-dac', true);
+    ironPing('dac', { lang: lang });
+    if (bcDac) try { bcDac.postMessage({ type: 'dac-stats', stats: typeof window.dacStats === 'function' ? window.dacStats() : {}, source: 'notes-surface' }); } catch (e) {}
+  });
+
+  document.getElementById('nt-steno-btn').addEventListener('click', function () {
+    var codec = window.qbitCodec;
+    var body = document.getElementById('nt-panel-steno-body');
+    if (!codec || !codec.encode) {
+      if (body) body.textContent = 'qbitCodec unavailable';
+      showPanel('nt-panel-steno', true);
+      return;
+    }
+    var text = combinedText();
+    var lang = defaultLang();
+    var r = codec.encode(text, lang, 'notes-surface', {});
+    var bits = ['prefixed lines: ' + (r.prefixed ? String(r.prefixed).split('\n').length : 0)];
+    if (r.meta) bits.push('DAC meta (ratio): ' + (r.meta.coverage != null ? Math.round(Number(r.meta.coverage) * 100) + '%' : '—'));
+    if (r.preflight) bits.push('preflight: ' + r.preflight.verdict + ' · ' + r.preflight.scorePct + '%');
+    if (r.steno) bits.push('steno: ' + JSON.stringify(r.steno));
+    if (r.prefixed) bits.push('--- sample ---\n' + String(r.prefixed).slice(0, 1200) + (String(r.prefixed).length > 1200 ? '\n…' : ''));
+    if (body) body.textContent = bits.join('\n\n');
+    showPanel('nt-panel-steno', true);
+    ironPing('steno-encode', { lang: lang });
+  });
+
+  document.getElementById('nt-preflight-btn').addEventListener('click', function () {
+    var PF = window.QbitPreflight;
+    var body = document.getElementById('nt-panel-preflight-body');
+    if (!PF || !PF.preflight) {
+      if (body) body.textContent = 'QbitPreflight not loaded';
+      showPanel('nt-panel-preflight', true);
+      return;
+    }
+    var qasm = findQasmText();
+    if (!qasm || qasm.length < 8) {
+      if (body) body.textContent = 'No QASM found — set a block to language “qasm” or include OPENQASM in text.';
+      showPanel('nt-panel-preflight', true);
+      return;
+    }
+    var rep = PF.preflight(qasm, 'ibm_torino', { shots: 4096 });
+    if (body) body.textContent = PF.formatReportText ? PF.formatReportText(rep) : JSON.stringify(rep, null, 2);
+    showPanel('nt-panel-preflight', true);
+    ironPing('preflight', { verdict: rep.verdict, scorePct: rep.scorePct });
+  });
+
+  document.getElementById('nt-export-prefixed').addEventListener('click', function () {
+    var QP = window.QuantumPrefixes;
+    if (!QP || !QP.downloadWithPrefixes) return;
+    var text = combinedText();
+    QP.downloadWithPrefixes(text, 'notes-surface-prefixed.md', defaultLang(), 'notes-surface');
+    if (bcHex) try { bcHex.postMessage({ type: 'notes-export', fmt: 'prefixed-md', source: 'notes-surface' }); } catch (e) {}
+  });
+
+  document.getElementById('nt-export-qbit').addEventListener('click', function () {
+    var codec = window.qbitCodec;
+    if (!codec || !codec.wrap) return;
+    var text = combinedText();
+    var out = codec.wrap(text, defaultLang(), 'notes-surface', {});
+    var blob = new Blob([out], { type: 'text/plain;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'notes-surface-' + new Date().toISOString().slice(0, 10) + '.qbit';
+    a.click();
+    URL.revokeObjectURL(a.href);
+    if (bcHex) try { bcHex.postMessage({ type: 'notes-export', fmt: 'qbit', source: 'notes-surface' }); } catch (e) {}
+  });
+
+  document.getElementById('nt-export-json').addEventListener('click', function () {
+    var QP = window.QuantumPrefixes;
+    if (!QP || !QP.wrapJsonExport) return;
+    var payload = QP.wrapJsonExport(
+      { app: 'notes-surface', blocks: blocks.length, exported: new Date().toISOString(), cellTypes: blocks.map(function (b) { return b.type || 'md'; }) },
+      blocks.map(function (b) { return { content: b.text || '', language: langFromBlock(b) }; }),
+      'notes-surface'
+    );
+    var blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'notes-surface-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  function net() {
+    var el = document.getElementById('nt-sb-net');
+    if (el) el.textContent = navigator.onLine ? 'online' : 'offline';
+  }
+  net();
+  window.addEventListener('online', net);
+  window.addEventListener('offline', net);
+
+  initMathRef();
+  initGateCards();
+  load();
+  render();
+  switchNotesTab('notebook');
+  updateContextPanel();
+
+  var QP = window.QuantumPrefixes;
+  if (QP && QP.onStateChange) {
+    try {
+      QP.onStateChange(function (src) {
+        if (src === 'notes-surface') return;
+        if (statusEl) statusEl.textContent = 'sync: ' + src;
+      });
+    } catch (e) {}
+  }
+  if (QP && QP.requestStateSync) try { QP.requestStateSync(); } catch (e2) {}
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+window.addEventListener('message', function (ev) {
+  try {
+    var d = ev.data;
+    if (!d || d.type !== 'upl-sync-theme') return;
+    if (window.parent === window) return;
+    if (ev.source !== window.parent) return;
+    document.documentElement.setAttribute('data-theme', d.theme === 'light' ? 'light' : 'dark');
+  } catch (e2) {}
+});
+</script>
+<script src="search-staff-bar.js"></script>
+</body>
+</html>

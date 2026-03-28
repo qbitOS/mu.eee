@@ -1,0 +1,2080 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uvspeed — jawta audio | Spatial Audio + Live Code</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+    <link rel="icon" type="image/x-icon" href="../icons/favicon.ico">
+    <style>
+        :root {
+            --cursor-bg: var(--qp-bg, #0d1117); --cursor-bg-secondary: var(--qp-bg-secondary, #161b22); --cursor-bg-tertiary: var(--qp-bg-tertiary, #21262d);
+            --cursor-border: var(--qp-border, #30363d); --cursor-text: var(--qp-text, #e6edf3); --cursor-text-muted: var(--qp-text-muted, #8b949e);
+            --cursor-accent: var(--qp-accent, #58a6ff); --cursor-success: #3fb950; --cursor-warning: #f0883e;
+            --cursor-error: #f85149; --cursor-purple: #a78bfa; --cursor-cyan: #56d4dd;
+            --audio-pink: #ff6b9d; --audio-violet: #c084fc;
+            --cursor-space-xs: 4px; --cursor-space-sm: 8px; --cursor-space-md: 16px;
+            --cursor-space-lg: 24px; --cursor-radius: 6px;
+            --cursor-font-mono: 'SF Mono','Fira Code','JetBrains Mono','Cascadia Code',monospace;
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;overflow:hidden;-webkit-text-size-adjust:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--cursor-bg);color:var(--cursor-text);font-size:14px;line-height:1.5}
+        a{color:var(--cursor-accent);text-decoration:none}a:hover{text-decoration:underline}
+
+        .app{display:flex;flex-direction:column;height:100vh}
+
+        /* Header */
+        .hdr{background:var(--cursor-bg-secondary);border-bottom:1px solid var(--cursor-border);padding:var(--cursor-space-sm) var(--cursor-space-lg);display:flex;align-items:center;justify-content:space-between;gap:var(--cursor-space-md);flex-shrink:0;min-height:48px}
+        .hdr-title{display:flex;align-items:center;gap:var(--cursor-space-sm);font-size:1rem;font-weight:600;white-space:nowrap}
+        .hdr-logo{height:24px;width:auto;border-radius:4px;filter:drop-shadow(0 0 4px rgba(139,92,246,.3))}
+        .hdr-badge{display:inline-flex;align-items:center;gap:4px;background:#c084fc22;border:1px solid var(--audio-violet);color:var(--audio-violet);border-radius:10px;padding:2px 8px;font-size:.625rem;font-weight:600}
+        .hdr-nav{display:flex;align-items:center;gap:6px;font-size:.75rem;flex-wrap:wrap}
+        .hdr-nav a{padding:3px 8px;border-radius:var(--cursor-radius);background:var(--cursor-bg-tertiary);border:1px solid var(--cursor-border);color:var(--cursor-text-muted);transition:all .15s}
+        .hdr-nav a:hover{color:var(--cursor-accent);border-color:var(--cursor-accent);text-decoration:none}
+        .pulse{display:inline-block;width:7px;height:7px;border-radius:50%;animation:pulse 2s infinite}
+        .pulse-violet{background:var(--audio-violet);box-shadow:0 0 6px var(--audio-violet)}
+        @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+
+        /* Controls */
+        .controls{background:var(--cursor-bg-secondary);border-bottom:1px solid var(--cursor-border);padding:6px var(--cursor-space-lg);display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0}
+        .ctrl-btn{background:var(--cursor-bg-tertiary);border:1px solid var(--cursor-border);color:var(--cursor-text);padding:4px 10px;border-radius:var(--cursor-radius);font-size:.6875rem;cursor:pointer;transition:all .15s;font-family:inherit}
+        .ctrl-btn:hover{border-color:var(--cursor-accent);color:var(--cursor-accent)}
+        .ctrl-btn.active{background:var(--audio-violet);border-color:var(--audio-violet);color:#fff}
+        .ctrl-sep{width:1px;height:20px;background:var(--cursor-border);margin:0 4px}
+
+        /* Main */
+        .main{flex:1;display:flex;overflow:hidden}
+        .content{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:0}
+
+        /* Panels */
+        .panel{border-bottom:1px solid var(--cursor-border);display:flex;flex-direction:column}
+        .panel-hdr{background:var(--cursor-bg-secondary);padding:4px 12px;font-size:.6875rem;font-weight:600;border-bottom:1px solid var(--cursor-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+        .panel-tag{font-size:.5625rem;padding:1px 6px;border-radius:8px;font-weight:500}
+        .tag-atmos{background:#c084fc22;color:var(--audio-violet);border:1px solid #c084fc44}
+        .tag-live{background:#3fb95022;color:var(--cursor-success);border:1px solid #3fb95044}
+        .tag-eq{background:#f0883e22;color:var(--cursor-warning);border:1px solid #f0883e44}
+        .panel-body{position:relative;background:#000;overflow:hidden}
+        .panel-body canvas{display:block;width:100%;height:100%}
+
+        /* Waveform / Spectrum */
+        .viz-row{display:grid;grid-template-columns:1fr 1fr;min-height:200px}
+        @media(max-width:768px){.viz-row{grid-template-columns:1fr;min-height:auto}}
+
+        /* EQ Bands */
+        .eq-container{background:var(--cursor-bg-secondary);padding:12px 16px}
+        .eq-bands{display:flex;align-items:flex-end;gap:6px;height:140px;padding:0 8px}
+        .eq-band{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+        .eq-slider-wrap{flex:1;display:flex;align-items:center;justify-content:center;width:100%;position:relative}
+        .eq-slider{writing-mode:vertical-lr;direction:rtl;width:28px;height:100px;accent-color:var(--audio-violet);cursor:pointer}
+        .eq-label{font-family:var(--cursor-font-mono);font-size:.5625rem;color:var(--cursor-text-muted);text-align:center}
+        .eq-val{font-family:var(--cursor-font-mono);font-size:.5625rem;color:var(--audio-violet);font-weight:600;min-width:28px;text-align:center}
+
+        /* Spatial / Atmos */
+        .atmos-container{display:grid;grid-template-columns:1fr 1fr;gap:0;min-height:280px}
+        @media(max-width:768px){.atmos-container{grid-template-columns:1fr}}
+        .atmos-canvas-wrap{position:relative;background:#050510;aspect-ratio:1;max-height:280px;display:flex;align-items:center;justify-content:center}
+        .atmos-canvas-wrap canvas{width:100%;height:100%}
+        .atmos-info{padding:12px 16px;background:var(--cursor-bg-secondary);font-size:.6875rem;overflow-y:auto}
+        .atmos-stat{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--cursor-border)}
+        .atmos-stat span:last-child{font-family:var(--cursor-font-mono);font-weight:600}
+
+        /* Live Code Editor (Strudel-style) */
+        .code-container{background:var(--cursor-bg-secondary);display:flex;flex-direction:column}
+        .code-editor{background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);margin:8px 12px;padding:10px;font-family:var(--cursor-font-mono);font-size:.8125rem;color:var(--cursor-text);resize:vertical;min-height:120px;outline:none;line-height:1.6}
+        .code-toolbar{display:flex;gap:4px;padding:0 12px 8px 12px;flex-wrap:wrap}
+
+        /* Sidebar */
+        .sidebar{width:240px;flex-shrink:0;background:var(--cursor-bg-secondary);border-left:1px solid var(--cursor-border);overflow-y:auto;font-size:.75rem}
+        .sidebar-section{padding:var(--cursor-space-sm) var(--cursor-space-md);border-bottom:1px solid var(--cursor-border)}
+        .sidebar-title{font-size:.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--cursor-text-muted);margin-bottom:6px}
+        @media(max-width:768px){.sidebar{display:none}}
+
+        /* Spatial channel */
+        .ch-row{display:flex;align-items:center;gap:6px;padding:3px 0;font-size:.6875rem}
+        .ch-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+        .ch-bar{flex:1;height:4px;border-radius:2px;background:var(--cursor-bg);overflow:hidden}
+        .ch-bar-fill{height:100%;border-radius:2px;transition:width .3s}
+        .ch-val{font-family:var(--cursor-font-mono);font-size:.5625rem;min-width:32px;text-align:right}
+
+        /* Footer */
+        .ftr{background:var(--cursor-bg-secondary);border-top:1px solid var(--cursor-border);padding:4px var(--cursor-space-lg);display:flex;align-items:center;gap:8px;font-size:.625rem;color:var(--cursor-text-muted);flex-shrink:0;flex-wrap:wrap}
+        .ftr-mono{font-family:var(--cursor-font-mono)}
+
+        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--cursor-border);border-radius:3px}
+    </style>
+</head>
+<body>
+<div style="display:flex;height:2px;width:100%;flex-shrink:0"><span style="flex:1;background:#ff3838"></span><span style="flex:1;background:#ff8c38"></span><span style="flex:1;background:#ffe138"></span><span style="flex:1;background:#3fb950"></span><span style="flex:1;background:#38a5ff"></span><span style="flex:1;background:#bc8cff"></span></div>
+<div class="app">
+    <!-- Header -->
+    <div class="hdr">
+        <div class="hdr-title">
+            <img src="../icons/nyan-banner.png" alt="uvspeed" class="hdr-logo">
+            jawta audio
+            <span style="color:var(--cursor-text-muted);font-weight:400;font-size:.8rem">— spatial audio + live code</span>
+            <span class="hdr-badge"><span class="pulse pulse-violet"></span> Dolby Atmos</span>
+        </div>
+        <div class="hdr-nav">
+            <a href="quantum-notepad.html">Notepad</a>
+            <a href="questcast.html">questcast</a>
+            <a href="archflow.html">archflow</a>
+            <a href="blackwell.html" style="color:#76b900">Blackwell</a>
+            <a href="hexcast.html">hexcast</a>
+            <a href="brothernumsy.html">Game</a>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="ctrl-btn" id="btn-mic" title="Microphone input">🎤 Mic</button>
+        <button class="ctrl-btn" id="btn-file" title="Load audio file">📂 File</button>
+        <button class="ctrl-btn active" id="btn-osc" title="Oscillator test tone">🔊 Oscillator</button>
+        <button class="ctrl-btn" id="btn-strudel" title="Strudel live code">🎵 Strudel</button>
+        <div class="ctrl-sep"></div>
+        <button class="ctrl-btn active" id="btn-atmos" title="Dolby Atmos spatial">🎧 Atmos</button>
+        <button class="ctrl-btn" id="btn-binaural" title="Binaural HRTF">🧠 Binaural</button>
+        <button class="ctrl-btn" id="btn-surround" title="7.1.4 Surround">🔈 7.1.4</button>
+        <div class="ctrl-sep"></div>
+        <button class="ctrl-btn" id="btn-play" title="Play/Resume">▶ Play</button>
+        <button class="ctrl-btn" id="btn-stop" title="Stop">⏹ Stop</button>
+        <button class="ctrl-btn" id="btn-record" title="Record output">⏺ Record</button>
+        <div class="ctrl-sep"></div>
+        <button class="ctrl-btn" id="btn-export" title="Export audio">📤 Export</button>
+    </div>
+
+    <div class="main">
+        <div class="content">
+            <!-- Waveform + Spectrum -->
+            <div class="panel">
+                <div class="panel-hdr"><span>📊 Waveform + Frequency Spectrum</span><span class="panel-tag tag-live"><span class="pulse pulse-violet" style="width:5px;height:5px"></span> live</span></div>
+                <div class="viz-row">
+                    <div class="panel-body" style="min-height:180px"><canvas id="cv-wave"></canvas></div>
+                    <div class="panel-body" style="min-height:180px"><canvas id="cv-spectrum"></canvas></div>
+                </div>
+            </div>
+
+            <!-- EQ -->
+            <div class="panel">
+                <div class="panel-hdr"><span>🎛 8-Band Parametric EQ</span><span class="panel-tag tag-eq">Parametric</span></div>
+                <div class="eq-container">
+                    <div class="eq-bands" id="eq-bands">
+                        <!-- 8 EQ bands injected by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Spatial Atmos -->
+            <div class="panel">
+                <div class="panel-hdr"><span>🎧 Dolby Atmos Spatial Field</span><span class="panel-tag tag-atmos">7.1.4</span></div>
+                <div class="atmos-container">
+                    <div class="atmos-canvas-wrap"><canvas id="cv-atmos"></canvas></div>
+                    <div class="atmos-info">
+                        <div class="sidebar-title">Spatial Configuration</div>
+                        <div class="atmos-stat"><span>Mode</span><span style="color:var(--audio-violet)" id="atmos-mode">Dolby Atmos 7.1.4</span></div>
+                        <div class="atmos-stat"><span>Channels</span><span id="atmos-ch">12</span></div>
+                        <div class="atmos-stat"><span>Objects</span><span id="atmos-obj">128 max</span></div>
+                        <div class="atmos-stat"><span>Binaural</span><span style="color:var(--cursor-success)" id="atmos-bin">HRTF active</span></div>
+                        <div class="atmos-stat"><span>Head Tracking</span><span style="color:var(--cursor-warning)" id="atmos-ht">Quest gyro</span></div>
+                        <div class="atmos-stat"><span>Sample Rate</span><span>48 kHz</span></div>
+                        <div class="atmos-stat"><span>Bit Depth</span><span>24-bit</span></div>
+                        <div class="atmos-stat"><span>Latency</span><span id="atmos-lat">5.3 ms</span></div>
+
+                        <div class="sidebar-title" style="margin-top:12px">Speaker Layout (7.1.4)</div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--cursor-accent)"></span>L <div class="ch-bar"><div class="ch-bar-fill" id="ch-l" style="width:70%;background:var(--cursor-accent)"></div></div><span class="ch-val" id="chv-l">-3.2 dB</span></div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--cursor-accent)"></span>R <div class="ch-bar"><div class="ch-bar-fill" id="ch-r" style="width:68%;background:var(--cursor-accent)"></div></div><span class="ch-val" id="chv-r">-3.5 dB</span></div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--cursor-success)"></span>C <div class="ch-bar"><div class="ch-bar-fill" id="ch-c" style="width:82%;background:var(--cursor-success)"></div></div><span class="ch-val" id="chv-c">-1.2 dB</span></div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--cursor-error)"></span>LFE <div class="ch-bar"><div class="ch-bar-fill" id="ch-lfe" style="width:55%;background:var(--cursor-error)"></div></div><span class="ch-val" id="chv-lfe">-6.0 dB</span></div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--cursor-warning)"></span>Ls <div class="ch-bar"><div class="ch-bar-fill" id="ch-ls" style="width:50%;background:var(--cursor-warning)"></div></div><span class="ch-val" id="chv-ls">-7.1 dB</span></div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--cursor-warning)"></span>Rs <div class="ch-bar"><div class="ch-bar-fill" id="ch-rs" style="width:48%;background:var(--cursor-warning)"></div></div><span class="ch-val" id="chv-rs">-7.4 dB</span></div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--cursor-purple)"></span>Lrs <div class="ch-bar"><div class="ch-bar-fill" id="ch-lrs" style="width:40%;background:var(--cursor-purple)"></div></div><span class="ch-val" id="chv-lrs">-9.0 dB</span></div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--cursor-purple)"></span>Rrs <div class="ch-bar"><div class="ch-bar-fill" id="ch-rrs" style="width:38%;background:var(--cursor-purple)"></div></div><span class="ch-val" id="chv-rrs">-9.3 dB</span></div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--audio-violet)"></span>TFL <div class="ch-bar"><div class="ch-bar-fill" id="ch-tfl" style="width:45%;background:var(--audio-violet)"></div></div><span class="ch-val" id="chv-tfl">-8.0 dB</span></div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--audio-violet)"></span>TFR <div class="ch-bar"><div class="ch-bar-fill" id="ch-tfr" style="width:43%;background:var(--audio-violet)"></div></div><span class="ch-val" id="chv-tfr">-8.2 dB</span></div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--audio-pink)"></span>TRL <div class="ch-bar"><div class="ch-bar-fill" id="ch-trl" style="width:35%;background:var(--audio-pink)"></div></div><span class="ch-val" id="chv-trl">-10.0 dB</span></div>
+                        <div class="ch-row"><span class="ch-dot" style="background:var(--audio-pink)"></span>TRR <div class="ch-bar"><div class="ch-bar-fill" id="ch-trr" style="width:33%;background:var(--audio-pink)"></div></div><span class="ch-val" id="chv-trr">-10.3 dB</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Live Code Editor (Strudel-style) -->
+            <div class="panel">
+                <div class="panel-hdr"><span>🎵 Live Code — Strudel Style</span><span class="panel-tag tag-live"><span class="pulse pulse-violet" style="width:5px;height:5px"></span> interactive</span></div>
+                <div class="code-container">
+                    <textarea class="code-editor" id="code-editor" spellcheck="false">// jawta audio — Strudel-style live coding
+// Press Ctrl+Enter to evaluate, Ctrl+. to stop
+
+// Basic pattern — kick, snare, hihat
+note("c2 ~ e2 ~").s("bd")
+  .stack(
+    note("~ c3 ~ c3").s("sd"),
+    note("c4 c4 c4 c4").s("hh")
+  )
+  .gain(0.8)
+  .room(0.3)
+
+// Spatial panning — Dolby Atmos object
+.pan(sine.range(0, 1).slow(4))
+.spatialize({
+  azimuth: sine.range(-180, 180).slow(8),
+  elevation: cosine.range(-30, 90).slow(6),
+  distance: sine.range(0.5, 3).slow(12)
+})
+
+// EQ + effects
+.eq({ low: 2, mid: 0, high: -3 })
+.delay(0.25).delaytime(0.125)
+.reverb(0.4)</textarea>
+                    <div class="code-toolbar">
+                        <button class="ctrl-btn" id="btn-eval" title="Evaluate code (Ctrl+Enter)" style="background:var(--cursor-success);border-color:var(--cursor-success);color:#000">▶ Eval</button>
+                        <button class="ctrl-btn" id="btn-hush" title="Stop all (Ctrl+.)">⏹ Hush</button>
+                        <button class="ctrl-btn" id="btn-pattern-1">Pattern: Ambient</button>
+                        <button class="ctrl-btn" id="btn-pattern-2">Pattern: Techno</button>
+                        <button class="ctrl-btn" id="btn-pattern-3">Pattern: Spatial</button>
+                        <button class="ctrl-btn" id="btn-pattern-4">Pattern: Binaural</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+            <!-- Morse Data Burst Translator -->
+            <div class="panel">
+                <div class="panel-hdr"><span>&#x1F4E1; Morse Data Burst &#x2014; Audio / Light / Shortwave</span><span class="panel-tag tag-live"><span class="pulse pulse-violet" style="width:5px;height:5px"></span> TX/RX</span></div>
+                <div style="background:var(--cursor-bg-secondary);padding:12px 16px;">
+                    <!-- Mode selector -->
+                    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:8px;">
+                        <button class="ctrl-btn active" id="morse-mode-audio" onclick="setMorseMode('audio')">&#x1F50A; Audio Burst</button>
+                        <button class="ctrl-btn" id="morse-mode-light" onclick="setMorseMode('light')">&#x1F4A1; Light Pulse</button>
+                        <button class="ctrl-btn" id="morse-mode-sw" onclick="setMorseMode('shortwave')">&#x1F4FB; Shortwave</button>
+                        <button class="ctrl-btn" id="morse-mode-coupled" onclick="setMorseMode('coupled')">&#x1F399; Speaker&#x2192;Mic</button>
+                        <div class="ctrl-sep"></div>
+                        <span style="font-size:.625rem;color:var(--cursor-text-muted);font-family:var(--cursor-font-mono);">WPM:</span>
+                        <input type="range" id="morse-wpm" min="5" max="40" value="15" style="width:80px;accent-color:var(--audio-violet);">
+                        <span id="morse-wpm-val" style="font-size:.625rem;font-family:var(--cursor-font-mono);color:var(--audio-violet);min-width:24px;">15</span>
+                        <span style="font-size:.625rem;color:var(--cursor-text-muted);font-family:var(--cursor-font-mono);">Hz:</span>
+                        <input type="range" id="morse-freq" min="300" max="2000" value="700" step="50" style="width:80px;accent-color:var(--audio-pink);">
+                        <span id="morse-freq-val" style="font-size:.625rem;font-family:var(--cursor-font-mono);color:var(--audio-pink);min-width:36px;">700</span>
+                    </div>
+                    <!-- Input row -->
+                    <div style="display:flex;gap:8px;margin-bottom:8px;">
+                        <input type="text" id="morse-input" placeholder="Type text or Morse (.-  -... etc)..." style="flex:1;background:var(--cursor-bg);border:1px solid var(--cursor-border);color:var(--cursor-text);padding:6px 10px;border-radius:var(--cursor-radius);font-family:var(--cursor-font-mono);font-size:.8125rem;outline:none;" autocomplete="off">
+                        <button class="ctrl-btn" id="morse-tx" onclick="morseTX()" style="background:#238636;border-color:#238636;color:#fff;">&#x25B6; Transmit</button>
+                        <button class="ctrl-btn" id="morse-rx" onclick="morseRX()">&#x23F9; Stop</button>
+                    </div>
+                    <!-- Output displays -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                        <div>
+                            <div style="font-size:.5625rem;color:var(--cursor-text-muted);margin-bottom:2px;">Morse Code</div>
+                            <div id="morse-code-out" style="background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:6px;font-family:var(--cursor-font-mono);font-size:.875rem;color:#22d3ee;min-height:28px;letter-spacing:2px;"></div>
+                        </div>
+                        <div>
+                            <div style="font-size:.5625rem;color:var(--cursor-text-muted);margin-bottom:2px;">Decoded Text</div>
+                            <div id="morse-text-out" style="background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:6px;font-family:var(--cursor-font-mono);font-size:.875rem;color:var(--cursor-text);min-height:28px;"></div>
+                        </div>
+                    </div>
+                    <!-- Autocomplete -->
+                    <div id="morse-autocomplete" style="display:none;background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:4px 8px;margin-bottom:8px;font-family:var(--cursor-font-mono);font-size:.6875rem;color:var(--cursor-text-muted);max-height:60px;overflow-y:auto;"></div>
+                    <!-- Visual panels row -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                        <!-- Light pulse visual -->
+                        <div style="background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:8px;text-align:center;">
+                            <div style="font-size:.5625rem;color:var(--cursor-text-muted);margin-bottom:4px;">Light Beam</div>
+                            <div id="morse-light-bulb" style="width:48px;height:48px;border-radius:50%;margin:0 auto 4px;background:#21262d;border:2px solid #30363d;transition:all .05s;"></div>
+                            <div id="morse-light-status" style="font-size:.5625rem;font-family:var(--cursor-font-mono);color:var(--cursor-text-muted);">idle</div>
+                        </div>
+                        <!-- Signal strength -->
+                        <div style="background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:8px;text-align:center;">
+                            <div style="font-size:.5625rem;color:var(--cursor-text-muted);margin-bottom:4px;">Signal</div>
+                            <canvas id="cv-morse-signal" style="width:100%;height:48px;"></canvas>
+                            <div style="display:flex;justify-content:space-between;font-size:.5rem;color:var(--cursor-text-muted);font-family:var(--cursor-font-mono);">
+                                <span id="morse-sig-freq">700 Hz</span>
+                                <span id="morse-sig-mode">audio</span>
+                            </div>
+                        </div>
+                        <!-- Shortwave autocomplete stats -->
+                        <div style="background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:8px;">
+                            <div style="font-size:.5625rem;color:var(--cursor-text-muted);margin-bottom:4px;">Shortwave Intel</div>
+                            <div style="font-size:.625rem;font-family:var(--cursor-font-mono);">
+                                <div style="color:var(--cursor-text-muted);">Mode: <span id="morse-sw-mode" style="color:var(--cursor-accent);">CW</span></div>
+                                <div style="color:var(--cursor-text-muted);">Band: <span id="morse-sw-band" style="color:var(--audio-violet);">40m</span></div>
+                                <div style="color:var(--cursor-text-muted);">TX: <span id="morse-sw-chars" style="color:var(--cursor-success);">0</span> chars</div>
+                                <div style="color:var(--cursor-text-muted);">Time: <span id="morse-sw-time" style="color:var(--cursor-warning);">0s</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Pulse Library -->
+                    <div style="margin-top:8px;border-top:1px solid var(--cursor-border);padding-top:8px;">
+                        <div style="display:flex;gap:6px;align-items:center;margin-bottom:6px;">
+                            <span style="font-size:.75rem;">&#x1F4DA;</span>
+                            <span style="font-size:.6875rem;font-weight:700;color:var(--cursor-text);">Pulse Library</span>
+                            <span style="font-size:.5625rem;color:var(--cursor-text-muted);">preset data bursts &#x2014; audio + light protocols</span>
+                        </div>
+                        <div style="display:flex;gap:4px;flex-wrap:wrap;" id="morse-pulse-lib">
+                            <button class="ctrl-btn" onclick="txPulse('sos')" style="font-size:.5625rem;">SOS</button>
+                            <button class="ctrl-btn" onclick="txPulse('cq')" style="font-size:.5625rem;">CQ CQ</button>
+                            <button class="ctrl-btn" onclick="txPulse('qth')" style="font-size:.5625rem;">QTH</button>
+                            <button class="ctrl-btn" onclick="txPulse('qsl')" style="font-size:.5625rem;">QSL</button>
+                            <button class="ctrl-btn" onclick="txPulse('73')" style="font-size:.5625rem;">73</button>
+                            <button class="ctrl-btn" onclick="txPulse('88')" style="font-size:.5625rem;">88</button>
+                            <button class="ctrl-btn" onclick="txPulse('qrz')" style="font-size:.5625rem;">QRZ?</button>
+                            <button class="ctrl-btn" onclick="txPulse('rst')" style="font-size:.5625rem;">RST 599</button>
+                            <button class="ctrl-btn" onclick="txPulse('beacon')" style="font-size:.5625rem;">&#x1F4E1; Beacon</button>
+                            <button class="ctrl-btn" onclick="txPulse('sync')" style="font-size:.5625rem;">&#x1F504; Sync Burst</button>
+                            <button class="ctrl-btn" onclick="txPulse('ack')" style="font-size:.5625rem;">&#x2714; ACK</button>
+                            <button class="ctrl-btn" onclick="txPulse('nack')" style="font-size:.5625rem;">&#x2718; NACK</button>
+                            <button class="ctrl-btn" onclick="txPulse('ping')" style="font-size:.5625rem;">PING</button>
+                            <button class="ctrl-btn" onclick="txPulse('heartbeat')" style="font-size:.5625rem;">&#x2764; Heartbeat</button>
+                            <button class="ctrl-btn" onclick="txPulse('solfeggio')" style="font-size:.5625rem;">&#x1F3B6; Solfeggio</button>
+                            <button class="ctrl-btn" onclick="txPulse('fibonacci')" style="font-size:.5625rem;">&#x1F69C; Fibonacci</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Whisper Detection + Eye Pattern + Physiological Response -->
+            <div class="panel">
+                <div class="panel-hdr"><span>&#x1F441; Whisper &#xB7; Eye Pattern &#xB7; Neuro Response</span><span class="panel-tag tag-live"><span class="pulse pulse-violet" style="width:5px;height:5px"></span> biometric</span></div>
+                <div style="background:var(--cursor-bg-secondary);padding:12px 16px;">
+                    <!-- Mode toggles -->
+                    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:10px;">
+                        <button class="ctrl-btn" id="wh-btn-whisper" onclick="toggleWhisperMode('whisper')">&#x1F3A4; Whisper Detect</button>
+                        <button class="ctrl-btn" id="wh-btn-subvocal" onclick="toggleWhisperMode('subvocal')">&#x1F9E0; Sub-Vocal</button>
+                        <button class="ctrl-btn" id="wh-btn-eye" onclick="toggleWhisperMode('eye')">&#x1F440; Eye Track</button>
+                        <button class="ctrl-btn" id="wh-btn-physio" onclick="toggleWhisperMode('physio')">&#x1F4C8; Physio Response</button>
+                        <div class="ctrl-sep"></div>
+                        <button class="ctrl-btn" id="wh-btn-truth" onclick="toggleWhisperMode('truth')">&#x2696; Truth Analysis</button>
+                        <div class="ctrl-sep"></div>
+                        <span id="wh-status" style="font-size:.5625rem;font-family:var(--cursor-font-mono);color:var(--cursor-text-muted);">inactive</span>
+                    </div>
+                    <!-- Main display grid -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
+                        <!-- Whisper / sub-vocal panel -->
+                        <div style="background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:8px;">
+                            <div style="font-size:.5625rem;color:var(--cursor-text-muted);margin-bottom:4px;">&#x1F3A4; Whisper / Sub-Vocalization</div>
+                            <canvas id="cv-whisper" style="width:100%;height:60px;border-radius:4px;"></canvas>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px;font-size:.5625rem;font-family:var(--cursor-font-mono);">
+                                <div style="color:var(--cursor-text-muted);">Amplitude: <span id="wh-amplitude" style="color:var(--audio-violet);">0.00</span></div>
+                                <div style="color:var(--cursor-text-muted);">Threshold: <span id="wh-threshold" style="color:var(--cursor-warning);">0.02</span></div>
+                                <div style="color:var(--cursor-text-muted);">Detected: <span id="wh-detected" style="color:var(--cursor-success);">&#x2014;</span></div>
+                                <div style="color:var(--cursor-text-muted);">Confidence: <span id="wh-confidence" style="color:var(--audio-pink);">0%</span></div>
+                            </div>
+                            <div id="wh-transcript" style="background:var(--cursor-bg-tertiary);border-radius:4px;padding:4px 6px;margin-top:4px;font-family:var(--cursor-font-mono);font-size:.625rem;color:var(--cursor-text);min-height:20px;max-height:40px;overflow-y:auto;"></div>
+                        </div>
+                        <!-- Eye tracking panel -->
+                        <div style="background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:8px;">
+                            <div style="font-size:.5625rem;color:var(--cursor-text-muted);margin-bottom:4px;">&#x1F440; Eye Pattern Analysis</div>
+                            <canvas id="cv-eye-track" style="width:100%;height:60px;border-radius:4px;background:#050510;"></canvas>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px;font-size:.5625rem;font-family:var(--cursor-font-mono);">
+                                <div style="color:var(--cursor-text-muted);">Gaze: <span id="wh-gaze" style="color:var(--cursor-accent);">center</span></div>
+                                <div style="color:var(--cursor-text-muted);">Pupil: <span id="wh-pupil" style="color:var(--audio-violet);">&#x2014;</span></div>
+                                <div style="color:var(--cursor-text-muted);">Blinks: <span id="wh-blinks" style="color:var(--cursor-warning);">0</span>/min</div>
+                                <div style="color:var(--cursor-text-muted);">Fixation: <span id="wh-fixation" style="color:var(--cursor-success);">&#x2014;</span></div>
+                                <div style="color:var(--cursor-text-muted);">Saccade: <span id="wh-saccade" style="color:var(--audio-pink);">&#x2014;</span></div>
+                                <div style="color:var(--cursor-text-muted);">Pattern: <span id="wh-eye-pattern" style="color:var(--cursor-cyan);">&#x2014;</span></div>
+                            </div>
+                        </div>
+                        <!-- Physiological response panel -->
+                        <div style="background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:8px;">
+                            <div style="font-size:.5625rem;color:var(--cursor-text-muted);margin-bottom:4px;">&#x1F4C8; Neuro-Physiological Response</div>
+                            <div style="display:flex;flex-direction:column;gap:3px;font-size:.5625rem;font-family:var(--cursor-font-mono);">
+                                <div style="display:flex;align-items:center;gap:4px;">
+                                    <span style="color:var(--cursor-text-muted);min-width:50px;">Heart</span>
+                                    <div style="flex:1;height:4px;background:var(--cursor-bg-tertiary);border-radius:2px;overflow:hidden;"><div id="wh-bar-heart" style="height:100%;width:60%;background:var(--cursor-error);border-radius:2px;transition:width .3s;"></div></div>
+                                    <span id="wh-heart-val" style="color:var(--cursor-error);min-width:32px;">72</span>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:4px;">
+                                    <span style="color:var(--cursor-text-muted);min-width:50px;">GSR</span>
+                                    <div style="flex:1;height:4px;background:var(--cursor-bg-tertiary);border-radius:2px;overflow:hidden;"><div id="wh-bar-gsr" style="height:100%;width:30%;background:var(--cursor-warning);border-radius:2px;transition:width .3s;"></div></div>
+                                    <span id="wh-gsr-val" style="color:var(--cursor-warning);min-width:32px;">2.1</span>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:4px;">
+                                    <span style="color:var(--cursor-text-muted);min-width:50px;">Resp</span>
+                                    <div style="flex:1;height:4px;background:var(--cursor-bg-tertiary);border-radius:2px;overflow:hidden;"><div id="wh-bar-resp" style="height:100%;width:50%;background:var(--cursor-accent);border-radius:2px;transition:width .3s;"></div></div>
+                                    <span id="wh-resp-val" style="color:var(--cursor-accent);min-width:32px;">16</span>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:4px;">
+                                    <span style="color:var(--cursor-text-muted);min-width:50px;">Micro-X</span>
+                                    <div style="flex:1;height:4px;background:var(--cursor-bg-tertiary);border-radius:2px;overflow:hidden;"><div id="wh-bar-micro" style="height:100%;width:10%;background:var(--audio-violet);border-radius:2px;transition:width .3s;"></div></div>
+                                    <span id="wh-micro-val" style="color:var(--audio-violet);min-width:32px;">0</span>
+                                </div>
+                                <div style="display:flex;align-items:center;gap:4px;">
+                                    <span style="color:var(--cursor-text-muted);min-width:50px;">Stress</span>
+                                    <div style="flex:1;height:4px;background:var(--cursor-bg-tertiary);border-radius:2px;overflow:hidden;"><div id="wh-bar-stress" style="height:100%;width:20%;background:var(--audio-pink);border-radius:2px;transition:width .3s;"></div></div>
+                                    <span id="wh-stress-val" style="color:var(--audio-pink);min-width:32px;">low</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Truth / Deception Analysis -->
+                    <div style="background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:8px;">
+                        <div style="display:flex;gap:8px;align-items:center;margin-bottom:6px;">
+                            <span style="font-size:.875rem;">&#x2696;</span>
+                            <span style="font-size:.6875rem;font-weight:700;color:var(--cursor-text);">Multi-Signal Truth Analysis</span>
+                            <span style="font-size:.5rem;color:var(--cursor-text-muted);font-family:var(--cursor-font-mono);">voice stress + eye pattern + micro-expression + GSR + respiration</span>
+                            <span style="flex:1;"></span>
+                            <span id="wh-truth-score" style="font-size:1rem;font-weight:700;font-family:var(--cursor-font-mono);color:var(--cursor-success);">&#x2014;</span>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;font-size:.5625rem;font-family:var(--cursor-font-mono);">
+                            <div style="text-align:center;padding:4px;background:var(--cursor-bg-secondary);border-radius:4px;">
+                                <div style="color:var(--cursor-text-muted);">Voice Stress</div>
+                                <div id="wh-truth-voice" style="font-weight:700;color:var(--cursor-success);">&#x2014;</div>
+                            </div>
+                            <div style="text-align:center;padding:4px;background:var(--cursor-bg-secondary);border-radius:4px;">
+                                <div style="color:var(--cursor-text-muted);">Eye Pattern</div>
+                                <div id="wh-truth-eye" style="font-weight:700;color:var(--cursor-success);">&#x2014;</div>
+                            </div>
+                            <div style="text-align:center;padding:4px;background:var(--cursor-bg-secondary);border-radius:4px;">
+                                <div style="color:var(--cursor-text-muted);">Micro-Expr</div>
+                                <div id="wh-truth-micro" style="font-weight:700;color:var(--cursor-success);">&#x2014;</div>
+                            </div>
+                            <div style="text-align:center;padding:4px;background:var(--cursor-bg-secondary);border-radius:4px;">
+                                <div style="color:var(--cursor-text-muted);">Galvanic</div>
+                                <div id="wh-truth-gsr" style="font-weight:700;color:var(--cursor-success);">&#x2014;</div>
+                            </div>
+                            <div style="text-align:center;padding:4px;background:var(--cursor-bg-secondary);border-radius:4px;">
+                                <div style="color:var(--cursor-text-muted);">Respiration</div>
+                                <div id="wh-truth-resp" style="font-weight:700;color:var(--cursor-success);">&#x2014;</div>
+                            </div>
+                        </div>
+                        <div id="wh-truth-timeline" style="margin-top:6px;font-size:.5rem;color:var(--cursor-text-muted);font-family:var(--cursor-font-mono);max-height:40px;overflow-y:auto;"></div>
+                    </div>
+                    <!-- NLP context from whisper -->
+                    <div style="margin-top:8px;display:flex;gap:8px;align-items:center;">
+                        <span style="font-size:.5625rem;color:var(--cursor-text-muted);">Integrations:</span>
+                        <button class="ctrl-btn" onclick="bridgeToKbatch()" style="font-size:.5625rem;">&#x2328; kbatch biometrics</button>
+                        <button class="ctrl-btn" onclick="bridgeToPersona()" style="font-size:.5625rem;">&#x1F464; Persona Context</button>
+                        <button class="ctrl-btn" onclick="bridgeToSteno()" style="font-size:.5625rem;">&#x26A1; StenoEngine</button>
+                        <button class="ctrl-btn" onclick="bridgeToMorse()" style="font-size:.5625rem;">&#x1F4E1; Morse TX</button>
+                        <button class="ctrl-btn" onclick="bridgeToQuantum()" style="font-size:.5625rem;background:#58a6ff22;border-color:#58a6ff44;">&#x269B; Quantum Bridge</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <div class="sidebar-title">Audio Engine</div>
+                <div style="font-size:.6875rem;">
+                    <div class="atmos-stat"><span>State</span><span style="color:var(--cursor-success)" id="eng-state">running</span></div>
+                    <div class="atmos-stat"><span>Context</span><span id="eng-ctx">AudioContext</span></div>
+                    <div class="atmos-stat"><span>Sample Rate</span><span id="eng-sr">48000</span></div>
+                    <div class="atmos-stat"><span>Buffer</span><span id="eng-buf">256</span></div>
+                    <div class="atmos-stat"><span>Latency</span><span id="eng-lat">5.3 ms</span></div>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Analyzers</div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    <button class="ctrl-btn" style="width:100%;text-align:left;font-size:.625rem" id="btn-fft">📊 FFT Spectrum</button>
+                    <button class="ctrl-btn" style="width:100%;text-align:left;font-size:.625rem" id="btn-rms">📈 RMS / Peak</button>
+                    <button class="ctrl-btn" style="width:100%;text-align:left;font-size:.625rem" id="btn-phase">🔄 Phase Correlation</button>
+                    <button class="ctrl-btn" style="width:100%;text-align:left;font-size:.625rem" id="btn-lufs">🔉 LUFS Metering</button>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Spatial Modes</div>
+                <div style="display:flex;flex-direction:column;gap:4px;">
+                    <button class="ctrl-btn" style="width:100%;text-align:left;font-size:.625rem" id="mode-atmos">🎧 Dolby Atmos 7.1.4</button>
+                    <button class="ctrl-btn" style="width:100%;text-align:left;font-size:.625rem" id="mode-binaural">🧠 Binaural HRTF</button>
+                    <button class="ctrl-btn" style="width:100%;text-align:left;font-size:.625rem" id="mode-ambi">🌐 Ambisonics (HOA)</button>
+                    <button class="ctrl-btn" style="width:100%;text-align:left;font-size:.625rem" id="mode-stereo">🔊 Stereo</button>
+                    <button class="ctrl-btn" style="width:100%;text-align:left;font-size:.625rem" id="mode-mono">📻 Mono</button>
+                </div>
+            </div>
+            <div class="sidebar-section">
+                <div class="sidebar-title">Effects Chain</div>
+                <div style="font-size:.625rem;color:var(--cursor-text-muted);font-family:var(--cursor-font-mono);">
+                    Input → EQ → Compressor → Reverb → Spatial → Binaural → Output
+                </div>
+            </div>
+            <div class="sidebar-section" style="margin-top:auto">
+                <div class="sidebar-title">beyondBINARY</div>
+                <div style="font-size:.5625rem;color:var(--cursor-text-muted);font-family:var(--cursor-font-mono);">
+                    {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="ftr">
+        <span>⚛ jawta audio</span><span style="opacity:.3">|</span>
+        <span class="ftr-mono" id="ftr-sr">48kHz</span><span style="opacity:.3">|</span>
+        <span class="ftr-mono" id="ftr-ch">7.1.4</span><span style="opacity:.3">|</span>
+        <span class="ftr-mono" id="ftr-lat">5.3ms</span><span style="opacity:.3">|</span>
+        <span class="ftr-mono">{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</span>
+        <span style="opacity:.3">|</span>
+        <span class="ftr-mono" style="font-size:.5625rem">Bridge: <span id="qb-status" style="color:var(--cursor-text-muted)">disconnected</span></span>
+        <span style="flex:1"></span>
+        <a href="quantum-notepad.html" style="font-size:.625rem">Notepad</a>
+        <a href="hexcast.html" style="font-size:.625rem">hexcast</a>
+        <span style="color:var(--audio-violet);font-family:var(--cursor-font-mono)">Dolby Atmos + Strudel</span>
+    </div>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script src="plan-corpus-indexer.js"></script>
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+
+// ══════════════════ QUANTUM BRIDGE CONNECTOR ══════════════════
+// HTTP + WebSocket client to quantum_bridge_server.py (port 8085/8086)
+// Bridge server needs to be running for transcript fetching,
+// but the analysis engine works on any text you feed it.
+const QuantumBridge = (function() {
+    const HTTP = 'http://localhost:8085';
+    const WS_URL = 'ws://localhost:8086';
+    let ws = null;
+    let wsReady = false;
+    let reconnectTimer = null;
+    const pending = {};      // msg_id → { resolve, reject, timer }
+    const listeners = {};    // type → [callback]
+    let msgSeq = 0;
+    let bridgeStatus = 'disconnected';  // disconnected | connecting | connected
+
+    // ── Status UI ──
+    function updateStatusUI() {
+        var el = $('qb-status');
+        if (el) {
+            el.textContent = bridgeStatus;
+            el.style.color = bridgeStatus === 'connected' ? 'var(--cursor-success)' :
+                             bridgeStatus === 'connecting' ? 'var(--cursor-warning)' : 'var(--cursor-text-muted)';
+        }
+    }
+
+    // ── HTTP POST ──
+    async function post(endpoint, data) {
+        try {
+            var resp = await fetch(HTTP + endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            return await resp.json();
+        } catch (e) {
+            console.warn('[QuantumBridge] HTTP error:', endpoint, e.message);
+            return { error: e.message, offline: true };
+        }
+    }
+
+    async function get(endpoint) {
+        try {
+            var resp = await fetch(HTTP + endpoint);
+            return await resp.json();
+        } catch (e) {
+            return { error: e.message, offline: true };
+        }
+    }
+
+    // ── WebSocket ──
+    function connectWS() {
+        if (ws && (ws.readyState === 0 || ws.readyState === 1)) return;
+        bridgeStatus = 'connecting';
+        updateStatusUI();
+        try {
+            ws = new WebSocket(WS_URL);
+        } catch (e) {
+            bridgeStatus = 'disconnected';
+            updateStatusUI();
+            scheduleReconnect();
+            return;
+        }
+        ws.onopen = function() {
+            wsReady = true;
+            bridgeStatus = 'connected';
+            updateStatusUI();
+            console.log('[QuantumBridge] WS connected');
+            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        };
+        ws.onmessage = function(e) {
+            try {
+                var msg = JSON.parse(e.data);
+                // Resolve pending request
+                if (msg._msg_id && pending[msg._msg_id]) {
+                    pending[msg._msg_id].resolve(msg);
+                    clearTimeout(pending[msg._msg_id].timer);
+                    delete pending[msg._msg_id];
+                }
+                // Fire type listeners
+                if (msg.type && listeners[msg.type]) {
+                    listeners[msg.type].forEach(function(fn) { fn(msg); });
+                }
+            } catch (err) {
+                console.warn('[QuantumBridge] WS parse error', err);
+            }
+        };
+        ws.onclose = function() {
+            wsReady = false;
+            bridgeStatus = 'disconnected';
+            updateStatusUI();
+            scheduleReconnect();
+        };
+        ws.onerror = function() {
+            wsReady = false;
+            bridgeStatus = 'disconnected';
+            updateStatusUI();
+        };
+    }
+
+    function scheduleReconnect() {
+        if (reconnectTimer) return;
+        reconnectTimer = setTimeout(function() {
+            reconnectTimer = null;
+            connectWS();
+        }, 5000);
+    }
+
+    function sendWS(msg) {
+        return new Promise(function(resolve, reject) {
+            if (!wsReady) {
+                // Fallback: try HTTP
+                resolve({ error: 'WebSocket not connected', offline: true });
+                return;
+            }
+            var id = 'qb_' + (++msgSeq);
+            msg._msg_id = id;
+            pending[id] = {
+                resolve: resolve,
+                reject: reject,
+                timer: setTimeout(function() {
+                    delete pending[id];
+                    resolve({ error: 'timeout' });
+                }, 15000),
+            };
+            ws.send(JSON.stringify(msg));
+        });
+    }
+
+    function on(type, callback) {
+        if (!listeners[type]) listeners[type] = [];
+        listeners[type].push(callback);
+    }
+
+    // ── Auto-connect ──
+    connectWS();
+
+    // ════════════════ HIGH-LEVEL API ════════════════
+
+    return {
+        // Status
+        get status() { return bridgeStatus; },
+        get wsConnected() { return wsReady; },
+        reconnect: connectWS,
+
+        // HTTP endpoints
+        morseEncode: function(text, wpm, freq, mode) {
+            return post('/api/jawta/morse/encode', { text: text, wpm: wpm || 20, freq: freq || 700, mode: mode || 'audio' });
+        },
+        morseDecode: function(morse) {
+            return post('/api/jawta/morse/decode', { morse: morse });
+        },
+        whisperAnalyze: function(text, audioFeatures) {
+            return post('/api/jawta/whisper/analyze', { text: text, audio_features: audioFeatures || {} });
+        },
+        truthAnalysis: function(text, voice, eye, physio, baseline) {
+            return post('/api/jawta/truth', { text: text, voice: voice, eye: eye, physio: physio, baseline: baseline });
+        },
+        biometricSnapshot: function(data) {
+            return post('/api/jawta/biometric', data || {});
+        },
+        transcriptAnalyze: function(text, source, language) {
+            return post('/api/jawta/transcript', { text: text, source: source || 'manual', language: language || 'python' });
+        },
+        fetchTranscript: function(url) {
+            return post('/api/media/transcript', { url: url });
+        },
+        signal: function(text, mode) {
+            return post('/api/jawta/signal', { text: text, mode: mode || 'morse' });
+        },
+        audioGen: function(text, sampleRate) {
+            return post('/api/jawta/audio', { text: text, sample_rate: sampleRate || 8000 });
+        },
+        serverStatus: function() {
+            return get('/api/status');
+        },
+        prefixCode: function(code, language) {
+            return post('/api/prefix', { code: code, language: language || 'python' });
+        },
+        aiInfer: function(prompt, model) {
+            return post('/api/ai', { prompt: prompt, model: model });
+        },
+
+        // WebSocket real-time
+        wsMorseTX: function(text, wpm, freq, mode) {
+            return sendWS({ type: 'jawta-morse-tx', text: text, wpm: wpm || 20, freq: freq || 700, mode: mode || 'audio' });
+        },
+        wsWhisperStream: function(text, audioFeatures) {
+            return sendWS({ type: 'jawta-whisper-stream', text: text, audio_features: audioFeatures || {} });
+        },
+        wsBiometricStream: function(data) {
+            return sendWS(Object.assign({ type: 'jawta-biometric-stream' }, data || {}));
+        },
+        wsTruthCheck: function(text, voice, eye, physio) {
+            return sendWS({ type: 'jawta-truth-check', text: text, voice: voice, eye: eye, physio: physio });
+        },
+        wsTranscriptAnalyze: function(text, source) {
+            return sendWS({ type: 'jawta-transcript-analyze', text: text, source: source || 'manual' });
+        },
+
+        // Event listeners for WS broadcasts
+        on: on,
+        onMorseRX: function(fn) { on('jawta-morse-rx', fn); },
+        onBiometricUpdate: function(fn) { on('jawta-biometric-update', fn); },
+        onWhisperResult: function(fn) { on('jawta-whisper-result', fn); },
+        onTruthResult: function(fn) { on('jawta-truth-result', fn); },
+        onTranscriptResult: function(fn) { on('jawta-transcript-result', fn); },
+
+        // Raw access
+        post: post,
+        get: get,
+        sendWS: sendWS,
+    };
+})();
+
+// EQ Bands
+const eqFreqs=[32,64,125,250,500,1000,4000,8000];
+const eqLabels=['32','64','125','250','500','1k','4k','8k'];
+const eqBands=$('eq-bands');
+const eqValues=new Array(8).fill(0);
+eqFreqs.forEach((f,i)=>{
+    const band=document.createElement('div');band.className='eq-band';
+    band.innerHTML=`<div class="eq-val" id="eq-val-${i}">0 dB</div>
+        <div class="eq-slider-wrap"><input type="range" class="eq-slider" id="eq-${i}" min="-12" max="12" value="0" step="0.5"></div>
+        <div class="eq-label">${eqLabels[i]}</div>`;
+    eqBands.appendChild(band);
+    band.querySelector('input').addEventListener('input',e=>{
+        eqValues[i]=parseFloat(e.target.value);
+        $('eq-val-'+i).textContent=eqValues[i].toFixed(1)+' dB';
+    });
+});
+
+// Canvas setup
+function setupCanvas(id){
+    const c=document.getElementById(id);
+    const p=c.parentElement;
+    const r=p.getBoundingClientRect();
+    c.width=r.width*devicePixelRatio;c.height=r.height*devicePixelRatio;
+    const ctx=c.getContext('2d');ctx.scale(devicePixelRatio,devicePixelRatio);
+    ctx._w=r.width;ctx._h=r.height;return ctx;
+}
+let ctxWave,ctxSpectrum,ctxAtmos;
+function initCanvases(){
+    ctxWave=setupCanvas('cv-wave');
+    ctxSpectrum=setupCanvas('cv-spectrum');
+    ctxAtmos=setupCanvas('cv-atmos');
+}
+setTimeout(initCanvases,100);
+window.addEventListener('resize',()=>setTimeout(initCanvases,50));
+
+// Simulated audio data
+let t=0;
+const fftSize=64;
+const fftData=new Float32Array(fftSize);
+const waveData=new Float32Array(256);
+
+function simAudio(){
+    t+=0.03;
+    for(let i=0;i<waveData.length;i++){
+        waveData[i]=Math.sin(i*0.05+t*3)*0.3+Math.sin(i*0.12+t*5)*0.15+Math.sin(i*0.02+t)*0.2+(Math.random()-0.5)*0.05;
+    }
+    for(let i=0;i<fftSize;i++){
+        const base=Math.max(0,1-i/fftSize)*0.8;
+        const peak=i<8?0.3:i<16?0.15:0.05;
+        fftData[i]=base+Math.sin(t*2+i*0.3)*peak+Math.random()*0.05;
+    }
+}
+
+// Draw waveform
+function drawWave(){
+    if(!ctxWave)return;
+    const ctx=ctxWave,w=ctx._w,h=ctx._h;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle='#050510';ctx.fillRect(0,0,w,h);
+    // Grid
+    ctx.strokeStyle='#ffffff08';ctx.lineWidth=.5;
+    for(let y=0;y<h;y+=h/4){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+    // Center line
+    ctx.strokeStyle='#ffffff15';ctx.beginPath();ctx.moveTo(0,h/2);ctx.lineTo(w,h/2);ctx.stroke();
+    // Waveform
+    ctx.beginPath();ctx.strokeStyle='var(--audio-violet)';ctx.lineWidth=1.5;
+    const step=w/waveData.length;
+    waveData.forEach((v,i)=>{
+        const x=i*step;const y=h/2-v*h/2;
+        if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    // Glow
+    ctx.globalAlpha=0.1;ctx.strokeStyle='#c084fc';ctx.lineWidth=4;
+    ctx.beginPath();
+    waveData.forEach((v,i)=>{const x=i*step;const y=h/2-v*h/2;if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});
+    ctx.stroke();ctx.globalAlpha=1;
+    // Label
+    ctx.fillStyle='#c084fc88';ctx.font='bold 9px '+getComputedStyle(document.body).getPropertyValue('--cursor-font-mono');
+    ctx.fillText('WAVEFORM',6,12);
+}
+
+// Draw spectrum
+function drawSpectrum(){
+    if(!ctxSpectrum)return;
+    const ctx=ctxSpectrum,w=ctx._w,h=ctx._h;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle='#050510';ctx.fillRect(0,0,w,h);
+    // Grid
+    ctx.strokeStyle='#ffffff08';ctx.lineWidth=.5;
+    for(let y=0;y<h;y+=h/4){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+    // Bars
+    const bw=w/fftSize-1;
+    fftData.forEach((v,i)=>{
+        const x=i*(bw+1);const bh=v*h*0.9;
+        const ratio=i/fftSize;
+        const r=Math.round(192+ratio*63);
+        const g=Math.round(132-ratio*80);
+        const b=Math.round(252-ratio*100);
+        ctx.fillStyle=`rgba(${r},${g},${b},0.8)`;
+        ctx.fillRect(x,h-bh,bw,bh);
+        // Top glow
+        ctx.fillStyle=`rgba(${r},${g},${b},0.3)`;
+        ctx.fillRect(x,h-bh-2,bw,2);
+    });
+    ctx.fillStyle='#ff6b9d88';ctx.font='bold 9px '+getComputedStyle(document.body).getPropertyValue('--cursor-font-mono');
+    ctx.fillText('SPECTRUM',6,12);
+}
+
+// Draw Atmos spatial field
+const speakers=[
+    {name:'L',a:-30,d:.7,color:'#58a6ff'},{name:'R',a:30,d:.7,color:'#58a6ff'},
+    {name:'C',a:0,d:.8,color:'#3fb950'},{name:'LFE',a:0,d:.3,color:'#f85149'},
+    {name:'Ls',a:-110,d:.7,color:'#f0883e'},{name:'Rs',a:110,d:.7,color:'#f0883e'},
+    {name:'Lrs',a:-150,d:.6,color:'#a78bfa'},{name:'Rrs',a:150,d:.6,color:'#a78bfa'},
+    {name:'TFL',a:-45,d:.5,color:'#c084fc'},{name:'TFR',a:45,d:.5,color:'#c084fc'},
+    {name:'TRL',a:-135,d:.5,color:'#ff6b9d'},{name:'TRR',a:135,d:.5,color:'#ff6b9d'}
+];
+let listenerAngle=0;
+
+function drawAtmos(){
+    if(!ctxAtmos)return;
+    const ctx=ctxAtmos,w=ctx._w,h=ctx._h;
+    const cx=w/2,cy=h/2,r=Math.min(w,h)*0.4;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle='#050510';ctx.fillRect(0,0,w,h);
+    // Rings
+    [1,.7,.4].forEach(s=>{
+        ctx.beginPath();ctx.arc(cx,cy,r*s,0,Math.PI*2);
+        ctx.strokeStyle='#ffffff0a';ctx.lineWidth=1;ctx.stroke();
+    });
+    // Cross
+    ctx.strokeStyle='#ffffff08';ctx.beginPath();ctx.moveTo(cx,cy-r);ctx.lineTo(cx,cy+r);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx-r,cy);ctx.lineTo(cx+r,cy);ctx.stroke();
+    // Listener head
+    listenerAngle+=0.01;
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(listenerAngle);
+    ctx.beginPath();ctx.arc(0,0,8,0,Math.PI*2);
+    ctx.fillStyle='#e6edf3';ctx.fill();
+    ctx.beginPath();ctx.moveTo(0,-12);ctx.lineTo(-5,-4);ctx.lineTo(5,-4);ctx.closePath();
+    ctx.fillStyle='#e6edf3';ctx.fill();
+    ctx.restore();
+    // Speakers
+    speakers.forEach(s=>{
+        const rad=(s.a-90)*Math.PI/180;
+        const sx=cx+Math.cos(rad)*r*s.d;
+        const sy=cy+Math.sin(rad)*r*s.d;
+        const activity=0.3+Math.random()*0.7;
+        // Glow
+        ctx.beginPath();ctx.arc(sx,sy,6+activity*6,0,Math.PI*2);
+        ctx.fillStyle=s.color+'33';ctx.fill();
+        // Dot
+        ctx.beginPath();ctx.arc(sx,sy,4,0,Math.PI*2);
+        ctx.fillStyle=s.color;ctx.fill();
+        // Label
+        ctx.fillStyle=s.color;
+        ctx.font='bold 8px '+getComputedStyle(document.body).getPropertyValue('--cursor-font-mono');
+        ctx.fillText(s.name,sx+8,sy+3);
+    });
+    // Title
+    ctx.fillStyle='#c084fc66';ctx.font='bold 9px '+getComputedStyle(document.body).getPropertyValue('--cursor-font-mono');
+    ctx.fillText('ATMOS 7.1.4',6,12);
+}
+
+// Update channel meters
+function updateChannels(){
+    const ids=['l','r','c','lfe','ls','rs','lrs','rrs','tfl','tfr','trl','trr'];
+    ids.forEach(id=>{
+        const v=30+Math.random()*70;
+        const el=$('ch-'+id);
+        if(el)el.style.width=v+'%';
+        const vel=$('chv-'+id);
+        if(vel)vel.textContent=(-20+v/5).toFixed(1)+' dB';
+    });
+}
+
+// Animation
+let frame=0;
+function tick(){
+    frame++;
+    simAudio();
+    drawWave();drawSpectrum();drawAtmos();
+    if(frame%15===0)updateChannels();
+    requestAnimationFrame(tick);
+}
+setTimeout(tick,200);
+
+// Strudel patterns
+const patterns={
+    ambient:`// Ambient pad with spatial movement
+note("c3 e3 g3 b3").s("pad")
+  .gain(0.4).room(0.8)
+  .pan(sine.range(0,1).slow(8))
+  .spatialize({azimuth: sine.range(-90,90).slow(12)})`,
+    techno:`// Techno kick pattern
+note("c1 ~ c1 ~").s("bd").gain(0.9)
+  .stack(
+    note("~ c3 ~ c3").s("sd").gain(0.7),
+    note("c5*8").s("hh").gain(0.3)
+  ).bpm(130)`,
+    spatial:`// Full spatial orbit
+note("c4 e4 g4 c5").s("pluck")
+  .spatialize({
+    azimuth: sine.range(-180,180).slow(4),
+    elevation: cosine.range(0,90).slow(6),
+    distance: sine.range(0.5,2).slow(8)
+  }).room(0.6).gain(0.5)`,
+    binaural:`// Binaural beat generator
+note("c3").s("sine").gain(0.3)
+  .stack(note("c3*1.003").s("sine").gain(0.3))
+  .pan(stack(0, 1))
+  // 3 Hz theta binaural beat
+  .lpf(800).room(0.2)`
+};
+
+$('btn-pattern-1').addEventListener('click',()=>$('code-editor').value=patterns.ambient);
+$('btn-pattern-2').addEventListener('click',()=>$('code-editor').value=patterns.techno);
+$('btn-pattern-3').addEventListener('click',()=>$('code-editor').value=patterns.spatial);
+$('btn-pattern-4').addEventListener('click',()=>$('code-editor').value=patterns.binaural);
+
+// ── Real AudioContext + tone generation ──
+let audioCtx = null, isPlaying = false, masterGain = null;
+let oscNodes = [];
+
+function initAudio() {
+    if (audioCtx) return audioCtx;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 48000 });
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.15;
+    masterGain.connect(audioCtx.destination);
+    if ($('eng-state')) $('eng-state').textContent = 'running';
+    if ($('eng-sr')) $('eng-sr').textContent = audioCtx.sampleRate;
+    return audioCtx;
+}
+
+function playAudio() {
+    const ctx = initAudio();
+    if (ctx.state === 'suspended') ctx.resume();
+    if (isPlaying) return;
+    isPlaying = true;
+
+    // Create a rich ambient chord: C3, E3, G3, B3
+    const freqs = [130.81, 164.81, 196.00, 246.94];
+    freqs.forEach((f, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        const pan = ctx.createStereoPanner();
+        osc.type = i % 2 === 0 ? 'sine' : 'triangle';
+        osc.frequency.value = f;
+        gain.gain.value = 0.08;
+        // Spatial pan: spread across stereo field
+        pan.pan.value = -0.6 + i * 0.4;
+        osc.connect(gain);
+        gain.connect(pan);
+        pan.connect(masterGain);
+        osc.start();
+        // Slow LFO modulation on frequency
+        const lfo = ctx.createOscillator();
+        const lfoGain = ctx.createGain();
+        lfo.frequency.value = 0.2 + i * 0.1;
+        lfoGain.gain.value = f * 0.003;
+        lfo.connect(lfoGain);
+        lfoGain.connect(osc.frequency);
+        lfo.start();
+        oscNodes.push(osc, lfo);
+    });
+
+    $('btn-play').classList.add('active');
+    $('btn-stop').classList.remove('active');
+    if ($('eng-state')) $('eng-state').textContent = 'playing';
+}
+
+function stopAudio() {
+    oscNodes.forEach(n => { try { n.stop(); } catch(e){} });
+    oscNodes = [];
+    isPlaying = false;
+    $('btn-play').classList.remove('active');
+    $('btn-stop').classList.add('active');
+    if ($('eng-state')) $('eng-state').textContent = 'stopped';
+}
+
+$('btn-play').addEventListener('click', playAudio);
+$('btn-stop').addEventListener('click', stopAudio);
+
+// Connect real audio data to visualizations when playing
+const origSimAudio = simAudio;
+const realAnalyser = { node: null };
+function simAudioEnhanced() {
+    if (isPlaying && audioCtx && !realAnalyser.node) {
+        try {
+            realAnalyser.node = audioCtx.createAnalyser();
+            realAnalyser.node.fftSize = 512;
+            masterGain.connect(realAnalyser.node);
+        } catch(e){}
+    }
+    if (isPlaying && realAnalyser.node) {
+        const buf = new Float32Array(realAnalyser.node.fftSize);
+        realAnalyser.node.getFloatTimeDomainData(buf);
+        for (let i = 0; i < waveData.length && i < buf.length; i++) waveData[i] = buf[i];
+        const fBuf = new Uint8Array(realAnalyser.node.frequencyBinCount);
+        realAnalyser.node.getByteFrequencyData(fBuf);
+        for (let i = 0; i < fftData.length && i < fBuf.length; i++) fftData[i] = fBuf[i] / 255;
+    } else {
+        origSimAudio();
+    }
+}
+// Patch into tick loop
+simAudio = simAudioEnhanced;
+
+// Control button toggles
+document.querySelectorAll('.ctrl-btn').forEach(btn=>{
+    if(!btn.id||btn.id.startsWith('btn-pattern')||btn.id==='btn-eval'||btn.id==='btn-hush'||btn.id==='btn-export'||btn.id==='btn-play'||btn.id==='btn-stop')return;
+    btn.addEventListener('click',()=>{
+        const srcGroup=['btn-mic','btn-file','btn-osc','btn-strudel'];
+        const modeGroup=['btn-atmos','btn-binaural','btn-surround'];
+        const group=srcGroup.includes(btn.id)?srcGroup:modeGroup.includes(btn.id)?modeGroup:null;
+        if(group){group.forEach(id=>$(id).classList.remove('active'));btn.classList.add('active')}
+        else btn.classList.toggle('active');
+    });
+});
+
+// ══════════════════ MORSE DATA BURST ENGINE ══════════════════
+// Morse ↔ Audio frequency ↔ Light pulse ↔ Shortwave CW
+// Speaker-to-microphone acoustic coupling for air-gap data transfer
+(function(){
+    const MORSE_TABLE = {
+        'a':'.-','b':'-...','c':'-.-.','d':'-..','e':'.','f':'..-.','g':'--.','h':'....','i':'..','j':'.---',
+        'k':'-.-','l':'.-..','m':'--','n':'-.','o':'---','p':'.--.','q':'--.-','r':'.-.','s':'...','t':'-',
+        'u':'..-','v':'...-','w':'.--','x':'-..-','y':'-.--','z':'--..','0':'-----','1':'.----','2':'..---',
+        '3':'...--','4':'....-','5':'.....','6':'-....','7':'--...','8':'---..','9':'----.','?':'..--..','!':'-.-.--',
+        '.':'.-.-.-',',':'--..--',':':'---...',';':'-.-.-.','=':'-...-','/':'-..-.','@':'.--.-.','+':'.-.-.','-':'-....-',
+        '(':'-.--.',')'  :'-.--.-','\'':'.----.',' ':' '
+    };
+    const REVERSE_MORSE = {};
+    Object.entries(MORSE_TABLE).forEach(([k,v]) => { if (v !== ' ') REVERSE_MORSE[v] = k; });
+
+    // Shortwave Q-codes and prosigns for autocomplete
+    const SW_VOCAB = {
+        'cq':'calling all stations','cq cq':'general call','qth':'my location is','qsl':'I confirm receipt',
+        'qrz':'who is calling?','qsy':'change frequency','qrm':'interference','qrn':'static noise',
+        'qrt':'stop transmitting','qso':'contact/conversation','qrp':'low power','qro':'high power',
+        'rst':'readability strength tone','73':'best regards','88':'love and kisses','sk':'end of contact',
+        'ar':'end of message','bt':'break/separator','kn':'go ahead (named station only)',
+        'r':'received','de':'from','k':'go ahead','v':'test','sos':'distress',
+        'mayday':'emergency voice','pan pan':'urgency','securite':'safety message',
+    };
+
+    // Pulse library: predefined data bursts
+    const PULSE_LIBRARY = {
+        sos:      { text: 'SOS', desc: 'International distress signal', repeat: 3 },
+        cq:       { text: 'CQ CQ CQ DE UV1SPD K', desc: 'General call' },
+        qth:      { text: 'QTH', desc: 'What is your location?' },
+        qsl:      { text: 'QSL', desc: 'Acknowledge receipt' },
+        '73':     { text: '73', desc: 'Best regards' },
+        '88':     { text: '88', desc: 'Love and kisses' },
+        qrz:      { text: 'QRZ?', desc: 'Who is calling me?' },
+        rst:      { text: 'RST 599', desc: 'Signal report: excellent' },
+        beacon:   { text: 'VVV DE UV1SPD', desc: 'Repeating beacon', repeat: 5 },
+        sync:     { text: 'SYNC', desc: 'Data synchronization burst', special: 'sync' },
+        ack:      { text: 'R', desc: 'Acknowledgment' },
+        nack:     { text: 'QRT', desc: 'Negative / stop' },
+        ping:     { text: 'V', desc: 'Test / ping' },
+        heartbeat:{ text: 'H', desc: 'Heartbeat pulse', repeat: 10, special: 'heartbeat' },
+        solfeggio:{ text: 'SOLFEGGIO', desc: 'Sacred frequency sweep', special: 'solfeggio' },
+        fibonacci:{ text: 'FIBONACCI', desc: 'Fibonacci timing pattern', special: 'fibonacci' },
+    };
+
+    let morseMode = 'audio';
+    let morseWPM = 15;
+    let morseFreq = 700;
+    let morseTXActive = false;
+    let morseTimeout = null;
+    let morseCharCount = 0;
+    let morseStartTime = 0;
+    let signalCanvas = null;
+    let signalCtx = null;
+    let signalData = [];
+
+    // Init signal canvas
+    setTimeout(function() {
+        signalCanvas = document.getElementById('cv-morse-signal');
+        if (signalCanvas) {
+            var parent = signalCanvas.parentElement;
+            signalCanvas.width = parent.clientWidth * devicePixelRatio;
+            signalCanvas.height = 48 * devicePixelRatio;
+            signalCtx = signalCanvas.getContext('2d');
+            signalCtx.scale(devicePixelRatio, devicePixelRatio);
+        }
+    }, 200);
+
+    function textToMorse(text) {
+        return text.toLowerCase().split('').map(c => MORSE_TABLE[c] || '').filter(Boolean).join(' ');
+    }
+
+    function morseToText(morse) {
+        return morse.split('   ').map(word =>
+            word.split(' ').map(code => REVERSE_MORSE[code] || '').join('')
+        ).join(' ');
+    }
+
+    // Calculate dit duration from WPM (PARIS standard: 50 dits per word)
+    function ditMs() { return 1200 / morseWPM; }
+
+    // ── Audio burst: play Morse as tones ──
+    function playMorseAudio(morseStr, callback) {
+        var ctx = initAudio();
+        if (ctx.state === 'suspended') ctx.resume();
+        var dit = ditMs() / 1000;
+        var currentTime = ctx.currentTime + 0.05;
+        var elements = morseStr.split('');
+
+        elements.forEach(function(el) {
+            if (el === '.') {
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.frequency.value = morseFreq;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0, currentTime);
+                gain.gain.linearRampToValueAtTime(0.3, currentTime + 0.005);
+                gain.gain.setValueAtTime(0.3, currentTime + dit - 0.005);
+                gain.gain.linearRampToValueAtTime(0, currentTime + dit);
+                osc.connect(gain);
+                gain.connect(masterGain || ctx.destination);
+                osc.start(currentTime);
+                osc.stop(currentTime + dit + 0.01);
+                pushSignal(currentTime, dit, 1);
+                currentTime += dit + dit; // dit + inter-element gap
+            } else if (el === '-') {
+                var osc2 = ctx.createOscillator();
+                var gain2 = ctx.createGain();
+                osc2.frequency.value = morseFreq;
+                osc2.type = 'sine';
+                gain2.gain.setValueAtTime(0, currentTime);
+                gain2.gain.linearRampToValueAtTime(0.3, currentTime + 0.005);
+                gain2.gain.setValueAtTime(0.3, currentTime + dit * 3 - 0.005);
+                gain2.gain.linearRampToValueAtTime(0, currentTime + dit * 3);
+                osc2.connect(gain2);
+                gain2.connect(masterGain || ctx.destination);
+                osc2.start(currentTime);
+                osc2.stop(currentTime + dit * 3 + 0.01);
+                pushSignal(currentTime, dit * 3, 1);
+                currentTime += dit * 3 + dit; // dah + inter-element gap
+            } else if (el === ' ') {
+                currentTime += dit * 3; // inter-word gap (3 extra = 7 total with element gap)
+            }
+        });
+        var totalDuration = (currentTime - ctx.currentTime) * 1000;
+        if (callback) setTimeout(callback, totalDuration + 100);
+        return totalDuration;
+    }
+
+    // ── Light pulse: flash the bulb element ──
+    function playMorseLight(morseStr, callback) {
+        var bulb = $('morse-light-bulb');
+        var status = $('morse-light-status');
+        if (!bulb) return;
+        var dit = ditMs();
+        var elements = morseStr.split('');
+        var delay = 0;
+        var timeouts = [];
+
+        elements.forEach(function(el) {
+            if (el === '.' || el === '-') {
+                var dur = el === '.' ? dit : dit * 3;
+                timeouts.push(setTimeout(function() {
+                    bulb.style.background = morseMode === 'light' ? '#fbbf24' : '#22d3ee';
+                    bulb.style.boxShadow = '0 0 20px ' + (morseMode === 'light' ? '#fbbf24' : '#22d3ee');
+                    if (status) status.textContent = el === '.' ? 'DIT' : 'DAH';
+                    pushSignal(Date.now() / 1000, dur / 1000, 1);
+                }, delay));
+                timeouts.push(setTimeout(function() {
+                    bulb.style.background = '#21262d';
+                    bulb.style.boxShadow = 'none';
+                    if (status) status.textContent = 'gap';
+                }, delay + dur));
+                delay += dur + dit;
+            } else if (el === ' ') {
+                delay += dit * 3;
+            }
+        });
+        timeouts.push(setTimeout(function() {
+            if (status) status.textContent = 'idle';
+            if (callback) callback();
+        }, delay));
+        window._morseTimeouts = timeouts;
+    }
+
+    // ── Solfeggio special: sweep through sacred frequencies ──
+    function playSolfeggio() {
+        var ctx = initAudio();
+        if (ctx.state === 'suspended') ctx.resume();
+        var freqs = [174, 285, 396, 417, 432, 528, 639, 741, 852, 963];
+        var t = ctx.currentTime + 0.05;
+        var dur = 0.5;
+        freqs.forEach(function(f) {
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.frequency.value = f;
+            osc.type = 'sine';
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.2, t + 0.02);
+            gain.gain.setValueAtTime(0.2, t + dur - 0.02);
+            gain.gain.linearRampToValueAtTime(0, t + dur);
+            osc.connect(gain);
+            gain.connect(masterGain || ctx.destination);
+            osc.start(t); osc.stop(t + dur + 0.01);
+            pushSignal(t, dur, f / 963);
+            t += dur + 0.1;
+        });
+    }
+
+    // ── Fibonacci timing: dits with Fibonacci-scaled gaps ──
+    function playFibonacci() {
+        var ctx = initAudio();
+        if (ctx.state === 'suspended') ctx.resume();
+        var fibs = [1,1,2,3,5,8,13,8,5,3,2,1,1];
+        var t = ctx.currentTime + 0.05;
+        var baseMs = ditMs() / 1000;
+        fibs.forEach(function(n) {
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.frequency.value = morseFreq;
+            osc.type = 'sine';
+            var dur = baseMs * n;
+            gain.gain.setValueAtTime(0, t);
+            gain.gain.linearRampToValueAtTime(0.25, t + 0.005);
+            gain.gain.setValueAtTime(0.25, t + dur - 0.005);
+            gain.gain.linearRampToValueAtTime(0, t + dur);
+            osc.connect(gain);
+            gain.connect(masterGain || ctx.destination);
+            osc.start(t); osc.stop(t + dur + 0.01);
+            pushSignal(t, dur, 1);
+            t += dur + baseMs;
+        });
+    }
+
+    // ── Heartbeat pattern: short-short with rhythmic pause ──
+    function playHeartbeat(repeats) {
+        var ctx = initAudio();
+        if (ctx.state === 'suspended') ctx.resume();
+        var t = ctx.currentTime + 0.05;
+        for (var r = 0; r < (repeats || 10); r++) {
+            // Lub (low)
+            var osc1 = ctx.createOscillator();
+            var g1 = ctx.createGain();
+            osc1.frequency.value = 60; osc1.type = 'sine';
+            g1.gain.setValueAtTime(0, t); g1.gain.linearRampToValueAtTime(0.4, t + 0.02);
+            g1.gain.linearRampToValueAtTime(0, t + 0.12);
+            osc1.connect(g1); g1.connect(masterGain || ctx.destination);
+            osc1.start(t); osc1.stop(t + 0.15);
+            // Dub (higher)
+            var osc2 = ctx.createOscillator();
+            var g2 = ctx.createGain();
+            osc2.frequency.value = 80; osc2.type = 'sine';
+            g2.gain.setValueAtTime(0, t + 0.15); g2.gain.linearRampToValueAtTime(0.3, t + 0.17);
+            g2.gain.linearRampToValueAtTime(0, t + 0.27);
+            osc2.connect(g2); g2.connect(masterGain || ctx.destination);
+            osc2.start(t + 0.15); osc2.stop(t + 0.3);
+            pushSignal(t, 0.3, 0.5);
+            t += 0.8; // ~75 BPM
+        }
+    }
+
+    // ── Signal visualization ──
+    function pushSignal(time, duration, amplitude) {
+        signalData.push({ t: time, dur: duration, amp: amplitude });
+        if (signalData.length > 100) signalData.shift();
+        drawSignal();
+    }
+
+    function drawSignal() {
+        if (!signalCtx || !signalCanvas) return;
+        var w = signalCanvas.width / devicePixelRatio;
+        var h = signalCanvas.height / devicePixelRatio;
+        signalCtx.clearRect(0, 0, w, h);
+        signalCtx.fillStyle = '#050510';
+        signalCtx.fillRect(0, 0, w, h);
+        if (signalData.length < 2) return;
+        var now = Date.now() / 1000;
+        signalCtx.strokeStyle = '#22d3ee';
+        signalCtx.lineWidth = 1.5;
+        signalCtx.beginPath();
+        var x = 0;
+        signalData.slice(-30).forEach(function(s, i) {
+            var y = h - s.amp * h * 0.8 - 2;
+            var bw = Math.max(2, s.dur * 40);
+            if (i === 0) signalCtx.moveTo(x, h - 2);
+            signalCtx.lineTo(x, y);
+            signalCtx.lineTo(x + bw, y);
+            signalCtx.lineTo(x + bw, h - 2);
+            x += bw + 2;
+        });
+        signalCtx.stroke();
+    }
+
+    // ── Shortwave autocomplete ──
+    function updateAutocomplete(text) {
+        var acEl = $('morse-autocomplete');
+        if (!acEl || text.length < 1) { if (acEl) acEl.style.display = 'none'; return; }
+        var lower = text.toLowerCase();
+        var matches = Object.entries(SW_VOCAB).filter(function(e) { return e[0].startsWith(lower) || e[1].indexOf(lower) !== -1; });
+        if (matches.length === 0) { acEl.style.display = 'none'; return; }
+        acEl.style.display = 'block';
+        acEl.innerHTML = matches.slice(0, 8).map(function(e) {
+            return '<span style="cursor:pointer;padding:2px 6px;display:inline-block;background:var(--cursor-bg-tertiary);border-radius:3px;margin:1px;" onclick="document.getElementById(\'morse-input\').value=\'' + e[0].toUpperCase() + '\';morseTX()">' +
+                '<b style="color:var(--cursor-accent);">' + e[0].toUpperCase() + '</b> <span style="color:var(--cursor-text-muted);">' + e[1] + '</span></span>';
+        }).join(' ');
+    }
+
+    // ── Main TX function ──
+    window.morseTX = function() {
+        var input = $('morse-input');
+        if (!input || !input.value.trim()) return;
+        var text = input.value.trim();
+        // Check if input is already Morse
+        var isMorse = /^[.\-\/ ]+$/.test(text);
+        var morseStr, plainText;
+        if (isMorse) {
+            morseStr = text;
+            plainText = morseToText(text);
+        } else {
+            morseStr = textToMorse(text);
+            plainText = text;
+        }
+        // Update displays
+        $('morse-code-out').textContent = morseStr;
+        $('morse-text-out').textContent = plainText.toUpperCase();
+        morseCharCount += plainText.length;
+        if (!morseStartTime) morseStartTime = Date.now();
+        $('morse-sw-chars').textContent = morseCharCount;
+        $('morse-sw-time').textContent = Math.round((Date.now() - morseStartTime) / 1000) + 's';
+        $('morse-sig-freq').textContent = morseFreq + ' Hz';
+        $('morse-sig-mode').textContent = morseMode;
+        morseTXActive = true;
+
+        // Execute based on mode
+        if (morseMode === 'audio' || morseMode === 'shortwave' || morseMode === 'coupled') {
+            playMorseAudio(morseStr, function() { morseTXActive = false; });
+        }
+        if (morseMode === 'light' || morseMode === 'coupled') {
+            playMorseLight(morseStr, function() { morseTXActive = false; });
+        }
+        if (morseMode === 'shortwave') {
+            $('morse-sw-mode').textContent = 'CW';
+        }
+        if (morseMode === 'coupled') {
+            $('morse-sw-mode').textContent = 'SPK\u2192MIC';
+            // In coupled mode, play audio loud enough for microphone pickup
+            if (masterGain) masterGain.gain.value = 0.5;
+            setTimeout(function() { if (masterGain) masterGain.gain.value = 0.15; },
+                morseStr.length * ditMs() + 1000);
+        }
+        // Always flash light as visual indicator
+        playMorseLight(morseStr);
+        // ── Bridge: send to quantum server (async, non-blocking) ──
+        if (typeof QuantumBridge !== 'undefined' && QuantumBridge.wsConnected) {
+            QuantumBridge.wsMorseTX(plainText, morseWPM, morseFreq, morseMode).then(function(r) {
+                if (r && r.quantum_prefix) {
+                    console.log('[Bridge] Morse TX quantum:', r.total_duration_ms + 'ms,', r.char_count + ' chars');
+                }
+            });
+        } else if (typeof QuantumBridge !== 'undefined') {
+            // HTTP fallback
+            QuantumBridge.morseEncode(plainText, morseWPM, morseFreq, morseMode).then(function(r) {
+                if (r && !r.error) console.log('[Bridge] Morse encode:', r.total_duration_ms + 'ms');
+            });
+        }
+    };
+
+    window.morseRX = function() {
+        morseTXActive = false;
+        if (window._morseTimeouts) window._morseTimeouts.forEach(clearTimeout);
+        var bulb = $('morse-light-bulb');
+        if (bulb) { bulb.style.background = '#21262d'; bulb.style.boxShadow = 'none'; }
+        $('morse-light-status').textContent = 'idle';
+    };
+
+    window.setMorseMode = function(mode) {
+        morseMode = mode;
+        ['audio','light','shortwave','coupled'].forEach(function(m) {
+            var btn = $('morse-mode-' + m);
+            if (btn) btn.classList.toggle('active', m === mode);
+        });
+        $('morse-sig-mode').textContent = mode;
+        // Set appropriate frequency band for shortwave
+        if (mode === 'shortwave') {
+            $('morse-sw-band').textContent = morseFreq < 500 ? '80m' : morseFreq < 800 ? '40m' : morseFreq < 1200 ? '20m' : '10m';
+        }
+    };
+
+    window.txPulse = function(id) {
+        var pulse = PULSE_LIBRARY[id];
+        if (!pulse) return;
+        if (pulse.special === 'solfeggio') { playSolfeggio(); return; }
+        if (pulse.special === 'fibonacci') { playFibonacci(); return; }
+        if (pulse.special === 'heartbeat') { playHeartbeat(pulse.repeat || 10); return; }
+        $('morse-input').value = pulse.text;
+        var repeats = pulse.repeat || 1;
+        function sendOnce(n) {
+            if (n <= 0) return;
+            window.morseTX();
+            if (n > 1) {
+                var delay = textToMorse(pulse.text).length * ditMs() + 500;
+                setTimeout(function() { sendOnce(n - 1); }, delay);
+            }
+        }
+        sendOnce(repeats);
+    };
+
+    // Wire controls
+    $('morse-wpm').addEventListener('input', function() {
+        morseWPM = parseInt(this.value);
+        $('morse-wpm-val').textContent = morseWPM;
+    });
+    $('morse-freq').addEventListener('input', function() {
+        morseFreq = parseInt(this.value);
+        $('morse-freq-val').textContent = morseFreq;
+        $('morse-sig-freq').textContent = morseFreq + ' Hz';
+    });
+    $('morse-input').addEventListener('input', function() {
+        updateAutocomplete(this.value);
+        // Live encode preview
+        var text = this.value;
+        if (text.length > 0 && !/^[.\-\/ ]+$/.test(text)) {
+            $('morse-code-out').textContent = textToMorse(text);
+            $('morse-text-out').textContent = text.toUpperCase();
+        } else if (/^[.\-\/ ]+$/.test(text)) {
+            $('morse-text-out').textContent = morseToText(text).toUpperCase();
+            $('morse-code-out').textContent = text;
+        }
+    });
+    $('morse-input').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); window.morseTX(); }
+    });
+
+    // Expose on jawta API
+    window._morseEngine = {
+        textToMorse: textToMorse,
+        morseToText: morseToText,
+        playAudio: playMorseAudio,
+        playLight: playMorseLight,
+        playSolfeggio: playSolfeggio,
+        playFibonacci: playFibonacci,
+        playHeartbeat: playHeartbeat,
+        PULSE_LIBRARY: PULSE_LIBRARY,
+        SW_VOCAB: SW_VOCAB,
+        get mode() { return morseMode; },
+        get wpm() { return morseWPM; },
+        get freq() { return morseFreq; },
+    };
+})();
+
+// ══════════════════ WHISPER + EYE PATTERN + NEURO RESPONSE ENGINE ══════════════════
+// Sub-vocalization detection via low-amplitude audio analysis
+// Eye pattern tracking via camera/Vision Pro eye tracking API
+// Physiological signal fusion for truth/deception analysis
+// Apple-compatible: AirPods whisper mic, Vision Pro eye tracking, HealthKit bridge
+(function(){
+    var activeModes = {};
+    var whisperStream = null;
+    var whisperAnalyser = null;
+    var whisperCtx = null;
+    var eyeCtx = null;
+    var eyeTrackData = { x: 0.5, y: 0.5, pupil: 0, blinks: 0, fixations: [], saccades: [], pattern: '' };
+    var physioState = {
+        heartRate: 72, heartBaseline: 72,
+        gsr: 2.1, gsrBaseline: 2.1,       // galvanic skin response (microsiemens)
+        respRate: 16, respBaseline: 16,     // breaths per minute
+        microExpressions: 0,                // detected micro-expression count
+        stressLevel: 0,                     // 0-100
+        voiceStress: 0,                     // vocal frequency tremor index
+    };
+    var truthHistory = [];
+    var whisperBuffer = [];
+    var sessionStart = 0;
+
+    // ── NLP eye direction mapping (based on Bandler-Grinder NLP eye accessing cues) ──
+    var EYE_CUES = {
+        'up-right':    { process: 'visual construct',   truth: 0.4, desc: 'constructing an image (imagination)' },
+        'up-left':     { process: 'visual recall',      truth: 0.8, desc: 'recalling a seen image (memory)' },
+        'level-right': { process: 'auditory construct',  truth: 0.3, desc: 'constructing sounds (imagination)' },
+        'level-left':  { process: 'auditory recall',     truth: 0.8, desc: 'recalling heard sounds (memory)' },
+        'down-right':  { process: 'kinesthetic',         truth: 0.6, desc: 'accessing feelings/body sensations' },
+        'down-left':   { process: 'internal dialogue',   truth: 0.7, desc: 'self-talk, inner voice' },
+        'center':      { process: 'neutral/focused',     truth: 0.5, desc: 'focused attention, present' },
+        'defocused':   { process: 'processing/search',   truth: 0.5, desc: 'mental processing, memory search' },
+    };
+
+    // ── Voice Stress Analysis (VSA) ──
+    // Detects micro-tremors in vocal frequency (8-12 Hz range) that increase under stress
+    function analyzeVoiceStress(analyserNode) {
+        if (!analyserNode) return 0;
+        var buf = new Float32Array(analyserNode.fftSize);
+        analyserNode.getFloatTimeDomainData(buf);
+        // Calculate amplitude
+        var sum = 0, max = 0;
+        for (var i = 0; i < buf.length; i++) {
+            var abs = Math.abs(buf[i]);
+            sum += abs;
+            if (abs > max) max = abs;
+        }
+        var avg = sum / buf.length;
+        // Micro-tremor detection: look for 8-12 Hz modulation in the envelope
+        var envelope = [];
+        var windowSize = Math.floor(analyserNode.context.sampleRate / 100); // 10ms windows
+        for (var j = 0; j < buf.length - windowSize; j += windowSize) {
+            var winSum = 0;
+            for (var k = 0; k < windowSize && (j + k) < buf.length; k++) {
+                winSum += Math.abs(buf[j + k]);
+            }
+            envelope.push(winSum / windowSize);
+        }
+        // Variance in envelope = tremor indicator
+        if (envelope.length < 3) return 0;
+        var envMean = envelope.reduce(function(s, v) { return s + v; }, 0) / envelope.length;
+        var envVar = envelope.reduce(function(s, v) { return s + (v - envMean) * (v - envMean); }, 0) / envelope.length;
+        var tremorIndex = Math.min(100, envVar * 10000);
+        return { amplitude: avg, peak: max, tremorIndex: tremorIndex, isWhisper: max > 0.005 && max < 0.08 };
+    }
+
+    // ── Eye Pattern classifier ──
+    function classifyGaze(x, y) {
+        // x: 0=left, 1=right; y: 0=top, 1=bottom
+        if (x < 0.35 && y < 0.35) return 'up-left';
+        if (x > 0.65 && y < 0.35) return 'up-right';
+        if (x < 0.35 && y > 0.35 && y < 0.65) return 'level-left';
+        if (x > 0.65 && y > 0.35 && y < 0.65) return 'level-right';
+        if (x < 0.35 && y > 0.65) return 'down-left';
+        if (x > 0.65 && y > 0.65) return 'down-right';
+        if (x > 0.3 && x < 0.7 && y > 0.3 && y < 0.7) return 'center';
+        return 'defocused';
+    }
+
+    // ── Multi-signal truth scoring ──
+    function computeTruthScore() {
+        var signals = [];
+        // 1. Voice stress (high tremor = more stress = less truthful)
+        var voiceTruth = Math.max(0, 100 - physioState.voiceStress);
+        signals.push({ name: 'voice', score: voiceTruth, weight: 0.25 });
+        // 2. Eye pattern (NLP accessing cues)
+        var eyeCue = EYE_CUES[eyeTrackData.pattern] || EYE_CUES.center;
+        var eyeTruth = eyeCue.truth * 100;
+        signals.push({ name: 'eye', score: eyeTruth, weight: 0.25 });
+        // 3. Micro-expressions (more = possible concealment)
+        var microTruth = Math.max(0, 100 - physioState.microExpressions * 15);
+        signals.push({ name: 'micro', score: microTruth, weight: 0.15 });
+        // 4. GSR (deviation from baseline = arousal)
+        var gsrDelta = Math.abs(physioState.gsr - physioState.gsrBaseline);
+        var gsrTruth = Math.max(0, 100 - gsrDelta * 30);
+        signals.push({ name: 'gsr', score: gsrTruth, weight: 0.20 });
+        // 5. Respiration (irregularity from baseline)
+        var respDelta = Math.abs(physioState.respRate - physioState.respBaseline);
+        var respTruth = Math.max(0, 100 - respDelta * 8);
+        signals.push({ name: 'resp', score: respTruth, weight: 0.15 });
+        // Weighted average
+        var totalWeight = signals.reduce(function(s, sig) { return s + sig.weight; }, 0);
+        var composite = signals.reduce(function(s, sig) { return s + sig.score * sig.weight; }, 0) / totalWeight;
+        return { composite: Math.round(composite), signals: signals, eyeCue: eyeCue };
+    }
+
+    // ── Start whisper microphone ──
+    function startWhisperMic() {
+        if (whisperStream) return;
+        navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+        .then(function(stream) {
+            whisperStream = stream;
+            var ctx = initAudio();
+            var source = ctx.createMediaStreamSource(stream);
+            whisperAnalyser = ctx.createAnalyser();
+            whisperAnalyser.fftSize = 2048;
+            whisperAnalyser.smoothingTimeConstant = 0.85;
+            source.connect(whisperAnalyser);
+            sessionStart = Date.now();
+            $('wh-status').textContent = 'listening...';
+            $('wh-status').style.color = 'var(--cursor-success)';
+            // Web Speech API for whisper transcription
+            if (window.webkitSpeechRecognition || window.SpeechRecognition) {
+                var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+                var recog = new SR();
+                recog.continuous = true;
+                recog.interimResults = true;
+                recog.lang = 'en-US';
+                recog.onresult = function(e) {
+                    var transcript = '';
+                    for (var i = e.resultIndex; i < e.results.length; i++) {
+                        transcript += e.results[i][0].transcript;
+                    }
+                    $('wh-transcript').textContent = transcript;
+                    $('wh-detected').textContent = 'speech';
+                    $('wh-confidence').textContent = Math.round(e.results[e.results.length - 1][0].confidence * 100) + '%';
+                    // ── Bridge: stream whisper transcript for analysis ──
+                    if (typeof QuantumBridge !== 'undefined' && transcript.length > 5) {
+                        var af = { rms: physioState.voiceStress || 0, pitch_hz: 0, tremor_8_12hz: physioState.stressLevel * 0.3 };
+                        if (QuantumBridge.wsConnected) {
+                            QuantumBridge.wsWhisperStream(transcript, af);
+                        } else {
+                            QuantumBridge.whisperAnalyze(transcript, af);
+                        }
+                    }
+                };
+                recog.onerror = function() {};
+                try { recog.start(); } catch(e) {}
+                window._whisperRecog = recog;
+            }
+        }).catch(function(err) {
+            $('wh-status').textContent = 'mic denied: ' + err.message;
+            $('wh-status').style.color = 'var(--cursor-error)';
+        });
+    }
+
+    function stopWhisperMic() {
+        if (whisperStream) { whisperStream.getTracks().forEach(function(t) { t.stop(); }); whisperStream = null; }
+        if (window._whisperRecog) { try { window._whisperRecog.stop(); } catch(e) {} }
+        whisperAnalyser = null;
+        $('wh-status').textContent = 'stopped';
+        $('wh-status').style.color = 'var(--cursor-text-muted)';
+    }
+
+    // ── Eye tracking: use mouse as proxy, Vision Pro API when available ──
+    var eyeTrackActive = false;
+    function startEyeTrack() {
+        eyeTrackActive = true;
+        // If Vision Pro eye tracking is available (future WebXR Eye Tracking)
+        if (navigator.xr) {
+            // Placeholder for WebXR Gaze API
+        }
+        // Mouse proxy for development
+        document.addEventListener('mousemove', eyeMouseProxy);
+        // Blink detection via visibility change (rough proxy)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) eyeTrackData.blinks++;
+        });
+    }
+    function stopEyeTrack() {
+        eyeTrackActive = false;
+        document.removeEventListener('mousemove', eyeMouseProxy);
+    }
+    function eyeMouseProxy(e) {
+        if (!eyeTrackActive) return;
+        eyeTrackData.x = e.clientX / window.innerWidth;
+        eyeTrackData.y = e.clientY / window.innerHeight;
+        var prevPattern = eyeTrackData.pattern;
+        eyeTrackData.pattern = classifyGaze(eyeTrackData.x, eyeTrackData.y);
+        if (prevPattern !== eyeTrackData.pattern) {
+            eyeTrackData.saccades.push({ from: prevPattern, to: eyeTrackData.pattern, t: Date.now() });
+            if (eyeTrackData.saccades.length > 50) eyeTrackData.saccades.shift();
+        }
+    }
+
+    // ── Physiological simulation (real sensors via WebBluetooth/HealthKit bridge) ──
+    function updatePhysio() {
+        // Simulate realistic physiological drift
+        physioState.heartRate = physioState.heartBaseline + (Math.random() - 0.5) * 8 + Math.sin(Date.now() / 5000) * 3;
+        physioState.gsr = physioState.gsrBaseline + (Math.random() - 0.5) * 0.5;
+        physioState.respRate = physioState.respBaseline + (Math.random() - 0.5) * 3;
+        physioState.stressLevel = Math.max(0, Math.min(100, physioState.voiceStress * 0.4 + Math.abs(physioState.gsr - physioState.gsrBaseline) * 15 + physioState.microExpressions * 5));
+        // Voice stress from analyser
+        if (whisperAnalyser) {
+            var vsa = analyzeVoiceStress(whisperAnalyser);
+            if (vsa) {
+                physioState.voiceStress = vsa.tremorIndex;
+                $('wh-amplitude').textContent = vsa.amplitude.toFixed(4);
+                if (vsa.isWhisper) {
+                    $('wh-detected').textContent = 'whisper';
+                    $('wh-detected').style.color = 'var(--audio-violet)';
+                } else if (vsa.peak > 0.08) {
+                    $('wh-detected').textContent = 'speech';
+                    $('wh-detected').style.color = 'var(--cursor-success)';
+                } else {
+                    $('wh-detected').textContent = 'silence';
+                    $('wh-detected').style.color = 'var(--cursor-text-muted)';
+                }
+            }
+        }
+    }
+
+    // ── Render loop ──
+    function renderWhisperCanvas() {
+        if (!whisperCtx) {
+            var cv = document.getElementById('cv-whisper');
+            if (cv && cv.parentElement) {
+                cv.width = cv.parentElement.clientWidth * devicePixelRatio;
+                cv.height = 60 * devicePixelRatio;
+                whisperCtx = cv.getContext('2d');
+                whisperCtx.scale(devicePixelRatio, devicePixelRatio);
+            }
+        }
+        if (!whisperCtx) return;
+        var w = whisperCtx.canvas.width / devicePixelRatio;
+        var h = whisperCtx.canvas.height / devicePixelRatio;
+        whisperCtx.clearRect(0, 0, w, h);
+        whisperCtx.fillStyle = '#050510'; whisperCtx.fillRect(0, 0, w, h);
+        // Draw whisper threshold line
+        var threshY = h * 0.7;
+        whisperCtx.strokeStyle = '#f0883e44'; whisperCtx.setLineDash([3, 3]);
+        whisperCtx.beginPath(); whisperCtx.moveTo(0, threshY); whisperCtx.lineTo(w, threshY); whisperCtx.stroke();
+        whisperCtx.setLineDash([]);
+        // Draw waveform from analyser
+        if (whisperAnalyser) {
+            var buf = new Float32Array(whisperAnalyser.fftSize);
+            whisperAnalyser.getFloatTimeDomainData(buf);
+            whisperCtx.strokeStyle = '#c084fc'; whisperCtx.lineWidth = 1;
+            whisperCtx.beginPath();
+            var step = w / buf.length;
+            for (var i = 0; i < buf.length; i++) {
+                var x = i * step;
+                var y = h / 2 - buf[i] * h * 2;
+                if (i === 0) whisperCtx.moveTo(x, y); else whisperCtx.lineTo(x, y);
+            }
+            whisperCtx.stroke();
+        }
+    }
+
+    function renderEyeCanvas() {
+        if (!eyeCtx) {
+            var cv = document.getElementById('cv-eye-track');
+            if (cv && cv.parentElement) {
+                cv.width = cv.parentElement.clientWidth * devicePixelRatio;
+                cv.height = 60 * devicePixelRatio;
+                eyeCtx = cv.getContext('2d');
+                eyeCtx.scale(devicePixelRatio, devicePixelRatio);
+            }
+        }
+        if (!eyeCtx) return;
+        var w = eyeCtx.canvas.width / devicePixelRatio;
+        var h = eyeCtx.canvas.height / devicePixelRatio;
+        eyeCtx.clearRect(0, 0, w, h);
+        eyeCtx.fillStyle = '#050510'; eyeCtx.fillRect(0, 0, w, h);
+        // Draw eye region grid
+        eyeCtx.strokeStyle = '#ffffff0a'; eyeCtx.lineWidth = 0.5;
+        eyeCtx.beginPath(); eyeCtx.moveTo(w * 0.33, 0); eyeCtx.lineTo(w * 0.33, h); eyeCtx.stroke();
+        eyeCtx.beginPath(); eyeCtx.moveTo(w * 0.66, 0); eyeCtx.lineTo(w * 0.66, h); eyeCtx.stroke();
+        eyeCtx.beginPath(); eyeCtx.moveTo(0, h * 0.33); eyeCtx.lineTo(w, h * 0.33); eyeCtx.stroke();
+        eyeCtx.beginPath(); eyeCtx.moveTo(0, h * 0.66); eyeCtx.lineTo(w, h * 0.66); eyeCtx.stroke();
+        // Draw gaze point
+        var gx = eyeTrackData.x * w, gy = eyeTrackData.y * h;
+        eyeCtx.beginPath(); eyeCtx.arc(gx, gy, 4, 0, Math.PI * 2);
+        eyeCtx.fillStyle = '#58a6ff'; eyeCtx.fill();
+        eyeCtx.beginPath(); eyeCtx.arc(gx, gy, 8, 0, Math.PI * 2);
+        eyeCtx.strokeStyle = '#58a6ff44'; eyeCtx.lineWidth = 1; eyeCtx.stroke();
+        // Draw recent saccade trail
+        if (eyeTrackData.saccades.length > 1) {
+            eyeCtx.strokeStyle = '#c084fc33'; eyeCtx.lineWidth = 1;
+            eyeCtx.beginPath();
+            eyeTrackData.saccades.slice(-10).forEach(function(s, i) {
+                // Approximate position from pattern name
+                var pos = patternToPos(s.to, w, h);
+                if (i === 0) eyeCtx.moveTo(pos.x, pos.y); else eyeCtx.lineTo(pos.x, pos.y);
+            });
+            eyeCtx.stroke();
+        }
+        // Pattern label
+        var cue = EYE_CUES[eyeTrackData.pattern] || EYE_CUES.center;
+        eyeCtx.fillStyle = '#58a6ff88'; eyeCtx.font = '7px ' + getComputedStyle(document.body).getPropertyValue('--cursor-font-mono');
+        eyeCtx.fillText(cue.process, 3, 8);
+    }
+
+    function patternToPos(pattern, w, h) {
+        var map = { 'up-left': [0.17, 0.17], 'up-right': [0.83, 0.17], 'level-left': [0.17, 0.5], 'level-right': [0.83, 0.5],
+                    'down-left': [0.17, 0.83], 'down-right': [0.83, 0.83], 'center': [0.5, 0.5], 'defocused': [0.5, 0.5] };
+        var p = map[pattern] || [0.5, 0.5];
+        return { x: p[0] * w, y: p[1] * h };
+    }
+
+    function updateUI() {
+        var cue = EYE_CUES[eyeTrackData.pattern] || EYE_CUES.center;
+        $('wh-gaze').textContent = eyeTrackData.pattern || 'center';
+        $('wh-eye-pattern').textContent = cue.process;
+        $('wh-blinks').textContent = eyeTrackData.blinks;
+        $('wh-saccade').textContent = eyeTrackData.saccades.length;
+        $('wh-fixation').textContent = eyeTrackData.fixations.length;
+        // Physio bars
+        $('wh-heart-val').textContent = Math.round(physioState.heartRate);
+        $('wh-bar-heart').style.width = Math.min(100, physioState.heartRate / 1.5) + '%';
+        $('wh-gsr-val').textContent = physioState.gsr.toFixed(1);
+        $('wh-bar-gsr').style.width = Math.min(100, physioState.gsr * 15) + '%';
+        $('wh-resp-val').textContent = Math.round(physioState.respRate);
+        $('wh-bar-resp').style.width = Math.min(100, physioState.respRate * 4) + '%';
+        $('wh-micro-val').textContent = physioState.microExpressions;
+        $('wh-bar-micro').style.width = Math.min(100, physioState.microExpressions * 10) + '%';
+        $('wh-stress-val').textContent = physioState.stressLevel < 30 ? 'low' : physioState.stressLevel < 60 ? 'mid' : 'high';
+        $('wh-bar-stress').style.width = physioState.stressLevel + '%';
+        $('wh-bar-stress').style.background = physioState.stressLevel < 30 ? 'var(--cursor-success)' : physioState.stressLevel < 60 ? 'var(--cursor-warning)' : 'var(--cursor-error)';
+        // Truth analysis
+        if (activeModes.truth) {
+            var truth = computeTruthScore();
+            var scoreColor = truth.composite > 70 ? 'var(--cursor-success)' : truth.composite > 40 ? 'var(--cursor-warning)' : 'var(--cursor-error)';
+            $('wh-truth-score').textContent = truth.composite + '%';
+            $('wh-truth-score').style.color = scoreColor;
+            truth.signals.forEach(function(sig) {
+                var el = $('wh-truth-' + sig.name);
+                if (el) {
+                    el.textContent = Math.round(sig.score) + '%';
+                    el.style.color = sig.score > 70 ? 'var(--cursor-success)' : sig.score > 40 ? 'var(--cursor-warning)' : 'var(--cursor-error)';
+                }
+            });
+            // Timeline
+            truthHistory.push({ t: Date.now(), score: truth.composite, eye: truth.eyeCue.process });
+            if (truthHistory.length > 100) truthHistory.shift();
+            var timelineEl = $('wh-truth-timeline');
+            if (timelineEl && truthHistory.length > 0) {
+                var last5 = truthHistory.slice(-5).map(function(e) {
+                    var ago = Math.round((Date.now() - e.t) / 1000);
+                    return '<span style="color:' + (e.score > 70 ? 'var(--cursor-success)' : e.score > 40 ? 'var(--cursor-warning)' : 'var(--cursor-error)') + ';">' + e.score + '%</span> ' + e.eye + ' (' + ago + 's)';
+                }).join(' \u2192 ');
+                timelineEl.innerHTML = last5;
+            }
+        }
+    }
+
+    // ── Update tick — every 200ms ──
+    setInterval(function() {
+        if (Object.keys(activeModes).length === 0) return;
+        updatePhysio();
+        renderWhisperCanvas();
+        renderEyeCanvas();
+        updateUI();
+    }, 200);
+
+    // ── Mode toggles ──
+    window.toggleWhisperMode = function(mode) {
+        var btn = $('wh-btn-' + mode);
+        if (activeModes[mode]) {
+            delete activeModes[mode];
+            if (btn) btn.classList.remove('active');
+            if (mode === 'whisper' || mode === 'subvocal') stopWhisperMic();
+            if (mode === 'eye') stopEyeTrack();
+        } else {
+            activeModes[mode] = true;
+            if (btn) btn.classList.add('active');
+            if (mode === 'whisper' || mode === 'subvocal') startWhisperMic();
+            if (mode === 'eye') startEyeTrack();
+        }
+        $('wh-status').textContent = Object.keys(activeModes).join(' + ') || 'inactive';
+    };
+
+    // ── Cross-tool bridges (BroadcastChannel + Quantum Bridge Server) ──
+    window.bridgeToKbatch = function() {
+        var data = { physio: physioState, eye: eyeTrackData, truth: computeTruthScore() };
+        if (window._planCorpusIndex) data.corpusCategories = Object.keys(window._planCorpusIndex.categories).length;
+        var transcript = $('wh-transcript') ? $('wh-transcript').textContent : '';
+        if (transcript && window._planCorpusIndex) {
+            var words = transcript.toLowerCase().split(/\s+/);
+            var cats = Object.keys(window._planCorpusIndex.categories);
+            var hits = [];
+            cats.forEach(function(c) { words.forEach(function(w) { if (w.length > 3 && c.indexOf(w) !== -1) hits.push(c); }); });
+            if (hits.length) data.corpusHits = hits.slice(0, 10);
+        }
+        var ch = new BroadcastChannel('hexterm');
+        ch.postMessage({ type: 'biometric-update', source: 'jawta-whisper', data: data });
+        ch.close();
+        // Also push to bridge server for persistent storage / ML pipeline
+        if (typeof QuantumBridge !== 'undefined') {
+            QuantumBridge.biometricSnapshot({
+                source: 'jawta-kbatch-bridge',
+                voice: { stress_score: physioState.voiceStress, voice_type: 'speech', rms: 0.1 },
+                eye: { pattern: eyeTrackData.pattern, gaze_x: eyeTrackData.x, gaze_y: eyeTrackData.y },
+                physio: { heart_rate: physioState.heartRate, gsr: physioState.gsr, resp_rate: physioState.respRate, stress_level: physioState.stressLevel, micro_expression: physioState.microExpression },
+                text: $('wh-transcript') ? $('wh-transcript').textContent : '',
+                truth: computeTruthScore(),
+            }).then(function(r) { if (r && !r.error) console.log('[Bridge] Biometric snapshot:', r.session_id); });
+        }
+    };
+    window.bridgeToPersona = function() {
+        var truth = computeTruthScore();
+        var ch = new BroadcastChannel('hexterm');
+        ch.postMessage({ type: 'persona-signal', source: 'jawta-whisper', data: { stressLevel: physioState.stressLevel, eyePattern: eyeTrackData.pattern, voiceStress: physioState.voiceStress, truthScore: truth.composite } });
+        ch.close();
+        // Bridge: full truth analysis via server
+        if (typeof QuantumBridge !== 'undefined') {
+            var transcript = $('wh-transcript') ? $('wh-transcript').textContent : '';
+            QuantumBridge.truthAnalysis(
+                transcript,
+                { stress_score: physioState.voiceStress, rms: 0.1, tremor_8_12hz: physioState.stressLevel * 0.2 },
+                { pattern: eyeTrackData.pattern, gaze_x: eyeTrackData.x, gaze_y: eyeTrackData.y, saccade_rate: eyeTrackData.saccadeRate || 0 },
+                { heart_rate: physioState.heartRate, gsr: physioState.gsr, resp_rate: physioState.respRate, micro_expression: physioState.microExpression },
+                { heart_rate: physioState.heartBaseline, gsr: physioState.gsrBaseline, resp_rate: physioState.respBaseline }
+            ).then(function(r) { if (r && !r.error) console.log('[Bridge] Truth analysis:', r.classification, r.composite_score); });
+        }
+    };
+    window.bridgeToSteno = function() {
+        var transcript = $('wh-transcript') ? $('wh-transcript').textContent : '';
+        if (transcript && window.opener && window.opener.StenoEngine) {
+            var encoded = window.opener.StenoEngine.encode(transcript);
+            console.log('[jawta] Steno encode:', encoded);
+        }
+        var ch = new BroadcastChannel('hexterm');
+        ch.postMessage({ type: 'steno-encode', source: 'jawta-whisper', text: transcript });
+        ch.close();
+        // Bridge: get quantum prefix + transcript analysis from server
+        if (typeof QuantumBridge !== 'undefined' && transcript) {
+            QuantumBridge.transcriptAnalyze(transcript, 'whisper').then(function(r) {
+                if (r && !r.error) console.log('[Bridge] Transcript:', r.word_count + ' words,', Object.keys(r.concept_categories).length + ' concepts, FK grade:', r.flesch_kincaid_grade);
+            });
+        }
+    };
+    window.bridgeToMorse = function() {
+        var transcript = $('wh-transcript') ? $('wh-transcript').textContent : '';
+        if (transcript && window._morseEngine) {
+            $('morse-input').value = transcript;
+            window.morseTX();
+        }
+    };
+    // NEW: Bridge to Quantum Server (standalone — full biometric + transcript + truth pipeline)
+    window.bridgeToQuantum = function() {
+        var transcript = $('wh-transcript') ? $('wh-transcript').textContent : '';
+        if (typeof QuantumBridge === 'undefined') {
+            console.warn('[Bridge] QuantumBridge not available');
+            return;
+        }
+        // Run full pipeline: whisper analyze + truth + biometric snapshot + transcript deep analysis
+        var promises = [];
+        if (transcript) {
+            promises.push(QuantumBridge.whisperAnalyze(transcript, {
+                rms: physioState.voiceStress || 0, tremor_8_12hz: physioState.stressLevel * 0.25
+            }));
+            promises.push(QuantumBridge.truthAnalysis(
+                transcript,
+                { stress_score: physioState.voiceStress, rms: 0.1 },
+                { pattern: eyeTrackData.pattern, gaze_x: eyeTrackData.x, gaze_y: eyeTrackData.y },
+                { heart_rate: physioState.heartRate, gsr: physioState.gsr, resp_rate: physioState.respRate, micro_expression: physioState.microExpression },
+                { heart_rate: physioState.heartBaseline, gsr: physioState.gsrBaseline, resp_rate: physioState.respBaseline }
+            ));
+            promises.push(QuantumBridge.transcriptAnalyze(transcript, 'whisper'));
+        }
+        promises.push(QuantumBridge.biometricSnapshot({
+            source: 'jawta-quantum-bridge',
+            voice: { stress_score: physioState.voiceStress, voice_type: 'speech' },
+            eye: { pattern: eyeTrackData.pattern, gaze_x: eyeTrackData.x, gaze_y: eyeTrackData.y },
+            physio: { heart_rate: physioState.heartRate, gsr: physioState.gsr, resp_rate: physioState.respRate, stress_level: physioState.stressLevel },
+            text: transcript,
+            truth: computeTruthScore(),
+        }));
+        Promise.all(promises).then(function(results) {
+            console.log('[Bridge] Full quantum pipeline:', results.length + ' responses');
+            results.forEach(function(r) { if (r && r.tool) console.log('  ', r.tool, r.classification || r.composite_score || r.word_count || r.session_id || ''); });
+            // Broadcast aggregated result via BroadcastChannel
+            var ch = new BroadcastChannel('hexterm');
+            ch.postMessage({ type: 'quantum-bridge-result', source: 'jawta', results: results });
+            ch.close();
+        });
+    };
+
+    // Expose
+    window._whisperEngine = {
+        get activeModes() { return { ...activeModes }; },
+        get physio() { return { ...physioState }; },
+        get eye() { return { ...eyeTrackData }; },
+        get truth() { return computeTruthScore(); },
+        get truthHistory() { return truthHistory.slice(); },
+        EYE_CUES: EYE_CUES,
+        analyzeVoiceStress: analyzeVoiceStress,
+        classifyGaze: classifyGaze,
+        setBaseline: function() {
+            physioState.heartBaseline = physioState.heartRate;
+            physioState.gsrBaseline = physioState.gsr;
+            physioState.respBaseline = physioState.respRate;
+        },
+    };
+})();
+
+// API
+window.jawta={
+    get state(){return{sampleRate:audioCtx?.sampleRate||48000,channels:12,mode:'atmos-7.1.4',latency:5.3,eq:eqValues.slice(),playing:isPlaying}},
+    get waveform(){return Array.from(waveData)},
+    get spectrum(){return Array.from(fftData)},
+    play: playAudio,
+    stop: stopAudio,
+    setEQ(band,val){if(band>=0&&band<8){eqValues[band]=val;$('eq-'+band).value=val;$('eq-val-'+band).textContent=val.toFixed(1)+' dB'}},
+    loadPattern(name){if(patterns[name])$('code-editor').value=patterns[name]},
+    exportJSON(){return JSON.stringify(this.state)},
+    morse: window._morseEngine || null,
+    whisper: window._whisperEngine || null,
+    bridge: typeof QuantumBridge !== 'undefined' ? QuantumBridge : null,
+};
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function() {
+    const QP = window.QuantumPrefixes;
+    if (!QP) return;
+    QP.onStateChange(function(source, state) { if (source === 'jawta' || !state) return; });
+    QP.broadcastState('jawta', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, role: 'spatial-audio' });
+    QP.requestStateSync();
+})();
+
+// ===== PLAN CORPUS → CAPSULE CROSS-REFERENCE =====
+(function() {
+    if (typeof BroadcastChannel === 'undefined') return;
+    var corpusBC = new BroadcastChannel('plan-corpus');
+    corpusBC.onmessage = function(e) {
+        if (!e.data || e.data.type !== 'corpus-indexed') return;
+        window._planCorpusIndex = e.data.index;
+        console.log('[jawta] corpus indexed:', e.data.index.totalPlans, 'plans');
+    };
+    var ironBC = new BroadcastChannel('iron-line');
+    ironBC.onmessage = function(e) {
+        if (!e.data || !e.data.type) return;
+        if (e.data.type === 'classify-dispatch' && e.data.layer === 3) {
+            console.log('[jawta] L3 quantum dispatch:', e.data);
+        }
+    };
+})();
+
+// ===== QUANTUM LOOPBACK RECEIVER =====
+(function() {
+    if (typeof BroadcastChannel === 'undefined') return;
+    var qlBC = new BroadcastChannel('quantum-loopback');
+    qlBC.onmessage = function(e) {
+        if (!e.data) return;
+        if (e.data.type === 'audio-cv') {
+            var d = e.data;
+            window._lastQuantumCV = d;
+            if (d.spatial && window.jawta && window.jawta.panner) {
+                try {
+                    var az = (d.spatial.azimuth || 0) * Math.PI / 180;
+                    var el = (d.spatial.elevation || 0) * Math.PI / 180;
+                    var p = window.jawta.panner;
+                    if (p.positionX) {
+                        p.positionX.setValueAtTime(Math.sin(az), p.context.currentTime);
+                        p.positionZ.setValueAtTime(-Math.cos(az), p.context.currentTime);
+                        p.positionY.setValueAtTime(Math.sin(el), p.context.currentTime);
+                    }
+                } catch(err) {}
+            }
+            console.log('[jawta] quantum-loopback frame #' + d.frame + ' E=' + (d.energy || 0).toFixed(3));
+        }
+    };
+})();
+
+console.log('⚛ jawta audio — spatial audio + live code');
+console.log('{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}');
+console.log('API: window.jawta');
+})();
+</script>
+</body>
+</html>

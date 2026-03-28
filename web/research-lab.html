@@ -1,0 +1,1215 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uvspeed — Research Lab | Live Research + Interactive Dev</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#8b5cf6">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
+    <script src="quantum-prefixes.js"></script>
+    <script src="qbit-dac.js"></script>
+    <script src="qbit-steno.js"></script>
+    <style>
+        :root {
+            --bg:var(--qp-bg,#0d1117);--bg2:var(--qp-bg-secondary,#161b22);--bg3:var(--qp-bg-tertiary,#21262d);--bg4:#2d333b;
+            --border:var(--qp-border,#30363d);--border-m:#484f58;--text:var(--qp-text,#e6edf3);--text-m:var(--qp-text-muted,#8b949e);--text-s:var(--qp-text-secondary,#c9d1d9);
+            --accent:var(--qp-accent,#58a6ff);--accent-s:rgba(88,166,255,.15);--green:#3fb950;--orange:#f0883e;
+            --red:#f85149;--purple:#a78bfa;--cyan:#56d4dd;--n8n:#ff6d5a;
+            --sp-xs:4px;--sp-sm:8px;--sp-md:16px;--sp-lg:24px;--rad:6px;
+            --mono:'SF Mono','Fira Code','JetBrains Mono','Cascadia Code',monospace;
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;overflow:hidden;-webkit-text-size-adjust:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+        a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+        .app{display:flex;flex-direction:column;height:100vh}
+
+        /* Header */
+        .hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:var(--sp-sm) var(--sp-lg);display:flex;align-items:center;justify-content:space-between;gap:var(--sp-md);flex-shrink:0;min-height:44px}
+        .hdr-title{display:flex;align-items:center;gap:var(--sp-sm);font-size:.9375rem;font-weight:600;white-space:nowrap}
+        .hdr-logo{height:22px;width:auto;border-radius:4px;filter:drop-shadow(0 0 4px rgba(139,92,246,.3))}
+        .hdr-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(139,92,246,.12);border:1px solid var(--purple);color:var(--purple);border-radius:10px;padding:2px 8px;font-size:.5625rem;font-weight:600}
+        .hdr-nav{display:flex;align-items:center;gap:4px;font-size:.6875rem;flex-wrap:wrap}
+        .hdr-nav a{padding:2px 7px;border-radius:var(--rad);background:var(--bg3);border:1px solid var(--border);color:var(--text-m);transition:all .15s}
+        .hdr-nav a:hover{color:var(--accent);border-color:var(--accent);text-decoration:none}
+
+        /* Main 3-panel layout */
+        .main{flex:1;display:flex;overflow:hidden}
+        .panel-resize{width:4px;background:var(--border);cursor:col-resize;flex-shrink:0;transition:background .15s}
+        .panel-resize:hover,.panel-resize.active{background:var(--accent)}
+
+        /* Left: Research Document */
+        .doc-panel{width:42%;min-width:280px;display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
+        .doc-toolbar{display:flex;align-items:center;gap:4px;padding:6px 12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0}
+        .doc-tab{padding:3px 10px;font-size:.625rem;font-weight:600;border:1px solid var(--border);border-radius:var(--rad);background:var(--bg3);color:var(--text-m);cursor:pointer;transition:all .15s}
+        .doc-tab:hover{color:var(--text)}
+        .doc-tab.active{background:var(--accent-s);color:var(--accent);border-color:var(--accent)}
+        .doc-tool-btn{padding:3px 8px;font-size:.5625rem;font-weight:600;border:1px solid var(--border);border-radius:var(--rad);background:var(--bg3);color:var(--text-m);cursor:pointer;transition:all .15s}
+        .doc-tool-btn:hover{color:var(--accent);border-color:var(--accent)}
+        .doc-edit-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column}
+        .doc-editor{flex:1;padding:16px 20px;font-family:var(--mono);font-size:.8125rem;line-height:1.7;color:var(--text-s);background:var(--bg);border:none;resize:none;outline:none;overflow-y:auto;tab-size:4}
+        .doc-rendered{flex:1;padding:16px 20px;overflow-y:auto;display:none}
+        /* Markdown rendered styles */
+        .doc-rendered h1{font-size:1.375rem;font-weight:700;color:var(--text);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+        .doc-rendered h2{font-size:1.0625rem;font-weight:700;color:var(--text);margin:20px 0 8px}
+        .doc-rendered h3{font-size:.875rem;font-weight:700;color:var(--accent);margin:16px 0 6px}
+        .doc-rendered p{margin:0 0 10px;font-size:.8125rem;color:var(--text-s);line-height:1.7}
+        .doc-rendered code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:.75rem;color:var(--green)}
+        .doc-rendered pre{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad);padding:12px;margin:8px 0 12px;overflow-x:auto}
+        .doc-rendered pre code{background:transparent;padding:0;color:var(--text-s);font-size:.6875rem;line-height:1.6}
+        .doc-rendered table{width:100%;border-collapse:collapse;font-size:.6875rem;margin:8px 0 12px}
+        .doc-rendered th{text-align:left;padding:4px 8px;background:var(--bg3);border:1px solid var(--border);color:var(--accent);font-weight:700}
+        .doc-rendered td{padding:4px 8px;border:1px solid var(--border);color:var(--text-s)}
+        .doc-rendered strong{color:var(--text);font-weight:700}
+        .doc-rendered em{color:var(--orange)}
+        .doc-rendered blockquote{border-left:3px solid var(--accent);padding:4px 12px;margin:8px 0;background:var(--accent-s);color:var(--text-m);font-size:.8125rem}
+        .doc-rendered ul,.doc-rendered ol{margin:4px 0 10px 20px;font-size:.8125rem}
+        .doc-rendered li{margin:2px 0;color:var(--text-s)}
+        .doc-rendered hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+        .doc-rendered .mermaid-block{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad);padding:12px;margin:8px 0;min-height:60px}
+        .doc-rendered .mermaid-block svg{max-width:100%;height:auto}
+        .doc-status{display:flex;align-items:center;gap:6px;padding:4px 12px;border-top:1px solid var(--border);background:var(--bg2);font-size:.5625rem;color:var(--text-m);flex-shrink:0}
+
+        /* Right: Canvas */
+        .canvas-panel{flex:1;min-width:300px;display:flex;flex-direction:column;overflow:hidden;position:relative}
+        .canvas-toolbar{display:flex;align-items:center;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
+        .canvas-area{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+        .canvas-grid{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,var(--border) .5px,transparent .5px);background-size:24px 24px;opacity:.4}
+        .canvas-scroll{position:absolute;inset:0;overflow:hidden;cursor:grab}
+        .canvas-scroll:active{cursor:grabbing}
+        .canvas-inner{min-width:2400px;min-height:1600px;position:relative;padding:40px;transform-origin:0 0}
+        .zoom-controls{position:absolute;bottom:12px;right:12px;display:flex;gap:4px;z-index:20}
+        .zoom-controls button{background:var(--bg2);border:1px solid var(--border);color:var(--text);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+        .zoom-controls button:hover{background:var(--accent);color:#fff}
+        .zoom-label{background:var(--bg2);border:1px solid var(--border);color:var(--muted);padding:2px 8px;border-radius:6px;font-size:11px;display:flex;align-items:center}
+
+        /* Nodes */
+        .node{position:absolute;background:var(--bg2);border:2px solid var(--border);border-radius:10px;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.3);cursor:move;user-select:none;transition:box-shadow .15s,border-color .15s;z-index:1}
+        .node:hover{box-shadow:0 6px 24px rgba(0,0,0,.5);border-color:var(--accent)}
+        .node.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(88,166,255,.25)}
+        .node.action-node{border-style:dashed}
+        .node.action-node.running{border-color:var(--orange);animation:pulse-border 1s ease infinite}
+        .node.action-node.done{border-color:var(--green);border-style:solid}
+        .node.action-node.error{border-color:var(--red);border-style:solid}
+        @keyframes pulse-border{0%,100%{box-shadow:0 0 0 0 rgba(240,136,62,.4)}50%{box-shadow:0 0 0 6px rgba(240,136,62,0)}}
+        .node-hdr{padding:6px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;border-radius:8px 8px 0 0}
+        .node-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.8125rem;flex-shrink:0}
+        .node-name{font-size:.75rem;font-weight:600}
+        .node-sub{font-size:.5rem;color:var(--text-m)}
+        .node-body{padding:6px 10px;font-size:.625rem}
+        .node-ports{display:flex;flex-direction:column;gap:2px}
+        .node-port{display:flex;align-items:center;gap:4px;padding:1px 0;font-family:var(--mono);font-size:.5rem;color:var(--text-m)}
+        .port-dot{width:7px;height:7px;border-radius:50%;border:2px solid var(--border);background:var(--bg);flex-shrink:0;cursor:crosshair}
+        .port-dot.connected{background:var(--green);border-color:var(--green)}
+        .port-dot.out{margin-left:auto}
+        .node-action-bar{padding:4px 8px;border-top:1px solid var(--border);display:flex;gap:3px}
+        .node-run-btn{flex:1;padding:2px 4px;font-size:.5rem;font-weight:700;border:1px solid var(--border);border-radius:3px;background:var(--bg3);color:var(--green);cursor:pointer;transition:all .15s}
+        .node-run-btn:hover{background:var(--green);color:#fff;border-color:var(--green)}
+
+        /* Connections SVG */
+        .connections-svg{position:absolute;inset:0;pointer-events:none;z-index:0}
+        .conn-path{fill:none;stroke:var(--border);stroke-width:2;transition:stroke .15s}
+        .conn-path.active{stroke:var(--green);stroke-width:2;filter:drop-shadow(0 0 3px rgba(63,185,80,.3))}
+
+        /* Palette chips */
+        .pal-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;font-size:.5625rem;font-weight:600;border:1px solid var(--border);border-radius:var(--rad);background:var(--bg3);color:var(--text-m);cursor:pointer;transition:all .12s;white-space:nowrap}
+        .pal-chip:hover{border-color:var(--accent);color:var(--accent)}
+        .pal-chip.action{border-color:var(--orange);color:var(--orange);background:rgba(240,136,62,.08)}
+
+        /* Bottom: Chat Console */
+        .console-panel{height:140px;min-height:80px;border-top:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;flex-shrink:0}
+        .console-resize{height:4px;background:var(--border);cursor:row-resize;flex-shrink:0;transition:background .15s}
+        .console-resize:hover,.console-resize.active{background:var(--accent)}
+        .console-log{flex:1;overflow-y:auto;padding:6px 12px;font-family:var(--mono);font-size:.6875rem;line-height:1.5}
+        .console-log .log-line{display:flex;gap:8px;padding:1px 0}
+        .console-log .log-ts{color:var(--text-m);flex-shrink:0;min-width:60px;font-size:.5625rem}
+        .console-log .log-tag{font-weight:700;flex-shrink:0;min-width:50px;font-size:.5625rem}
+        .console-log .log-msg{color:var(--text-s);word-break:break-word}
+        .console-input{display:flex;border-top:1px solid var(--border);flex-shrink:0}
+        .console-input input{flex:1;background:var(--bg);border:none;padding:6px 12px;color:var(--text);font-family:var(--mono);font-size:.75rem;outline:none}
+        .console-input button{padding:6px 14px;background:var(--accent);border:none;color:#fff;font-size:.6875rem;font-weight:600;cursor:pointer}
+
+        /* Footer */
+        .ftr{background:var(--bg2);border-top:1px solid var(--border);padding:3px var(--sp-lg);display:flex;align-items:center;gap:8px;font-size:.5625rem;color:var(--text-m);flex-shrink:0}
+
+        @media(max-width:900px){.doc-panel{width:35%;min-width:220px}}
+        @media(max-width:600px){
+            .main{flex-direction:column}
+            .doc-panel{width:100%;height:40%}
+            .panel-resize{display:none}
+        }
+    </style>
+</head>
+<body>
+<div style="display:flex;height:2px;width:100%;flex-shrink:0"><span style="flex:1;background:#ff3838"></span><span style="flex:1;background:#ff8c38"></span><span style="flex:1;background:#ffe138"></span><span style="flex:1;background:#3fb950"></span><span style="flex:1;background:#38a5ff"></span><span style="flex:1;background:#bc8cff"></span></div>
+<div class="app">
+    <!-- Header -->
+    <div class="hdr">
+        <div class="hdr-title">
+            <img src="../icons/nyan-banner.png" alt="uvspeed" class="hdr-logo">
+            Research Lab
+            <span class="hdr-badge">Live Dev</span>
+        </div>
+        <div class="hdr-nav">
+            <a href="quantum-notepad.html">Notepad</a>
+            <a href="archflow.html">archflow</a>
+            <a href="blackwell.html" style="color:#76b900">Blackwell</a>
+            <a href="questcast.html">questcast</a>
+            <a href="jawta-audio.html">jawta</a>
+            <a href="hexcast.html">hexcast</a>
+            <a href="hexbench.html" style="color:#ffe138">hexbench</a>
+            <a href="github-dashboard.html">Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Main: Doc + Canvas -->
+    <div class="main">
+        <!-- Left: Research Document -->
+        <div class="doc-panel" id="doc-panel">
+            <div class="doc-toolbar">
+                <button class="doc-tab active" data-mode="edit" id="tab-edit">Edit</button>
+                <button class="doc-tab" data-mode="preview" id="tab-preview">Preview</button>
+                <button class="doc-tab" data-mode="split" id="tab-split">Split</button>
+                <span style="flex:1"></span>
+                <button class="doc-tool-btn" id="doc-save" title="Save to localStorage">Save</button>
+                <button class="doc-tool-btn" id="doc-export" title="Export as .md">Export .md</button>
+                <button class="doc-tool-btn" id="doc-import" title="Import .md file">Import</button>
+                <button class="doc-tool-btn" id="doc-version" title="Version history">v<span id="doc-ver-num">1</span></button>
+            </div>
+            <div class="doc-edit-wrap">
+                <textarea class="doc-editor" id="doc-editor" spellcheck="false"></textarea>
+                <div class="doc-rendered" id="doc-rendered"></div>
+            </div>
+            <div class="doc-status">
+                <span id="doc-chars">0</span> chars
+                <span style="opacity:.3">|</span>
+                <span id="doc-lines">0</span> lines
+                <span style="opacity:.3">|</span>
+                <span id="doc-saved-at">unsaved</span>
+                <span style="flex:1"></span>
+                <span style="color:var(--green)">auto-save on</span>
+            </div>
+        </div>
+
+        <!-- Resize Handle -->
+        <div class="panel-resize" id="panel-resize"></div>
+
+        <!-- Right: Node Canvas -->
+        <div class="canvas-panel" id="canvas-panel">
+            <div class="canvas-toolbar">
+                <span style="font-size:.625rem;font-weight:700;color:var(--text-m);margin-right:4px">NODES</span>
+                <span class="pal-chip" data-type="deploy">Deploy</span>
+                <span class="pal-chip" data-type="analyze">Analyze</span>
+                <span class="pal-chip" data-type="train">Train</span>
+                <span class="pal-chip" data-type="clone">Clone</span>
+                <span class="pal-chip" data-type="test">Test</span>
+                <span class="pal-chip" data-type="benchmark">Bench</span>
+                <span class="pal-chip" data-type="workflow">Workflow</span>
+                <span class="pal-chip" data-type="quantum">Quantum</span>
+                <span class="pal-chip" data-type="terminal">Terminal</span>
+                <span style="opacity:.3;margin:0 2px">|</span>
+                <span class="pal-chip action" data-type="runtime">Runtime</span>
+                <span class="pal-chip action" data-type="server">Server</span>
+                <span class="pal-chip action" data-type="ai">AI</span>
+                <span class="pal-chip action" data-type="frontend">Frontend</span>
+                <span class="pal-chip action" data-type="gpu">GPU</span>
+                <span class="pal-chip action" data-type="stream">Stream</span>
+                <span style="flex:1"></span>
+                <span class="pal-chip" id="preset-decisive" style="color:var(--purple);border-color:var(--purple)">Decisive Path</span>
+                <span class="pal-chip" id="preset-tiers" style="color:var(--green);border-color:var(--green)">Tier Stack</span>
+                <span class="pal-chip" id="preset-gold" style="color:#e2b714;border-color:#e2b714">Gold Standard</span>
+                <span class="pal-chip" id="preset-clear" style="color:var(--red);border-color:var(--red)">Clear</span>
+            </div>
+            <div class="canvas-area">
+                <div class="canvas-grid" id="canvas-grid"></div>
+                <div class="canvas-scroll" id="canvas-scroll">
+                    <div class="canvas-inner" id="canvas-inner">
+                        <svg class="connections-svg" id="connections-svg"></svg>
+                    </div>
+                </div>
+                <div class="zoom-controls">
+                    <button id="zoom-in" title="Zoom in">+</button>
+                    <span class="zoom-label" id="zoom-label">100%</span>
+                    <button id="zoom-out" title="Zoom out">−</button>
+                    <button id="zoom-fit" title="Fit all">⊙</button>
+                    <button id="zoom-reset" title="Reset">1:1</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Console Resize -->
+    <div class="console-resize" id="console-resize"></div>
+
+    <!-- Bottom: Chat/Dev Console -->
+    <div class="console-panel" id="console-panel">
+        <div class="console-log" id="console-log"></div>
+        <div class="console-input">
+            <input type="text" id="console-input" placeholder="Chat, command, or AI query..." autocomplete="off">
+            <button id="console-send">Send</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="ftr">
+        <span>Research Lab</span><span style="opacity:.3">|</span>
+        <span style="font-family:var(--mono)" id="ftr-nodes">0 nodes</span><span style="opacity:.3">|</span>
+        <span style="font-family:var(--mono)" id="ftr-conns">0 connections</span><span style="opacity:.3">|</span>
+        <span style="font-family:var(--mono)">{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</span>
+        <span style="flex:1"></span>
+        <a href="quantum-notepad.html" style="font-size:.5625rem">Notepad</a>
+        <span style="color:var(--purple);font-family:var(--mono)">beyondBINARY</span>
+    </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+
+// ===== MERMAID =====
+mermaid.initialize({startOnLoad:false,theme:'dark',themeVariables:{
+    primaryColor:'#161b22',primaryTextColor:'#e6edf3',primaryBorderColor:'#30363d',
+    lineColor:'#58a6ff',secondaryColor:'#21262d',tertiaryColor:'#0d1117',
+    fontFamily:'-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif'
+}});
+
+// ===== RESEARCH DOCUMENT =====
+const DEFAULT_DOC = `# uvspeed — Gold Standard Build Workflow
+
+> 10 languages, 21 files, full CI/CD automation — the complete pipeline from code edit to quantum classification.
+
+---
+
+## Architecture: Full Pipeline
+
+\`\`\`
+┌─ YOU EDIT CODE ─────────────────────────────────────────────┐
+│                                                              │
+│  Cursor Rules (5 .mdc files)                                │
+│  ├── quantum-prefix-gutter.mdc → prefix every line          │
+│  ├── workstation-tools.mdc → tool version awareness          │
+│  └── auto-tasks.mdc → suggest tests, builds, deploys        │
+│                                                              │
+├─ git commit ────────────────────────────────────────────────┤
+│                                                              │
+│  Pre-commit hooks (.pre-commit-config.yaml)                  │
+│  ├── ruff check + format (Python lint)                      │
+│  ├── cargo fmt + clippy + test (Rust lint)                  │
+│  ├── quantum prefix header validation                       │
+│  └── version consistency check                              │
+│                                                              │
+├─ git push ──────────────────────────────────────────────────┤
+│                                                              │
+│  GitHub Actions CI (4 workflows)                             │
+│  ├── pages.yml → deploy to GitHub Pages                      │
+│  ├── release.yml → build artifacts on tag                    │
+│  ├── ci.yml → test + lint + WASM build on every PR          │
+│  └── health.yml → load-test all 20 PWAs                     │
+│                                                              │
+├─ Runtime (Browser) ─────────────────────────────────────────┤
+│                                                              │
+│  Service Worker → cache + offline (20 apps)                  │
+│  BroadcastChannel → cross-app prefix sync                    │
+│  WASM prefix engine → 100x Rust-speed in browser            │
+│  quantum-theme.css → shared light/dark theming               │
+│                                                              │
+├─ Runtime (Desktop — Tauri v2) ──────────────────────────────┤
+│                                                              │
+│  Tauri IPC → Rust-native prefix classification               │
+│  ├── classify_line(line, language) → symbol + coords         │
+│  ├── classify_file(path) → full coverage stats               │
+│  ├── generate_gutter(source) → prefix strings                │
+│  └── benchmark_classifier(source) → lines/sec                │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+\`\`\`
+
+---
+
+## Language Stack (10 languages)
+
+| Language | Files | Role | GitHub Bar |
+|----------|-------|------|-----------|
+| **TypeScript** | quantum-prefixes.d.ts, wasm-loader.ts, tsconfig.json | Type-safe API, WASM loader | ~15% |
+| **Rust** | prefix-engine, prefix_engine.rs, main.rs, build.rs | Core classifier, Tauri IPC, WASM | ~12% |
+| **Python** | uvspeed_cli.py, bridge, MCP server, hexcast | CLI tools, bridge server | ~35% |
+| **JavaScript** | quantum-prefixes.js, sw.js, tests, extensions | Runtime engine, service worker | ~20% |
+| **Go** | src/bridge/main.go | High-perf bridge server (10x throughput) | ~5% |
+| **CSS** | quantum-theme.css | Shared theme module, prefix colors | ~3% |
+| **Shell** | build-wasm.sh, version-sync.sh, watch-dev.sh | Build automation, dev tools | ~5% |
+| **Nushell** | build.nu, test.nu, audit.nu | Structured data pipelines | ~3% |
+| **WGSL** | prefix-classify.wgsl | GPU compute shader (256-thread) | ~1% |
+| **TOML/YAML** | Cargo.toml, cliff.toml, ci.yml, health.yml | Config, CI/CD | ~1% |
+
+---
+
+## Tier 1: High-Impact Upgrades
+
+### TypeScript (.d.ts + tsconfig)
+- \`web/quantum-prefixes.d.ts\` — 200+ lines of type definitions
+- Types: PrefixSymbol, PrefixCategory, SupportedLanguage, ClassifyResult, PrefixMetadataResult, SyncState, IoTConnectionOptions, ThemeMode
+- \`window.QuantumPrefixes\` fully typed with all 30+ methods
+- All 20 apps get autocomplete/type-checking
+
+### WASM Compilation Pipeline
+- \`crates/prefix-engine/\` → compiles to WebAssembly via wasm-pack
+- \`scripts/build-wasm.sh\` — build + optimize (wasm-opt -Oz)
+- \`web/wasm-loader.ts\` — dynamic import with JS fallback
+- CI auto-builds WASM on every merge to main
+- Result: 100x faster prefix classification in browser
+
+### Rust/Tauri IPC (5 commands)
+- \`classify_line\` → single line → { symbol, category, bits, coords }
+- \`classify_file\` → whole file → { coverage, prefix_counts, lines[] }
+- \`classify_lines\` → batch classification
+- \`generate_gutter\` → prefix strings for display
+- \`benchmark_classifier\` → performance measurement (lines/sec)
+- All route through the Rust prefix-engine crate (no JS overhead)
+
+---
+
+## Tier 2: Good Signal
+
+### Shared CSS (quantum-theme.css)
+- Dark + light theme variables (40+ CSS custom properties)
+- Prefix color constants (13 prefix classes)
+- Base components: .qp-card, .qp-btn, .qp-input
+- Animations: qp-fade-in, qp-pulse, qp-spin
+- Print styles, responsive utilities
+- Legacy compat: --cursor-* mapped to --qp-*
+
+### Nushell Scripts (structured pipelines)
+- \`nu scripts/build.nu all\` — build web, tauri, wasm, python, rust
+- \`nu scripts/test.nu all\` — run rust, python, prefix, health suites
+- \`nu scripts/audit.nu\` — code stats, file counts, disk usage
+- \`nu scripts/audit.nu health\` — verify all dev tools installed
+- \`nu scripts/audit.nu versions\` — check version consistency
+
+### Python CLI (subcommands)
+\`\`\`bash
+uvspeed-bridge serve              # Start quantum bridge server
+uvspeed-bridge classify main.py   # Classify file with prefixes
+uvspeed-bridge prefix src/lib.rs  # Add prefix gutter to source
+uvspeed-bridge stats *.py --json  # Prefix distribution statistics
+uvspeed-bridge health             # Check bridge server status
+\`\`\`
+
+---
+
+## Tier 3: Future Differentiation
+
+### Go Bridge Server (src/bridge/main.go)
+- /health endpoint with uptime
+- /api/classify — POST source code, get prefix results
+- /api/state — global prefix state (all connected apps)
+- Full 11-symbol classifier in Go
+- 10x throughput vs Python bridge
+
+### WGSL Compute Shader (prefix-classify.wgsl)
+- 256-thread workgroups, one thread per line
+- Atomic operations for safe parallel writes
+- 4-bit packed output (2 symbols per byte)
+- Separate stats pass (count distribution)
+- Ready for WebGPU integration in Blackwell app
+
+### Tauri Mobile (iOS/Android)
+- Bundle identifier: com.qbitos.uvspeed
+- iOS minimum: 16.0 / Android min SDK: 26
+- Same web UI, native wrapper
+
+---
+
+## Automation Pipeline
+
+### ci.yml (every push/PR)
+| Job | What | Time |
+|-----|------|------|
+| rust | cargo test + clippy + fmt (prefix-engine) | ~2 min |
+| wasm | wasm-pack build → artifact upload | ~3 min |
+| python | ruff lint + format + pytest | ~1 min |
+| prefix-check | quantum header validation | ~30s |
+| version-check | version alignment across configs | ~15s |
+
+### health.yml (weekly + on web/ changes)
+| Job | What |
+|-----|------|
+| html-validation | DOCTYPE, </html>, quantum-prefixes.js, sw.js for all 20 apps |
+| js-syntax | node --check on JS modules |
+| shared-modules | verify 10+ required API exports exist |
+| size-budget | alert if HTML > 500KB or JS > 200KB |
+
+### Pre-commit Hooks
+\`\`\`
+trailing-whitespace, end-of-file-fixer, check-yaml/json/toml
+ruff (Python lint + format)
+cargo fmt + clippy + test (Rust)
+quantum prefix header check
+version consistency check
+\`\`\`
+
+### Auto-changelog (git-cliff)
+- Conventional commits → CHANGELOG.md
+- Groups: Features, Bug Fixes, Performance, Refactoring, CI/CD, Dependencies
+
+### Version Sync
+\`\`\`bash
+bash scripts/version-sync.sh        # Check consistency
+bash scripts/version-sync.sh set 4.3.0  # Set ALL versions at once
+\`\`\`
+Syncs: pyproject.toml, Cargo.toml (x2), uvspeed_cli.py, README.md badge
+
+### Dev File Watcher
+\`\`\`bash
+bash scripts/watch-dev.sh   # auto-copy web/ → tauri-dist/
+\`\`\`
+Uses fswatch (macOS), inotifywait (Linux), or poll fallback.
+
+---
+
+## Data Flow: Code → Classification
+
+\`\`\`mermaid
+graph LR
+    A[Source Code] --> B{Language?}
+    B -->|Browser| C[JS quantum-prefixes.js]
+    B -->|Browser+WASM| D[Rust prefix_engine.wasm]
+    B -->|Desktop| E[Tauri IPC → Rust]
+    B -->|CLI| F[Python uvspeed_cli.py]
+    B -->|Server| G[Go bridge :8085]
+    B -->|GPU| H[WGSL Compute Shader]
+    C --> I[11-Symbol Prefix]
+    D --> I
+    E --> I
+    F --> I
+    G --> I
+    H --> I
+    I --> J[BroadcastChannel Sync]
+    J --> K[All 20 Apps]
+\`\`\`
+
+---
+
+## Quantum Prefix Engine (Rust Crate)
+
+| Feature | Value |
+|---------|-------|
+| Symbols | 9 ({n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}) |
+| Storage | 4-bit per line (2 lines per byte) |
+| 3D coords | Each symbol → (x, y, z) in {-1, 0, +1} |
+| Targets | Native binary, WASM module, C ABI (FFI) |
+| Tests | 11 unit tests, benchmark suite |
+| Languages | 20+ keyword patterns |
+
+---
+
+## Phase Timeline (Updated)
+
+- **Phase 3.5:** PWA-first, research-lab, install.sh — *shipped*
+- **Phase 4.0:** Tauri v2, Rust prefix engine, auto-update — *shipped*
+- **Phase 4.2 (NOW):** Gold standard build — 10 languages, full CI/CD, WASM pipeline
+- **Phase 4.3:** WASM compilation live in production, Tauri mobile builds
+- **Phase 5.0:** wgpu native viz, NPU offload, WebGPU shaders in Blackwell
+- **Phase 6.0:** Quantum-hybrid prefix classification on fault-tolerant QPU
+`;
+
+let docContent = localStorage.getItem('uvspeed-research-doc') || DEFAULT_DOC;
+let docVersion = parseInt(localStorage.getItem('uvspeed-research-ver') || '1');
+const editor = $('doc-editor');
+const rendered = $('doc-rendered');
+editor.value = docContent;
+$('doc-ver-num').textContent = docVersion;
+
+let docMode = 'edit'; // edit | preview | split
+let renderTimeout = null;
+let mermaidRenderCount = 0;
+
+function updateDocStats() {
+    $('doc-chars').textContent = editor.value.length;
+    $('doc-lines').textContent = editor.value.split('\n').length;
+}
+
+async function renderDoc() {
+    const md = editor.value;
+    // Use marked to render markdown
+    let html = '';
+    if (window.marked) {
+        html = marked.parse(md);
+    } else {
+        html = md.replace(/</g, '&lt;').replace(/\n/g, '<br>');
+    }
+    // Find mermaid code blocks and render them
+    html = html.replace(/<pre><code class="language-mermaid">([\s\S]*?)<\/code><\/pre>/g, (_, code) => {
+        const id = 'mm-doc-' + (mermaidRenderCount++);
+        const decoded = code.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+        return `<div class="mermaid-block" data-mermaid-src="${btoa(unescape(encodeURIComponent(decoded)))}" id="${id}"></div>`;
+    });
+    rendered.innerHTML = html;
+    // Render mermaid blocks
+    rendered.querySelectorAll('.mermaid-block[data-mermaid-src]').forEach(async el => {
+        try {
+            const src = decodeURIComponent(escape(atob(el.dataset.mermaidSrc)));
+            const { svg } = await mermaid.render(el.id + '-svg', src);
+            el.innerHTML = svg;
+        } catch (e) {
+            el.innerHTML = `<span style="color:var(--red);font-size:.6875rem">${e.message}</span>`;
+        }
+    });
+}
+
+function setDocMode(mode) {
+    docMode = mode;
+    document.querySelectorAll('.doc-tab').forEach(t => t.classList.remove('active'));
+    document.querySelector(`.doc-tab[data-mode="${mode}"]`)?.classList.add('active');
+    if (mode === 'edit') {
+        editor.style.display = 'block'; rendered.style.display = 'none';
+        editor.style.width = '100%';
+    } else if (mode === 'preview') {
+        editor.style.display = 'none'; rendered.style.display = 'block';
+        renderDoc();
+    } else { // split
+        editor.style.display = 'block'; rendered.style.display = 'block';
+        editor.style.width = '50%'; rendered.style.width = '50%';
+        editor.parentElement.style.flexDirection = 'row';
+        renderDoc();
+    }
+    if (mode !== 'split') editor.parentElement.style.flexDirection = 'column';
+}
+
+editor.addEventListener('input', () => {
+    docContent = editor.value;
+    updateDocStats();
+    if (docMode === 'split' || docMode === 'preview') {
+        clearTimeout(renderTimeout);
+        renderTimeout = setTimeout(renderDoc, 400);
+    }
+    // Auto-save
+    clearTimeout(editor._saveTimer);
+    editor._saveTimer = setTimeout(() => {
+        localStorage.setItem('uvspeed-research-doc', docContent);
+        localStorage.setItem('uvspeed-research-ver', String(++docVersion));
+        $('doc-ver-num').textContent = docVersion;
+        $('doc-saved-at').textContent = new Date().toLocaleTimeString();
+    }, 1000);
+});
+
+document.querySelectorAll('.doc-tab').forEach(t => {
+    t.addEventListener('click', () => setDocMode(t.dataset.mode));
+});
+
+$('doc-save').addEventListener('click', () => {
+    localStorage.setItem('uvspeed-research-doc', editor.value);
+    localStorage.setItem('uvspeed-research-ver', String(++docVersion));
+    $('doc-ver-num').textContent = docVersion;
+    $('doc-saved-at').textContent = 'saved ' + new Date().toLocaleTimeString();
+    // Broadcast quantum prefix state on save
+    const QP = window.QuantumPrefixes;
+    if (QP) {
+        const meta = QP.prefixMetadata(editor.value, 'markdown');
+        QP.broadcastState('research-lab', { coverage: meta.coverage, totalLines: meta.totalLines, classifiedLines: meta.classifiedLines, prefixCounts: meta.prefixCounts });
+    }
+    logConsole('sys', 'Document saved (v' + docVersion + ')');
+});
+
+$('doc-export').addEventListener('click', () => {
+    const QP = window.QuantumPrefixes;
+    if (QP) {
+        const meta = QP.downloadWithPrefixes(editor.value, 'uvspeed-research-' + Date.now() + '.md', 'markdown', 'research-lab');
+        QP.broadcastState('research-lab', { coverage: meta.coverage, totalLines: meta.totalLines, classifiedLines: meta.classifiedLines, prefixCounts: meta.prefixCounts });
+        logConsole('sys', 'Exported research doc with quantum gutter (' + meta.coverage + '% coverage)');
+    } else {
+        const blob = new Blob([editor.value], { type: 'text/markdown' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+        a.download = 'uvspeed-research-' + Date.now() + '.md'; a.click();
+        logConsole('sys', 'Exported research doc as .md');
+    }
+});
+
+$('doc-import').addEventListener('click', () => {
+    const input = document.createElement('input'); input.type = 'file'; input.accept = '.md,.txt,.json';
+    input.onchange = e => {
+        const f = e.target.files[0]; if (!f) return;
+        const reader = new FileReader();
+        reader.onload = ev => {
+            editor.value = ev.target.result; docContent = ev.target.result;
+            updateDocStats(); if (docMode !== 'edit') renderDoc();
+            logConsole('sys', 'Imported: ' + f.name);
+        };
+        reader.readAsText(f);
+    };
+    input.click();
+});
+
+$('doc-version').addEventListener('click', () => {
+    logConsole('sys', 'Document version: v' + docVersion + ' | Chars: ' + editor.value.length + ' | Lines: ' + editor.value.split('\n').length);
+});
+
+updateDocStats();
+
+// ===== PANEL RESIZE =====
+const panelResize = $('panel-resize');
+let panelDragging = false;
+panelResize.addEventListener('mousedown', () => { panelDragging = true; panelResize.classList.add('active'); });
+document.addEventListener('mousemove', e => {
+    if (!panelDragging) return;
+    const main = document.querySelector('.main');
+    const pct = (e.clientX / main.offsetWidth) * 100;
+    $('doc-panel').style.width = Math.max(20, Math.min(70, pct)) + '%';
+});
+document.addEventListener('mouseup', () => { panelDragging = false; panelResize.classList.remove('active'); });
+
+// Console resize
+const consoleResize = $('console-resize');
+let consoleDragging = false;
+consoleResize.addEventListener('mousedown', () => { consoleDragging = true; consoleResize.classList.add('active'); });
+document.addEventListener('mousemove', e => {
+    if (!consoleDragging) return;
+    const appH = document.querySelector('.app').offsetHeight;
+    const h = appH - e.clientY;
+    $('console-panel').style.height = Math.max(60, Math.min(400, h)) + 'px';
+});
+document.addEventListener('mouseup', () => { consoleDragging = false; consoleResize.classList.remove('active'); });
+
+// ===== NODE ENGINE =====
+const nodesData = [];
+const connections = [];
+let nodeIdCounter = 0;
+const inner = $('canvas-inner');
+const svgEl = $('connections-svg');
+
+const nodeTypes = {
+    // Action nodes (executable)
+    deploy:    { icon:'🚀', color:'#3fb950', label:'Deploy',    action:true },
+    analyze:   { icon:'🔍', color:'#58a6ff', label:'Analyze',   action:true },
+    train:     { icon:'🧠', color:'#a78bfa', label:'Train',     action:true },
+    clone:     { icon:'📋', color:'#56d4dd', label:'Clone',     action:true },
+    test:      { icon:'✅', color:'#3fb950', label:'Test',      action:true },
+    benchmark: { icon:'⚡', color:'#f0883e', label:'Benchmark', action:true },
+    workflow:  { icon:'🔀', color:'#ff6d5a', label:'Workflow',  action:true },
+    quantum:   { icon:'⚛',  color:'#d2a8ff', label:'Quantum',   action:true },
+    terminal:  { icon:'💻', color:'#8b949e', label:'Terminal',  action:true },
+    // Structural nodes
+    runtime:   { icon:'🦀', color:'#f0883e', label:'Runtime' },
+    server:    { icon:'🌐', color:'#3fb950', label:'Server' },
+    ai:        { icon:'🤖', color:'#a78bfa', label:'AI Model' },
+    frontend:  { icon:'📱', color:'#58a6ff', label:'Frontend' },
+    gpu:       { icon:'🟢', color:'#76b900', label:'GPU' },
+    stream:    { icon:'📡', color:'#f85149', label:'Stream' },
+    database:  { icon:'🗄', color:'#56d4dd', label:'Database' },
+    api:       { icon:'🔌', color:'#f0883e', label:'API' },
+    tool:      { icon:'🔧', color:'#8b949e', label:'Tool' },
+};
+
+function createNode(type, x, y, name, ports) {
+    const id = nodeIdCounter++;
+    const t = nodeTypes[type] || nodeTypes.tool;
+    const n = { id, type, x, y, name: name || t.label, ports: ports || ['in','out'], status:'idle' };
+    nodesData.push(n);
+    const el = document.createElement('div');
+    el.className = 'node' + (t.action ? ' action-node' : '');
+    el.id = 'node-' + id;
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    el.innerHTML = `
+        <div class="node-hdr">
+            <div class="node-icon" style="background:${t.color}22;border:1px solid ${t.color}">${t.icon}</div>
+            <div><div class="node-name">${n.name}</div><div class="node-sub">${type}</div></div>
+        </div>
+        <div class="node-body"><div class="node-ports">
+            ${n.ports.map(p => `<div class="node-port"><span class="port-dot${p==='out'?' out':''} connected" data-node="${id}" data-port="${p}"></span>${p}</div>`).join('')}
+        </div></div>
+        ${t.action ? `<div class="node-action-bar"><button class="node-run-btn" data-node-id="${id}">▶ Run</button></div>` : ''}`;
+    inner.appendChild(el);
+    makeDraggable(el, n);
+    updateStats();
+    return n;
+}
+
+function makeDraggable(el, nd) {
+    let dragging = false, ox, oy;
+    el.addEventListener('mousedown', e => {
+        if (e.target.classList.contains('port-dot') || e.target.classList.contains('node-run-btn')) return;
+        dragging = true;
+        const r = el.getBoundingClientRect();
+        ox = e.clientX - r.left; oy = e.clientY - r.top;
+        el.style.zIndex = '10';
+        document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+        el.classList.add('selected');
+    });
+    document.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        const s = $('canvas-scroll');
+        const sr = s.getBoundingClientRect();
+        nd.x = Math.max(0, e.clientX - sr.left + s.scrollLeft - ox);
+        nd.y = Math.max(0, e.clientY - sr.top + s.scrollTop - oy);
+        el.style.left = nd.x + 'px'; el.style.top = nd.y + 'px';
+        drawConnections();
+    });
+    document.addEventListener('mouseup', () => { if (dragging) { dragging = false; el.style.zIndex = ''; } });
+    // Touch support
+    el.addEventListener('touchstart', e => {
+        if (e.target.classList.contains('port-dot') || e.target.classList.contains('node-run-btn')) return;
+        dragging = true;
+        const r = el.getBoundingClientRect();
+        ox = e.touches[0].clientX - r.left; oy = e.touches[0].clientY - r.top;
+    }, { passive: true });
+    el.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        const s = $('canvas-scroll'), sr = s.getBoundingClientRect();
+        nd.x = Math.max(0, e.touches[0].clientX - sr.left + s.scrollLeft - ox);
+        nd.y = Math.max(0, e.touches[0].clientY - sr.top + s.scrollTop - oy);
+        el.style.left = nd.x + 'px'; el.style.top = nd.y + 'px';
+        drawConnections();
+        e.preventDefault();
+    }, { passive: false });
+    el.addEventListener('touchend', () => { dragging = false; }, { passive: true });
+}
+
+function addConnection(fromId, toId) {
+    connections.push({ from: fromId, to: toId });
+    drawConnections(); updateStats();
+}
+
+function drawConnections() {
+    let svg = '';
+    connections.forEach(c => {
+        const fe = document.getElementById('node-' + c.from);
+        const te = document.getElementById('node-' + c.to);
+        if (!fe || !te) return;
+        const fn = nodesData.find(n => n.id === c.from), tn = nodesData.find(n => n.id === c.to);
+        if (!fn || !tn) return;
+        const x1 = fn.x + fe.offsetWidth, y1 = fn.y + fe.offsetHeight / 2;
+        const x2 = tn.x, y2 = tn.y + te.offsetHeight / 2;
+        const dx = Math.abs(x2 - x1) * .5;
+        svg += `<path class="conn-path active" d="M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}"/>`;
+    });
+    svgEl.innerHTML = svg;
+}
+
+// ── Zoom / Pan ──
+let canvasZoom = 1, panX = 0, panY = 0, isPanning = false, panStartX, panStartY;
+const scrollEl = $('canvas-scroll'), gridEl = $('canvas-grid');
+
+function applyTransform() {
+    inner.style.transform = `translate(${panX}px,${panY}px) scale(${canvasZoom})`;
+    if (gridEl) gridEl.style.backgroundSize = `${24*canvasZoom}px ${24*canvasZoom}px`;
+    const lbl = $('zoom-label');
+    if (lbl) lbl.textContent = Math.round(canvasZoom * 100) + '%';
+    drawConnections();
+}
+
+function setZoom(z, cx, cy) {
+    const oldZ = canvasZoom;
+    canvasZoom = Math.min(3, Math.max(0.2, z));
+    // Adjust pan to zoom toward cursor
+    if (cx !== undefined) {
+        panX = cx - (cx - panX) * (canvasZoom / oldZ);
+        panY = cy - (cy - panY) * (canvasZoom / oldZ);
+    }
+    applyTransform();
+}
+
+// Mouse wheel zoom
+scrollEl.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = scrollEl.getBoundingClientRect();
+    const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setZoom(canvasZoom * delta, cx, cy);
+}, { passive: false });
+
+// Pan with middle-click or empty space click
+scrollEl.addEventListener('mousedown', e => {
+    if (e.target.closest('.node') || e.target.closest('.zoom-controls')) return;
+    isPanning = true;
+    panStartX = e.clientX - panX;
+    panStartY = e.clientY - panY;
+    scrollEl.style.cursor = 'grabbing';
+});
+document.addEventListener('mousemove', e => {
+    if (!isPanning) return;
+    panX = e.clientX - panStartX;
+    panY = e.clientY - panStartY;
+    applyTransform();
+});
+document.addEventListener('mouseup', () => { if (isPanning) { isPanning = false; scrollEl.style.cursor = 'grab'; } });
+
+// Touch pan (two-finger)
+let lastTouchDist = 0;
+scrollEl.addEventListener('touchstart', e => {
+    if (e.target.closest('.node')) return;
+    if (e.touches.length === 1) {
+        isPanning = true;
+        panStartX = e.touches[0].clientX - panX;
+        panStartY = e.touches[0].clientY - panY;
+    }
+    if (e.touches.length === 2) {
+        lastTouchDist = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY);
+    }
+}, { passive: true });
+scrollEl.addEventListener('touchmove', e => {
+    if (e.target.closest('.node')) return;
+    if (e.touches.length === 1 && isPanning) {
+        panX = e.touches[0].clientX - panStartX;
+        panY = e.touches[0].clientY - panStartY;
+        applyTransform();
+        e.preventDefault();
+    }
+    if (e.touches.length === 2) {
+        const d = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY);
+        if (lastTouchDist) {
+            const rect = scrollEl.getBoundingClientRect();
+            const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left;
+            const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top;
+            setZoom(canvasZoom * (d / lastTouchDist), cx, cy);
+        }
+        lastTouchDist = d;
+        e.preventDefault();
+    }
+}, { passive: false });
+scrollEl.addEventListener('touchend', () => { isPanning = false; lastTouchDist = 0; }, { passive: true });
+
+// Zoom buttons
+$('zoom-in')?.addEventListener('click', () => setZoom(canvasZoom * 1.2));
+$('zoom-out')?.addEventListener('click', () => setZoom(canvasZoom / 1.2));
+$('zoom-reset')?.addEventListener('click', () => { canvasZoom = 1; panX = 0; panY = 0; applyTransform(); });
+$('zoom-fit')?.addEventListener('click', () => {
+    if (!nodesData.length) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodesData.forEach(n => { minX = Math.min(minX, n.x); minY = Math.min(minY, n.y); maxX = Math.max(maxX, n.x + 200); maxY = Math.max(maxY, n.y + 120); });
+    const rect = scrollEl.getBoundingClientRect();
+    const zx = rect.width / (maxX - minX + 80), zy = rect.height / (maxY - minY + 80);
+    canvasZoom = Math.min(2, Math.max(0.2, Math.min(zx, zy)));
+    panX = (rect.width - (maxX - minX) * canvasZoom) / 2 - minX * canvasZoom;
+    panY = (rect.height - (maxY - minY) * canvasZoom) / 2 - minY * canvasZoom;
+    applyTransform();
+});
+
+function updateStats() {
+    const nc = nodesData.length, cc = connections.length;
+    if ($('ftr-nodes')) $('ftr-nodes').textContent = nc + ' nodes';
+    if ($('ftr-conns')) $('ftr-conns').textContent = cc + ' connections';
+}
+
+function clearCanvas() {
+    nodesData.length = 0; connections.length = 0; nodeIdCounter = 0;
+    inner.querySelectorAll('.node').forEach(n => n.remove());
+    svgEl.innerHTML = ''; updateStats();
+}
+
+// ===== ACTION NODE EXECUTION =====
+async function executeNode(nodeId) {
+    const nd = nodesData.find(n => n.id === nodeId);
+    if (!nd) return;
+    const el = document.getElementById('node-' + nodeId);
+    el?.classList.add('running');
+    nd.status = 'running';
+    logConsole(nd.type, `Running ${nd.name}...`);
+
+    try {
+        switch (nd.type) {
+            case 'benchmark': {
+                const t0 = performance.now();
+                let ops = 0; const end = t0 + 500;
+                while (performance.now() < end) { Math.sqrt(ops * 3.14159); ops++; }
+                const ms = performance.now() - t0;
+                logConsole('bench', `Math: ${(ops/1000).toFixed(0)}K ops in ${ms.toFixed(0)}ms = ${(ops/ms*1000).toFixed(0)} ops/s`);
+                break;
+            }
+            case 'analyze': {
+                const code = editor.value;
+                const lines = code.split('\n').length;
+                const words = code.split(/\s+/).length;
+                logConsole('analyze', `Doc: ${lines} lines, ${words} words, ${code.length} chars`);
+                break;
+            }
+            case 'test': {
+                logConsole('test', 'Running self-test...');
+                const checks = [
+                    { name: 'localStorage', pass: !!window.localStorage },
+                    { name: 'ServiceWorker', pass: 'serviceWorker' in navigator },
+                    { name: 'WebSocket', pass: !!window.WebSocket },
+                    { name: 'Mermaid CDN', pass: !!window.mermaid },
+                    { name: 'Marked CDN', pass: !!window.marked },
+                    { name: 'Canvas 2D', pass: !!document.createElement('canvas').getContext('2d') },
+                    { name: 'Touch events', pass: 'ontouchstart' in window || navigator.maxTouchPoints > 0 },
+                ];
+                checks.forEach(c => logConsole('test', `  ${c.pass ? '✅' : '❌'} ${c.name}`));
+                logConsole('test', `${checks.filter(c => c.pass).length}/${checks.length} passed`);
+                break;
+            }
+            case 'deploy': {
+                logConsole('deploy', 'Deploy target: GitHub Pages');
+                logConsole('deploy', 'URL: qbitos.github.io/uvspeed/');
+                logConsole('deploy', 'Use: git push origin main (triggers pages.yml workflow)');
+                break;
+            }
+            case 'clone': {
+                logConsole('clone', 'Web clone ready — paste URL or screenshot in chat');
+                logConsole('clone', 'Requires: Ollama (local) or cloud AI API');
+                break;
+            }
+            case 'train': {
+                logConsole('train', 'Prefix classifier training');
+                logConsole('train', 'Model: 15-feature vector → 13 prefix categories');
+                logConsole('train', 'Requires: bridge server (uv run quantum_bridge_server.py)');
+                break;
+            }
+            case 'quantum': {
+                logConsole('quantum', 'Quantum circuit simulator');
+                logConsole('quantum', 'Requires: pip install qiskit (via bridge)');
+                logConsole('quantum', 'Cloud QPU: IBM Quantum, AWS Braket, Azure Quantum');
+                break;
+            }
+            case 'terminal': {
+                logConsole('terminal', 'Terminal node — execute commands via bridge WebSocket');
+                logConsole('terminal', 'Bridge: ws://localhost:8086');
+                break;
+            }
+            case 'workflow': {
+                logConsole('workflow', 'Workflow orchestrator — chain action nodes');
+                logConsole('workflow', 'Connect action nodes to define execution order');
+                break;
+            }
+            default:
+                logConsole(nd.type, `${nd.name} — no action handler defined`);
+        }
+        nd.status = 'done';
+        el?.classList.remove('running'); el?.classList.add('done');
+        setTimeout(() => el?.classList.remove('done'), 3000);
+    } catch (e) {
+        nd.status = 'error';
+        el?.classList.remove('running'); el?.classList.add('error');
+        logConsole('error', e.message);
+        setTimeout(() => el?.classList.remove('error'), 3000);
+    }
+}
+
+// Click handler for run buttons
+document.addEventListener('click', e => {
+    if (e.target.classList.contains('node-run-btn')) {
+        executeNode(parseInt(e.target.dataset.nodeId));
+    }
+});
+
+// ===== PRESETS =====
+function loadDecisivePath() {
+    clearCanvas();
+    const pwa    = createNode('frontend', 60,  60, 'PWA (zero install)', ['out']);
+    const uv     = createNode('runtime',  320, 60, 'uv (Rust)', ['in','out']);
+    const bridge = createNode('server',   580, 60, 'Bridge :8085', ['in','out']);
+    const tauri  = createNode('runtime',  320, 220, 'Tauri v2 (Rust)', ['in','out']);
+    const pty    = createNode('terminal', 580, 220, 'PTY Terminal', ['in','out']);
+    const prefix = createNode('analyze',  840, 60, 'Rust Prefix', ['in','out']);
+    const wasm   = createNode('tool',     840, 220, 'WASM (web)', ['in']);
+    const wgpu   = createNode('gpu',      60,  380, 'wgpu Renderer', ['in','out']);
+    const npu    = createNode('ai',       320, 380, 'NPU Offload', ['in','out']);
+    const cudaq  = createNode('quantum',  580, 380, 'CUDA-Q', ['in','out']);
+    const qpu    = createNode('quantum',  840, 380, 'QPU Cloud', ['in']);
+
+    addConnection(pwa.id, uv.id); addConnection(uv.id, bridge.id);
+    addConnection(uv.id, tauri.id); addConnection(tauri.id, pty.id);
+    addConnection(bridge.id, prefix.id); addConnection(prefix.id, wasm.id);
+    addConnection(tauri.id, wgpu.id); addConnection(wgpu.id, npu.id);
+    addConnection(npu.id, cudaq.id); addConnection(cudaq.id, qpu.id);
+    setTimeout(drawConnections, 50);
+}
+
+function loadTierStack() {
+    clearCanvas();
+    const t0 = createNode('frontend', 60,  80, 'Tier 0: PWA', ['out']);
+    const t1 = createNode('runtime',  280, 80, 'Tier 1: uv+bridge', ['in','out']);
+    const t2 = createNode('runtime',  500, 80, 'Tier 2: Tauri v2', ['in','out']);
+    const t3 = createNode('frontend', 720, 80, 'Tier 3: Mobile', ['in','out']);
+    const t4 = createNode('tool',     500, 260, 'Tier 4: IoT', ['in','out']);
+    const t5 = createNode('quantum',  720, 260, 'Tier 5: Quantum', ['in']);
+    const bits = createNode('stream',  60, 260, 'Binary/Bits', ['out']);
+    const int8 = createNode('ai',     280, 260, 'INT8 (universal)', ['in','out']);
+
+    addConnection(t0.id, t1.id); addConnection(t1.id, t2.id);
+    addConnection(t2.id, t3.id); addConnection(t2.id, t4.id);
+    addConnection(t4.id, t5.id); addConnection(bits.id, int8.id);
+    addConnection(int8.id, t4.id);
+    setTimeout(drawConnections, 50);
+}
+
+function loadGoldStandard() {
+    clearCanvas();
+    // ── Layer 1: Edit Code ──
+    const cursor  = createNode('tool',     60,  40, 'Cursor IDE + Rules', ['out']);
+    const edit    = createNode('frontend', 300, 40, 'Edit Code', ['in','out']);
+    // ── Layer 2: Pre-commit ──
+    const commit  = createNode('workflow', 60,  180, 'git commit', ['in','out']);
+    const ruff    = createNode('analyze',  280, 180, 'ruff (Python)', ['in','out']);
+    const clippy  = createNode('analyze',  480, 180, 'clippy (Rust)', ['in','out']);
+    const prefix  = createNode('analyze',  680, 180, 'Prefix Validate', ['in','out']);
+    const versync = createNode('analyze',  880, 180, 'Version Sync', ['in']);
+    // ── Layer 3: CI/CD ──
+    const push    = createNode('workflow', 60,  340, 'git push', ['in','out']);
+    const ciRust  = createNode('test',    280, 340, 'CI: Rust Tests', ['in','out']);
+    const ciWasm  = createNode('deploy',  480, 340, 'CI: WASM Build', ['in','out']);
+    const ciPy    = createNode('test',    680, 340, 'CI: Python Tests', ['in','out']);
+    const health  = createNode('test',    880, 340, 'CI: Health Check', ['in']);
+    // ── Layer 4: Runtime Engines ──
+    const jsEng   = createNode('frontend', 60,  500, 'JS Engine', ['in','out']);
+    const wasmEng = createNode('runtime',  280, 500, 'WASM Engine', ['in','out']);
+    const tauriIPC= createNode('runtime',  480, 500, 'Tauri IPC (Rust)', ['in','out']);
+    const goBridge= createNode('server',   680, 500, 'Go Bridge :8085', ['in','out']);
+    const pyCli   = createNode('terminal', 880, 500, 'Python CLI', ['in']);
+    // ── Layer 5: Output ──
+    const sync    = createNode('stream',   280, 660, 'BroadcastChannel', ['in','out']);
+    const apps19  = createNode('deploy',   60,  660, '20 PWA Apps', ['in']);
+    const wgsl    = createNode('gpu',      480, 660, 'WGSL GPU Shader', ['in','out']);
+    const nuBuild = createNode('workflow', 680, 660, 'Nushell Pipelines', ['in']);
+    const qpu     = createNode('quantum',  880, 660, 'Quantum (QPU)', ['in']);
+
+    // Layer 1 → 2
+    addConnection(cursor.id, edit.id);
+    addConnection(edit.id, commit.id);
+    // Layer 2 (pre-commit chain)
+    addConnection(commit.id, ruff.id);
+    addConnection(ruff.id, clippy.id);
+    addConnection(clippy.id, prefix.id);
+    addConnection(prefix.id, versync.id);
+    // Layer 2 → 3
+    addConnection(commit.id, push.id);
+    // Layer 3 (CI chain)
+    addConnection(push.id, ciRust.id);
+    addConnection(ciRust.id, ciWasm.id);
+    addConnection(ciWasm.id, ciPy.id);
+    addConnection(ciPy.id, health.id);
+    // Layer 3 → 4 (build outputs)
+    addConnection(ciRust.id, tauriIPC.id);
+    addConnection(ciWasm.id, wasmEng.id);
+    addConnection(ciPy.id, pyCli.id);
+    addConnection(push.id, jsEng.id);
+    addConnection(push.id, goBridge.id);
+    // Layer 4 → 5 (runtime)
+    addConnection(jsEng.id, sync.id);
+    addConnection(wasmEng.id, sync.id);
+    addConnection(sync.id, apps19.id);
+    addConnection(tauriIPC.id, wgsl.id);
+    addConnection(goBridge.id, nuBuild.id);
+    addConnection(wgsl.id, qpu.id);
+
+    setTimeout(drawConnections, 50);
+}
+
+$('preset-decisive').addEventListener('click', loadDecisivePath);
+$('preset-tiers').addEventListener('click', loadTierStack);
+$('preset-gold').addEventListener('click', loadGoldStandard);
+$('preset-clear').addEventListener('click', clearCanvas);
+
+// Palette click-to-add
+document.querySelectorAll('.pal-chip[data-type]').forEach(chip => {
+    chip.addEventListener('click', () => {
+        const s = $('canvas-scroll');
+        createNode(chip.dataset.type, s.scrollLeft + 100 + Math.random() * 300, s.scrollTop + 80 + Math.random() * 200);
+    });
+});
+
+// ===== CONSOLE =====
+function logConsole(tag, msg) {
+    const log = $('console-log');
+    const ts = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const colors = { sys:'#58a6ff', error:'#f85149', bench:'#f0883e', analyze:'#a78bfa', test:'#3fb950',
+                     deploy:'#3fb950', clone:'#56d4dd', train:'#a78bfa', quantum:'#d2a8ff', terminal:'#8b949e',
+                     workflow:'#ff6d5a', chat:'#e6edf3' };
+    const c = colors[tag] || '#8b949e';
+    log.innerHTML += `<div class="log-line"><span class="log-ts">${ts}</span><span class="log-tag" style="color:${c}">${tag}</span><span class="log-msg">${msg}</span></div>`;
+    log.scrollTop = log.scrollHeight;
+}
+
+const consoleInput = $('console-input');
+function handleConsoleInput() {
+    const val = consoleInput.value.trim();
+    if (!val) return;
+    consoleInput.value = '';
+    logConsole('chat', val);
+
+    // Simple command handling
+    if (val.startsWith('/')) {
+        const cmd = val.slice(1).split(' ')[0];
+        const arg = val.slice(cmd.length + 2).trim();
+        switch (cmd) {
+            case 'clear': $('console-log').innerHTML = ''; break;
+            case 'nodes': logConsole('sys', JSON.stringify(nodesData.map(n => n.name))); break;
+            case 'save': $('doc-save').click(); break;
+            case 'export': $('doc-export').click(); break;
+            case 'preset': loadDecisivePath(); logConsole('sys', 'Loaded: Decisive Path'); break;
+            case 'tiers': loadTierStack(); logConsole('sys', 'Loaded: Tier Stack'); break;
+            case 'gold': loadGoldStandard(); logConsole('sys', 'Loaded: Gold Standard Workflow — 10 languages, full CI/CD'); break;
+            case 'run': {
+                const nd = nodesData.find(n => n.name.toLowerCase().includes(arg.toLowerCase()));
+                if (nd) executeNode(nd.id); else logConsole('error', 'Node not found: ' + arg);
+                break;
+            }
+            case 'help':
+                logConsole('sys', 'Commands: /clear /nodes /save /export /preset /tiers /gold /run <node> /help');
+                break;
+            default: logConsole('sys', 'Unknown command: /' + cmd + ' — try /help');
+        }
+    } else {
+        logConsole('sys', 'Tip: use /help for commands, or type freely to chat');
+    }
+}
+
+consoleInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleConsoleInput(); });
+$('console-send').addEventListener('click', handleConsoleInput);
+
+// ===== INIT =====
+loadGoldStandard();
+logConsole('sys', 'Research Lab v4.2 — Gold Standard Build');
+logConsole('sys', 'Left: research document (edit/preview/split) | Right: node canvas | Bottom: console');
+logConsole('sys', 'Presets: Gold Standard, Decisive Path, Tier Stack — or /help for commands');
+
+// API
+window.researchLab = {
+    get nodes() { return [...nodesData]; },
+    get connections() { return [...connections]; },
+    addNode: (type, x, y, name, ports) => createNode(type, x || 100, y || 100, name, ports),
+    connect: (a, b) => addConnection(a, b),
+    execute: id => executeNode(id),
+    loadDecisivePath, loadTierStack, loadGoldStandard, clearCanvas,
+    log: logConsole,
+    getDoc: () => editor.value,
+    setDoc: md => { editor.value = md; docContent = md; updateDocStats(); },
+};
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function initQPSync() {
+    const QP = window.QuantumPrefixes;
+    if (!QP) return;
+    let _qpDebounce;
+    editor.addEventListener('input', () => {
+        clearTimeout(_qpDebounce);
+        _qpDebounce = setTimeout(() => {
+            const meta = QP.prefixMetadata(editor.value);
+            QP.broadcastState('research-lab', { coverage: meta.coverage, totalLines: meta.totalLines, classifiedLines: meta.classifiedLines, prefixCounts: meta.prefixCounts });
+        }, 1000);
+    });
+    QP.onStateChange((source, state) => {
+        if (source === 'research-lab' || !state) return;
+        logConsole('sync', `${source}: ${state.coverage}% quantum coverage`);
+    });
+    const meta = QP.prefixMetadata(editor.value);
+    QP.broadcastState('research-lab', { coverage: meta.coverage, totalLines: meta.totalLines, classifiedLines: meta.classifiedLines, prefixCounts: meta.prefixCounts });
+    QP.requestStateSync();
+})();
+
+console.log('⚛ Research Lab — Live Research + Interactive Dev');
+console.log('API: window.researchLab');
+})();
+</script>
+</body>
+</html>

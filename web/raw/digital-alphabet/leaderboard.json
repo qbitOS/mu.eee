@@ -1,0 +1,7 @@
+{
+  "schema": "ugrad-digital-alphabet-lb-v1",
+  "game": "digital-alphabet",
+  "localStorageKey": "ugrad-digital-alphabet-lb-v1",
+  "note": "Placeholder for public HTTP feed. Browser truth is localStorage + HexTerm `alphabet lb`; sync to this URL via CI or Worker ingest.",
+  "rows": []
+}

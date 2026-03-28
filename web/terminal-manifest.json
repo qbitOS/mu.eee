@@ -1,0 +1,52 @@
+{
+    "name": "hexterm — terminal PWA",
+    "short_name": "hexterm",
+    "description": "Full terminal emulator PWA with hexcast camera streaming, virtual filesystem, and shell commands. Works offline on iOS, Android, and desktop.",
+    "start_url": "terminal.html",
+    "display": "standalone",
+    "orientation": "any",
+    "background_color": "#0d1117",
+    "theme_color": "#0d1117",
+    "categories": ["developer tools", "utilities", "productivity"],
+    "icons": [
+        {
+            "src": "../icons/hexterm-favicon.png",
+            "sizes": "32x32",
+            "type": "image/png"
+        },
+        {
+            "src": "../icons/hexterm-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "../icons/hexterm-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Camera Feed",
+            "short_name": "hexcast",
+            "url": "terminal.html#hexcast",
+            "description": "Launch camera terminal feed"
+        },
+        {
+            "name": "Send Camera",
+            "short_name": "Send",
+            "url": "hexcast-send.html",
+            "description": "Stream phone camera to remote terminal"
+        },
+        {
+            "name": "Notepad",
+            "short_name": "Notepad",
+            "url": "quantum-notepad.html",
+            "description": "Open quantum notepad"
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false
+}

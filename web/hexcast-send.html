@@ -1,0 +1,953 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+<link rel="apple-touch-icon" sizes="192x192" href="../icons/icon-192.png">
+<link rel="manifest" href="hexcast-manifest.json">
+<title>hexcast — stream camera</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    html, body { touch-action: manipulation; -webkit-text-size-adjust: 100%; }
+    body { background: var(--qp-bg, #0d1117); color: var(--qp-text, #e6edf3); font-family: -apple-system, 'SF Pro', system-ui, sans-serif; min-height: 100dvh; display: flex; flex-direction: column; overflow: hidden; -webkit-tap-highlight-color: transparent; }
+
+    /* ── Safe-area spacer (iOS status bar / notch) ── */
+    .safe-top { flex-shrink: 0; background: #161b22; height: 0; height: env(safe-area-inset-top, 0px); }
+
+    /* ── Rainbow bar ── */
+    .rainbow { display: flex; height: 3px; width: 100%; flex-shrink: 0; }
+    .rainbow span { flex: 1; }
+
+    /* ── Top bar ── */
+    .topbar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #161b22; border-bottom: 1px solid #21262d; flex-shrink: 0; }
+    .topbar-logo { width: 20px; height: 20px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 12px; background: linear-gradient(135deg, #58a6ff 0%, #bc8cff 100%); color: #fff; font-weight: 700; }
+    .topbar-title { font-size: .8125rem; font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .topbar-title .sub { color: #8b949e; font-weight: 400; }
+
+    /* ── Status pill ── */
+    .status-pill { font-size: .5625rem; font-weight: 600; padding: 3px 8px; border-radius: 10px; text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; }
+    .status-pill.off { background: #30363d; color: #8b949e; }
+    .status-pill.connecting { background: #e3b341; color: #0d1117; }
+    .status-pill.live { background: #238636; color: #fff; animation: pulse-bg 2s infinite; }
+    .status-pill.error { background: #da3633; color: #fff; }
+    @keyframes pulse-bg { 0%,100% { opacity: 1; } 50% { opacity: .75; } }
+
+    /* ── Control strip (swap + quality + filter) ── */
+    .ctrl-strip { display: flex; gap: 6px; padding: 6px 12px; background: #0d1117; flex-shrink: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .ctrl-btn { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 5px 10px; border-radius: 6px; font-size: .6875rem; font-weight: 600; cursor: pointer; white-space: nowrap; display: flex; align-items: center; gap: 4px; }
+    .ctrl-btn:active { transform: scale(.96); }
+    .ctrl-btn.active { background: #1f6feb; border-color: #388bfd; color: #fff; }
+    .ctrl-btn.swap { background: #1f6feb22; border-color: #1f6feb; color: #58a6ff; }
+    .ctrl-btn.swap:active { background: #1f6feb; color: #fff; }
+    .lens-btn { font-size: .625rem; padding: 3px 7px; text-transform: capitalize; flex-shrink: 0; }
+    .lens-btn.active { background: #238636; border-color: #2ea043; color: #fff; }
+    #lens-strip { overflow-x: auto; flex-wrap: nowrap; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding: 3px 12px; gap: 4px; }
+    #lens-strip::-webkit-scrollbar { display: none; }
+
+    /* ── Video area ── */
+    .video-area { flex: 1; position: relative; min-height: 0; background: #000; overflow: hidden; }
+    .video-area video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .video-area canvas#filter-canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; pointer-events: none; display: none; }
+    .video-area canvas#hidden-canvas { display: none; }
+
+    /* ── Overlay badges ── */
+    .badge-tl { position: absolute; top: 8px; left: 8px; }
+    .badge-tr { position: absolute; top: 8px; right: 8px; }
+    .badge { background: rgba(0,0,0,.65); color: #c9d1d9; font-size: .5625rem; padding: 3px 8px; border-radius: 4px; font-family: 'SF Mono', ui-monospace, monospace; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .badge.live { color: #3fb950; }
+    .badge.live::before { content: ''; display: inline-block; width: 5px; height: 5px; background: #3fb950; border-radius: 50%; margin-right: 4px; animation: blink 1.2s infinite; }
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: .3; } }
+
+    /* ── Filter label (center tap indicator) ── */
+    .filter-label { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,.7); color: #fff; font-size: .75rem; font-weight: 600; padding: 4px 14px; border-radius: 12px; pointer-events: none; opacity: 0; transition: opacity .25s; z-index: 5; }
+    .filter-label.show { opacity: 1; }
+
+    /* ── Adjustment HUD ── */
+    .adjust-hud { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); pointer-events: none; opacity: 0; transition: opacity .2s; z-index: 5; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+    .adjust-hud.show { opacity: 1; }
+    .adjust-hud-label { font-size: .625rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: rgba(255,255,255,.6); }
+    .adjust-hud-bar { width: 180px; height: 4px; background: rgba(255,255,255,.15); border-radius: 2px; overflow: hidden; position: relative; }
+    .adjust-hud-fill { height: 100%; border-radius: 2px; transition: width .05s; }
+    .adjust-hud-val { font-size: .8125rem; font-weight: 700; color: #fff; font-family: 'SF Mono', ui-monospace, monospace; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+    /* Swipe hint arrows */
+    .swipe-hint { position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%); pointer-events: none; opacity: 0; transition: opacity .3s; color: rgba(255,255,255,.25); font-size: .625rem; letter-spacing: 2px; }
+    .swipe-hint.show { opacity: 1; }
+
+    /* ── Stats strip ── */
+    .stats-strip { display: flex; gap: 12px; padding: 6px 12px; background: #161b22; border-top: 1px solid #21262d; font-size: .625rem; font-family: 'SF Mono', ui-monospace, monospace; color: #8b949e; flex-shrink: 0; flex-wrap: wrap; align-items: center; }
+    .stats-strip .val { color: #58a6ff; }
+    .stats-strip .sep { color: #30363d; }
+
+    /* ── Connect bar ── */
+    .connect-bar { display: flex; gap: 6px; padding: 8px 12px; background: #0d1117; border-top: 1px solid #21262d; flex-shrink: 0; }
+    .connect-bar input { flex: 1; background: #161b22; border: 1px solid #30363d; border-radius: 6px; padding: 8px 10px; color: #e6edf3; font-size: .8125rem; font-family: 'SF Mono', ui-monospace, monospace; }
+    .connect-bar input:focus { outline: none; border-color: #58a6ff; box-shadow: 0 0 0 2px #1f6feb33; }
+    .send-btn { background: #238636; border: none; color: #fff; padding: 8px 16px; border-radius: 6px; font-size: .8125rem; font-weight: 700; cursor: pointer; min-width: 56px; }
+    .send-btn:active { transform: scale(.97); }
+    .send-btn.stop { background: #da3633; }
+
+    /* ── Chat input ── */
+    .chat-bar { display: flex; gap: 6px; padding: 6px 12px; background: #161b22; border-top: 1px solid #21262d; flex-shrink: 0; }
+    .chat-bar input { flex: 1; background: #0d1117; border: 1px solid #30363d; border-radius: 6px; padding: 7px 10px; color: #e6edf3; font-size: .75rem; }
+    .chat-bar input:focus { outline: none; border-color: #bc8cff; }
+    .chat-bar input::placeholder { color: #484f58; }
+    .chat-send { background: #30363d; border: 1px solid #484f58; color: #c9d1d9; padding: 7px 12px; border-radius: 6px; font-size: .6875rem; font-weight: 600; cursor: pointer; }
+    .chat-send:active { background: #484f58; }
+
+    /* ── Bottom rainbow ── */
+    .rainbow-bottom { display: flex; height: 2px; width: 100%; flex-shrink: 0; }
+    .rainbow-bottom span { flex: 1; }
+
+    /* ── Safe-area padding ── */
+    @supports (padding: env(safe-area-inset-bottom)) {
+        .chat-bar { padding-bottom: calc(6px + env(safe-area-inset-bottom)); }
+    }
+
+    /* ── Pull-to-refresh ── */
+    .ptr { position: fixed; top: 0; left: 0; right: 0; z-index: 100; display: flex; align-items: center; justify-content: center; height: 0; overflow: hidden; background: linear-gradient(180deg, #161b22 0%, #0d1117 100%); transition: height .2s ease; pointer-events: none; }
+    .ptr.pulling { transition: none; }
+    .ptr.refreshing { height: 48px; }
+    .ptr-inner { display: flex; align-items: center; gap: 8px; color: #8b949e; font-size: .75rem; font-weight: 600; }
+    .ptr-arrow { font-size: 1rem; transition: transform .2s; display: inline-block; }
+    .ptr-arrow.flip { transform: rotate(180deg); }
+    .ptr-spinner { width: 16px; height: 16px; border: 2px solid #30363d; border-top-color: #58a6ff; border-radius: 50%; animation: ptr-spin .6s linear infinite; }
+    @keyframes ptr-spin { to { transform: rotate(360deg); } }
+
+    /* ── Mobile Responsive ── */
+    @media (max-width: 600px) {
+        html, body { font-size: 14px; }
+        
+        .topbar { padding: 6px 10px; gap: 6px; }
+        .topbar-title { font-size: .75rem; }
+        .topbar-logo { width: 18px; height: 18px; font-size: 11px; }
+        .status-pill { font-size: .5rem; padding: 2px 6px; }
+        
+        .ctrl-strip { padding: 5px 10px; gap: 5px; }
+        .ctrl-btn { padding: 4px 8px; font-size: .625rem; }
+        .lens-btn { font-size: .5625rem; padding: 2px 6px; }
+        #lens-strip { padding: 2px 10px; gap: 3px; }
+        
+        .video-area { min-height: 0; }
+        .video-area video,
+        .video-area canvas#filter-canvas { width: 100%; height: 100%; object-fit: cover; }
+        
+        .badge { font-size: .5rem; padding: 2px 6px; }
+        .badge-tl { top: 6px; left: 6px; }
+        .badge-tr { top: 6px; right: 6px; }
+        
+        .filter-label { font-size: .6875rem; padding: 3px 12px; bottom: 10px; }
+        .adjust-hud-label { font-size: .5625rem; }
+        .adjust-hud-bar { width: 150px; height: 3px; }
+        .adjust-hud-val { font-size: .75rem; }
+        .swipe-hint { font-size: .5625rem; bottom: 35px; }
+        
+        .stats-strip { padding: 5px 10px; gap: 8px; font-size: .5625rem; }
+        
+        .connect-bar { padding: 6px 10px; gap: 5px; }
+        .connect-bar input { padding: 7px 9px; font-size: .75rem; }
+        .send-btn { padding: 7px 14px; font-size: .75rem; min-width: 50px; }
+        
+        .chat-bar { padding: 5px 10px; gap: 5px; }
+        .chat-bar input { padding: 6px 9px; font-size: .6875rem; }
+        .chat-send { padding: 6px 10px; font-size: .625rem; }
+        
+        .ptr-inner { font-size: .6875rem; }
+        .ptr-arrow { font-size: .875rem; }
+        .ptr-spinner { width: 14px; height: 14px; }
+    }
+</style>
+</head>
+<body>
+
+<!-- ━━━ Pull-to-refresh indicator ━━━ -->
+<div class="ptr" id="ptr">
+    <div class="ptr-inner" id="ptr-inner">
+        <span class="ptr-arrow" id="ptr-arrow">↓</span>
+        <span id="ptr-text">Pull to refresh</span>
+    </div>
+</div>
+
+<!-- ━━━ Safe-area spacer (notch/dynamic island) ━━━ -->
+<div class="safe-top"></div>
+
+<!-- ━━━ Top rainbow ━━━ -->
+<div class="rainbow"><span style="background:#ff3838"></span><span style="background:#ff8c38"></span><span style="background:#ffe138"></span><span style="background:#3fb950"></span><span style="background:#38a5ff"></span><span style="background:#bc8cff"></span></div>
+
+<!-- ━━━ Top bar ━━━ -->
+<div class="topbar">
+    <div class="topbar-logo">⬡</div>
+    <div class="topbar-title">hexcast <span class="sub">send</span></div>
+    <span class="status-pill off" id="status-pill">disconnected</span>
+    <button onclick="location.reload()" style="background:none;border:none;color:#8b949e;font-size:.75rem;padding:4px 6px;cursor:pointer;flex-shrink:0" title="Reload">↻</button>
+</div>
+
+<!-- ━━━ Control strip ━━━ -->
+<div class="ctrl-strip">
+    <button class="ctrl-btn swap" id="btn-swap" onclick="swapCamera()">↺ Swap</button>
+    <button class="ctrl-btn" id="btn-quality" onclick="cycleQuality()">◉ med</button>
+    <button class="ctrl-btn" id="btn-filter" onclick="cycleFilter()">◐ none</button>
+    <button class="ctrl-btn" id="btn-torch" onclick="toggleTorch()">🔦 Torch</button>
+    <button class="ctrl-btn" id="btn-snapshot" onclick="takeSnapshot()">📸</button>
+</div>
+
+<!-- ━━━ Lens strip (auto-populated) ━━━ -->
+<div class="ctrl-strip" id="lens-strip" style="display:none"></div>
+
+<!-- ━━━ Video feed ━━━ -->
+<div class="video-area" id="video-area">
+    <video id="video" playsinline autoplay muted></video>
+    <canvas id="filter-canvas"></canvas>
+    <canvas id="hidden-canvas"></canvas>
+    <div class="badge-tl"><span class="badge" id="badge">camera off</span></div>
+    <div class="badge-tr"><span class="badge" id="badge-filter"></span></div>
+    <div class="filter-label" id="filter-label">Normal</div>
+    <div class="adjust-hud" id="adjust-hud">
+        <div class="adjust-hud-label" id="adjust-hud-label">brightness</div>
+        <div class="adjust-hud-bar"><div class="adjust-hud-fill" id="adjust-hud-fill"></div></div>
+        <div class="adjust-hud-val" id="adjust-hud-val">0</div>
+    </div>
+    <div class="swipe-hint" id="swipe-hint">◁ swipe to adjust ▷</div>
+</div>
+
+<!-- ━━━ Stats strip ━━━ -->
+<div class="stats-strip">
+    <span>FPS <span class="val" id="s-fps">0</span></span>
+    <span class="sep">·</span>
+    <span>Frames <span class="val" id="s-frames">0</span></span>
+    <span class="sep">·</span>
+    <span><span class="val" id="s-size">0 KB</span>/f</span>
+    <span class="sep">·</span>
+    <span>Cam <span class="val" id="s-cam">—</span></span>
+    <span style="flex:1"></span>
+    <span>Lat <span class="val" id="s-lat">—</span></span>
+</div>
+
+<!-- ━━━ Connect bar ━━━ -->
+<div class="connect-bar">
+    <input type="text" id="host-input" placeholder="IP:port  (e.g. 192.168.1.42:9876)" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" inputmode="url">
+    <button class="send-btn" id="connect-btn" onclick="toggleStream()">Send</button>
+</div>
+
+<!-- ━━━ Chat bar ━━━ -->
+<div class="chat-bar">
+    <input type="text" id="chat-input" placeholder="message to terminal…" autocomplete="off" autocorrect="off">
+    <button class="chat-send" onclick="sendChat()">Send</button>
+</div>
+
+<!-- ━━━ Bottom rainbow ━━━ -->
+<div class="rainbow-bottom"><span style="background:#ff3838"></span><span style="background:#ff8c38"></span><span style="background:#ffe138"></span><span style="background:#3fb950"></span><span style="background:#38a5ff"></span><span style="background:#bc8cff"></span></div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+'use strict';
+
+const video = document.getElementById('video');
+const filterCanvas = document.getElementById('filter-canvas');
+const hiddenCanvas = document.getElementById('hidden-canvas');
+const fCtx = filterCanvas.getContext('2d');
+const hCtx = hiddenCanvas.getContext('2d');
+const hostInput = document.getElementById('host-input');
+const badge = document.getElementById('badge');
+const badgeFilter = document.getElementById('badge-filter');
+const statusPill = document.getElementById('status-pill');
+const connectBtn = document.getElementById('connect-btn');
+const filterLabel = document.getElementById('filter-label');
+const chatInput = document.getElementById('chat-input');
+
+let ws = null, stream = null, animId = null;
+let frameCount = 0, lastFpsTime = 0, lastFpsCount = 0;
+let facingMode = 'environment'; // default: back camera for streaming
+let torchOn = false;
+
+// ── Lens / device detection ──
+let allVideoDevices = [];  // [{deviceId, label, groupId}]
+let currentDeviceIdx = 0;
+let lensMap = [];          // [{deviceId, label, short}] — deduplicated, ordered
+
+async function detectLenses() {
+    try {
+        // Need initial permission to get labels
+        const tempStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        tempStream.getTracks().forEach(t => t.stop());
+
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        allVideoDevices = devices.filter(d => d.kind === 'videoinput');
+
+        // Build lens map with friendly names
+        lensMap = allVideoDevices.map((d, i) => {
+            const lbl = d.label || `Camera ${i}`;
+            // Try to extract lens type from label
+            let short = `cam ${i}`;
+            const lo = lbl.toLowerCase();
+            if (lo.includes('ultra') && lo.includes('wide')) short = 'ultra-wide';
+            else if (lo.includes('wide') && !lo.includes('ultra')) short = 'wide';
+            else if (lo.includes('tele')) short = 'telephoto';
+            else if (lo.includes('front') || lo.includes('facetime') || lo.includes('truedepth')) short = 'front';
+            else if (lo.includes('back') || lo.includes('rear')) short = 'back';
+            else if (lo.includes('macro')) short = 'macro';
+            else if (lo.includes('depth') || lo.includes('lidar')) short = 'depth';
+            else if (i === 0 && allVideoDevices.length > 1) short = 'front';
+            else if (i === 1) short = 'back';
+            else if (i === 0) short = 'default';
+            return { deviceId: d.deviceId, label: lbl, short, groupId: d.groupId };
+        });
+
+        updateLensUI();
+        console.log(`📷 ${lensMap.length} lenses detected:`, lensMap.map(l => l.short).join(', '));
+    } catch (e) {
+        console.warn('Lens detection:', e);
+    }
+}
+
+function updateLensUI() {
+    const strip = document.getElementById('lens-strip');
+    if (!strip || !lensMap.length) return;
+    strip.innerHTML = '';
+    lensMap.forEach((lens, i) => {
+        const btn = document.createElement('button');
+        btn.className = 'ctrl-btn lens-btn' + (i === currentDeviceIdx ? ' active' : '');
+        btn.textContent = lens.short;
+        btn.title = lens.label;
+        btn.onclick = () => switchLens(i);
+        strip.appendChild(btn);
+    });
+    strip.style.display = lensMap.length > 1 ? 'flex' : 'none';
+}
+
+async function switchLens(idx) {
+    if (idx < 0 || idx >= lensMap.length) return;
+    currentDeviceIdx = idx;
+    torchOn = false;
+    document.getElementById('btn-torch')?.classList.remove('active');
+
+    if (stream) stream.getTracks().forEach(t => t.stop());
+    const q = qualities[qualityIdx];
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { deviceId: { exact: lensMap[idx].deviceId }, width: { ideal: q.w }, height: { ideal: q.h } },
+            audio: false
+        });
+        video.srcObject = stream;
+        await video.play();
+        const track = stream.getVideoTracks()[0];
+        const s = track.getSettings();
+        const caps = track.getCapabilities ? track.getCapabilities() : {};
+        const zoomStr = (caps.zoom && s.zoom) ? ` ${s.zoom.toFixed(1)}×` : '';
+        document.getElementById('s-cam').textContent = `${lensMap[idx].short}${zoomStr} ${s.width||'?'}×${s.height||'?'}`;
+        badge.textContent = lensMap[idx].short;
+        badge.className = 'badge';
+    } catch (e) {
+        badge.textContent = 'lens error: ' + e.message;
+        console.warn('switchLens:', e);
+    }
+    updateLensUI();
+    updateFilterCanvas();
+}
+
+function nextLens() {
+    if (lensMap.length < 2) { swapCamera(); return; }
+    switchLens((currentDeviceIdx + 1) % lensMap.length);
+}
+
+// ── Quality presets ──
+const qualities = [
+    { label: 'low', q: 0.3, w: 240, h: 180 },
+    { label: 'med', q: 0.5, w: 480, h: 360 },
+    { label: 'high', q: 0.7, w: 640, h: 480 },
+    { label: 'max', q: 0.85, w: 1280, h: 720 },
+];
+let qualityIdx = 1;
+let quality = qualities[qualityIdx].q;
+
+// ── Filter presets ──
+const filters = [
+    { name: 'none', label: 'Normal', fn: null },
+    { name: 'thermal', label: 'Thermal', fn: applyThermal },
+    { name: 'gray', label: 'Grayscale', fn: applyGray },
+    { name: 'fax', label: 'Fax B/W', fn: applyFax },
+    { name: 'signal', label: 'Signal', fn: applySignal },
+    { name: 'edge', label: 'Edge Detect', fn: applyEdge },
+    { name: 'invert', label: 'Invert', fn: applyInvert },
+    { name: 'cyber', label: 'Cyberpunk', fn: applyCyber },
+];
+let filterIdx = 0;
+
+// Auto-fill from URL hash
+if (location.hash) hostInput.value = location.hash.slice(1);
+
+// ── Camera ──
+async function startCamera() {
+    // Detect lenses first, then start with the preferred one
+    await detectLenses();
+    if (lensMap.length > 1) {
+        // Find the back/wide camera as default
+        const backIdx = lensMap.findIndex(l => l.short === 'back' || l.short === 'wide');
+        currentDeviceIdx = backIdx >= 0 ? backIdx : 0;
+        await switchLens(currentDeviceIdx);
+    } else {
+        // Fallback: use facingMode
+        if (stream) stream.getTracks().forEach(t => t.stop());
+        const q = qualities[qualityIdx];
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode, width: { ideal: q.w }, height: { ideal: q.h } },
+                audio: false
+            });
+            video.srcObject = stream;
+            await video.play();
+            const track = stream.getVideoTracks()[0];
+            const s = track.getSettings();
+            document.getElementById('s-cam').textContent = `${facingMode === 'user' ? 'front' : 'back'} ${s.width||'?'}×${s.height||'?'}`;
+            badge.textContent = facingMode === 'user' ? 'front' : 'back';
+            badge.className = 'badge';
+            updateFilterCanvas();
+        } catch (e) {
+            badge.textContent = 'camera: ' + e.message;
+        }
+    }
+}
+
+function swapCamera() {
+    if (lensMap.length > 1) {
+        nextLens();
+    } else {
+        facingMode = facingMode === 'user' ? 'environment' : 'user';
+        torchOn = false;
+        document.getElementById('btn-torch').classList.remove('active');
+        startCamera();
+    }
+}
+
+function cycleQuality() {
+    qualityIdx = (qualityIdx + 1) % qualities.length;
+    quality = qualities[qualityIdx].q;
+    document.getElementById('btn-quality').textContent = '◉ ' + qualities[qualityIdx].label;
+    // Re-open at new resolution using current lens
+    if (lensMap.length > 1) switchLens(currentDeviceIdx);
+    else if (stream) startCamera();
+}
+
+function cycleFilter() {
+    filterIdx = (filterIdx + 1) % filters.length;
+    const f = filters[filterIdx];
+    document.getElementById('btn-filter').textContent = '◐ ' + f.name;
+    badgeFilter.textContent = f.name === 'none' ? '' : f.name;
+    // Show label briefly
+    filterLabel.textContent = f.label;
+    filterLabel.classList.add('show');
+    setTimeout(() => filterLabel.classList.remove('show'), 1200);
+    updateFilterCanvas();
+}
+
+function updateFilterCanvas() {
+    const f = filters[filterIdx];
+    filterCanvas.style.display = f.fn ? 'block' : 'none';
+}
+
+function toggleTorch() {
+    if (!stream) return;
+    const track = stream.getVideoTracks()[0];
+    if (!track) return;
+    torchOn = !torchOn;
+    try { track.applyConstraints({ advanced: [{ torch: torchOn }] }); } catch(e) {}
+    document.getElementById('btn-torch').classList.toggle('active', torchOn);
+}
+
+function takeSnapshot() {
+    const q = qualities[qualityIdx];
+    hiddenCanvas.width = q.w; hiddenCanvas.height = q.h;
+    hCtx.drawImage(video, 0, 0, q.w, q.h);
+    if (hasAdjustments()) applyImageAdjustments(hCtx, q.w, q.h);
+    if (filters[filterIdx].fn) filters[filterIdx].fn(hCtx, q.w, q.h);
+    const a = document.createElement('a');
+    a.href = hiddenCanvas.toDataURL('image/png');
+    a.download = 'hexcast-' + Date.now() + '.png';
+    a.click();
+}
+
+// ── Image adjustment state ──
+// Swipe vertically selects parameter, horizontally adjusts value
+const adjustParams = [
+    { key: 'brightness', min: -100, max: 100, val: 0, color: '#ffe138' },
+    { key: 'contrast',   min: -100, max: 100, val: 0, color: '#58a6ff' },
+    { key: 'saturation', min: -100, max: 100, val: 0, color: '#bc8cff' },
+    { key: 'exposure',   min: -100, max: 100, val: 0, color: '#3fb950' },
+];
+let currentParam = 0;
+let adjustHideTimer = null;
+
+const adjustHud = document.getElementById('adjust-hud');
+const adjustLabel = document.getElementById('adjust-hud-label');
+const adjustFill = document.getElementById('adjust-hud-fill');
+const adjustVal = document.getElementById('adjust-hud-val');
+const swipeHint = document.getElementById('swipe-hint');
+
+function showAdjustHud() {
+    const p = adjustParams[currentParam];
+    adjustLabel.textContent = p.key;
+    const pct = ((p.val - p.min) / (p.max - p.min)) * 100;
+    adjustFill.style.width = pct + '%';
+    adjustFill.style.background = p.color;
+    adjustVal.textContent = (p.val > 0 ? '+' : '') + Math.round(p.val);
+    adjustVal.style.color = p.color;
+    adjustHud.classList.add('show');
+    swipeHint.classList.remove('show');
+    clearTimeout(adjustHideTimer);
+    adjustHideTimer = setTimeout(() => adjustHud.classList.remove('show'), 1500);
+}
+
+function applyImageAdjustments(ctx, w, h) {
+    const br = adjustParams[0].val;  // brightness
+    const co = adjustParams[1].val;  // contrast
+    const sa = adjustParams[2].val;  // saturation
+    const ex = adjustParams[3].val;  // exposure
+    if (br === 0 && co === 0 && sa === 0 && ex === 0) return;
+
+    const img = ctx.getImageData(0, 0, w, h), d = img.data;
+    const cFactor = (259 * (co + 255)) / (255 * (259 - co));
+    const eFactor = 1 + ex / 100;
+
+    for (let i = 0; i < d.length; i += 4) {
+        let r = d[i], g = d[i+1], b = d[i+2];
+
+        // Exposure
+        if (ex !== 0) { r *= eFactor; g *= eFactor; b *= eFactor; }
+
+        // Brightness
+        if (br !== 0) { r += br; g += br; b += br; }
+
+        // Contrast
+        if (co !== 0) {
+            r = cFactor * (r - 128) + 128;
+            g = cFactor * (g - 128) + 128;
+            b = cFactor * (b - 128) + 128;
+        }
+
+        // Saturation
+        if (sa !== 0) {
+            const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+            const s = 1 + sa / 100;
+            r = gray + s * (r - gray);
+            g = gray + s * (g - gray);
+            b = gray + s * (b - gray);
+        }
+
+        d[i]   = Math.max(0, Math.min(255, r));
+        d[i+1] = Math.max(0, Math.min(255, g));
+        d[i+2] = Math.max(0, Math.min(255, b));
+    }
+    ctx.putImageData(img, 0, 0);
+}
+
+// ── Touch gestures on video area ──
+// Tap = cycle filter | Horizontal swipe = adjust value | Vertical swipe = change param
+(function initGestures() {
+    const area = document.getElementById('video-area');
+    let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
+    let isSwiping = false, swipeAxis = null; // 'h' or 'v'
+    let startParamVal = 0;
+
+    area.addEventListener('touchstart', e => {
+        if (e.target.closest('button') || e.target.closest('input')) return;
+        const t = e.touches[0];
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        touchStartTime = Date.now();
+        isSwiping = false;
+        swipeAxis = null;
+        startParamVal = adjustParams[currentParam].val;
+    }, { passive: true });
+
+    area.addEventListener('touchmove', e => {
+        if (e.target.closest('button') || e.target.closest('input')) return;
+        const t = e.touches[0];
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
+
+        // Determine axis on first significant movement
+        if (!swipeAxis && (Math.abs(dx) > 10 || Math.abs(dy) > 10)) {
+            swipeAxis = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
+            isSwiping = true;
+        }
+
+        if (swipeAxis === 'h') {
+            // Horizontal: adjust current parameter value
+            // Full screen width = full range (-100 to +100)
+            const range = adjustParams[currentParam].max - adjustParams[currentParam].min;
+            const sensitivity = range / (area.offsetWidth * 0.7);
+            let newVal = startParamVal + dx * sensitivity;
+            newVal = Math.max(adjustParams[currentParam].min, Math.min(adjustParams[currentParam].max, newVal));
+            adjustParams[currentParam].val = Math.round(newVal);
+            showAdjustHud();
+            e.preventDefault();
+        } else if (swipeAxis === 'v') {
+            // Vertical: switch parameter (up/down through the list)
+            const steps = Math.floor(dy / 40);
+            if (steps !== 0) {
+                const newIdx = Math.max(0, Math.min(adjustParams.length - 1, currentParam + steps));
+                if (newIdx !== currentParam) {
+                    currentParam = newIdx;
+                    startParamVal = adjustParams[currentParam].val;
+                    touchStartY = t.clientY;
+                    showAdjustHud();
+                }
+            }
+            e.preventDefault();
+        }
+    }, { passive: false });
+
+    area.addEventListener('touchend', e => {
+        if (e.target.closest('button') || e.target.closest('input')) return;
+        const elapsed = Date.now() - touchStartTime;
+        // Tap detection: short touch, no significant movement
+        if (!isSwiping && elapsed < 300) {
+            cycleFilter();
+        }
+        isSwiping = false;
+        swipeAxis = null;
+    }, { passive: true });
+
+    // Double-tap to reset current parameter
+    let lastTapTime = 0;
+    area.addEventListener('click', e => {
+        if (e.target.closest('button') || e.target.closest('input')) return;
+        const now = Date.now();
+        if (now - lastTapTime < 350) {
+            // Double-tap: reset current adjustment
+            adjustParams[currentParam].val = 0;
+            showAdjustHud();
+        }
+        lastTapTime = now;
+    });
+
+    // Show swipe hint on first load
+    setTimeout(() => { swipeHint.classList.add('show'); setTimeout(() => swipeHint.classList.remove('show'), 3000); }, 2000);
+})();
+
+// ── Filter functions ──
+function applyThermal(ctx, w, h) {
+    const img = ctx.getImageData(0, 0, w, h), d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+        const lum = (d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114) / 255;
+        if (lum < 0.25) { d[i] = 0; d[i+1] = Math.round(lum*4*255); d[i+2] = 255; }
+        else if (lum < 0.5) { d[i] = 0; d[i+1] = 255; d[i+2] = Math.round((1-(lum-0.25)*4)*255); }
+        else if (lum < 0.75) { d[i] = Math.round((lum-0.5)*4*255); d[i+1] = 255; d[i+2] = 0; }
+        else { d[i] = 255; d[i+1] = Math.round((1-(lum-0.75)*4)*255); d[i+2] = 0; }
+    }
+    ctx.putImageData(img, 0, 0);
+}
+
+function applyGray(ctx, w, h) {
+    const img = ctx.getImageData(0, 0, w, h), d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+        const g = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+        d[i] = d[i+1] = d[i+2] = g;
+    }
+    ctx.putImageData(img, 0, 0);
+}
+
+function applyFax(ctx, w, h) {
+    const img = ctx.getImageData(0, 0, w, h), d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+        const g = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+        const v = g > 128 ? 255 : 0;
+        d[i] = d[i+1] = d[i+2] = v;
+    }
+    ctx.putImageData(img, 0, 0);
+}
+
+function applySignal(ctx, w, h) {
+    const img = ctx.getImageData(0, 0, w, h), d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+        const g = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+        d[i] = 0; d[i+1] = Math.round(g * 0.95); d[i+2] = Math.round(g * 0.2);
+    }
+    ctx.putImageData(img, 0, 0);
+}
+
+function applyEdge(ctx, w, h) {
+    const src = ctx.getImageData(0, 0, w, h), s = src.data;
+    const out = ctx.createImageData(w, h), o = out.data;
+    for (let y = 1; y < h - 1; y++) {
+        for (let x = 1; x < w - 1; x++) {
+            const idx = (y * w + x) * 4;
+            const tl = s[((y-1)*w+x-1)*4], t = s[((y-1)*w+x)*4], tr = s[((y-1)*w+x+1)*4];
+            const bl = s[((y+1)*w+x-1)*4], b = s[((y+1)*w+x)*4], br = s[((y+1)*w+x+1)*4];
+            const l = s[(y*w+x-1)*4], r = s[(y*w+x+1)*4];
+            const gx = -tl + tr - 2*l + 2*r - bl + br;
+            const gy = -tl - 2*t - tr + bl + 2*b + br;
+            const mag = Math.min(255, Math.sqrt(gx*gx + gy*gy));
+            o[idx] = mag * 0.4; o[idx+1] = mag * 0.8; o[idx+2] = mag; o[idx+3] = 255;
+        }
+    }
+    ctx.putImageData(out, 0, 0);
+}
+
+function applyInvert(ctx, w, h) {
+    const img = ctx.getImageData(0, 0, w, h), d = img.data;
+    for (let i = 0; i < d.length; i += 4) { d[i] = 255 - d[i]; d[i+1] = 255 - d[i+1]; d[i+2] = 255 - d[i+2]; }
+    ctx.putImageData(img, 0, 0);
+}
+
+function applyCyber(ctx, w, h) {
+    const img = ctx.getImageData(0, 0, w, h), d = img.data;
+    for (let i = 0; i < d.length; i += 4) {
+        const g = d[i] * 0.299 + d[i+1] * 0.587 + d[i+2] * 0.114;
+        const n = g / 255;
+        // Cyan → magenta → yellow ramp
+        d[i] = Math.round(n < 0.5 ? n*2*80 : 80 + (n-0.5)*2*175);
+        d[i+1] = Math.round(n < 0.33 ? 200*n*3 : n < 0.66 ? 200 - (n-0.33)*3*150 : 50 + (n-0.66)*3*205);
+        d[i+2] = Math.round(n < 0.5 ? 255 - n*2*155 : 100 - (n-0.5)*2*100);
+    }
+    ctx.putImageData(img, 0, 0);
+}
+
+// ── Render filter overlay in real-time ──
+let filterAnimId = null;
+const hasAdjustments = () => adjustParams.some(p => p.val !== 0);
+function filterLoop() {
+    const f = filters[filterIdx];
+    const adj = hasAdjustments();
+    if ((f.fn || adj) && video.readyState >= 2) {
+        const vw = video.videoWidth || 480, vh = video.videoHeight || 360;
+        if (filterCanvas.width !== vw) { filterCanvas.width = vw; filterCanvas.height = vh; }
+        fCtx.drawImage(video, 0, 0, vw, vh);
+        // Apply adjustments first (brightness/contrast/saturation/exposure)
+        if (adj) applyImageAdjustments(fCtx, vw, vh);
+        // Then apply artistic filter on top
+        if (f.fn) f.fn(fCtx, vw, vh);
+        filterCanvas.style.display = 'block';
+    } else if (!f.fn && !adj) {
+        filterCanvas.style.display = 'none';
+    }
+    filterAnimId = requestAnimationFrame(filterLoop);
+}
+filterLoop();
+
+// ── Stream / WebSocket ──
+function setStatus(state, text) {
+    statusPill.className = 'status-pill ' + state;
+    statusPill.textContent = text || state;
+}
+
+function toggleStream() {
+    if (ws) stopStream(); else startStream();
+}
+
+function startStream() {
+    let host = hostInput.value.trim();
+    if (!host) { hostInput.focus(); return; }
+    if (!host.includes(':')) host += ':9876';
+    if (!host.startsWith('ws://')) host = 'ws://' + host;
+
+    setStatus('connecting', 'connecting…');
+    ws = new WebSocket(host);
+    ws.onopen = () => {
+        setStatus('live', 'streaming');
+        badge.className = 'badge live';
+        badge.textContent = `${facingMode === 'user' ? 'front' : 'back'} → ${hostInput.value}`;
+        connectBtn.textContent = 'Stop';
+        connectBtn.className = 'send-btn stop';
+        frameCount = 0;
+        lastFpsTime = performance.now();
+        lastFpsCount = 0;
+        sendLoop();
+    };
+    ws.onclose = () => stopStream();
+    ws.onerror = () => { setStatus('error', 'error'); stopStream(); };
+    ws.onmessage = (evt) => {
+        // Handle incoming messages from terminal (chat, commands)
+        try {
+            const msg = JSON.parse(evt.data);
+            if (msg.type === 'chat') showIncomingChat(msg.text, msg.from || 'terminal');
+            if (msg.type === 'cmd') handleRemoteCmd(msg.cmd);
+        } catch(e) {}
+    };
+}
+
+function stopStream() {
+    if (animId) { clearTimeout(animId); animId = null; }
+    if (ws) { try { ws.close(); } catch(e) {} }
+    ws = null;
+    setStatus('off', 'disconnected');
+    badge.className = 'badge';
+    badge.textContent = facingMode === 'user' ? 'front' : 'back';
+    connectBtn.textContent = 'Send';
+    connectBtn.className = 'send-btn';
+}
+
+function sendLoop() {
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    const q = qualities[qualityIdx];
+    hiddenCanvas.width = q.w; hiddenCanvas.height = q.h;
+    hCtx.drawImage(video, 0, 0, q.w, q.h);
+
+    // Apply adjustments + filter to outgoing frame
+    if (hasAdjustments()) applyImageAdjustments(hCtx, q.w, q.h);
+    if (filters[filterIdx].fn) filters[filterIdx].fn(hCtx, q.w, q.h);
+
+    const dataUrl = hiddenCanvas.toDataURL('image/jpeg', quality);
+    const b64 = dataUrl.split(',')[1];
+    const sz = Math.round(b64.length * 0.75);
+
+    const packet = JSON.stringify({
+        type: 'frame',
+        v: '4.0.0',
+        src: `phone:${facingMode === 'user' ? 'front' : 'back'}`,
+        filter: filters[filterIdx].name,
+        w: q.w, h: q.h, sz, t: Date.now() / 1000,
+    }) + '\n' + b64;
+
+    try { ws.send(packet); } catch(e) { stopStream(); return; }
+
+    frameCount++;
+    document.getElementById('s-frames').textContent = frameCount;
+    document.getElementById('s-size').textContent = (sz / 1024).toFixed(1) + ' KB';
+
+    const now = performance.now();
+    if (now - lastFpsTime > 1000) {
+        const fps = Math.round((frameCount - lastFpsCount) / ((now - lastFpsTime) / 1000));
+        document.getElementById('s-fps').textContent = fps;
+        document.getElementById('s-lat').textContent = Math.round(1000 / Math.max(1, fps)) + ' ms';
+        lastFpsCount = frameCount;
+        lastFpsTime = now;
+    }
+
+    animId = setTimeout(() => requestAnimationFrame(sendLoop), 50);
+}
+
+// ── Chat ──
+function sendChat() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'chat', text, from: 'phone', t: Date.now() }));
+    }
+    // Also broadcast for hexterm integration
+    try {
+        const bc = new BroadcastChannel('hexterm');
+        bc.postMessage({ type: 'chat', text, from: 'hexcast-send' });
+        bc.close();
+    } catch(e) {}
+    chatInput.value = '';
+}
+
+chatInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); sendChat(); }
+});
+
+function showIncomingChat(text, from) {
+    // Brief visual indication in badge
+    const old = badge.textContent;
+    badge.textContent = `💬 ${from}: ${text}`;
+    setTimeout(() => { badge.textContent = old; }, 3000);
+}
+
+function handleRemoteCmd(cmd) {
+    if (cmd === 'swap') swapCamera();
+    else if (cmd === 'snapshot') takeSnapshot();
+    else if (cmd === 'filter') cycleFilter();
+    else if (cmd === 'torch') toggleTorch();
+    else if (cmd.startsWith('quality:')) {
+        const idx = qualities.findIndex(q => q.label === cmd.split(':')[1]);
+        if (idx >= 0) { qualityIdx = idx; quality = qualities[qualityIdx].q; document.getElementById('btn-quality').textContent = '◉ ' + qualities[qualityIdx].label; if (stream) startCamera(); }
+    }
+}
+
+// ── BroadcastChannel for hexterm pairing ──
+try {
+    const bc = new BroadcastChannel('hexterm');
+    bc.onmessage = e => {
+        const d = e.data;
+        if (d.type === 'cmd' && d.target === 'hexcast-send') handleRemoteCmd(d.cmd);
+        if (d.type === 'chat' && d.from !== 'hexcast-send') showIncomingChat(d.text, d.from || 'terminal');
+    };
+} catch(e) {}
+
+// ── PWA Service Worker ──
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ── Pull-to-refresh ──
+(function initPTR() {
+    const ptr = document.getElementById('ptr');
+    const ptrArrow = document.getElementById('ptr-arrow');
+    const ptrText = document.getElementById('ptr-text');
+    const ptrInner = document.getElementById('ptr-inner');
+    const threshold = 50; // lower threshold — easier to trigger
+    let startY = 0, currentY = 0, pulling = false, refreshing = false;
+
+    document.addEventListener('touchstart', e => {
+        if (refreshing) return;
+        if (e.touches.length !== 1) return;
+        if (e.target.closest('input') || e.target.closest('button') || e.target.closest('.video-area')) return;
+        startY = e.touches[0].clientY;
+        currentY = startY;
+        pulling = true;
+        ptr.classList.add('pulling');
+    }, { passive: true });
+
+    document.addEventListener('touchmove', e => {
+        if (!pulling || refreshing) return;
+        currentY = e.touches[0].clientY;
+        const dy = Math.max(0, currentY - startY);
+        if (dy === 0) return;
+
+        const h = Math.min(dy * 0.5, 60);
+        ptr.style.height = h + 'px';
+
+        if (dy > threshold) {
+            ptrArrow.classList.add('flip');
+            ptrText.textContent = 'Release to refresh';
+        } else {
+            ptrArrow.classList.remove('flip');
+            ptrText.textContent = 'Pull to refresh';
+        }
+    }, { passive: true });
+
+    document.addEventListener('touchend', () => {
+        if (!pulling || refreshing) return;
+        const dy = currentY - startY;
+        ptr.classList.remove('pulling');
+
+        if (dy > threshold) {
+            refreshing = true;
+            ptr.classList.add('refreshing');
+            ptr.style.height = '';
+            ptrInner.innerHTML = '<div class="ptr-spinner"></div><span>Refreshing…</span>';
+            setTimeout(() => location.reload(), 500);
+        } else {
+            pulling = false;
+            ptr.style.height = '0';
+        }
+    }, { passive: true });
+})();
+
+// Start camera on load
+startCamera();
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function() {
+    const QP = window.QuantumPrefixes;
+    if (!QP) return;
+    QP.onStateChange(function(source, state) {
+        if (source === 'hexcast-send' || !state) return;
+    });
+    QP.broadcastState('hexcast-send', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, role: 'camera-stream' });
+    QP.requestStateSync();
+})();
+
+console.log('⚛ hexcast send v4.3 — camera → terminal streaming');
+console.log('{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}');
+</script>
+</body>
+</html>

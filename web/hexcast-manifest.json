@@ -1,0 +1,34 @@
+{
+    "name": "hexcast — camera stream to terminal",
+    "short_name": "hexcast",
+    "description": "Stream your phone camera to any terminal running hexcast --receive. Filters, chat, and remote control built in.",
+    "start_url": "hexcast-send.html",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#0d1117",
+    "theme_color": "#0d1117",
+    "categories": ["developer tools", "utilities", "video"],
+    "icons": [
+        {
+            "src": "../icons/favicon.png",
+            "sizes": "32x32",
+            "type": "image/png"
+        },
+        {
+            "src": "../icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Quick Stream",
+            "short_name": "Stream",
+            "url": "hexcast-send.html",
+            "description": "Start camera stream"
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false
+}

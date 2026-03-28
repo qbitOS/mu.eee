@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>uvspeed — Ecosystem Progress Tracker</title>
+<link rel="icon" href="../icons/favicon.ico" sizes="any">
+<link rel="manifest" href="manifest.json">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--fg:#c9d1d9;--dim:#484f58;--border:#30363d;--green:#3fb950;--yellow:#c9a84c;--red:#f85149;--blue:#58a6ff;--purple:#bc8cff;--orange:#d29922;--cyan:#56d4dd;--radius:8px;--mono:'SF Mono','Fira Code','Cascadia Code',monospace}
+html,body{height:100%;background:var(--bg);color:var(--fg);font:13px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+.container{max-width:1200px;margin:0 auto;padding:20px}
+.hero{text-align:center;padding:40px 20px 30px;border-bottom:1px solid var(--border)}
+.hero h1{font-size:28px;font-weight:800;margin-bottom:6px}
+.hero .sub{color:var(--dim);font-size:13px;font-family:var(--mono)}
+.badge-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+.badge{padding:2px 8px;border-radius:12px;font-size:11px;font-family:var(--mono);border:1px solid var(--border)}
+.badge-g{color:var(--green);border-color:rgba(63,185,80,0.4)}
+.badge-b{color:var(--blue);border-color:rgba(88,166,255,0.4)}
+.badge-p{color:var(--purple);border-color:rgba(188,140,255,0.4)}
+.badge-y{color:var(--yellow);border-color:rgba(201,168,76,0.4)}
+.badge-c{color:var(--cyan);border-color:rgba(86,212,221,0.4)}
+.badge-r{color:var(--red);border-color:rgba(248,81,73,0.4)}
+.stats{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;margin:20px 0}
+.stat{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:12px;text-align:center}
+.stat .val{font-size:22px;font-weight:800;font-family:var(--mono)}
+.stat .lbl{font-size:10px;color:var(--dim);margin-top:2px}
+.section{margin-top:30px}
+.section h2{font-size:18px;font-weight:700;margin-bottom:12px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px;font-size:12px;transition:border-color .2s}
+.card:hover{border-color:var(--blue)}
+.card .name{font-weight:700;font-size:13px;margin-bottom:4px}
+.card .meta{color:var(--dim);font-size:10px;font-family:var(--mono)}
+.card .layer{display:inline-block;padding:1px 5px;border-radius:3px;font-size:9px;font-family:var(--mono);margin-left:4px}
+.iron-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:8px}
+.iron-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:10px}
+.iron-card .l{font-weight:800;font-size:14px;font-family:var(--mono)}
+.iron-card .n{font-weight:600;font-size:12px}
+.iron-card .apps{color:var(--dim);font-size:10px;margin-top:4px}
+table{width:100%;border-collapse:collapse;font-size:11px;font-family:var(--mono)}
+th{text-align:left;padding:6px 8px;background:var(--bg2);color:var(--dim);font-weight:600;border-bottom:1px solid var(--border)}
+td{padding:5px 8px;border-bottom:1px solid rgba(48,54,61,0.4)}
+.r-stair{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.r-card{border-radius:var(--radius);padding:10px;border:1px solid var(--border)}
+.r-card.built{background:rgba(63,185,80,0.08);border-color:rgba(63,185,80,0.3)}
+.r-card.planned{background:rgba(88,166,255,0.06);border-color:rgba(88,166,255,0.2)}
+.r-card .rl{font-weight:800;font-family:var(--mono);font-size:14px}
+.r-card .rn{font-weight:600;font-size:11px}
+.r-card .rd{color:var(--dim);font-size:10px;margin-top:2px}
+.module-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+.footer{text-align:center;padding:30px 20px;border-top:1px solid var(--border);margin-top:40px;color:var(--dim);font-size:11px;font-family:var(--mono)}
+@media(max-width:600px){.stats{grid-template-columns:repeat(2,1fr)}.grid,.iron-grid{grid-template-columns:1fr}}
+</style>
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+</head>
+<body>
+<div class="container">
+<div class="hero">
+    <h1>qbitOS / uvspeed</h1>
+    <div class="sub">beyondBINARY quantum-prefixed development platform · v4.93 · Phase 4.33</div>
+    <div class="badge-row">
+        <span class="badge badge-g">50 web apps</span>
+        <span class="badge badge-b">59 languages</span>
+        <span class="badge badge-p">11 quantum gates</span>
+        <span class="badge badge-y">8 Iron Line layers</span>
+        <span class="badge badge-c">10-lang gold build</span>
+        <span class="badge badge-r">R0-R4 built</span>
+    </div>
+</div>
+
+<div class="stats" id="stats-row"></div>
+
+<div class="section">
+    <h2>Iron Line Pipeline (L0–L7)</h2>
+    <div class="iron-grid" id="iron-grid"></div>
+</div>
+
+<div class="section">
+    <h2>R-Level Staircase (R0–R6)</h2>
+    <div class="r-stair" id="r-stair"></div>
+</div>
+
+<div class="section">
+    <h2>Web Applications (48)</h2>
+    <div class="grid" id="app-grid"></div>
+</div>
+
+<div class="section">
+    <h2>Shared Modules</h2>
+    <div class="module-grid" id="module-grid"></div>
+</div>
+
+<div class="section">
+    <h2>.qbit Codec — Universal Solver</h2>
+    <div id="codec-status"></div>
+</div>
+
+<div class="section">
+    <h2>Gluelam Stack</h2>
+    <table id="gluelam-table"><thead><tr><th>Consumer</th><th>File</th><th>Lines</th><th>Integration</th></tr></thead><tbody id="gluelam-body"></tbody></table>
+</div>
+
+<div class="section">
+    <h2>Key Architectural Decisions (52)</h2>
+    <div id="decisions" style="max-height:400px;overflow-y:auto"></div>
+</div>
+
+<div class="footer">
+    qbitOS v4.93 · fornevercollective · beyondBINARY<br>
+    {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}<br>
+    <a href="launcher.html">Launcher</a> · <a href="quantum-notepad.html">Notepad</a> · <a href="github-dashboard.html">Dashboard</a> · <a href="ugrad-r0.html">μgrad</a> · <a href="https://github.com/qbitOS/uvspeed">GitHub</a>
+</div>
+</div>
+
+<script>
+(function(){
+const QP=window.QuantumPrefixes;
+const STATS=[
+  {val:'48',lbl:'Web Apps',color:'var(--green)'},
+  {val:'7',lbl:'Shared Modules',color:'var(--blue)'},
+  {val:'59',lbl:'Languages',color:'var(--purple)'},
+  {val:'11',lbl:'Quantum Gates',color:'var(--yellow)'},
+  {val:'9',lbl:'Scan Modalities',color:'var(--cyan)'},
+  {val:'8',lbl:'Iron Line Layers',color:'var(--orange)'},
+  {val:'R4',lbl:'R-Level Built',color:'var(--green)'},
+  {val:'337×',lbl:'μgrad Speedup',color:'var(--red)'},
+  {val:'120+',lbl:'Commits',color:'var(--dim)'},
+  {val:'113',lbl:'Plans Indexed',color:'var(--purple)'},
+  {val:'20',lbl:'Search Connectors',color:'var(--blue)'},
+  {val:'52',lbl:'Arch Decisions',color:'var(--yellow)'}
+];
+const sr=document.getElementById('stats-row');
+STATS.forEach(s=>{sr.innerHTML+=`<div class="stat"><div class="val" style="color:${s.color}">${s.val}</div><div class="lbl">${s.lbl}</div></div>`});
+
+const IRON=[
+  {l:'L0',name:'Super Speed',budget:'1.3ms boot',apps:'qbit-raw, μgrad (r0/quantum/park/sentence/contrail), steno-term/pad',color:'var(--red)',status:'BUILT'},
+  {l:'L1',name:'Terminal + Search',budget:'100μs local',apps:'qbit-search, HexTerm, search',color:'var(--orange)',status:'BUILT'},
+  {l:'L2',name:'Commander',budget:'100ms AI',apps:'terminal commands, agent dispatch, corpus',color:'var(--yellow)',status:'BUILT'},
+  {l:'L3',name:'Quantum',budget:'0.1μs gate',apps:'quantum-gutter, jawta, uvqbit, globe, QPU',color:'var(--green)',status:'BUILT'},
+  {l:'L4',name:'Notepad / Everything',budget:'2ms classify',apps:'quantum-notepad, kbatch, plan-viewer',color:'var(--cyan)',status:'BUILT'},
+  {l:'L5',name:'RNDR + Data',budget:'16ms frame',apps:'qbit-studio, archflow, hexcast, hexbench',color:'var(--blue)',status:'BUILT'},
+  {l:'L6',name:'Research / Medical',budget:'5ms DICOM',apps:'qbit-medical, freya, research-lab',color:'var(--purple)',status:'BUILT'},
+  {l:'L7',name:'Security / Persona',budget:'5ms persona',apps:'history, search, qa, dashboard, sponsor',color:'var(--dim)',status:'BUILT'}
+];
+const ig=document.getElementById('iron-grid');
+IRON.forEach(i=>{ig.innerHTML+=`<div class="iron-card"><div class="l" style="color:${i.color}">${i.l}</div><div class="n">${i.name} <span class="badge badge-g" style="font-size:8px">${i.status}</span></div><div style="color:var(--dim);font-size:10px;font-family:var(--mono)">${i.budget}</div><div class="apps">${i.apps}</div></div>`});
+
+const RLEVELS=[
+  {r:'R0',name:'micrograd',desc:'Scalar autograd, MLP, 19+59 datasets',built:true},
+  {r:'R1',name:'microtorch',desc:'Tensor class, Float32Array, batched autograd',built:true},
+  {r:'R2',name:'minitorch',desc:'Adam optimizer, cross-entropy, real datasets',built:true},
+  {r:'R3',name:'μtorch',desc:'Embedding, LayerNorm, attention ops',built:true},
+  {r:'R4',name:'μformer',desc:'Transformer blocks, MiniGPT, char gen',built:true},
+  {r:'R5',name:'μcortical',desc:'Cortical loop, SensorBridge, 24ms, body ecosystem',built:false},
+  {r:'R6',name:'μorganoid',desc:'DNA parenthood, organoid feedback, self-modify',built:false}
+];
+const rs=document.getElementById('r-stair');
+RLEVELS.forEach(r=>{rs.innerHTML+=`<div class="r-card ${r.built?'built':'planned'}"><div class="rl" style="color:${r.built?'var(--green)':'var(--blue)'}">${r.r}</div><div class="rn">${r.name}</div><div class="rd">${r.desc}</div></div>`});
+
+const APPS=[
+  {name:'qbit Search',file:'qbit-search.html',layer:'L0-L1',lines:'~1800',desc:'Iron Line terminal, BLE/mesh, pipeline telemetry'},
+  {name:'qbit Medical',file:'qbit-medical.html',layer:'L5-L6',lines:'~1200',desc:'DICOM viewer, 10 body systems, neuron speed'},
+  {name:'qbit Studio',file:'qbit-studio.html',layer:'L4',lines:'~900',desc:'Section designer, AI chat, retro components'},
+  {name:'qbit Globe',file:'qbit-globe.html',layer:'L3',lines:'~2000',desc:'3D quantum globe, 7 infra layers, 100+ facilities'},
+  {name:'nTerminal',file:'nterminal.html',layer:'L3',lines:'~800',desc:'QASM, Bloch spheres, QPU selector, cryostat'},
+  {name:'uvQbit',file:'uvqbit.html',layer:'L3',lines:'~3200',desc:'5-act quantum journey, circuit editor, Bloch'},
+  {name:'Notepad',file:'quantum-notepad.html',layer:'L4',lines:'~16K',desc:'Code notepad, prefix gutter, inspect, heatmaps'},
+  {name:'HexBench',file:'hexbench.html',layer:'L4',lines:'~1400',desc:'Voltage lab, PSU, Arduino, node workbench'},
+  {name:'HexTerm',file:'terminal.html',layer:'L1',lines:'~3800',desc:'Full terminal, virtual FS, dev/auditor mode'},
+  {name:'HexCast',file:'hexcast.html',layer:'L5',lines:'~900',desc:'Video hex broadcast, 4 encode modes'},
+  {name:'HexCast Send',file:'hexcast-send.html',layer:'L5',lines:'~400',desc:'Camera → terminal mobile streaming'},
+  {name:'Research Lab',file:'research-lab.html',layer:'L6',lines:'~1100',desc:'Markdown editor, mermaid, node canvas'},
+  {name:'ArchFlow',file:'archflow.html',layer:'L4',lines:'~900',desc:'n8n-style architecture node visualizer'},
+  {name:'Dashboard',file:'github-dashboard.html',layer:'L7',lines:'~2000',desc:'Repo health, community, CI, inspect sync'},
+  {name:'Launcher',file:'launcher.html',layer:'L0',lines:'~500',desc:'App launcher hub'},
+  {name:'Grid',file:'grid.html',layer:'L5',lines:'~1100',desc:'Multi-feed grid viewer'},
+  {name:'Feed',file:'feed.html',layer:'L5',lines:'~900',desc:'Camera feed with speech transcript'},
+  {name:'QuestCast',file:'questcast.html',layer:'L5-L6',lines:'~600',desc:'Meta Quest broadcast + research'},
+  {name:'Sponsor',file:'sponsor.html',layer:'L7',lines:'~1800',desc:'Sponsor page, Rubik\'s cube, starfield, tiers'},
+  {name:'Jawta Audio',file:'jawta-audio.html',layer:'L6',lines:'~1500',desc:'Spatial audio, Morse TX/RX, Quantum Bridge'},
+  {name:'Numsy',file:'numsy.html',layer:'L5',lines:'~400',desc:'1080x1080 Instagram visual'},
+  {name:'brotherNumsy',file:'brothernumsy.html',layer:'L5',lines:'~2200',desc:'Endless runner game, AI training API'},
+  {name:'kBatch',file:'kbatch.html',layer:'L7',lines:'~5400',desc:'Keyboard analyzer, 121 capsules, StenoEngine'},
+  {name:'Blackwell',file:'blackwell.html',layer:'L3',lines:'~1100',desc:'GPU dashboard, SM heatmaps, deploy targets'},
+  {name:'Quantum Gutter',file:'quantum-gutter.html',layer:'L4',lines:'~1200',desc:'3D prefix cube, starfield, benchmarks'},
+  {name:'FreyaUnits',file:'freya.html',layer:'L6',lines:'~1300',desc:'Galactic converter, Codex chart, quantum nav'},
+  {name:'Freya Landing',file:'freya-landing.html',layer:'L6',lines:'~460',desc:'FreyaUnits showcase, log-scale, Codex mini'},
+  {name:'History',file:'history.html',layer:'L7',lines:'~3500',desc:'Universal timeline, knowledge graph, AI persona'},
+  {name:'Search',file:'search.html',layer:'L1',lines:'~1800',desc:'17 connectors, doc viewer, tone analysis'},
+  {name:'QA',file:'qa.html',layer:'L7',lines:'~1200',desc:'QA walkthrough, stage stepper, annotations'},
+  {name:'Plan Viewer',file:'plan-viewer.html',layer:'L4',lines:'~600',desc:'Plan corpus browser, prefix coverage'},
+  {name:'qbit Raw v4',file:'qbit-raw.html',layer:'L0',lines:'~1200',desc:'Pajama fills, nbloat, interleave'},
+  {name:'qbit Raw v3',file:'qbit-raw-v3.html',layer:'L0',lines:'~465',desc:'Layer bar, ⌘K palette (archived)'},
+  {name:'qbit Raw v2',file:'qbit-raw-v2.html',layer:'L0',lines:'~416',desc:'Quantum gutter, night watch (archived)'},
+  {name:'qbit Raw v1',file:'qbit-raw-v1.html',layer:'L0',lines:'~262',desc:'Pure speed terminal (archived)'},
+  {name:'Steno Terminal',file:'qbit-steno-term.html',layer:'L0',lines:'~800',desc:'Every byte carries signal, encode/decode'},
+  {name:'Steno Pad',file:'qbit-steno-pad.html',layer:'L0',lines:'~700',desc:'Dual-pane steno editor, Channel A+B'},
+  {name:'μgrad R0',file:'ugrad-r0.html',layer:'L0-L3',lines:'~1600',desc:'R0-R4 AI terminal, VQC, Bloch, QASM'},
+  {name:'QPU Results',file:'qpu-goldie-results.html',layer:'L3',lines:'~1000',desc:'Scan pipeline, quantum locate, bullet-time'},
+  {name:'QPU PointCloud',file:'qpu-pointcloud.html',layer:'L3',lines:'~1300',desc:'WebGL point cloud, scan ingest'},
+  {name:'μgrad Quantum',file:'ugrad-quantum.html',layer:'L0-L3',lines:'~1200',desc:'Bloch autograd, earth-layer topo, Dijkstra'},
+  {name:'μPark',file:'ugrad-photonic-park.html',layer:'L0-L3',lines:'~1800',desc:'4 AI riders, Aurora topo, IBM gates, evolution'},
+  {name:'μgrad Sentence',file:'ugrad-sentence.html',layer:'L0',lines:'~900',desc:'Sentence-level AI, closure engine, 94K fwd/s'},
+  {name:'μgrad Contrail',file:'ugrad-contrail.html',layer:'L0',lines:'~1100',desc:'Contrail-integrated training features'},
+  {name:'μgrad Contrail Raw',file:'ugrad-contrail-raw.html',layer:'L0',lines:'~800',desc:'Raw contrail classification terminal'},
+  {name:'Core Race',file:'qbit-core-race.html',layer:'L0-L3',lines:'~1680',desc:'Globe OSINT terminal, dormant mode, settings, info panel'},
+  {name:'Progress',file:'progress.html',layer:'L7',lines:'~300',desc:'This page — ecosystem tracker'}
+];
+const ag=document.getElementById('app-grid');
+const LC={'L0':'var(--red)','L0-L1':'var(--orange)','L0-L3':'var(--yellow)','L1':'var(--orange)','L1-L2':'var(--orange)','L3':'var(--green)','L4':'var(--cyan)','L5':'var(--blue)','L5-L6':'var(--purple)','L6':'var(--purple)','L7':'var(--dim)'};
+APPS.forEach(a=>{ag.innerHTML+=`<div class="card"><div class="name"><a href="${a.file}">${a.name}</a><span class="layer" style="color:${LC[a.layer]||'var(--dim)'};border:1px solid ${LC[a.layer]||'var(--dim)'}">${a.layer}</span></div><div style="color:var(--fg);font-size:11px">${a.desc}</div><div class="meta">${a.file} · ${a.lines}</div></div>`});
+
+const MODULES=[
+  {name:'quantum-prefixes.js',lines:'~450',desc:'11 symbols, 59 languages, BroadcastChannel sync'},
+  {name:'qbit-dac.js',lines:'~750',desc:'DAC+ tracks/stripes/complexity, .qbit universal codec'},
+  {name:'qbit-steno.js',lines:'~350',desc:'13 Unicode spaces, 19b/line steganographic encoding'},
+  {name:'qbit-preflight.js',lines:'~727',desc:'Pre-submission validation, 6-check scan pipeline'},
+  {name:'history-search-engine.js',lines:'~600',desc:'20 connectors, tone analysis, economic signals'},
+  {name:'plan-corpus-indexer.js',lines:'~200',desc:'.plan.md indexer, category extraction'},
+  {name:'sw.js',lines:'~80',desc:'Service worker, offline-first cache'},
+  {name:'quantum-theme.css',lines:'~120',desc:'Shared light/dark theming, --qp-* vars'}
+];
+const mg=document.getElementById('module-grid');
+MODULES.forEach(m=>{mg.innerHTML+=`<div class="card"><div class="name"><a href="${m.name}">${m.name}</a></div><div style="color:var(--fg);font-size:11px">${m.desc}</div><div class="meta">${m.lines}</div></div>`});
+
+const cs=document.getElementById('codec-status');
+cs.innerHTML=`<div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(250px,1fr))">
+  <div class="card" style="border-color:rgba(63,185,80,0.3)"><div class="name" style="color:var(--green)">H.qbit — Universal Codec</div><div style="font-size:11px">Not a wrapper — native quantum-aware media encoding. Steno whitespace carries 19b/line metadata invisible to legacy decoders. Works with EXR, ProRes, H.264, raw PCM, point clouds, QASM circuits.</div></div>
+  <div class="card"><div class="name" style="color:var(--cyan)">qbitCodec.encode()</div><div style="font-size:11px">DAC classify → steno-encode → preflight validate → universal output</div></div>
+  <div class="card"><div class="name" style="color:var(--purple)">qbitCodec.scanEncode()</div><div style="font-size:11px">9 modalities: photogrammetry, SAM2, gsplat, WiFi, LiDAR, IR, audio, kbatch, QPU</div></div>
+  <div class="card"><div class="name" style="color:var(--blue)">qbitCodec.mediaEncode()</div><div style="font-size:11px">Universal media: video frames, audio samples, EXR layers, point clouds</div></div>
+  <div class="card"><div class="name" style="color:var(--orange)">Speed Stack</div><div style="font-size:11px;font-family:var(--mono)">T5-native: 3.2ns/line (312M/sec)<br>Rust standard: 89.6ns/line<br>WASM: ~300ns/line<br>JS: ~246ns/line<br>Cortical: 24ms loop</div></div>
+  <div class="card"><div class="name" style="color:var(--yellow)">Body Ecosystem</div><div style="font-size:11px">CAT/MRI → Bloch point cloud → IK body mapping: endocrine, neural, nerve, vascular, respiratory, skeletal, muscular, lymphatic</div></div>
+</div>`;
+
+const GLUE=[
+  ['Cursor Plugin','extension.ts','~433','require() both modules, complexity sidebar, scope hover'],
+  ['MCP Server','mcp_server.py','~718','16 tools (5 DAC+) via node subprocess'],
+  ['Git Hooks','prefix-audit.py','~306','Node.js batch classifier, fallback Python regex'],
+  ['Cursor Hooks','hooks.json','~60','On-save, pre-commit, prepare-commit-msg'],
+  ['Browser Extension','history-search/','~800','17-connector search above Google/Bing/DDG'],
+  ['μgrad Worker','ugrad-worker.js','~400','VQE, QBT, QAS, cortical, organoid compute']
+];
+const gb=document.getElementById('gluelam-body');
+GLUE.forEach(g=>{gb.innerHTML+=`<tr><td style="color:var(--blue)">${g[0]}</td><td style="color:var(--dim);font-family:var(--mono)">${g[1]}</td><td style="color:var(--purple)">${g[2]}</td><td>${g[3]}</td></tr>`});
+
+const DECISIONS=[
+  'beyondBINARY prefix system: 11 symbols, 9 core + 2 extended',
+  'Gluelam architecture: isomorphic browser+Node.js shared modules',
+  'BroadcastChannel for cross-app communication (11 channels)',
+  'Single-file PWA apps: each HTML is self-contained, zero build',
+  'quantum-prefixes.js as single source of truth for all 59 languages',
+  'Iron Line 8-layer pipeline with 24ms cortical loop target',
+  'R-level staircase: R0 micrograd → R6 μorganoid progression',
+  'Steno codec: 13 Unicode spaces, 19 bits/line, invisible to formatters',
+  'DAC+ dimensional addressing: tracks, stripes, complexity analysis',
+  '.qbit codec: universal file format (DAC+steno+preflight+media)',
+  'Tauri v2 for native desktop (macOS, Windows, Linux)',
+  'Go WebSocket bridge for real-time communication',
+  'WGSL GPU compute shaders for parallel prefix classification',
+  'Rust prefix engine with AST (tree-sitter) + SIMD paths',
+  'WASM compilation for browser-native Rust speed',
+  'Pre-commit hooks: ruff, clippy, prefix headers, version sync',
+  'CI/CD: 4 workflows (ci, health, release, pages)',
+  'Quantum gate mapping: each prefix → quantum gate (H,CNOT,X,...)',
+  'QASM export from prefix-classified code',
+  'VQC (Variational Quantum Circuit) pipeline',
+  'Preflight: 10-check validation for quantum circuit submission',
+  'Live QPU calibration ingestion (CSV → per-qubit health A-F)',
+  'System directory: compiled CPU/GPU/QPU/.qbit registry',
+  '3D quantum mesh: Bloch point clouds, 5 render modes',
+  'MOPA/UV laser pipeline: STL + .qbit + XYZ + G-code export',
+  'Scan pipeline: 9 modalities → quantum locate → bullet-time',
+  'Ballistic waveform + dispersion relation + Iron Condor circuit',
+  'Infrastructure layers: 7 layers, 115 facilities on globe',
+  'Ping calibration: IANA→DNS→CDN→proxy with L2 stop-gaps',
+  'Pre-idiot gold standard: network grade gates benchmarks',
+  'Quantum Codex: Bloch astrology (12 houses × 11 gates)',
+  'Dashboard Inspect sync: 6-panel view from quantum-notepad',
+  'H.qbit universal codec: own standard, not wrapping ProRes/EXR',
+  'Body ecosystem mapping: CAT/MRI → IK via Bloch point cloud',
+  'Contrail shorthand: evolving Unicode-style code concept language',
+  'kBatch code-building capsules: symbol → block concept mapping',
+  'Contrail→Circuit→Staff→.qbit→Text: 5-stage universal pipeline',
+  'Musical staff codec: gate→note mapping (H=C4, CNOT=E4, X=G4), WebAudio',
+  'qbitCodec.contrailPipeline(): unified contrail→QASM→staff→steno→text(11 langs)',
+  'Photonic park: Xanadu Aurora 8-sector topology as 3D wireframe terrain for AI racing',
+  'IBM Quantum gate judges: weightsToQASM → localQSim → hellingerFidelity → speed boost',
+  'ChipGenome: evolvable photonic chip layout (crossover + mutation + fastRace fitness)',
+  'Studio→Park pipeline: visual chip design → BroadcastChannel genome → terrain application',
+  'Earth-layer quantum autograd: each NN layer mapped to geological depth with gate error',
+  'Core Race: standalone globe OSINT terminal with real HTTP ping timing + CTF scoring',
+  'Dormant mode: data-flow-only rendering strips globe chrome for pure signal visualization',
+  'Settings panel: per-layer ring opacity/flash + infrastructure tier toggles + map overlays'
+];
+const dd=document.getElementById('decisions');
+DECISIONS.forEach((d,i)=>{dd.innerHTML+=`<div style="padding:3px 8px;font-size:11px;border-bottom:1px solid rgba(48,54,61,0.3)"><span style="color:var(--dim);font-family:var(--mono);width:24px;display:inline-block">${i+1}.</span> ${d}</div>`});
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(QP){QP.broadcastState('progress',{coverage:0,totalLines:0,classifiedLines:0,prefixCounts:{},role:'tracker'});QP.requestStateSync()}
+})();
+</script>
+</body>
+</html>

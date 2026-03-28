@@ -1,0 +1,70 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | qbitOS game hub path -->
+<!--
+  Principal: Tad R. Ericson · qbitOS / ugrad.ai
+  Engineering: Cursor IDE · assistive models (Anthropic Claude, OpenAI GPT, Mistral-class) — human authorship & review
+-->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0b">
+<meta name="description" content="qbitOS μgrad games hub path — Tad R. Ericson · ugrad.ai · Iron Line arenas">
+<title>qbitOS — game hub</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+<link rel="stylesheet" href="../quantum-theme.css">
+<style>
+  body{margin:0;min-height:100vh;background:#000;color:rgba(250,250,252,.94);font:15px/1.5 ui-sans-serif,system-ui,sans-serif;padding:24px 20px 40px;box-sizing:border-box}
+  .wrap{max-width:40rem;margin:0 auto}
+  h1{font-size:1.25rem;font-weight:700;margin:0 0 8px;letter-spacing:.02em}
+  p{color:rgba(250,250,252,.62);margin:0 0 16px;font-size:14px}
+  .cta{display:inline-block;padding:10px 18px;background:rgba(45,212,191,.15);border:1px solid rgba(45,212,191,.35);color:#5eead4;border-radius:10px;font-weight:600;text-decoration:none;margin:4px 8px 12px 0}
+  .cta:hover{background:rgba(45,212,191,.22)}
+  ul{margin:12px 0 0;padding-left:1.2rem;color:rgba(250,250,252,.72);font-size:13px}
+  a{color:#7dd3fc}
+  .muted{font-size:12px;margin-top:20px;color:rgba(250,250,252,.45)}
+  .deck{margin-top:22px;padding:14px 16px;border:1px solid rgba(250,250,252,.1);border-radius:12px;background:rgba(250,250,252,.04);font-size:12px;line-height:1.55;color:rgba(250,250,252,.55)}
+  .deck strong{color:rgba(250,250,252,.82);font-weight:600}
+  .deck a{color:#93c5fd}
+</style>
+<script src="../quantum-prefixes.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <h1>qbitOS game hub</h1>
+  <p>Path alias for the μgrad arenas shell registry. Opens the same hub as <code>games-ugrad-hub.html</code> — use this folder for qbitOS-branded links and routing.</p>
+  <a class="cta" href="../games-ugrad-hub.html">Enter μgrad games hub</a>
+  <a class="cta" href="../games-ugrad-terminal.html" style="border-color:rgba(250,250,252,.2);background:rgba(250,250,252,.06);color:rgba(250,250,252,.9)">Terminal install</a>
+  <ul>
+    <li><a href="../raw-games-ugrad.html">Raw corpus index</a></li>
+    <li><a href="../launcher.html">Launcher</a> · <a href="../terminal.html">HexTerm</a> · <a href="../uterm.html">uterm</a></li>
+    <li><a href="ATTRIBUTION.md">Attribution &amp; AI tooling</a> · <a href="../../docs/qbitos-org-investor-presentation.md" title="Repo root docs">Diligence brief</a></li>
+  </ul>
+  <p class="muted"><code>web/qbitos-gameHUB/index.html</code></p>
+  <aside class="deck" role="note" aria-label="Principal and diligence">
+    <p><strong>Principal</strong> · Tad R. Ericson · qbitOS / ugrad.ai</p>
+    <p><strong>AI-assisted engineering</strong> · Development may use <strong>Cursor</strong>, <strong>Claude</strong> (Anthropic), <strong>GPT</strong> / ChatGPT (OpenAI), and <strong>Mistral</strong>-class models as assistive tooling; shipping artifacts are <strong>human-authored and reviewed</strong>. Third-party marks are not endorsed.</p>
+    <p><strong>Diligence</strong> · See <a href="ATTRIBUTION.md">ATTRIBUTION.md</a> and repo <code>docs/qbitos-org-investor-presentation.md</code>. No implied partnership with named investors or vendors.</p>
+  </aside>
+</div>
+<script>
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function(){
+  var QP = window.QuantumPrefixes;
+  try{
+    var ht = new BroadcastChannel('hexterm');
+    ht.postMessage({ type:'qbitos-gameHUB-ready', source:'qbitos-gameHUB', principal:'Tad R. Ericson', ts:Date.now() });
+    ht.close();
+  }catch(_){}
+  if(QP){
+    try{
+      QP.broadcastState('qbitos-gameHUB',{app:'qbitos-gameHUB',role:'path-alias',principal:'Tad R. Ericson',ts:Date.now()});
+    }catch(e1){}
+    try{
+      QP.onStateChange(function(){});
+    }catch(e2){}
+  }
+})();
+</script>
+</body>
+</html>

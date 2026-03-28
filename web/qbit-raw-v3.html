@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>qbit raw</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#000;color:#c9d1d9;font:13px/1.5 'SF Mono','Fira Code','Cascadia Code',monospace;overflow:hidden}
+#a{display:flex;flex-direction:column;height:100vh}
+#o{flex:1;overflow-y:auto;padding:8px 12px;white-space:pre-wrap;word-break:break-word}
+#o::-webkit-scrollbar{width:4px}
+#o::-webkit-scrollbar-thumb{background:#161b22;border-radius:2px}
+#s{display:flex;gap:12px;padding:2px 12px;border-top:1px solid #0d1117;font-size:10px;color:#484f58;flex-shrink:0;user-select:none}
+#p{display:flex;align-items:center;gap:4px;padding:4px 12px;border-top:1px solid #0d1117;flex-shrink:0}
+#p b{color:#c9a84c;font-weight:400;user-select:none}
+#p input{flex:1;background:none;border:none;color:#c9d1d9;font:inherit;outline:none;caret-color:#c9a84c}
+.pfx{min-width:3ch;text-align:right;font-size:11px;color:#484f58;user-select:none;transition:color .1s}
+.gt{display:inline-block;min-width:3ch;text-align:right;margin-right:1ch;user-select:none;font-size:12px}
+.g{color:#3fb950}.y{color:#c9a84c}.r{color:#f85149}.c{color:#58a6ff}.d{color:#484f58}.m{color:#bc8cff}.o{color:#d29922}
+#l{display:flex;gap:1px;padding:2px 12px;font-size:10px;user-select:none;flex-shrink:0}
+.ll{padding:1px 5px;border-radius:2px;cursor:pointer;color:#484f58;letter-spacing:.5px;transition:color .1s}.ll:hover{color:#c9d1d9}.ll.on{color:#c9a84c}
+#cp{display:none;position:fixed;top:15%;left:50%;transform:translateX(-50%);width:340px;max-width:90vw;background:#0d1117;border:1px solid #30363d;border-radius:8px;z-index:100;box-shadow:0 8px 32px rgba(0,0,0,.7)}
+#cp.open{display:block}#cp input{width:100%;padding:8px 12px;background:none;border:none;border-bottom:1px solid #21262d;color:#c9d1d9;font:inherit;outline:none;caret-color:#c9a84c}
+#cp-ls{max-height:240px;overflow-y:auto}.cp-i{padding:5px 12px;cursor:pointer;color:#8b949e;font-size:12px;display:flex;justify-content:space-between}
+.cp-i:hover,.cp-i.sel{background:#161b22;color:#c9d1d9}.cp-i b{color:#484f58;font-weight:400;font-size:10px}
+.cmd{cursor:pointer}.cmd:hover{text-decoration:underline}
+@media(max-width:600px){html,body{font-size:12px}#o{padding:6px 8px}#p{padding:4px 8px}}
+</style>
+</head>
+<body>
+<div id="a">
+<div id="l"><span class="ll on" data-h="qbit-raw">⚡0</span><span class="ll" data-h="qbit-search">◉1</span><span class="ll" data-h="nterminal">△2</span><span class="ll" data-h="quantum-gutter">◇3</span><span class="ll" data-h="quantum-notepad">▣4</span><span class="ll" data-h="qbit-studio">◈5</span><span class="ll" data-h="qbit-medical">✚6</span><span class="ll" data-h="history">◎7</span></div>
+<div id="o"></div>
+<div id="s"><span id="s-cov">cov:—</span><span id="s-dac">dac:tracks</span><span id="s-gl">· glue</span><span id="s-w">· watch</span></div>
+<div id="p"><span class="pfx" id="pfx"></span><b id="pb">qbit ❯</b><input id="i" spellcheck="false" autocomplete="off"></div>
+</div>
+<div id="cp"><input id="cp-in" placeholder="command..." spellcheck="false"><div id="cp-ls"></div></div>
+<span data-qp-theme-host style="display:none"></span>
+<script defer src="quantum-prefixes.js"></script>
+<script defer src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+(function(){
+var T0=performance.now();
+var O=document.getElementById('o'),I=document.getElementById('i');
+var PFX=document.getElementById('pfx'),PB=document.getElementById('pb');
+var SC=document.getElementById('s-cov'),SD=document.getElementById('s-dac');
+var SG=document.getElementById('s-gl'),SWE=document.getElementById('s-w');
+var H=[];try{H=JSON.parse(localStorage.getItem('qr-h')||'[]')}catch(e){}
+var hi=-1,S0=Date.now(),NW=false,totL=0,clsL=0;
+
+function w(h){O.insertAdjacentHTML('beforeend',h+'\n');O.scrollTop=O.scrollHeight}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function ln(t,c){w(c?'<span class="'+c+'">'+esc(t)+'</span>':esc(t))}
+function pad(n,l){var s=String(n);while(s.length<l)s=' '+s;return s}
+
+var PCLS={'n:':'o','+1:':'d','-n:':'m','+0:':'c','0:':'c','-1:':'r','+n:':'y','+2:':'g','-0:':'m','+3:':'o','1:':'c'};
+
+function lang(code){
+if(/^#!/.test(code))return'shell';
+if(/\bdef\s|\bimport\s\w|\bfrom\s\w/.test(code))return'python';
+if(/\bfn\s|\blet\s+mut|\bimpl\s/.test(code))return'rust';
+if(/\bfunc\s|\bpackage\s/.test(code))return'go';
+if(/<[a-z]|<\//.test(code))return'html';
+return'javascript'}
+
+function wg(line,lg){
+var QP=window.QuantumPrefixes;
+if(!QP){w('<span class="gt d">  </span>'+esc(line));return}
+var c=QP.classifyLine(line,lg||'javascript');
+var sym=c.sym||'  ',cls=PCLS[c.sym]||'d';
+w('<span class="gt '+cls+'">'+pad(sym,3)+'</span>'+esc(line))}
+
+function cov(code,lg){
+var QP=window.QuantumPrefixes;if(!QP)return;
+var m=QP.prefixMetadata(code,lg||'javascript');
+totL+=m.totalLines;clsL+=m.classifiedLines;
+var pct=totL?Math.round(clsL/totL*100):0;
+SC.innerHTML='cov:<span class="g">'+pct+'%</span>'}
+
+function stat(){
+var qp=!!window.QuantumPrefixes,dac=!!window.QbitDAC;
+SG.innerHTML='<span class="'+(qp&&dac?'g':'d')+'">'+(qp&&dac?'✓':'·')+'</span> glue';
+SWE.innerHTML='<span class="'+(NW?'g':'d')+'">'+(NW?'⌁':'·')+'</span> watch'}
+
+var C={
+help:function(){
+w('<span class="y">commands</span> <span class="d">· click to run · ⌘K palette · ⌘1-8 layers</span>');
+w('  <span class="d">── core ──</span>');
+w('  <span class="c cmd">help</span>      <span class="d">commands</span>        <span class="c cmd">clear</span>     <span class="d">clear</span>');
+w('  <span class="c cmd">speed</span>     <span class="d">benchmark</span>       <span class="c cmd">version</span>   <span class="d">system</span>');
+w('  <span class="c cmd">uptime</span>    <span class="d">session</span>         <span class="c cmd">date</span>      <span class="d">timestamp</span>');
+w('  <span class="c cmd">echo</span>      <span class="d">print</span>           <span class="c cmd">eval</span>      <span class="d">run JS</span>');
+w('  <span class="d">── iron line ──</span>');
+w('  <span class="c cmd">layers</span>    <span class="d">L0-L7</span>           <span class="c cmd">apps</span>      <span class="d">all apps</span>');
+w('  <span class="c cmd">pipeline</span>  <span class="d">data flow</span>       <span class="c cmd">loop</span>      <span class="d">event loop</span>');
+w('  <span class="c cmd">tether</span>    <span class="d">cross-app</span>       <span class="c cmd">open</span>      <span class="d">app/URL</span>');
+w('  <span class="d">── build ──</span>');
+w('  <span class="c cmd">build</span>     <span class="d">pipeline</span>        <span class="c cmd">test</span>      <span class="d">suites</span>');
+w('  <span class="c cmd">lint</span>      <span class="d">linters</span>         <span class="c cmd">deploy</span>    <span class="d">steps</span>');
+w('  <span class="c cmd">config</span>    <span class="d">project</span>');
+w('  <span class="d">── quantum ──</span>');
+w('  <span class="c cmd">gutter</span>    <span class="d">classify code</span>   <span class="c cmd">prefix</span>    <span class="d">line info</span>');
+w('  <span class="c cmd">stripe</span>    <span class="d">token colors</span>    <span class="c cmd">dac</span>       <span class="d">DAC codec</span>');
+w('  <span class="c cmd">coverage</span>  <span class="d">prefix stats</span>   <span class="c cmd">watch</span>     <span class="d">night watch</span>');
+w('  <span class="c cmd">gluelam</span>   <span class="d">module status</span>')},
+
+clear:function(){O.innerHTML=''},
+cls:function(){O.innerHTML=''},
+echo:function(a){ln(a.join(' '))},
+date:function(){ln(new Date().toISOString(),'c')},
+whoami:function(){ln('{.qbit} raw v3.0 — L0 iron line terminal','y')},
+
+uptime:function(){
+var s=Math.floor((Date.now()-S0)/1000),m=Math.floor(s/60),h=Math.floor(m/60);
+ln(h+'h '+m%60+'m '+s%60+'s','g')},
+
+version:function(){
+w('<span class="y">{.qbit} raw v3.0</span>');
+ln('  cores: '+navigator.hardwareConcurrency,'d');
+ln('  mem:   '+(navigator.deviceMemory||'?')+'GB','d');
+ln('  lang:  '+navigator.language,'d')},
+
+eval:function(a,r){
+if(!a.length){ln('usage: eval <expr>','d');return}
+try{var v=eval(r.substring(r.indexOf(' ')+1));
+if(typeof v==='string'&&v.indexOf('\n')>=0){
+var lg=lang(v);v.split('\n').forEach(function(l){wg(l,lg)});cov(v,lg)
+}else ln(String(v),'g')}catch(e){ln(e.message,'r')}},
+
+speed:function(){
+w('<span class="y">⚡ speed</span>');
+var tmp=document.createElement('div'),d0=performance.now(),i;
+for(i=0;i<1000;i++)tmp.insertAdjacentHTML('beforeend','<s>'+i+'</s>');
+var dom=performance.now()-d0;
+var m0=performance.now(),x=0;for(i=0;i<1e6;i++)x+=Math.sqrt(i);
+var math=performance.now()-m0;
+var s0=performance.now(),ar=[];for(i=0;i<1e4;i++)ar.push('q');ar.join('');
+var str=performance.now()-s0;
+var j0=performance.now();for(i=0;i<1000;i++)JSON.parse(JSON.stringify({a:1,b:[2,3]}));
+var json=performance.now()-j0;
+var tot=dom+math+str+json,cnt=3.011e6;
+function p(n){return pad(n.toFixed(1),6)}
+w('  <span class="g">dom    1K nodes  '+p(dom)+'ms</span>');
+w('  <span class="g">math   1M sqrt   '+p(math)+'ms</span>');
+w('  <span class="g">string 10K cat   '+p(str)+'ms</span>');
+w('  <span class="g">json   1K rt     '+p(json)+'ms</span>');
+var QP=window.QuantumPrefixes,DAC=window.QbitDAC;
+if(QP){var p0=performance.now();
+for(i=0;i<1000;i++)QP.classifyLine('function hello(){return 42}','javascript');
+var pfx=performance.now()-p0;tot+=pfx;cnt+=1e3;
+w('  <span class="g">prefix 1K class  '+p(pfx)+'ms</span>')}
+if(DAC&&DAC.dacTracks){var t0=performance.now();
+for(i=0;i<1000;i++)DAC.dacTracks('if(x){\n  y++;\n}','javascript');
+var dact=performance.now()-t0;tot+=dact;cnt+=1e3;
+w('  <span class="g">dac    1K tracks '+p(dact)+'ms</span>')}
+w('  <span class="y">total            '+p(tot)+'ms</span>');
+w('  <span class="c">rate  '+(cnt/tot|0)+' ops/ms</span>');
+w('  <span class="y">'+(tot<20?'🔥 on fire':tot<50?'⚡ blazing':tot<100?'✓ fast':'⚠ slow')+'</span>')},
+
+layers:function(){
+w('<span class="y">iron line</span>');
+var L=[['L0','speed','qbit-raw',1],['L1','search','qbit-search',0],
+['L2','commander','nterminal',0],['L3','quantum','quantum-gutter',0],
+['L4','notepad','quantum-notepad',0],['L5','rndr','qbit-studio',0],
+['L6','medical','qbit-medical',0],['L7','persona','history',0]];
+for(var i=0;i<L.length;i++){var l=L[i],tag=l[3]?' <span class="y">← here</span>':'';
+w('  <span class="c">'+l[0]+'</span> '+l[1]+Array(13-l[1].length).join(' ')+'<span class="d">'+l[2]+'.html</span>'+tag)}},
+
+apps:function(){
+var a=['quantum-notepad','hexbench','terminal','nterminal','qbit-search','qbit-raw',
+'qbit-raw-v1','qbit-studio','qbit-medical','qbit-globe','hexcast','hexcast-send',
+'research-lab','archflow','github-dashboard','launcher','grid','feed','questcast',
+'sponsor','jawta-audio','numsy','brothernumsy','kbatch','blackwell','quantum-gutter',
+'freya','freya-landing','history','search','qa','uvqbit','plan-viewer'];
+w('<span class="y">'+a.length+' apps</span>');
+for(var i=0;i<a.length;i+=4){var r='  ';
+for(var j=i;j<Math.min(i+4,a.length);j++){var n=a[j];r+='<span class="c">'+n+Array(Math.max(1,21-n.length)).join(' ')+'</span>'}
+w(r)}},
+
+build:function(){
+w('<span class="y">build</span>');
+w('  <span class="c">nu scripts/build.nu all</span>     <span class="d">everything</span>');
+w('  <span class="c">nu scripts/build.nu wasm</span>    <span class="d">WASM</span>');
+w('  <span class="c">bash scripts/build-wasm.sh</span>  <span class="d">Rust→WASM</span>');
+w('  <span class="c">cargo tauri build</span>           <span class="d">desktop</span>')},
+
+test:function(){
+w('<span class="y">test</span>');
+w('  <span class="c">nu scripts/test.nu all</span>             <span class="d">all</span>');
+w('  <span class="c">cargo test -p uvspeed-prefix-engine</span> <span class="d">Rust</span>');
+w('  <span class="c">uv run pytest</span>                      <span class="d">Python</span>')},
+
+lint:function(){
+w('<span class="y">lint</span>');
+w('  <span class="c">uv run ruff check .</span>          <span class="d">Python</span>');
+w('  <span class="c">cargo clippy -- -D warnings</span>  <span class="d">Rust</span>');
+w('  <span class="c">cargo fmt --check</span>            <span class="d">fmt</span>')},
+
+deploy:function(){
+w('<span class="y">deploy</span>');
+var s=['pre.nu audit','version-sync','cargo test','uv run pytest',
+'clippy','ruff check','build wasm','build tauri','git tag','git push'];
+for(var i=0;i<s.length;i++)w('  <span class="d">'+(i<9?' ':'')+(i+1)+'.</span> <span class="c">'+s[i]+'</span>')},
+
+config:function(){
+w('<span class="y">config</span>');
+w('  <span class="d">project</span>  <span class="c">uvspeed</span>');
+w('  <span class="d">apps</span>     <span class="c">33</span>');
+w('  <span class="d">langs</span>    <span class="c">59</span>');
+w('  <span class="d">rust</span>     <span class="c">1.93+</span>');
+w('  <span class="d">python</span>   <span class="c">3.13 (uv)</span>');
+w('  <span class="d">tauri</span>    <span class="c">2.x</span>')},
+
+open:function(a){
+if(!a.length){ln('usage: open <app|URL>','d');return}
+var t=a[0];
+if(t.indexOf('http')===0){window.open(t,'_blank');ln('→ '+t,'g');return}
+var m={notepad:'quantum-notepad',bench:'hexbench',term:'terminal',search:'qbit-search',
+raw:'qbit-raw',studio:'qbit-studio',med:'qbit-medical',globe:'qbit-globe',
+gutter:'quantum-gutter',dash:'github-dashboard',lab:'research-lab'};
+var f=(m[t]||t)+'.html';window.open(f,'_blank');ln('→ '+f,'g')},
+
+pipeline:function(){
+w('<span class="y">pipeline</span>');
+w('  <span class="c">L0</span> input → <span class="c">L1</span> search → <span class="c">L2</span> cmd → <span class="c">L3</span> quantum');
+w('  <span class="c">L4</span> notepad → <span class="c">L5</span> render → <span class="c">L6</span> med → <span class="c">L7</span> persona')},
+
+loop:function(){
+w('<span class="y">event loop</span>');
+w('  <span class="d">broadcast</span> <span class="g">connected</span>');
+w('  <span class="d">history</span>   <span class="g">'+H.length+'</span>');
+w('  <span class="d">session</span>   <span class="g">'+((Date.now()-S0)/1000|0)+'s</span>');
+w('  <span class="d">prefix</span>   <span class="g">'+(window.QuantumPrefixes?'✓ loaded':'· pending')+'</span>');
+w('  <span class="d">dac</span>      <span class="g">'+(window.QbitDAC?'✓ loaded':'· pending')+'</span>');
+w('  <span class="d">watch</span>    <span class="g">'+(NW?'⌁ active':'· off')+'</span>')},
+
+tether:function(a){
+if(!a.length){ln('usage: tether <app> <msg>','d');return}
+bc.postMessage({type:'command',source:'qbit-raw',target:a[0],command:a.slice(1).join(' ')});
+ln('→ '+a[0],'g')},
+
+gutter:function(a,r){
+var QP=window.QuantumPrefixes;
+if(!QP){ln('quantum-prefixes.js pending','r');return}
+if(!a.length){
+var sample='#!/usr/bin/env node\nimport fs from "fs";\nclass App {\n  constructor(){\n    this.x=42;\n  }\n  run(){\n    if(this.x>0){\n      for(let i=0;i<this.x;i++){\n        console.log(i);\n      }\n    }\n    return this.x;\n  }\n}\ntry {\n  new App().run();\n} catch(e){\n  console.error(e);\n}';
+w('<span class="y">⌁ quantum gutter</span>');
+var lines=sample.split('\n'),lg='javascript';
+for(var i=0;i<lines.length;i++)wg(lines[i],lg);
+cov(sample,lg);return}
+var code=r.substring(r.indexOf(' ')+1),lg=lang(code);
+if(code.indexOf('\n')>=0){code.split('\n').forEach(function(l){wg(l,lg)})}
+else wg(code,lg);cov(code,lg)},
+g:function(a,r){C.gutter(a,r)},
+
+prefix:function(a,r){
+var QP=window.QuantumPrefixes;
+if(!QP){ln('quantum-prefixes.js pending','r');return}
+if(!a.length){ln('usage: prefix <line of code>','d');return}
+var code=r.substring(r.indexOf(' ')+1),lg=lang(code);
+var c=QP.classifyLine(code,lg);
+w('<span class="'+(PCLS[c.sym]||'d')+'">'+pad(c.sym||'—',3)+'</span> '+esc(code));
+w('  <span class="d">category:</span> <span class="c">'+(c.category||'default')+'</span>');
+w('  <span class="d">class:</span>    <span class="c">'+(c.cls||'none')+'</span>');
+w('  <span class="d">lang:</span>     <span class="c">'+lg+'</span>')},
+pfx:function(a,r){C.prefix(a,r)},
+
+stripe:function(a,r){
+var DAC=window.QbitDAC;
+if(!DAC||!DAC.dacStripe){ln('qbit-dac.js pending','r');return}
+if(!a.length){
+var samples=['const x = Math.sqrt(42);','def hello(name): return f"hi {name}"','fn main() { let x = vec![1,2,3]; }'];
+w('<span class="y">⌁ token stripe</span>');
+samples.forEach(function(s){
+var tk=DAC.dacStripe(s,lang(s)),out='  ';
+tk.forEach(function(t){var cl=t.type==='keyword'?'m':t.type==='number'?'o':t.type==='operator'?'r':t.type==='string'?'g':'c';
+out+='<span class="'+cl+'">'+esc(t.text)+'</span>'});w(out)});return}
+var code=r.substring(r.indexOf(' ')+1);
+var tk=DAC.dacStripe(code,lang(code)),out='';
+tk.forEach(function(t){var cl=t.type==='keyword'?'m':t.type==='number'?'o':t.type==='operator'?'r':t.type==='string'?'g':'c';
+out+='<span class="'+cl+'">'+esc(t.text)+'</span>'});w(out)},
+
+coverage:function(){
+w('<span class="y">coverage</span>');
+w('  <span class="d">total lines:</span>      <span class="c">'+totL+'</span>');
+w('  <span class="d">classified:</span>       <span class="c">'+clsL+'</span>');
+var pct=totL?Math.round(clsL/totL*100):0;
+w('  <span class="d">coverage:</span>         <span class="'+(pct>70?'g':pct>40?'y':'r')+'">'+pct+'%</span>');
+if(window.QuantumPrefixes){
+var m=window.QuantumPrefixes.prefixMetadata('','javascript');
+w('  <span class="d">symbols:</span>          <span class="c">n: +1: -n: +0: 0: -1: +n: +2: -0: +3: 1:</span>');
+w('  <span class="d">categories:</span>       <span class="c">11</span>')}
+w('  <span class="d">languages:</span>        <span class="c">17 supported</span>')},
+cov:function(){C.coverage()},
+
+watch:function(){
+NW=!NW;
+PB.textContent=NW?'qbit ⌁':'qbit ❯';
+stat();
+if(NW){
+w('<span class="g">⌁ night watch — active</span>');
+w('<span class="d">  live prefix in prompt · gutter on commands · paste to classify</span>');
+w('<span class="d">  type</span> <span class="c">watch</span> <span class="d">again to disable</span>')
+}else{w('<span class="d">· night watch off</span>')}},
+
+gluelam:function(){
+w('<span class="y">gluelam — shared modules</span>');
+var mods=[
+['quantum-prefixes.js',!!window.QuantumPrefixes,'prefix engine · 17 langs · 11 symbols'],
+['qbit-dac.js',!!window.QbitDAC,'DAC+ · tracks · stripes · codec'],
+['BroadcastChannel',!!bc,'hexterm cross-app channel'],
+['quantum-prefixes BC',!!_qpBC,'prefix state sync'],
+['localStorage',true,'history · settings · state'],
+['serviceWorker','serviceWorker'in navigator,'sw.js · PWA cache']];
+for(var i=0;i<mods.length;i++){var m=mods[i];
+w('  <span class="'+(m[1]?'g':'r')+'">'+(m[1]?'✓':'✗')+'</span> <span class="c">'+m[0]+'</span>');
+w('    <span class="d">'+m[2]+'</span>')}},
+
+dac:function(a){
+var QP=window.QuantumPrefixes,DAC=window.QbitDAC;
+if(!a.length){
+w('<span class="y">dac — dimensional addressing codec</span>');
+w('  <span class="c">dac stats</span>    <span class="d">coverage</span>');
+w('  <span class="c">dac run</span>      <span class="d">classify with gutter</span>');
+w('  <span class="c">dac tracks</span>   <span class="d">depth map</span>');
+w('  <span class="c">dac stripe</span>   <span class="d">tokens</span>');
+w('  <span class="c">dac mode X</span>   <span class="d">switch</span>');return}
+var s=a[0];
+if(s==='stats'){
+if(!QP){ln('pending','r');return}
+var m=QP.prefixMetadata('function hello(){\n  const x=42;\n  if(x>0){\n    console.log(x);\n  }\n  return x;\n}\n','javascript');
+w('<span class="g">coverage: '+m.coverage+'</span>');
+w('<span class="d">lines: '+m.totalLines+' · classified: '+m.classifiedLines+'</span>');
+var pc={};if(m.prefixCounts)Object.keys(m.prefixCounts).forEach(function(k){
+if(m.prefixCounts[k])w('  <span class="'+(PCLS[k]||'d')+'">'+pad(k,3)+' × '+m.prefixCounts[k]+'</span>')})
+}else if(s==='run'){
+if(!QP){ln('pending','r');return}
+var sample='#!/usr/bin/env node\nimport fs from "fs";\nfunction main(){\n  const x=42;\n  if(x>0){\n    for(let i=0;i<10;i++){\n      console.log(i);\n    }\n  }\n  return x;\n}';
+w('<span class="y">⌁ gutter classify</span>');
+sample.split('\n').forEach(function(l){wg(l,'javascript')});
+cov(sample,'javascript')
+}else if(s==='tracks'){
+if(!DAC||!DAC.dacTracks){ln('qbit-dac.js pending','r');return}
+var code='function outer(){\n  if(true){\n    for(let i=0;i<10;i++){\n      try{\n        console.log(i);\n      }catch(e){\n        throw e;\n      }\n    }\n  }\n}';
+w('<span class="y">⌁ depth tracks</span>');
+DAC.dacTracks(code,'javascript').forEach(function(r){var b='';for(var i=0;i<r.depth;i++)b+='│';
+w('<span class="d">'+pad(r.depth,2)+'</span> <span class="y">'+b+'</span>'+esc(r.line))})
+}else if(s==='stripe'){C.stripe(a.slice(1),a.slice(1).join(' '))
+}else if(s==='mode'){
+if(!DAC){ln('qbit-dac.js pending','r');return}
+var mode=a[1]||'tracks';DAC.dacMode(mode);ln('mode → '+mode,'g');
+SD.textContent='dac:'+mode
+}else ln('? dac '+s,'r')}
+};
+
+function exec(raw){
+var r=raw.trim();if(!r)return;
+if(r==='!!'&&H.length){exec(H[0]);return}
+H.unshift(r);if(H.length>500)H.length=500;hi=-1;
+try{localStorage.setItem('qr-h',JSON.stringify(H.slice(0,100)))}catch(e){}
+if(NW&&window.QuantumPrefixes){
+var cl=window.QuantumPrefixes.classifyLine(r,lang(r));
+var sym=cl.sym||'  ',cc=PCLS[cl.sym]||'d';
+w('<span class="gt '+cc+'">'+pad(sym,3)+'</span><span class="d">❯</span> '+esc(r))
+}else{w('<span class="d">❯</span> '+esc(r))}
+var p=r.split(/\s+/),cmd=p[0].toLowerCase(),args=p.slice(1);
+var fn=C[cmd];
+if(fn)try{fn(args,r)}catch(e){ln(e.message,'r')}
+else ln('? '+cmd,'r')}
+
+I.addEventListener('keydown',function(e){
+if(e.key==='Enter'){exec(I.value);I.value='';PFX.textContent=''}
+else if(e.key==='ArrowUp'){e.preventDefault();if(hi<H.length-1)I.value=H[++hi]}
+else if(e.key==='ArrowDown'){e.preventDefault();hi>0?I.value=H[--hi]:(hi=-1,I.value='')}
+else if(e.key==='l'&&e.ctrlKey){e.preventDefault();O.innerHTML=''}
+else if(e.key==='k'&&e.metaKey){e.preventDefault();O.innerHTML=''}
+else if(e.key==='c'&&e.ctrlKey){I.value='';PFX.textContent='';w('<span class="d">^C</span>')}
+else if(e.key==='Tab'){e.preventDefault();
+var v=I.value.trim().toLowerCase();if(!v)return;
+var m=Object.keys(C).filter(function(k){return k.indexOf(v)===0});
+if(m.length===1)I.value=m[0]+' ';
+else if(m.length>1)w('<span class="d">'+m.join('  ')+'</span>')}});
+
+I.addEventListener('input',function(){
+var QP=window.QuantumPrefixes;if(!QP){PFX.textContent='';return}
+var v=I.value.trim();if(!v){PFX.textContent='';PFX.className='pfx';return}
+var c=QP.classifyLine(v,lang(v));
+PFX.textContent=c.sym||'';PFX.className='pfx '+(PCLS[c.sym]||'d')});
+
+I.addEventListener('paste',function(e){
+if(!NW)return;
+var text=(e.clipboardData||window.clipboardData).getData('text');
+if(text.indexOf('\n')<0)return;
+e.preventDefault();
+var lines=text.split('\n'),lg=lang(text);
+w('<span class="y">⌁ night watch — '+lines.length+' lines · '+lg+'</span>');
+for(var i=0;i<lines.length;i++)wg(lines[i],lg);
+cov(text,lg)});
+
+O.addEventListener('click',function(e){var t=e.target.closest('.cmd');
+if(t){var cmd=t.textContent.trim().toLowerCase();if(C[cmd]){exec(cmd);return}}I.focus()});
+
+document.getElementById('l').addEventListener('click',function(e){
+var t=e.target.closest('.ll');if(!t||t.classList.contains('on'))return;
+window.open(t.dataset.h+'.html','_blank')});
+
+var CPI=document.getElementById('cp-in'),CPL=document.getElementById('cp-ls'),CPE=document.getElementById('cp');
+var cpOn=false,cpSel=0;
+var cpDesc={help:'commands',clear:'clear',speed:'benchmark',layers:'L0-L7',dac:'DAC codec',
+apps:'all apps',build:'pipeline',test:'suites',lint:'linters',deploy:'steps',config:'project',
+open:'app/URL',pipeline:'flow',loop:'status',tether:'cross-app',echo:'print',date:'time',
+uptime:'session',version:'system',whoami:'identity',eval:'JS',gutter:'classify',
+prefix:'line',stripe:'tokens',coverage:'stats',watch:'night watch',gluelam:'modules'};
+function cpToggle(){cpOn=!cpOn;CPE.className=cpOn?'open':'';
+if(cpOn){CPI.value='';cpFilter('');CPI.focus();cpSel=0}else I.focus()}
+function cpFilter(q){
+var keys=Object.keys(C).filter(function(k){return k!=='cls'&&k!=='g'&&k!=='pfx'&&k!=='cov'});
+if(q)keys=keys.filter(function(k){return k.indexOf(q.toLowerCase())>=0});
+CPL.innerHTML='';keys.forEach(function(k,i){var d=document.createElement('div');
+d.className='cp-i'+(i===cpSel?' sel':'');d.dataset.cmd=k;
+d.innerHTML=k+'<b>'+(cpDesc[k]||'')+'</b>';CPL.appendChild(d)})}
+CPI.addEventListener('input',function(){cpSel=0;cpFilter(CPI.value)});
+CPI.addEventListener('keydown',function(e){var items=CPL.querySelectorAll('.cp-i');
+if(e.key==='ArrowDown'){e.preventDefault();cpSel=Math.min(cpSel+1,items.length-1)}
+else if(e.key==='ArrowUp'){e.preventDefault();cpSel=Math.max(cpSel-1,0)}
+else if(e.key==='Enter'){e.preventDefault();if(items[cpSel]){exec(items[cpSel].dataset.cmd);cpToggle()}return}
+else if(e.key==='Escape'){e.preventDefault();cpToggle();return}else return;
+items.forEach(function(it,i){it.className='cp-i'+(i===cpSel?' sel':'')});
+if(items[cpSel])items[cpSel].scrollIntoView({block:'nearest'})});
+CPL.addEventListener('click',function(e){var t=e.target.closest('.cp-i');if(!t)return;exec(t.dataset.cmd);cpToggle()});
+
+document.addEventListener('keydown',function(e){
+if(e.target===CPI)return;
+var LL=['qbit-raw','qbit-search','nterminal','quantum-gutter','quantum-notepad','qbit-studio','qbit-medical','history'];
+if((e.metaKey||e.ctrlKey)&&e.key>='1'&&e.key<='8'){e.preventDefault();
+var idx=parseInt(e.key)-1;if(LL[idx]!=='qbit-raw')window.open(LL[idx]+'.html','_blank');return}
+if((e.metaKey||e.ctrlKey)&&e.key==='k'){e.preventDefault();cpToggle();return}
+if(e.key==='Escape'){if(cpOn)cpToggle();else I.focus();return}
+if(e.key==='PageUp'){e.preventDefault();O.scrollTop-=O.clientHeight*.8;return}
+if(e.key==='PageDown'){e.preventDefault();O.scrollTop+=O.clientHeight*.8;return}});
+
+var bc=new BroadcastChannel('hexterm');
+bc.onmessage=function(e){if(e.data&&e.data.type==='command')exec(e.data.command)};
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+var _qpBC=new BroadcastChannel('quantum-prefixes');
+_qpBC.onmessage=function(e){
+if(e.data&&e.data.type==='state-request'&&window.QuantumPrefixes)
+window.QuantumPrefixes.broadcastState('qbit-raw',{})};
+window.addEventListener('load',function(){
+if(window.QuantumPrefixes)window.QuantumPrefixes.broadcastState('qbit-raw',{active:true});stat()});
+
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+
+var boot=(performance.now()-T0).toFixed(1);
+w('<span class="y">{.qbit} raw</span> <span class="d">v3.0 · '+boot+'ms · gluelam '+(window.QuantumPrefixes?'✓':'⏳')+'</span>');
+w('<span class="d">L0 ·</span> <span class="c cmd">help</span> <span class="d">·</span> <span class="c cmd">watch</span> <span class="d">· ⌘K palette · ⌘1-8 hop</span>');
+w('');
+I.focus()
+})()
+</script>
+</body>
+</html>

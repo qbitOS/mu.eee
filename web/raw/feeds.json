@@ -1,0 +1,36 @@
+{
+  "schema": "ugrad-raw-feeds-manifest-v1",
+  "exportedAt": "2026-03-20T00:00:00.000Z",
+  "note": "Static placeholders on GitHub Pages. Live cross-device leaderboards require Worker+D1 ingest; client truth is localStorage + BroadcastChannel per feed.",
+  "feeds": [
+    {
+      "id": "manifest",
+      "title": "This manifest",
+      "path": "feeds.json",
+      "mime": "application/json"
+    },
+    {
+      "id": "go",
+      "title": "Go 19×19 lab — leaderboard placeholder",
+      "path": "go/leaderboard.json",
+      "localStorageKey": null,
+      "channels": ["ugrad-go-board"],
+      "mime": "application/json"
+    },
+    {
+      "id": "digital-alphabet",
+      "title": "Digital alphabet text leaderboard",
+      "path": "digital-alphabet/leaderboard.json",
+      "localStorageKey": "ugrad-digital-alphabet-lb-v1",
+      "channels": ["digital-alphabet-lb"],
+      "mime": "application/json"
+    },
+    {
+      "id": "corpus-sample",
+      "title": "Corpus NDJSON sample line (export builds full JSONL in browser)",
+      "path": "corpus/sample-export.ndjson",
+      "localStorageKey": "ugrad-corpus-log-v1",
+      "mime": "application/x-ndjson"
+    }
+  ]
+}

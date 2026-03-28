@@ -1,0 +1,2972 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>brotherNumsy &amp; Freya — beyondBINARY runner</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+    <link rel="icon" type="image/x-icon" href="../icons/favicon.ico">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: var(--qp-bg, #0d1117);
+            color: var(--qp-text-secondary, #c9d1d9);
+            font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+            overflow-y: auto;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 16px;
+            background: #161b22;
+            border-bottom: 1px solid #30363d;
+            font-size: 0.8125rem;
+            z-index: 10;
+        }
+        #header a { color: #58a6ff; text-decoration: none; }
+        #header a:hover { text-decoration: underline; }
+        .hdr-title { font-weight: 700; color: #e6b422; }
+        .hdr-freya { font-weight: 700; color: #a78bfa; }
+        .hdr-sub { color: #8b949e; font-size: 0.6875rem; }
+        #game-wrap {
+            flex: 0 0 auto;
+            height: min(60vh, 480px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        canvas { display: block; image-rendering: pixelated; image-rendering: crisp-edges; }
+        #hud {
+            position: absolute;
+            top: 12px;
+            left: 16px;
+            right: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            font-size: 0.875rem;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .hud-left, .hud-right { display: flex; flex-direction: column; gap: 4px; }
+        .hud-center { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+        .hud-item { background: rgba(13,17,23,0.7); padding: 4px 10px; border-radius: 6px; border: 1px solid #30363d; white-space: nowrap; }
+        .hud-score { color: #e6b422; font-weight: 700; font-size: 1rem; }
+        .hud-hi { color: #8b949e; }
+        .hud-speed { color: #58a6ff; }
+        .hud-freya { color: #a78bfa; font-size: 0.75rem; border-color: #7c3aed44; }
+        .hud-freya-unit { color: #06b6d4; font-size: 0.6875rem; border-color: #06b6d444; }
+        .hud-freya-power { color: #c084fc; font-size: 0.6875rem; border-color: #c084fc44; }
+
+        /* Overlays */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(13,17,23,0.88);
+            z-index: 20;
+            transition: opacity 0.3s;
+        }
+        .overlay.hidden { opacity: 0; pointer-events: none; }
+        .overlay h1 { font-size: 2.5rem; margin-bottom: 4px; }
+        .overlay h2 { font-size: 1.5rem; margin-bottom: 6px; color: #e6b422; }
+        .overlay h3 { font-size: 1rem; margin-bottom: 10px; color: #a78bfa; font-weight: 400; }
+        .overlay p { color: #8b949e; margin-bottom: 16px; max-width: 520px; text-align: center; line-height: 1.5; font-size: 0.875rem; }
+        .overlay .start-btn {
+            padding: 12px 32px;
+            font-size: 1.125rem;
+            font-family: inherit;
+            background: #e6b422;
+            color: #0d1117;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            transition: transform 0.15s, background 0.15s;
+        }
+        .overlay .start-btn:hover { transform: scale(1.05); background: #f0c040; }
+        .controls-hint {
+            margin-top: 20px;
+            font-size: 0.75rem;
+            color: #484f58;
+        }
+        .controls-hint kbd {
+            background: #21262d;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-family: inherit;
+            color: #c9d1d9;
+        }
+        .score-final { font-size: 3rem; font-weight: 700; color: #e6b422; margin: 8px 0; }
+        .dist-final { font-size: 0.875rem; color: #a78bfa; margin-bottom: 8px; }
+        .quote { font-style: italic; color: #7ee787; font-size: 0.875rem; margin-bottom: 16px; max-width: 440px; text-align: center; }
+        #footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 6px 16px;
+            background: #161b22;
+            border-top: 1px solid #30363d;
+            font-size: 0.6875rem;
+            color: #484f58;
+            z-index: 10;
+            flex-wrap: wrap;
+        }
+        #footer a { color: #58a6ff; text-decoration: none; }
+        .freya-tag { color: #a78bfa; }
+
+        /* ===== Fullscreen Mode ===== */
+        .fullscreen-btn {
+            background: none;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            color: #8b949e;
+            font-family: inherit;
+            font-size: 0.6875rem;
+            padding: 2px 8px;
+            cursor: pointer;
+            margin-left: 10px;
+            transition: all 0.15s;
+        }
+        .fullscreen-btn:hover { background: #21262d; color: #c9d1d9; border-color: #484f58; }
+        body.game-fullscreen #header { display: none; }
+        body.game-fullscreen #footer { display: none; }
+        body.game-fullscreen #bottom-panels { display: none; }
+        body.game-fullscreen #game-wrap {
+            height: 100vh;
+            flex: 1;
+        }
+        body.game-fullscreen .fullscreen-exit {
+            position: fixed;
+            top: 8px;
+            right: 8px;
+            z-index: 100;
+            background: rgba(13,17,23,0.85);
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            color: #8b949e;
+            font-family: inherit;
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            cursor: pointer;
+            display: block;
+        }
+        body.game-fullscreen .fullscreen-exit:hover { background: rgba(33,38,45,0.95); color: #c9d1d9; }
+        .fullscreen-exit { display: none; }
+
+        /* ===== Code Cell & Terminal ===== */
+        #bottom-panels {
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid #30363d;
+        }
+        .panel-section {
+            border-bottom: 1px solid #21262d;
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 6px 16px;
+            background: #161b22;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+        .panel-header:hover { background: #1c2129; }
+        .panel-header .tag { font-size: 0.5625rem; padding: 2px 6px; border-radius: 4px; }
+        .panel-body { padding: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .panel-body.collapsed { max-height: 0 !important; }
+        .code-cell-area {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            min-height: 200px;
+        }
+        .code-editor {
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #21262d;
+        }
+        .code-editor textarea {
+            flex: 1;
+            background: #0d1117;
+            color: #c9d1d9;
+            border: none;
+            padding: 12px;
+            font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+            font-size: 0.8125rem;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            min-height: 180px;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        .code-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            background: #161b22;
+            border-bottom: 1px solid #21262d;
+            font-size: 0.6875rem;
+        }
+        .code-toolbar button {
+            padding: 3px 10px;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            background: #21262d;
+            color: #c9d1d9;
+            font-family: inherit;
+            font-size: 0.6875rem;
+            cursor: pointer;
+        }
+        .code-toolbar button:hover { background: #30363d; }
+        .code-toolbar .btn-run { background: #238636; border-color: #2ea043; color: #fff; }
+        .code-toolbar .btn-run:hover { background: #2ea043; }
+
+        /* ===== Game Blocks Builder ===== */
+        .blocks-builder {
+            display: grid;
+            grid-template-columns: 160px 1fr;
+            min-height: 320px;
+            max-height: 480px;
+        }
+        .blocks-palette {
+            background: #161b22;
+            border-right: 1px solid #21262d;
+            padding: 8px;
+            overflow-y: auto;
+            font-size: 0.6875rem;
+        }
+        .blocks-palette-cat {
+            margin-bottom: 8px;
+        }
+        .blocks-palette-cat-title {
+            font-weight: 700;
+            font-size: 0.5625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 0;
+            margin-bottom: 3px;
+        }
+        .blocks-palette-chip {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            margin-bottom: 3px;
+            cursor: grab;
+            background: #0d1117;
+            transition: border-color 0.15s, background 0.15s;
+            font-size: 0.625rem;
+            font-weight: 600;
+        }
+        .blocks-palette-chip:hover {
+            border-color: #58a6ff;
+            background: #161b22;
+        }
+        .blocks-palette-chip .chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        .blocks-canvas-wrap {
+            position: relative;
+            overflow: auto;
+            background: #0d1117;
+            background-image: radial-gradient(circle, #21262d 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .blocks-canvas {
+            position: relative;
+            min-width: 1200px;
+            min-height: 600px;
+        }
+        .blocks-toolbar {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            display: flex;
+            gap: 4px;
+            z-index: 5;
+        }
+        .blocks-toolbar button {
+            padding: 3px 10px;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            background: #21262d;
+            color: #c9d1d9;
+            font-family: inherit;
+            font-size: 0.625rem;
+            cursor: pointer;
+        }
+        .blocks-toolbar button:hover { background: #30363d; }
+        .blocks-toolbar .btn-export { background: #238636; border-color: #2ea043; color: #fff; }
+        .blocks-toolbar .btn-export:hover { background: #2ea043; }
+
+        /* Game Block element */
+        .game-block {
+            position: absolute;
+            min-width: 140px;
+            border-radius: 8px;
+            border: 2px solid;
+            background: #161b22;
+            cursor: grab;
+            user-select: none;
+            font-size: 0.6875rem;
+            z-index: 2;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            transition: box-shadow 0.15s;
+        }
+        .game-block:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.5); }
+        .game-block.dragging { z-index: 10; opacity: 0.9; cursor: grabbing; }
+        .game-block-head {
+            padding: 5px 10px;
+            border-radius: 6px 6px 0 0;
+            font-weight: 700;
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+            color: #0d1117;
+        }
+        .game-block-head .block-prefix {
+            font-size: 0.5625rem;
+            opacity: 0.7;
+            font-weight: 400;
+        }
+        .game-block-body {
+            padding: 6px 10px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .game-block-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.625rem;
+        }
+        .game-block-row label {
+            color: #8b949e;
+            min-width: 48px;
+            flex-shrink: 0;
+        }
+        .game-block-row input,
+        .game-block-row select {
+            flex: 1;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 3px;
+            color: #c9d1d9;
+            padding: 2px 6px;
+            font-family: inherit;
+            font-size: 0.625rem;
+            outline: none;
+        }
+        .game-block-row input:focus,
+        .game-block-row select:focus { border-color: #58a6ff; }
+        .block-connector {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid;
+            background: #0d1117;
+            cursor: crosshair;
+            z-index: 3;
+        }
+        .block-connector.out { right: -6px; top: 50%; transform: translateY(-50%); }
+        .block-connector.in { left: -6px; top: 50%; transform: translateY(-50%); }
+        .blocks-connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .code-output {
+            background: #0d1117;
+            padding: 12px;
+            font-size: 0.75rem;
+            line-height: 1.5;
+            overflow-y: auto;
+            max-height: 300px;
+            min-height: 180px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .code-output .out-line { color: #8b949e; }
+        .code-output .out-result { color: #7ee787; }
+        .code-output .out-error { color: #f97583; }
+        .code-output .out-info { color: #58a6ff; }
+
+        /* Terminal */
+        .terminal-area {
+            background: #0d1117;
+            padding: 8px 12px;
+            min-height: 120px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 0.75rem;
+            line-height: 1.6;
+        }
+        .terminal-area .term-line { color: #8b949e; }
+        .terminal-area .term-line.result { color: #7ee787; }
+        .terminal-area .term-line.error { color: #f97583; }
+        .terminal-area .term-line.info { color: #58a6ff; }
+        .terminal-area .term-line.warn { color: #e6b422; }
+        .term-input-row {
+            display: flex;
+            align-items: center;
+            padding: 4px 12px;
+            background: #161b22;
+            border-top: 1px solid #21262d;
+        }
+        .term-prompt { color: #a78bfa; font-size: 0.75rem; margin-right: 6px; white-space: nowrap; }
+        .term-input-row input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: #c9d1d9;
+            font-family: inherit;
+            font-size: 0.75rem;
+            outline: none;
+            user-select: text;
+            -webkit-user-select: text;
+        }
+        @media (max-width: 700px) {
+            .code-cell-area { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div style="display:flex;height:2px;width:100%;flex-shrink:0"><span style="flex:1;background:#ff3838"></span><span style="flex:1;background:#ff8c38"></span><span style="flex:1;background:#ffe138"></span><span style="flex:1;background:#3fb950"></span><span style="flex:1;background:#38a5ff"></span><span style="flex:1;background:#bc8cff"></span></div>
+    <div id="header">
+        <div>
+            <span class="hdr-title">brotherNumsy</span>
+            <span class="hdr-sub"> &amp; </span>
+            <span class="hdr-freya">Freya</span>
+            <span class="hdr-sub"> — beyondBINARY endless runner</span>
+        </div>
+        <div>
+            <button class="fullscreen-btn" id="btn-fullscreen" title="Fullscreen game">&#x26F6; Fullscreen</button>
+            <a href="hexcast.html">hexcast</a>
+            <a href="kbatch.html">kbatch</a>
+            <a href="questcast.html">questcast</a>
+            <a href="jawta-audio.html">jawta</a>
+            <a href="archflow.html">archflow</a>
+            <a href="blackwell.html" style="color:#76b900;">Blackwell</a>
+            <a href="quantum-notepad.html">Notepad</a>
+        </div>
+    </div>
+
+    <div id="game-wrap">
+        <canvas id="game"></canvas>
+        <button class="fullscreen-exit" id="btn-fs-exit">&#x2716; Exit Fullscreen</button>
+
+        <div id="hud">
+            <div class="hud-left">
+                <div class="hud-item hud-score" id="hud-score">+n: 0</div>
+                <div class="hud-item hud-freya-power" id="hud-freya-power" style="display:none;"></div>
+            </div>
+            <div class="hud-center">
+                <div class="hud-item hud-freya" id="hud-freya">FREYA: Planck 0.0 &#x2113;p</div>
+                <div class="hud-item hud-freya-unit" id="hud-freya-unit"></div>
+            </div>
+            <div class="hud-right">
+                <div class="hud-item hud-speed" id="hud-speed">SPEED 1x</div>
+                <div class="hud-item hud-hi" id="hud-hi">HI: 0</div>
+            </div>
+        </div>
+
+        <!-- Start overlay -->
+        <div class="overlay" id="start-overlay">
+            <h1 style="color:#e6b422;">brotherNumsy</h1>
+            <h3>with <span style="color:#c084fc;">Freya</span> — precision companion</h3>
+            <h2>beyondBINARY runner</h2>
+            <p>The binary agents are coming. Only the quantum-prefixed can survive.<br>
+            Collect <b style="color:#58a6ff;">{+1, -1, +0, 0, -0, +n, n, -n}</b> to prove you're beyond binary.<br>
+            <b style="color:#e6b422;">Golden Child</b> tokens grant invincibility.<br>
+            <span style="color:#a78bfa;"><b>Freya</b></span> flies with you, measuring your journey from <b style="color:#06b6d4;">Planck length to Parsec</b>.<br>
+            Collect <b style="color:#c084fc;">FreyaUnit</b> tokens to unleash her <em>conversion beam</em> and clear obstacles.</p>
+            <button class="start-btn" id="btn-start">PLAY</button>
+            <div class="controls-hint">
+                <kbd>Space</kbd> / <kbd>&uarr;</kbd> Jump &nbsp;&middot;&nbsp;
+                <kbd>&darr;</kbd> Duck &nbsp;&middot;&nbsp;
+                Tap on mobile
+            </div>
+        </div>
+
+        <!-- Game Over overlay -->
+        <div class="overlay hidden" id="gameover-overlay">
+            <h2>GAME OVER</h2>
+            <div class="score-final" id="final-score">0</div>
+            <div class="dist-final" id="final-dist"></div>
+            <div class="quote" id="go-quote">"The binary caught you. beyondBINARY next time."</div>
+            <button class="start-btn" id="btn-restart">PLAY AGAIN</button>
+            <div class="controls-hint" id="go-hi">HIGH SCORE: 0</div>
+        </div>
+    </div>
+
+    <div id="footer">
+        <span>{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</span>
+        <span>&middot;</span>
+        <span class="freya-tag">FreyaUnits: Planck &rarr; Parsec</span>
+        <span>&middot;</span>
+        <a href="quantum-notepad.html">uvspeed notepad</a>
+        <span>&middot;</span>
+        <a href="kbatch.html">kbatch analyzer</a>
+        <span>&middot;</span>
+        <a href="hexcast.html">hexcast broadcast</a>
+        <span>&middot;</span>
+        <span>AI API: <code>window.numsyAI</code></span>
+    </div>
+
+    <!-- ═══ Bottom Panels: Live Code Cell + Terminal ═══ -->
+    <div id="bottom-panels">
+        <!-- Live Code Cell -->
+        <div class="panel-section">
+            <div class="panel-header" id="code-panel-toggle">
+                <span style="color:#7ee787;">&#9889; Live Code Cell</span>
+                <span>
+                    <span class="tag" style="background:#238636;color:#fff;">JS</span>
+                    <span class="tag" style="background:#21262d;color:#8b949e;">numsyAI + FreyaUnits</span>
+                    <span style="color:#484f58;margin-left:6px;">&#9660;</span>
+                </span>
+            </div>
+            <div class="panel-body collapsed" id="code-panel-body">
+                <div class="code-cell-area">
+                    <div class="code-editor">
+                        <div class="code-toolbar">
+                            <button class="btn-run" id="code-run">&#9654; Run</button>
+                            <button id="code-clear">Clear</button>
+                            <button id="code-example">Example</button>
+                            <button id="code-sync" title="Sync game state to code">Sync State</button>
+                            <span style="flex:1;"></span>
+                            <span style="color:#484f58;">Ctrl+Enter to run</span>
+                        </div>
+                        <textarea id="code-input" placeholder="// Write JavaScript here&#10;// Access: numsyAI, FreyaUnits, game&#10;// Example: numsyAI.getState()&#10;" spellcheck="false">// Get game state
+const state = numsyAI.getState();
+console.log('Score:', state.score);
+console.log('Speed:', state.speed.toFixed(2));
+console.log('Alive:', state.alive);
+console.log('Freya power:', state.freyaPower);
+
+// FreyaUnits conversion
+const km = FreyaUnits.convert(1, 'mi', 'km');
+console.log('1 mile =', km.toFixed(4), 'km');
+
+// List nearest obstacles
+state.obstacles.forEach((o, i) => {
+    console.log(`Obstacle ${i}: ${o.type} at dist ${o.dist.toFixed(0)}`);
+});</textarea>
+                    </div>
+                    <div>
+                        <div class="code-toolbar" style="justify-content:space-between;">
+                            <span style="color:#7ee787;">Output</span>
+                            <button id="output-clear">Clear Output</button>
+                        </div>
+                        <div class="code-output" id="code-output">
+                            <div class="out-info">// Output appears here when you run code</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Blocks Builder -->
+        <div class="panel-section">
+            <div class="panel-header" id="blocks-panel-toggle">
+                <span style="color:#f0883e;">&#9881; Game Blocks Builder</span>
+                <span>
+                    <span class="tag" style="background:#f0883e22;color:#f0883e;">entity + physics + AI</span>
+                    <span class="tag" style="background:#21262d;color:#8b949e;">drag &amp; connect</span>
+                    <span style="color:#484f58;margin-left:6px;">&#9660;</span>
+                </span>
+            </div>
+            <div class="panel-body collapsed" id="blocks-panel-body">
+                <div class="blocks-builder">
+                    <div class="blocks-palette" id="blocks-palette"></div>
+                    <div class="blocks-canvas-wrap" id="blocks-canvas-wrap">
+                        <div class="blocks-toolbar">
+                            <button onclick="gameBlocks.loadPreset('runner')">&#9654; Runner Preset</button>
+                            <button onclick="gameBlocks.loadPreset('platformer')">&#127918; Platformer</button>
+                            <button onclick="gameBlocks.clear()">Clear</button>
+                            <button class="btn-export" onclick="gameBlocks.exportAndInject()">&#9889; Export &amp; Inject</button>
+                        </div>
+                        <svg class="blocks-connections" id="blocks-connections"></svg>
+                        <div class="blocks-canvas" id="blocks-canvas"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Terminal -->
+        <div class="panel-section">
+            <div class="panel-header" id="term-panel-toggle">
+                <span style="color:#a78bfa;">&#9638; Terminal</span>
+                <span>
+                    <span class="tag" style="background:#7c3aed22;color:#a78bfa;">game + freya + ai</span>
+                    <span style="color:#484f58;margin-left:6px;">&#9660;</span>
+                </span>
+            </div>
+            <div class="panel-body collapsed" id="term-panel-body">
+                <div class="terminal-area" id="term-output">
+                    <div class="term-line info">Welcome to brotherNumsy &amp; Freya terminal</div>
+                    <div class="term-line">Type <b style="color:#c084fc;">help</b> for commands. Access <b>numsyAI</b>, <b>FreyaUnits</b>, and full JS eval.</div>
+                    <div class="term-line" style="color:#484f58;">─────────────────────────────────────────</div>
+                </div>
+                <div class="term-input-row">
+                    <span class="term-prompt">&#x26B1; numsy&gt;</span>
+                    <input type="text" id="term-input" placeholder="help, status, convert 1 mi km, score, state, eval ..." autocomplete="off" spellcheck="false">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="quantum-prefixes.js"></script>
+    <script src="qbit-dac.js"></script>
+    <script src="qbit-steno.js"></script>
+    <script>
+    // ================================================================
+    //  brotherNumsy & Freya — beyondBINARY Endless Runner
+    //  Sprites, physics, FreyaUnits conversion engine — all in one file.
+    // ================================================================
+
+    // ──────────────────── SPRITES ────────────────────
+    // Numsy Palette: 0=transparent, 1=black outline, 2=dark robe, 3=robe mid,
+    // 4=gold/skin, 5=bright gold, 6=white, 7=red (eyes/detail), 8=dark gold, 9=gray
+
+    const NUMSY_PAL = [
+        null,
+        '#1a1a2e',  // 1 outline
+        '#2d2040',  // 2 dark robe
+        '#4a3560',  // 3 robe mid
+        '#e6b422',  // 4 gold / skin
+        '#ffd700',  // 5 bright gold
+        '#ffffff',  // 6 white
+        '#ff4444',  // 7 red
+        '#b8860b',  // 8 dark gold
+        '#888899',  // 9 gray
+    ];
+
+    // brotherNumsy 16x16 — run frame 1 (left leg forward)
+    const NUMSY_RUN1 = [
+        [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,0,1,4,4,4,4,1,0,0,0,0,0],
+        [0,0,0,0,1,4,6,1,1,6,4,1,0,0,0,0],
+        [0,0,0,0,1,4,4,4,4,4,4,1,0,0,0,0],
+        [0,0,0,0,0,1,4,7,4,1,0,0,0,0,0,0],
+        [0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,1,3,3,5,5,5,3,3,1,0,0,0,0],
+        [0,0,1,3,3,3,5,5,5,3,3,3,1,0,0,0],
+        [0,0,1,2,3,3,3,3,3,3,3,2,1,0,0,0],
+        [0,0,1,2,2,3,3,3,3,3,2,2,1,0,0,0],
+        [0,0,0,1,2,2,3,3,3,2,2,1,0,0,0,0],
+        [0,0,0,1,2,2,2,2,2,2,2,1,0,0,0,0],
+        [0,0,0,0,1,2,2,2,2,2,1,0,0,0,0,0],
+        [0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0],
+        [0,0,0,1,9,1,0,0,0,1,9,1,0,0,0,0],
+        [0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,0],
+    ];
+
+    // brotherNumsy run frame 2 (right leg forward)
+    const NUMSY_RUN2 = [
+        [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,0,1,4,4,4,4,1,0,0,0,0,0],
+        [0,0,0,0,1,4,6,1,1,6,4,1,0,0,0,0],
+        [0,0,0,0,1,4,4,4,4,4,4,1,0,0,0,0],
+        [0,0,0,0,0,1,4,7,4,1,0,0,0,0,0,0],
+        [0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0],
+        [0,0,0,1,3,3,5,5,5,3,3,1,0,0,0,0],
+        [0,0,1,3,3,3,5,5,5,3,3,3,1,0,0,0],
+        [0,0,1,2,3,3,3,3,3,3,3,2,1,0,0,0],
+        [0,0,1,2,2,3,3,3,3,3,2,2,1,0,0,0],
+        [0,0,0,1,2,2,3,3,3,2,2,1,0,0,0,0],
+        [0,0,0,1,2,2,2,2,2,2,2,1,0,0,0,0],
+        [0,0,0,0,1,2,2,2,2,2,1,0,0,0,0,0],
+        [0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0],
+        [0,0,0,0,1,9,1,0,1,9,1,0,0,0,0,0],
+        [0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0],
+    ];
+
+    // brotherNumsy jump frame (arms up, robe flared)
+    const NUMSY_JUMP = [
+        [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,0,1,4,4,4,4,1,0,0,0,0,0],
+        [0,0,0,0,1,4,6,1,1,6,4,1,0,0,0,0],
+        [0,0,0,0,1,4,4,4,4,4,4,1,0,0,0,0],
+        [0,0,0,0,0,1,4,7,4,1,0,0,0,0,0,0],
+        [0,0,1,0,1,1,1,1,1,1,1,0,1,0,0,0],
+        [0,1,5,1,3,3,5,5,5,3,3,1,5,1,0,0],
+        [0,1,5,1,3,3,5,5,5,3,3,1,5,1,0,0],
+        [0,0,1,2,3,3,3,3,3,3,3,2,1,0,0,0],
+        [0,1,2,2,2,3,3,3,3,3,2,2,2,1,0,0],
+        [1,2,2,1,2,2,3,3,3,2,2,1,2,2,1,0],
+        [0,1,1,0,1,2,2,2,2,2,1,0,1,1,0,0],
+        [0,0,0,0,0,1,2,2,2,1,0,0,0,0,0,0],
+        [0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,0,1,9,0,9,1,0,0,0,0,0,0],
+        [0,0,0,0,0,1,1,0,1,1,0,0,0,0,0,0],
+    ];
+
+    // brotherNumsy duck frame (crouched)
+    const NUMSY_DUCK = [
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0],
+        [0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],
+        [0,0,0,0,0,1,4,4,4,4,1,0,0,0,0,0],
+        [0,0,0,0,1,4,6,1,1,6,4,1,0,0,0,0],
+        [0,0,0,1,3,1,4,7,4,1,3,3,1,0,0,0],
+        [0,0,1,3,3,3,5,5,5,3,3,3,3,1,0,0],
+        [0,1,2,2,3,3,3,3,3,3,3,2,2,2,1,0],
+        [0,1,2,2,2,2,2,2,2,2,2,2,2,2,1,0],
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0],
+        [0,0,1,9,1,0,0,0,0,0,0,1,9,1,0,0],
+        [0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0],
+    ];
+
+    const NUMSY_FRAMES = [NUMSY_RUN1, NUMSY_RUN2, NUMSY_JUMP, NUMSY_DUCK];
+
+    // ──────────────────── FREYA SPRITES ────────────────────
+    // Freya Palette: 0=transparent, 1=dark outline, 2=deep purple, 3=mid purple,
+    // 4=light purple/lavender, 5=cyan glow, 6=white, 7=blue, 8=pink, 9=violet bright
+
+    const FREYA_PAL = [
+        null,
+        '#1a1a2e',  // 1 outline
+        '#4c1d95',  // 2 deep purple
+        '#7c3aed',  // 3 mid purple
+        '#a78bfa',  // 4 lavender
+        '#06b6d4',  // 5 cyan
+        '#ffffff',  // 6 white
+        '#3b82f6',  // 7 blue
+        '#f472b6',  // 8 pink
+        '#c084fc',  // 9 bright violet
+    ];
+
+    // Freya companion 12x12 — floating scientist figure, frame 1 (arms out, measuring)
+    const FREYA_FLY1 = [
+        [0,0,0,0,1,1,1,1,0,0,0,0],
+        [0,0,0,1,4,4,4,4,1,0,0,0],
+        [0,0,1,4,6,1,1,6,4,1,0,0],
+        [0,0,1,4,4,8,4,4,4,1,0,0],
+        [0,0,0,1,1,1,1,1,1,0,0,0],
+        [0,1,5,1,3,3,3,3,1,5,1,0],
+        [1,5,1,3,3,9,9,3,3,1,5,1],
+        [0,1,1,2,3,3,3,3,2,1,1,0],
+        [0,0,1,2,2,3,3,2,2,1,0,0],
+        [0,0,0,1,2,2,2,2,1,0,0,0],
+        [0,0,0,1,1,0,0,1,1,0,0,0],
+        [0,0,0,1,7,0,0,7,1,0,0,0],
+    ];
+
+    // Freya frame 2 (arms shifted, measurement pulse)
+    const FREYA_FLY2 = [
+        [0,0,0,0,1,1,1,1,0,0,0,0],
+        [0,0,0,1,4,4,4,4,1,0,0,0],
+        [0,0,1,4,6,1,1,6,4,1,0,0],
+        [0,0,1,4,4,8,4,4,4,1,0,0],
+        [0,0,0,1,1,1,1,1,1,0,0,0],
+        [0,0,1,3,3,3,3,3,3,1,0,0],
+        [0,1,5,3,3,9,9,3,3,5,1,0],
+        [1,5,1,2,3,3,3,3,2,1,5,1],
+        [0,1,1,2,2,3,3,2,2,1,1,0],
+        [0,0,0,1,2,2,2,2,1,0,0,0],
+        [0,0,0,0,1,1,1,1,0,0,0,0],
+        [0,0,0,0,1,7,7,1,0,0,0,0],
+    ];
+
+    // Freya conversion beam frame (arms wide, energy blast)
+    const FREYA_BEAM = [
+        [0,0,0,0,1,1,1,1,0,0,0,0],
+        [0,0,0,1,9,9,9,9,1,0,0,0],
+        [0,0,1,9,6,1,1,6,9,1,0,0],
+        [0,0,1,4,4,8,4,4,4,1,0,0],
+        [0,0,0,1,1,1,1,1,1,0,0,0],
+        [5,5,5,1,3,9,9,3,1,5,5,5],
+        [0,5,1,3,3,9,9,3,3,1,5,0],
+        [0,0,1,2,3,3,3,3,2,1,0,0],
+        [0,0,1,2,2,3,3,2,2,1,0,0],
+        [0,0,0,1,2,2,2,2,1,0,0,0],
+        [0,0,0,1,1,0,0,1,1,0,0,0],
+        [0,0,0,1,5,0,0,5,1,0,0,0],
+    ];
+
+    const FREYA_FRAMES = [FREYA_FLY1, FREYA_FLY2, FREYA_BEAM];
+
+    // ──────────────────── NYAN CAT SPRITES (10x7 compact) ────────────────────
+    // 3 variants: Original, Numsy Cat (golden), Freya Cat (purple)
+    // Palette per variant provided inline
+
+    // Original Nyan Cat: 1=outline, 2=body gray, 3=pink, 4=poptart tan, 5=poptart pink, 6=white
+    const NYAN_ORIGINAL = [
+        [0,0,0,1,1,1,1,1,1,0],
+        [0,0,1,4,5,4,5,4,5,1],
+        [0,1,2,1,4,4,4,4,1,2],
+        [1,2,6,1,2,2,2,2,1,2],
+        [1,2,1,1,2,3,2,3,1,1],
+        [0,1,2,2,2,2,2,2,2,1],
+        [0,1,1,0,1,1,0,1,1,0],
+    ];
+    const NYAN_PAL_ORIG = [null,'#222','#999','#ff6699','#ffcc99','#ff99cc','#fff'];
+    const NYAN_RAINBOW = ['#ff0000','#ff9900','#ffff00','#33ff00','#0099ff','#6633ff'];
+
+    // Numsy Cat (golden robe cat): 1=outline, 2=gold body, 3=red nose, 4=robe tan, 5=bright gold, 6=white eyes
+    const NYAN_NUMSY = [
+        [0,0,0,1,1,1,1,1,1,0],
+        [0,0,1,4,5,4,5,4,5,1],
+        [0,1,2,1,4,4,4,4,1,2],
+        [1,2,6,1,2,2,2,2,1,2],
+        [1,2,1,1,2,3,2,3,1,1],
+        [0,1,2,2,2,2,2,2,2,1],
+        [0,1,1,0,1,1,0,1,1,0],
+    ];
+    const NYAN_PAL_NUMSY = [null,'#1a1a2e','#e6b422','#ff4444','#b8860b','#ffd700','#fff'];
+    const NYAN_TRAIL_NUMSY = ['#ffd700','#e6b422','#b8860b','#daa520','#f0c040','#ffec80'];
+
+    // Freya Cat (purple/cyan cat): 1=outline, 2=purple body, 3=pink, 4=deep purple, 5=cyan glow, 6=white
+    const NYAN_FREYA = [
+        [0,0,0,1,1,1,1,1,1,0],
+        [0,0,1,4,5,4,5,4,5,1],
+        [0,1,2,1,4,4,4,4,1,2],
+        [1,2,6,1,2,2,2,2,1,2],
+        [1,2,1,1,2,3,2,3,1,1],
+        [0,1,2,2,2,2,2,2,2,1],
+        [0,1,1,0,1,1,0,1,1,0],
+    ];
+    const NYAN_PAL_FREYA = [null,'#1a1a2e','#7c3aed','#f472b6','#4c1d95','#06b6d4','#fff'];
+    const NYAN_TRAIL_FREYA = ['#c084fc','#a78bfa','#7c3aed','#6366f1','#06b6d4','#22d3ee'];
+
+    const NYAN_TYPES = [
+        { sprite: NYAN_ORIGINAL, pal: NYAN_PAL_ORIG, trail: NYAN_RAINBOW, name: 'nyan' },
+        { sprite: NYAN_NUMSY, pal: NYAN_PAL_NUMSY, trail: NYAN_TRAIL_NUMSY, name: 'numsy' },
+        { sprite: NYAN_FREYA, pal: NYAN_PAL_FREYA, trail: NYAN_TRAIL_FREYA, name: 'freya' },
+    ];
+
+    // ──────────────────── ENEMY / COLLECTIBLE SPRITES ────────────────────
+
+    // Binary "0" enemy (8x12)
+    const BINARY_0 = [
+        [0,0,1,1,1,1,0,0],
+        [0,1,7,7,7,7,1,0],
+        [1,7,0,0,0,0,7,1],
+        [1,7,0,0,0,0,7,1],
+        [1,7,0,0,0,0,7,1],
+        [1,7,0,0,0,0,7,1],
+        [1,7,0,0,0,0,7,1],
+        [1,7,0,0,0,0,7,1],
+        [1,7,0,0,0,0,7,1],
+        [0,1,7,7,7,7,1,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,0,0,0,0,0,0],
+    ];
+
+    // Binary "1" enemy (8x12)
+    const BINARY_1 = [
+        [0,0,0,1,1,0,0,0],
+        [0,0,1,7,7,0,0,0],
+        [0,1,1,7,7,0,0,0],
+        [0,0,0,7,7,0,0,0],
+        [0,0,0,7,7,0,0,0],
+        [0,0,0,7,7,0,0,0],
+        [0,0,0,7,7,0,0,0],
+        [0,0,0,7,7,0,0,0],
+        [0,0,0,7,7,0,0,0],
+        [0,1,7,7,7,7,1,0],
+        [0,0,1,1,1,1,0,0],
+        [0,0,0,0,0,0,0,0],
+    ];
+
+    // Flying binary pair {0,1} (12x8)
+    const BINARY_FLYING = [
+        [1,1,0,0,1,0,0,1,0,1,1,0],
+        [1,0,1,0,1,0,1,0,1,0,0,1],
+        [1,0,1,0,1,0,1,0,0,0,0,1],
+        [1,0,1,0,1,0,1,0,0,0,1,0],
+        [1,0,1,0,1,0,1,0,0,1,0,0],
+        [1,0,1,0,1,0,1,0,1,0,0,0],
+        [1,1,0,0,1,0,0,1,1,1,1,0],
+        [0,0,0,0,0,0,0,0,0,0,0,0],
+    ];
+
+    // Quantum collectible (8x8)
+    const QUANTUM_SYMBOL = [
+        [0,0,1,1,1,1,0,0],
+        [0,1,5,5,5,5,1,0],
+        [1,5,4,4,4,4,5,1],
+        [1,5,4,6,6,4,5,1],
+        [1,5,4,6,6,4,5,1],
+        [1,5,4,4,4,4,5,1],
+        [0,1,5,5,5,5,1,0],
+        [0,0,1,1,1,1,0,0],
+    ];
+
+    // Golden Child token (10x10)
+    const GOLDEN_CHILD = [
+        [0,0,0,5,5,5,5,0,0,0],
+        [0,0,5,4,5,5,4,5,0,0],
+        [0,5,4,6,4,4,6,4,5,0],
+        [0,5,4,4,4,4,4,4,5,0],
+        [5,8,5,4,7,4,5,5,8,5],
+        [5,5,5,5,5,5,5,5,5,5],
+        [0,5,8,5,5,5,5,8,5,0],
+        [0,0,5,5,5,5,5,5,0,0],
+        [0,0,0,5,8,8,5,0,0,0],
+        [0,0,0,0,5,5,0,0,0,0],
+    ];
+
+    // FreyaUnit token (10x10) — purple/cyan measurement crystal
+    const FREYA_TOKEN = [
+        [0,0,0,0,1,1,0,0,0,0],
+        [0,0,0,1,9,9,1,0,0,0],
+        [0,0,1,5,9,9,5,1,0,0],
+        [0,1,3,5,6,6,5,3,1,0],
+        [1,3,3,5,6,6,5,3,3,1],
+        [1,3,3,5,6,6,5,3,3,1],
+        [0,1,3,5,9,9,5,3,1,0],
+        [0,0,1,5,9,9,5,1,0,0],
+        [0,0,0,1,9,9,1,0,0,0],
+        [0,0,0,0,1,1,0,0,0,0],
+    ];
+
+    const ENEMY_PAL = [
+        null, '#1a1a2e', '#2d2040', '#4a3560', '#e6b422',
+        '#ffd700', '#ffffff', '#ff3333', '#b8860b', '#888899',
+    ];
+
+    const FLYING_PAL = [null, '#ff5555'];
+
+    // ──────────────────── FREYA UNITS CONVERSION ENGINE ────────────────────
+    // Real FreyaUnits system — 29 units from Planck length to Parsec
+    const FREYA_UNITS = [
+        { sym: 'ℓp',  name: 'Planck',       m: 1.616255e-35 },
+        { sym: 'am',  name: 'Attometer',     m: 1e-18 },
+        { sym: 'fm',  name: 'Femtometer',    m: 1e-15 },
+        { sym: 'pm',  name: 'Picometer',     m: 1e-12 },
+        { sym: 'Å',   name: 'Angstrom',      m: 1e-10 },
+        { sym: 'nm',  name: 'Nanometer',     m: 1e-9 },
+        { sym: 'µin', name: 'Microinch',     m: 2.54e-8 },
+        { sym: 'µm',  name: 'Micrometer',    m: 1e-6 },
+        { sym: 'λIR', name: 'IR Wave',       m: 10e-6 },
+        { sym: 'mil', name: 'Mil',           m: 2.54e-5 },
+        { sym: 'mm',  name: 'Millimeter',    m: 1e-3 },
+        { sym: 'cm',  name: 'Centimeter',    m: 1e-2 },
+        { sym: 'in',  name: 'Inch',          m: 0.0254 },
+        { sym: 'ft',  name: 'Foot',          m: 0.3048 },
+        { sym: 'yd',  name: 'Yard',          m: 0.9144 },
+        { sym: 'm',   name: 'Meter',         m: 1 },
+        { sym: 'λRF', name: 'RF Wave',       m: 1 },
+        { sym: 'λVHF',name: 'VHF Wave',      m: 3 },
+        { sym: 'km',  name: 'Kilometer',     m: 1e3 },
+        { sym: 'mi',  name: 'Mile',          m: 1609.34 },
+        { sym: 'NM',  name: 'Nautical Mile', m: 1852 },
+        { sym: 'λAM', name: 'AM Wave',       m: 300 },
+        { sym: 'λLF', name: 'Long Wave',     m: 3000 },
+        { sym: 'λELF',name: 'ELF Wave',      m: 5e6 },
+        { sym: 'AU',  name: 'Astro Unit',    m: 1.496e11 },
+        { sym: 'ly',  name: 'Light Year',    m: 9.461e15 },
+        { sym: 'pc',  name: 'Parsec',        m: 3.086e16 },
+    ];
+
+    // Unit display categories for the conversion HUD
+    const FREYA_DISPLAY_UNITS = [
+        { sym: 'ℓp',  name: 'Planck',     m: 1.616255e-35 },
+        { sym: 'fm',  name: 'Femtometer', m: 1e-15 },
+        { sym: 'nm',  name: 'Nanometer',  m: 1e-9 },
+        { sym: 'µm',  name: 'Micrometer', m: 1e-6 },
+        { sym: 'mm',  name: 'Millimeter', m: 1e-3 },
+        { sym: 'm',   name: 'Meter',      m: 1 },
+        { sym: 'km',  name: 'Kilometer',  m: 1e3 },
+        { sym: 'AU',  name: 'Astro Unit', m: 1.496e11 },
+        { sym: 'ly',  name: 'Light Year', m: 9.461e15 },
+        { sym: 'pc',  name: 'Parsec',     m: 3.086e16 },
+    ];
+
+    // FreyaUnit symbols that appear as collectible labels
+    const FREYA_SYMBOLS = ['Å', 'nm', 'µm', 'mm', 'm', 'km', 'AU', 'ly', 'pc', 'ℓp'];
+
+    // Distance scale: 1 game pixel-distance = 0.01 meters (10 mm per px)
+    const PX_TO_METERS = 0.01;
+
+    function freyaConvert(meters, unit) {
+        return meters / unit.m;
+    }
+
+    function freyaFormat(val) {
+        if (val === 0) return '0.0';
+        const abs = Math.abs(val);
+        if (abs >= 1e15) return val.toExponential(2);
+        if (abs >= 1e6) return (val / 1e6).toFixed(2) + 'M';
+        if (abs >= 1e3) return (val / 1e3).toFixed(2) + 'K';
+        if (abs >= 1) return val.toFixed(2);
+        if (abs >= 0.001) return val.toFixed(4);
+        return val.toExponential(2);
+    }
+
+    // Pick the best "human-readable" unit for a given distance in meters
+    function freyaBestUnit(meters) {
+        if (meters <= 0) return FREYA_DISPLAY_UNITS[0];
+        // Walk up the scale, pick the unit where the value is >= 0.5
+        let best = FREYA_DISPLAY_UNITS[0];
+        for (const u of FREYA_DISPLAY_UNITS) {
+            if (meters / u.m >= 0.5) best = u;
+        }
+        return best;
+    }
+
+    // Conversion facts shown at scale milestones
+    const FREYA_FACTS = [
+        { at: 0.001,  text: 'You\'ve traveled 1 mm — the width of a pencil lead' },
+        { at: 0.01,   text: 'You\'ve traveled 1 cm — the width of your fingernail' },
+        { at: 0.0254, text: 'You\'ve traveled 1 inch — exactly 25.4 mm (Freya knows)' },
+        { at: 0.1,    text: '100 mm — a LEGO minifig is about 40 mm tall' },
+        { at: 0.3048, text: '1 foot — 12 inches, 304.8 mm' },
+        { at: 1,      text: '1 meter — the SI base unit of length' },
+        { at: 10,     text: '10 meters — the length of a school bus' },
+        { at: 100,    text: '100 m — a football field (Freya: = 3.281×10² ft)' },
+        { at: 1000,   text: '1 kilometer — Freya: = 0.621 miles' },
+        { at: 1609.34,text: '1 mile — 5,280 feet, 1.609 km' },
+        { at: 1852,   text: '1 nautical mile — used in navigation (Freya confirms)' },
+        { at: 10000,  text: '10 km — average altitude of a cruising airplane' },
+        { at: 42195,  text: 'Marathon distance — 42.195 km (Freya: 26.219 mi)' },
+        { at: 100000, text: '100 km — the Kármán line (edge of space!)' },
+    ];
+
+    // ──────────────────── CONSTANTS ────────────────────
+    const GRAVITY    = 0.65;
+    const JUMP_FORCE = -12;
+    const GROUND_Y   = 0.78;
+    const BASE_SPEED = 4.5;
+    const SPEED_INC  = 0.08;
+    const SPAWN_MIN  = 60;
+    const SPAWN_MAX  = 140;
+    const GOLDEN_CHANCE  = 0.03;
+    const FREYA_CHANCE   = 0.08;  // FreyaUnit token spawn chance
+
+    const PREFIXES = ['+1', '1', '-1', '+0', '0', '-0', '+n', 'n', '-n', '+2', '+3'];
+
+    const GOLDEN_QUOTES = [
+        '"I want the knife." — Chandler Jarrell',
+        '"Only the chosen one can hold the blade."',
+        '"My dear, sweet brother Numsy!"',
+        '"There is a place so dark, the binary dare not go."',
+        '"The quantum child has returned."',
+        '"beyondBINARY... always beyondBINARY."',
+        '"I-I-I want the knife... please."',
+        '"You are not prepared for what lies beyond {0,1}."',
+        '"Freya measured the distance — it was exactly 1 Parsec of courage."',
+        '"Between Planck and Parsec, the truth lives." — Freya',
+        '"..luvuFREYAbot" — echoed through every calculation',
+        '"Her name, in every robot, across all of time."',
+    ];
+
+    // ──────────────────── GAME CLASS ────────────────────
+    class BrotherNumsyGame {
+        constructor(canvas) {
+            this.canvas = canvas;
+            this.ctx = canvas.getContext('2d');
+            this.resize();
+
+            // State
+            this.running = false;
+            this.alive = false;
+            this.score = 0;
+            this.distance = 0;       // px units
+            this.distMeters = 0;     // real meters via FreyaUnits
+            this.highScore = parseInt(localStorage.getItem('numsy_hi') || '0');
+            this.speed = BASE_SPEED;
+            this.speedMult = 1;
+            this.frame = 0;
+
+            // Player
+            this.player = {
+                x: 0, y: 0, vy: 0,
+                w: 16, h: 16,
+                grounded: true,
+                ducking: false,
+                invincible: 0,
+                animFrame: 0,
+            };
+
+            // Freya companion
+            this.freya = {
+                x: 0, y: 0,
+                targetX: 0, targetY: 0,
+                animFrame: 0,
+                power: 0,       // conversion beam energy (0-100)
+                beamActive: 0,  // frames remaining for beam
+                tokensCollected: 0,
+                lastUnit: FREYA_DISPLAY_UNITS[0],
+            };
+
+            // World
+            this.obstacles = [];
+            this.collectibles = [];
+            this.particles = [];
+            this.stars = [];
+            this.nyanCats = [];     // flying nyan cats in background
+            this.nyanTimer = 200;   // frames until next nyan spawn
+            this.lastMilestone = 0; // last score milestone for swarm trigger
+            this.gridOffset = 0;
+            this.spawnTimer = 80;
+            this.collectTimer = 50;
+
+            // Freya conversion HUD state
+            this.freyaHudRotate = 0;     // which unit index to show
+            this.freyaHudTimer = 0;
+            this.freyaFactIdx = 0;       // next fact to show
+            this.freyaFactMsg = '';       // current fact message
+            this.freyaFactTimer = 0;     // display timer
+
+            // Generate starfield
+            for (let i = 0; i < 100; i++) {
+                this.stars.push({
+                    x: Math.random() * 2000,
+                    y: Math.random() * this.H,
+                    s: Math.random() * 2 + 0.5,
+                    b: Math.random() * 150 + 80,
+                    speed: Math.random() * 0.5 + 0.2,
+                });
+            }
+
+            // AI callbacks
+            this._aiCallbacks = [];
+
+            // Input
+            this._keys = {};
+            this._touchY = null;
+            window.addEventListener('keydown', e => {
+                // Ignore when typing in input/textarea
+                const tag = e.target.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+                this._keys[e.code] = true;
+                if (['Space','ArrowUp','ArrowDown'].includes(e.code)) e.preventDefault();
+            });
+            window.addEventListener('keyup', e => {
+                const tag = e.target.tagName;
+                if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+                this._keys[e.code] = false;
+            });
+            canvas.addEventListener('touchstart', e => {
+                e.preventDefault();
+                this._touchY = e.touches[0].clientY;
+                const rect = canvas.getBoundingClientRect();
+                const relY = (e.touches[0].clientY - rect.top) / rect.height;
+                if (relY < 0.5) this._keys['Space'] = true;
+                else this._keys['ArrowDown'] = true;
+            });
+            canvas.addEventListener('touchend', e => {
+                this._keys['Space'] = false;
+                this._keys['ArrowDown'] = false;
+            });
+
+            this._updateHiDisplay();
+        }
+
+        resize() {
+            const wrap = this.canvas.parentElement;
+            const maxW = wrap.clientWidth;
+            const maxH = wrap.clientHeight - 10;
+            const aspect = 16 / 9;
+            let w = maxW;
+            let h = w / aspect;
+            if (h > maxH) { h = maxH; w = h * aspect; }
+            this.W = Math.floor(w);
+            this.H = Math.floor(h);
+            this.canvas.width = this.W;
+            this.canvas.height = this.H;
+            this.scale = Math.max(2, Math.floor(this.H / 160));
+            this.groundY = Math.floor(this.H * GROUND_Y);
+        }
+
+        start() {
+            this.alive = true;
+            this.running = true;
+            this.score = 0;
+            this.distance = 0;
+            this.distMeters = 0;
+            this.speed = BASE_SPEED;
+            this.speedMult = 1;
+            this.frame = 0;
+            this.obstacles = [];
+            this.collectibles = [];
+            this.particles = [];
+            this.nyanCats = [];
+            this.nyanTimer = 200;
+            this.lastMilestone = 0;
+            this.spawnTimer = 80;
+            this.collectTimer = 50;
+            this.freyaHudRotate = 0;
+            this.freyaHudTimer = 0;
+            this.freyaFactIdx = 0;
+            this.freyaFactMsg = '';
+            this.freyaFactTimer = 0;
+
+            const s = this.scale;
+            this.player.x = this.W * 0.12;
+            this.player.y = this.groundY - 16 * s;
+            this.player.vy = 0;
+            this.player.grounded = true;
+            this.player.ducking = false;
+            this.player.invincible = 0;
+            this.player.animFrame = 0;
+
+            // Reset Freya companion
+            this.freya.x = this.player.x - 8 * s;
+            this.freya.y = this.player.y - 20 * s;
+            this.freya.targetX = this.freya.x;
+            this.freya.targetY = this.freya.y;
+            this.freya.animFrame = 0;
+            this.freya.power = 0;
+            this.freya.beamActive = 0;
+            this.freya.tokensCollected = 0;
+            this.freya.lastUnit = FREYA_DISPLAY_UNITS[0];
+
+            document.getElementById('start-overlay').classList.add('hidden');
+            document.getElementById('gameover-overlay').classList.add('hidden');
+            document.getElementById('hud-freya-power').style.display = 'none';
+
+            if (!this._looping) {
+                this._looping = true;
+                this._loop();
+            }
+        }
+
+        _loop() {
+            if (!this.running) { this._looping = false; return; }
+            this.update();
+            this.render();
+            for (const cb of this._aiCallbacks) {
+                try { cb(this.getState()); } catch(e) {}
+            }
+            requestAnimationFrame(() => this._loop());
+        }
+
+        // ──────── UPDATE ────────
+        update() {
+            if (!this.alive) return;
+            this.frame++;
+            const s = this.scale;
+            const p = this.player;
+            const f = this.freya;
+
+            // Speed ramp
+            this.speedMult = 1 + Math.floor(this.score / 500) * SPEED_INC;
+            const spd = this.speed * this.speedMult * (p.invincible > 0 ? 1.3 : 1);
+
+            // Input
+            const wantJump = this._keys['Space'] || this._keys['ArrowUp'] || this._keys['KeyW'];
+            const wantDuck = this._keys['ArrowDown'] || this._keys['KeyS'];
+
+            if (wantJump && p.grounded) {
+                p.vy = JUMP_FORCE * (s / 4);
+                p.grounded = false;
+            }
+            p.ducking = wantDuck && p.grounded;
+
+            // Gravity
+            if (!p.grounded) {
+                p.vy += GRAVITY * (s / 4);
+                p.y += p.vy;
+                if (p.y >= this.groundY - 16 * s) {
+                    p.y = this.groundY - 16 * s;
+                    p.vy = 0;
+                    p.grounded = true;
+                }
+            }
+
+            // Player animation
+            if (p.grounded && !p.ducking) {
+                p.animFrame = (Math.floor(this.frame / 8) % 2);
+            } else if (!p.grounded) {
+                p.animFrame = 2;
+            } else {
+                p.animFrame = 3;
+            }
+
+            // Invincibility countdown
+            if (p.invincible > 0) p.invincible--;
+
+            // ── Freya companion movement ──
+            f.targetX = p.x - 14 * s;
+            f.targetY = p.y - 18 * s + Math.sin(this.frame * 0.05) * 6 * (s / 3);
+            // Smooth follow
+            f.x += (f.targetX - f.x) * 0.12;
+            f.y += (f.targetY - f.y) * 0.1;
+            // Animation: normal fly or beam
+            if (f.beamActive > 0) {
+                f.animFrame = 2; // beam frame
+                f.beamActive--;
+            } else {
+                f.animFrame = Math.floor(this.frame / 10) % 2;
+            }
+
+            // ── Freya trail particles ──
+            if (this.frame % 4 === 0) {
+                const trailColor = f.beamActive > 0 ? '#c084fc' : '#7c3aed';
+                this.particles.push({
+                    x: f.x + 6 * s, y: f.y + 10 * s,
+                    vx: (Math.random() - 0.5) * 1.5,
+                    vy: Math.random() * 2 + 0.5,
+                    color: trailColor,
+                    size: Math.random() * 2 + 0.5,
+                    life: 15 + Math.floor(Math.random() * 10),
+                });
+            }
+
+            // Scroll distance
+            this.distance += spd;
+            this.distMeters = this.distance * PX_TO_METERS;
+            this.score = Math.floor(this.distance / 10);
+            this.gridOffset = (this.gridOffset + spd) % (32 * s);
+
+            // ── Freya conversion HUD update ──
+            this.freyaHudTimer++;
+            if (this.freyaHudTimer >= 90) { // rotate display unit every 1.5s
+                this.freyaHudTimer = 0;
+                this.freyaHudRotate = (this.freyaHudRotate + 1) % FREYA_DISPLAY_UNITS.length;
+            }
+            f.lastUnit = freyaBestUnit(this.distMeters);
+
+            // ── Freya scale milestone facts ──
+            if (this.freyaFactIdx < FREYA_FACTS.length) {
+                const fact = FREYA_FACTS[this.freyaFactIdx];
+                if (this.distMeters >= fact.at) {
+                    this.freyaFactMsg = fact.text;
+                    this.freyaFactTimer = 180; // 3 seconds
+                    this.freyaFactIdx++;
+                    // Bonus particles at milestone
+                    this._spawnParticles(f.x + 6 * s, f.y + 6 * s, '#06b6d4', 10);
+                }
+            }
+            if (this.freyaFactTimer > 0) this.freyaFactTimer--;
+
+            // ── Spawn obstacles ──
+            this.spawnTimer -= 1;
+            if (this.spawnTimer <= 0) {
+                this.spawnTimer = SPAWN_MIN + Math.floor(Math.random() * (SPAWN_MAX - SPAWN_MIN));
+                this.spawnTimer = Math.max(30, this.spawnTimer - Math.floor(this.speedMult * 10));
+
+                const isFlying = Math.random() < 0.3;
+                if (isFlying) {
+                    this.obstacles.push({
+                        type: 'flying',
+                        x: this.W + 20,
+                        y: this.groundY - (30 + Math.random() * 20) * s,
+                        w: 12 * s, h: 8 * s,
+                        sprite: BINARY_FLYING,
+                    });
+                } else {
+                    const isTall = Math.random() < 0.4;
+                    const sprite = Math.random() < 0.5 ? BINARY_0 : BINARY_1;
+                    this.obstacles.push({
+                        type: 'ground',
+                        x: this.W + 20,
+                        y: this.groundY - (isTall ? 14 : 12) * s,
+                        w: 8 * s, h: (isTall ? 14 : 12) * s,
+                        sprite: sprite,
+                    });
+                }
+            }
+
+            // ── Spawn collectibles ──
+            this.collectTimer -= 1;
+            if (this.collectTimer <= 0) {
+                this.collectTimer = 40 + Math.floor(Math.random() * 60);
+                const roll = Math.random();
+                const isGolden = roll < GOLDEN_CHANCE;
+                const isFreya = !isGolden && roll < GOLDEN_CHANCE + FREYA_CHANCE;
+                const yOff = Math.random() < 0.5 ? 0 : -20 * s;
+
+                let type, spriteC, symbolC, wC, hC;
+                if (isGolden) {
+                    type = 'golden'; spriteC = GOLDEN_CHILD;
+                    symbolC = ''; wC = 10; hC = 10;
+                } else if (isFreya) {
+                    type = 'freya'; spriteC = FREYA_TOKEN;
+                    symbolC = FREYA_SYMBOLS[Math.floor(Math.random() * FREYA_SYMBOLS.length)];
+                    wC = 10; hC = 10;
+                } else {
+                    type = 'quantum'; spriteC = QUANTUM_SYMBOL;
+                    symbolC = PREFIXES[Math.floor(Math.random() * PREFIXES.length)];
+                    wC = 8; hC = 8;
+                }
+                this.collectibles.push({
+                    type, sprite: spriteC, symbol: symbolC,
+                    x: this.W + 20,
+                    y: this.groundY - 20 * s + yOff,
+                    w: wC * s, h: hC * s,
+                    bob: Math.random() * Math.PI * 2,
+                });
+            }
+
+            // ── Move obstacles ──
+            for (const ob of this.obstacles) ob.x -= spd;
+            this.obstacles = this.obstacles.filter(o => o.x + o.w > -50);
+
+            // ── Move collectibles ──
+            for (const c of this.collectibles) {
+                c.x -= spd;
+                c.bob += 0.08;
+            }
+            this.collectibles = this.collectibles.filter(c => c.x + c.w > -50);
+
+            // ── Freya conversion beam effect ──
+            if (f.beamActive > 0) {
+                // Beam destroys nearby obstacles
+                for (const ob of this.obstacles) {
+                    const dist = ob.x - p.x;
+                    if (dist > 0 && dist < 200 * (s / 3)) {
+                        this._spawnParticles(ob.x + ob.w/2, ob.y + ob.h/2, '#c084fc', 10);
+                        ob.x = -999;
+                        this.score += 7;
+                    }
+                }
+            }
+
+            // ── Collision: obstacles ──
+            const px = p.x;
+            const pw = 12 * s;
+            const py = p.ducking ? p.y + 8 * s : p.y;
+            const ph = p.ducking ? 8 * s : 16 * s;
+
+            for (const ob of this.obstacles) {
+                if (this._aabb(px, py, pw, ph, ob.x, ob.y, ob.w, ob.h)) {
+                    if (p.invincible > 0) {
+                        ob.x = -999;
+                        this._spawnParticles(ob.x + ob.w/2, ob.y + ob.h/2, '#ff3333', 8);
+                        this.score += 5;
+                    } else {
+                        this._die();
+                        return;
+                    }
+                }
+            }
+
+            // ── Collision: collectibles ──
+            for (let i = this.collectibles.length - 1; i >= 0; i--) {
+                const c = this.collectibles[i];
+                const cy = c.y + Math.sin(c.bob) * 4 * (s / 3);
+                if (this._aabb(px, py, pw, ph, c.x, cy, c.w, c.h)) {
+                    if (c.type === 'golden') {
+                        p.invincible = 180;
+                        this.score += 99;
+                        this._spawnParticles(c.x, cy, '#ffd700', 20);
+                    } else if (c.type === 'freya') {
+                        // FreyaUnit token collected!
+                        f.tokensCollected++;
+                        f.power = Math.min(100, f.power + 35);
+                        this.score += 15;
+                        this._spawnParticles(c.x, cy, '#c084fc', 15);
+                        this._spawnParticles(c.x, cy, '#06b6d4', 10);
+                        // Auto-trigger beam when power hits 100
+                        if (f.power >= 100) {
+                            f.beamActive = 120; // 2 seconds of beam
+                            f.power = 0;
+                            this._spawnParticles(f.x + 6 * s, f.y + 6 * s, '#c084fc', 25);
+                        }
+                    } else {
+                        this.score += 9;
+                        this._spawnParticles(c.x, cy, '#58a6ff', 6);
+                    }
+                    this.collectibles.splice(i, 1);
+                }
+            }
+
+            // ── Particles ──
+            for (const pt of this.particles) {
+                pt.x += pt.vx;
+                pt.y += pt.vy;
+                pt.vy += 0.2;
+                pt.life--;
+            }
+            this.particles = this.particles.filter(pt => pt.life > 0);
+
+            // ── Golden trail ──
+            if (p.invincible > 0 && this.frame % 3 === 0) {
+                this._spawnParticles(p.x, p.y + 8 * s, '#e6b422', 2);
+            }
+
+            // ── Nyan cats: random background spawns ──
+            this.nyanTimer--;
+            if (this.nyanTimer <= 0) {
+                this._spawnNyanCat(1);
+                this.nyanTimer = 300 + Math.floor(Math.random() * 400); // every 5-12 seconds
+            }
+
+            // Nyan cat milestone swarm: every 500 points, spawn a burst of tiny ones
+            const milestone = Math.floor(this.score / 500);
+            if (milestone > this.lastMilestone) {
+                this.lastMilestone = milestone;
+                const count = Math.min(6 + milestone * 2, 25); // more cats at higher scores
+                this._spawnNyanCat(count);
+            }
+
+            // Update nyan cats
+            for (const nc of this.nyanCats) {
+                nc.x += nc.vx;
+                nc.y += Math.sin(nc.bob) * nc.bobAmp;
+                nc.bob += nc.bobSpeed;
+                nc.legFrame = (nc.legFrame + 1) % 16;
+                nc.trailLen = Math.min(nc.trailLen + 0.3, nc.maxTrail);
+            }
+            this.nyanCats = this.nyanCats.filter(nc =>
+                (nc.vx > 0 && nc.x < this.W + 100) ||
+                (nc.vx < 0 && nc.x > -nc.w * nc.sz - 100)
+            );
+
+            // Update HUD
+            this._updateHUD();
+        }
+
+        _aabb(ax, ay, aw, ah, bx, by, bw, bh) {
+            return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
+        }
+
+        _spawnParticles(x, y, color, count) {
+            for (let i = 0; i < count; i++) {
+                this.particles.push({
+                    x, y,
+                    vx: (Math.random() - 0.5) * 6,
+                    vy: (Math.random() - 1) * 5,
+                    color,
+                    size: Math.random() * 3 + 1,
+                    life: 20 + Math.floor(Math.random() * 15),
+                });
+            }
+        }
+
+        _spawnNyanCat(count) {
+            const s = this.scale;
+            for (let i = 0; i < count; i++) {
+                const type = NYAN_TYPES[Math.floor(Math.random() * NYAN_TYPES.length)];
+                const goRight = Math.random() < 0.5;
+                const tiny = count > 2; // swarm = tiny cats
+                const sz = tiny ? (0.3 + Math.random() * 0.5) : (0.6 + Math.random() * 0.6);
+                const speed = (1.5 + Math.random() * 2.5) * (tiny ? 1.5 : 1);
+                this.nyanCats.push({
+                    ...type,
+                    x: goRight ? -type.sprite[0].length * s * sz - 20 : this.W + 20,
+                    y: 20 + Math.random() * (this.groundY * 0.6),
+                    w: type.sprite[0].length,
+                    h: type.sprite.length,
+                    sz: sz,
+                    vx: goRight ? speed : -speed,
+                    bob: Math.random() * Math.PI * 2,
+                    bobAmp: 0.3 + Math.random() * 0.8,
+                    bobSpeed: 0.03 + Math.random() * 0.04,
+                    legFrame: 0,
+                    trailLen: 0,
+                    maxTrail: 6 + Math.floor(Math.random() * 8),
+                });
+            }
+        }
+
+        _die() {
+            this.alive = false;
+            if (this.score > this.highScore) {
+                this.highScore = this.score;
+                localStorage.setItem('numsy_hi', String(this.highScore));
+            }
+            setTimeout(() => this._showGameOver(), 400);
+        }
+
+        _showGameOver() {
+            const overlay = document.getElementById('gameover-overlay');
+            document.getElementById('final-score').textContent = `+n: ${this.score.toLocaleString()}`;
+
+            // Show final distance in best FreyaUnit
+            const bestUnit = freyaBestUnit(this.distMeters);
+            const val = freyaConvert(this.distMeters, bestUnit);
+            document.getElementById('final-dist').textContent =
+                `Freya measured: ${freyaFormat(val)} ${bestUnit.sym} (${freyaFormat(this.distMeters)} m) — ${this.freya.tokensCollected} FreyaUnit tokens`;
+
+            document.getElementById('go-quote').textContent = GOLDEN_QUOTES[Math.floor(Math.random() * GOLDEN_QUOTES.length)];
+            document.getElementById('go-hi').textContent = `HIGH SCORE: +n: ${this.highScore.toLocaleString()}`;
+            overlay.classList.remove('hidden');
+        }
+
+        _updateHUD() {
+            document.getElementById('hud-score').textContent = `+n: ${this.score.toLocaleString()}`;
+            document.getElementById('hud-speed').textContent = `SPEED ${this.speedMult.toFixed(1)}x`;
+
+            // Freya primary distance (best unit)
+            const bestUnit = this.freya.lastUnit;
+            const bestVal = freyaConvert(this.distMeters, bestUnit);
+            document.getElementById('hud-freya').textContent =
+                `FREYA: ${freyaFormat(bestVal)} ${bestUnit.sym}`;
+
+            // Freya secondary (rotating unit)
+            const rotUnit = FREYA_DISPLAY_UNITS[this.freyaHudRotate];
+            const rotVal = freyaConvert(this.distMeters, rotUnit);
+            document.getElementById('hud-freya-unit').textContent =
+                `= ${freyaFormat(rotVal)} ${rotUnit.sym} (${rotUnit.name})`;
+
+            // Freya power meter
+            const f = this.freya;
+            const powerEl = document.getElementById('hud-freya-power');
+            if (f.power > 0 || f.beamActive > 0) {
+                powerEl.style.display = 'block';
+                if (f.beamActive > 0) {
+                    powerEl.textContent = `BEAM ACTIVE [${'█'.repeat(Math.ceil(f.beamActive / 12))}]`;
+                    powerEl.style.color = '#c084fc';
+                } else {
+                    const bars = Math.ceil(f.power / 10);
+                    powerEl.textContent = `FREYA [${'█'.repeat(bars)}${'░'.repeat(10 - bars)}] ${f.power}%`;
+                    powerEl.style.color = '#a78bfa';
+                }
+            } else {
+                powerEl.style.display = 'none';
+            }
+        }
+
+        _updateHiDisplay() {
+            document.getElementById('hud-hi').textContent = `HI: ${this.highScore.toLocaleString()}`;
+        }
+
+        // ──────── RENDER ────────
+        render() {
+            const ctx = this.ctx;
+            const W = this.W, H = this.H;
+            const s = this.scale;
+
+            // === Background: space ===
+            ctx.fillStyle = '#0d1117';
+            ctx.fillRect(0, 0, W, H);
+
+            // Parallax stars
+            for (const star of this.stars) {
+                star.x -= star.speed * this.speedMult;
+                if (star.x < 0) { star.x = W + Math.random() * 200; star.y = Math.random() * H; }
+                ctx.fillStyle = `rgba(255,255,255,${star.b / 255})`;
+                ctx.fillRect(star.x, star.y, star.s, star.s);
+            }
+
+            // === Nyan cats (background layer) ===
+            for (const nc of this.nyanCats) {
+                const ps = s * nc.sz; // pixel scale
+                // Draw rainbow/color trail
+                const trailDir = nc.vx > 0 ? -1 : 1;
+                for (let t = 0; t < Math.floor(nc.trailLen); t++) {
+                    for (let r = 0; r < nc.trail.length; r++) {
+                        ctx.fillStyle = nc.trail[r];
+                        ctx.globalAlpha = 0.6 - (t / nc.maxTrail) * 0.5;
+                        const tx = nc.x + (trailDir * (t + 1) * 3 * ps) + (nc.vx > 0 ? 0 : nc.w * ps);
+                        const bandH = (nc.h * ps) / nc.trail.length;
+                        ctx.fillRect(tx, nc.y + r * bandH, 3 * ps, bandH);
+                    }
+                }
+                ctx.globalAlpha = 1;
+                // Draw cat sprite
+                for (let r = 0; r < nc.sprite.length; r++) {
+                    const row = nc.sprite[r];
+                    for (let c = 0; c < row.length; c++) {
+                        const idx = row[c];
+                        if (idx === 0) continue;
+                        // Leg wiggle on bottom row
+                        let yOff = 0;
+                        if (r >= nc.sprite.length - 2 && nc.legFrame < 8) yOff = ps * 0.3;
+                        const color = nc.pal[idx];
+                        if (!color) continue;
+                        ctx.fillStyle = color;
+                        ctx.fillRect(nc.x + c * ps, nc.y + r * ps + yOff, ps, ps);
+                    }
+                }
+            }
+
+            // === Mid-ground: quantum lattice grid ===
+            ctx.strokeStyle = 'rgba(88,166,255,0.08)';
+            ctx.lineWidth = 1;
+            const gridSpacing = 32 * s;
+            const gOff = this.gridOffset;
+            for (let x = -gOff; x < W + gridSpacing; x += gridSpacing) {
+                ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, this.groundY); ctx.stroke();
+            }
+            for (let y = 0; y < this.groundY; y += gridSpacing) {
+                ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+            }
+
+            // === Ground ===
+            ctx.fillStyle = '#161b22';
+            ctx.fillRect(0, this.groundY, W, H - this.groundY);
+            ctx.fillStyle = '#30363d';
+            ctx.fillRect(0, this.groundY, W, 2);
+
+            // Ground texture
+            ctx.strokeStyle = 'rgba(48,54,61,0.5)';
+            for (let x = -gOff; x < W + 20; x += 20 * s) {
+                ctx.beginPath();
+                ctx.moveTo(x, this.groundY + 6);
+                ctx.lineTo(x + 10 * s, this.groundY + 6);
+                ctx.stroke();
+            }
+
+            // === Freya conversion beam visual ===
+            const f = this.freya;
+            if (f.beamActive > 0) {
+                const beamAlpha = 0.15 + Math.sin(this.frame * 0.3) * 0.08;
+                const grad = ctx.createLinearGradient(f.x + 12 * s, 0, this.W, 0);
+                grad.addColorStop(0, `rgba(167,139,250,${beamAlpha})`);
+                grad.addColorStop(0.5, `rgba(6,182,212,${beamAlpha * 0.7})`);
+                grad.addColorStop(1, 'rgba(192,132,252,0)');
+                ctx.fillStyle = grad;
+                ctx.fillRect(f.x + 12 * s, f.y - 4 * s, this.W - f.x, 24 * s);
+
+                // Beam sparkles
+                if (this.frame % 2 === 0) {
+                    for (let bx = f.x + 20 * s; bx < Math.min(f.x + 200 * s, this.W); bx += 15 * s) {
+                        const by = f.y + Math.sin(bx * 0.05 + this.frame * 0.2) * 10 * s;
+                        ctx.fillStyle = '#c084fc';
+                        ctx.globalAlpha = 0.6;
+                        ctx.fillRect(bx, by, s * 1.5, s * 1.5);
+                    }
+                    ctx.globalAlpha = 1;
+                }
+            }
+
+            // === Obstacles ===
+            for (const ob of this.obstacles) {
+                if (ob.type === 'flying') {
+                    this._drawSprite(ctx, ob.sprite, ob.x, ob.y, s, FLYING_PAL);
+                } else {
+                    this._drawSprite(ctx, ob.sprite, ob.x, ob.y, s, ENEMY_PAL);
+                }
+            }
+
+            // === Collectibles ===
+            for (const c of this.collectibles) {
+                const bobY = c.y + Math.sin(c.bob) * 4 * (s / 3);
+                // Glow
+                let glowColor;
+                if (c.type === 'golden') glowColor = 'rgba(255,215,0,0.25)';
+                else if (c.type === 'freya') glowColor = 'rgba(167,139,250,0.3)';
+                else glowColor = 'rgba(88,166,255,0.2)';
+                ctx.fillStyle = glowColor;
+                ctx.beginPath();
+                ctx.arc(c.x + c.w / 2, bobY + c.h / 2, c.w * 0.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // FreyaUnit token has a secondary cyan ring
+                if (c.type === 'freya') {
+                    ctx.strokeStyle = `rgba(6,182,212,${0.3 + Math.sin(c.bob) * 0.15})`;
+                    ctx.lineWidth = s * 0.5;
+                    ctx.beginPath();
+                    ctx.arc(c.x + c.w / 2, bobY + c.h / 2, c.w * 1.0, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // Sprite
+                const pal = c.type === 'freya' ? FREYA_PAL : NUMSY_PAL;
+                this._drawSprite(ctx, c.sprite, c.x, bobY, s, pal);
+
+                // Symbol label
+                if (c.type === 'golden') {
+                    ctx.fillStyle = '#ffd700';
+                } else if (c.type === 'freya') {
+                    ctx.fillStyle = '#c084fc';
+                } else {
+                    ctx.fillStyle = '#58a6ff';
+                }
+                ctx.font = `bold ${Math.max(8, s * 3)}px monospace`;
+                ctx.textAlign = 'center';
+                ctx.fillText(c.symbol, c.x + c.w / 2, bobY - 2);
+                ctx.textAlign = 'start';
+            }
+
+            // === Freya companion ===
+            const freyaSprite = FREYA_FRAMES[f.animFrame];
+
+            // Freya aura
+            const auraAlpha = f.beamActive > 0
+                ? 0.3 + Math.sin(this.frame * 0.25) * 0.15
+                : 0.12 + Math.sin(this.frame * 0.08) * 0.06;
+            const auraColor = f.beamActive > 0 ? '192,132,252' : '124,58,237';
+            ctx.fillStyle = `rgba(${auraColor},${auraAlpha})`;
+            ctx.beginPath();
+            ctx.arc(f.x + 6 * s, f.y + 6 * s, (f.beamActive > 0 ? 10 : 8) * s, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Freya sprite
+            this._drawSprite(ctx, freyaSprite, f.x, f.y, s, FREYA_PAL);
+
+            // Small "F" label above Freya
+            ctx.fillStyle = '#a78bfa';
+            ctx.font = `bold ${Math.max(7, s * 2.5)}px monospace`;
+            ctx.textAlign = 'center';
+            ctx.fillText('F', f.x + 6 * s, f.y - 3);
+            ctx.textAlign = 'start';
+
+            // === Player ===
+            const p = this.player;
+            const spriteFrame = NUMSY_FRAMES[p.animFrame];
+
+            // Invincibility golden aura
+            if (p.invincible > 0) {
+                const pulse = 0.3 + Math.sin(this.frame * 0.2) * 0.15;
+                ctx.fillStyle = `rgba(230,180,34,${pulse})`;
+                ctx.beginPath();
+                ctx.arc(p.x + 8 * s, p.y + 8 * s, 12 * s, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Flash blink at end of invincibility
+            if (p.invincible > 0 && p.invincible < 30 && this.frame % 4 < 2) {
+                // skip (blink)
+            } else {
+                this._drawSprite(ctx, spriteFrame, p.x, p.y, s, NUMSY_PAL);
+            }
+
+            // === Particles ===
+            for (const pt of this.particles) {
+                const alpha = pt.life / 30;
+                ctx.fillStyle = pt.color;
+                ctx.globalAlpha = alpha;
+                ctx.fillRect(pt.x, pt.y, pt.size * s / 3, pt.size * s / 3);
+            }
+            ctx.globalAlpha = 1;
+
+            // === Freya fact banner ===
+            if (this.freyaFactTimer > 0) {
+                const factAlpha = Math.min(1, this.freyaFactTimer / 30);
+                ctx.fillStyle = `rgba(76,29,149,${0.7 * factAlpha})`;
+                const bannerH = 28;
+                const bannerY = this.groundY - bannerH - 8;
+                ctx.fillRect(0, bannerY, W, bannerH);
+                ctx.strokeStyle = `rgba(167,139,250,${0.5 * factAlpha})`;
+                ctx.lineWidth = 1;
+                ctx.strokeRect(0, bannerY, W, bannerH);
+                ctx.fillStyle = `rgba(6,182,212,${factAlpha})`;
+                ctx.font = `${Math.max(10, s * 3)}px monospace`;
+                ctx.textAlign = 'center';
+                ctx.fillText(this.freyaFactMsg, W / 2, bannerY + bannerH / 2 + 4);
+                ctx.textAlign = 'start';
+            }
+
+            // === Death flash ===
+            if (!this.alive) {
+                ctx.fillStyle = 'rgba(255,68,68,0.15)';
+                ctx.fillRect(0, 0, W, H);
+            }
+        }
+
+        _drawSprite(ctx, sprite, x, y, scale, palette) {
+            for (let r = 0; r < sprite.length; r++) {
+                const row = sprite[r];
+                for (let c = 0; c < row.length; c++) {
+                    const idx = row[c];
+                    if (idx === 0) continue;
+                    const color = (palette && palette[idx]) || NUMSY_PAL[idx];
+                    if (!color) continue;
+                    ctx.fillStyle = color;
+                    ctx.fillRect(x + c * scale, y + r * scale, scale, scale);
+                }
+            }
+        }
+
+        // ──────── AI API ────────
+        getState() {
+            const s = this.scale;
+            const p = this.player;
+            const f = this.freya;
+            return {
+                alive: this.alive,
+                score: this.score,
+                speed: this.speed * this.speedMult,
+                distanceMeters: this.distMeters,
+                playerY: p.y,
+                playerGrounded: p.grounded,
+                playerDucking: p.ducking,
+                invincible: p.invincible > 0,
+                freyaPower: f.power,
+                freyaBeamActive: f.beamActive > 0,
+                freyaTokens: f.tokensCollected,
+                freyaUnit: f.lastUnit.sym,
+                obstacles: this.obstacles.slice(0, 5).map(o => ({
+                    type: o.type, x: o.x, y: o.y, w: o.w, h: o.h,
+                    dist: o.x - p.x,
+                })),
+                collectibles: this.collectibles.slice(0, 5).map(c => ({
+                    type: c.type, x: c.x, y: c.y, symbol: c.symbol,
+                    dist: c.x - p.x,
+                })),
+                groundY: this.groundY,
+                canvasH: this.H,
+                frame: this.frame,
+            };
+        }
+
+        act(action) {
+            if (action === 'jump') {
+                this._keys['Space'] = true;
+                setTimeout(() => this._keys['Space'] = false, 100);
+            } else if (action === 'duck') {
+                this._keys['ArrowDown'] = true;
+                setTimeout(() => this._keys['ArrowDown'] = false, 200);
+            }
+        }
+
+        reset() {
+            this.start();
+        }
+
+        onFrame(cb) {
+            this._aiCallbacks.push(cb);
+        }
+    }
+
+    // ──────────────────── FREYA UNITS API ────────────────────
+    // Expose FreyaUnits conversion functions globally
+    window.FreyaUnits = {
+        units: FREYA_UNITS,
+        convert: function(value, fromSym, toSym) {
+            const from = FREYA_UNITS.find(u => u.sym === fromSym);
+            const to = FREYA_UNITS.find(u => u.sym === toSym);
+            if (!from || !to) return null;
+            const meters = value * from.m;
+            return meters / to.m;
+        },
+        toMeters: function(value, sym) {
+            const u = FREYA_UNITS.find(u => u.sym === sym);
+            return u ? value * u.m : null;
+        },
+        fromMeters: function(meters, sym) {
+            const u = FREYA_UNITS.find(u => u.sym === sym);
+            return u ? meters / u.m : null;
+        },
+        bestUnit: freyaBestUnit,
+        format: freyaFormat,
+        listUnits: function() { return FREYA_UNITS.map(u => `${u.sym} (${u.name}): ${u.m} m`); },
+    };
+
+    // ──────────────────── INIT ────────────────────
+    const canvas = document.getElementById('game');
+    const game = new BrotherNumsyGame(canvas);
+
+    // Expose AI API with training capabilities
+    const _trainSessions = [];
+    window.numsyAI = {
+        getState: () => game.getState(),
+        act: (a) => game.act(a),
+        reset: () => game.reset(),
+        onFrame: (cb) => game.onFrame(cb),
+        get highScore() { return game.highScore; },
+        get sessions() { return _trainSessions; },
+
+        // Train N episodes with a callback agent
+        train: function(episodes, agentFn, opts) {
+            opts = opts || {};
+            const delay = opts.delay || 0;
+            let ep = 0;
+            const results = [];
+            const session = { start: Date.now(), episodes, results, status: 'running' };
+            _trainSessions.push(session);
+
+            function runEpisode() {
+                if (ep >= episodes) {
+                    session.status = 'done';
+                    session.end = Date.now();
+                    session.bestScore = Math.max(...results.map(r => r.score));
+                    session.avgScore = results.reduce((s, r) => s + r.score, 0) / results.length;
+                    console.log(`[AI Train] Done: ${episodes} episodes, best=${session.bestScore}, avg=${session.avgScore.toFixed(1)}`);
+                    if (opts.onDone) opts.onDone(session);
+                    return;
+                }
+                game.start();
+                const epStart = Date.now();
+                const cb = function(state) {
+                    if (!state.alive) {
+                        // Episode over
+                        const idx = game._aiCallbacks.indexOf(cb);
+                        if (idx >= 0) game._aiCallbacks.splice(idx, 1);
+                        results.push({ episode: ep, score: state.score, time: Date.now() - epStart, frames: state.frame });
+                        if (opts.onEpisode) opts.onEpisode(ep, results[results.length - 1]);
+                        ep++;
+                        if (delay > 0) setTimeout(runEpisode, delay);
+                        else requestAnimationFrame(runEpisode);
+                        return;
+                    }
+                    agentFn(state);
+                };
+                game.onFrame(cb);
+            }
+            runEpisode();
+            return session;
+        },
+
+        // Quick heuristic benchmark
+        benchmark: function(episodes) {
+            return this.train(episodes || 10, function(state) {
+                var ob = state.obstacles[0];
+                if (ob && ob.dist < 150 && ob.dist > 0) {
+                    numsyAI.act(ob.type === 'flying' ? 'duck' : 'jump');
+                }
+            }, { onEpisode: function(i, r) { console.log(`[Benchmark] Ep ${i}: score=${r.score}`); } });
+        },
+    };
+
+    // Buttons
+    document.getElementById('btn-start').addEventListener('click', () => game.start());
+    document.getElementById('btn-restart').addEventListener('click', () => game.start());
+
+    // Keyboard shortcut to restart
+    window.addEventListener('keydown', e => {
+        if (!game.alive && !document.getElementById('start-overlay').classList.contains('hidden')) {
+            if (e.code === 'Space' || e.code === 'Enter') game.start();
+        }
+        if (!game.alive && !document.getElementById('gameover-overlay').classList.contains('hidden')) {
+            if (e.code === 'Space' || e.code === 'Enter') game.start();
+        }
+    });
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+        game.resize();
+        if (!game.running) game.render();
+    });
+
+    // Initial render
+    game.render();
+
+    // ──────────────────── LIVE CODE CELL ────────────────────
+    (function(){
+        const codeInput = document.getElementById('code-input');
+        const codeOutput = document.getElementById('code-output');
+        const codeRun = document.getElementById('code-run');
+        const codeClear = document.getElementById('code-clear');
+        const codeExample = document.getElementById('code-example');
+        const codeSync = document.getElementById('code-sync');
+        const outputClear = document.getElementById('output-clear');
+
+        function appendOutput(text, cls = 'out-line') {
+            const div = document.createElement('div');
+            div.className = cls;
+            div.textContent = text;
+            codeOutput.appendChild(div);
+            codeOutput.scrollTop = codeOutput.scrollHeight;
+        }
+
+        function runCode() {
+            const code = codeInput.value;
+            if (!code.trim()) return;
+            appendOutput('▶ Running...', 'out-info');
+            // Capture console.log
+            const origLog = console.log;
+            const origWarn = console.warn;
+            const origError = console.error;
+            const logs = [];
+            console.log = (...args) => { logs.push({ type: 'log', msg: args.map(String).join(' ') }); origLog(...args); };
+            console.warn = (...args) => { logs.push({ type: 'warn', msg: args.map(String).join(' ') }); origWarn(...args); };
+            console.error = (...args) => { logs.push({ type: 'error', msg: args.map(String).join(' ') }); origError(...args); };
+            try {
+                const result = eval(code);
+                logs.forEach(l => {
+                    const cls = l.type === 'error' ? 'out-error' : l.type === 'warn' ? 'out-info' : 'out-line';
+                    appendOutput(l.msg, cls);
+                });
+                if (result !== undefined) {
+                    appendOutput('→ ' + String(result), 'out-result');
+                }
+            } catch (e) {
+                logs.forEach(l => appendOutput(l.msg, 'out-line'));
+                appendOutput('Error: ' + e.message, 'out-error');
+            }
+            console.log = origLog;
+            console.warn = origWarn;
+            console.error = origError;
+        }
+
+        codeRun.addEventListener('click', runCode);
+        codeClear.addEventListener('click', () => { codeInput.value = ''; });
+        outputClear.addEventListener('click', () => { codeOutput.innerHTML = ''; });
+        codeInput.addEventListener('keydown', e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); }
+            // Allow typing in code area
+            e.stopPropagation();
+        });
+
+        codeExample.addEventListener('click', () => {
+            codeInput.value = `// AI Training Loop Example
+let steps = 0;
+numsyAI.onFrame((state) => {
+    if (steps++ > 300) return; // run for 5 seconds
+    if (!state.alive) { numsyAI.reset(); return; }
+
+    // Simple heuristic: jump if obstacle close and low
+    const ob = state.obstacles[0];
+    if (ob && ob.dist < 150 && ob.dist > 0) {
+        if (ob.type === 'flying') numsyAI.act('duck');
+        else numsyAI.act('jump');
+    }
+});
+console.log('AI training loop registered for 300 frames');
+
+// FreyaUnits: show all unit conversions for 1 meter
+console.log('\\n--- 1 meter in all FreyaUnits ---');
+FreyaUnits.units.forEach(u => {
+    const val = FreyaUnits.fromMeters(1, u.sym);
+    console.log(u.sym + ': ' + (val > 1e6 ? val.toExponential(4) : val.toFixed(6)));
+});`;
+        });
+
+        codeSync.addEventListener('click', () => {
+            const state = game.getState();
+            const json = JSON.stringify(state, null, 2);
+            appendOutput('── Game State Synced ──', 'out-info');
+            appendOutput(json, 'out-result');
+        });
+
+        // Panel toggle
+        document.getElementById('code-panel-toggle').addEventListener('click', () => {
+            document.getElementById('code-panel-body').classList.toggle('collapsed');
+        });
+    })();
+
+    // ──────────────────── GAME BLOCKS BUILDER ────────────────────
+    (function(){
+        // +0: Block type definitions — category, color, prefix, label, input rows
+        const GB_TYPES = {
+            // Entity blocks — quantum prefix: 1: (variable)
+            player:      { cat:'entity',  color:'#3fb950', prefix:'1:',  label:'Player',       rows:[{l:'Speed',inp:'4.5'},{l:'Jump',inp:'-12'},{l:'Gravity',inp:'0.65'},{l:'Sprite',sel:['brotherNumsy','custom']}] },
+            companion:   { cat:'entity',  color:'#3fb950', prefix:'1:',  label:'Companion',    rows:[{l:'Name',inp:'Freya'},{l:'Float Y',inp:'20'},{l:'Power Max',inp:'100'}] },
+            enemy:       { cat:'entity',  color:'#3fb950', prefix:'1:',  label:'Enemy',        rows:[{l:'Type',sel:['ground','flying','boss']},{l:'Speed',inp:'1.0'},{l:'HP',inp:'1'},{l:'Sprite',sel:['binary0','binary1','flyingPair','custom']}] },
+            collectible: { cat:'entity',  color:'#3fb950', prefix:'1:',  label:'Collectible',  rows:[{l:'Type',sel:['quantum','golden','freya','custom']},{l:'Points',inp:'10'},{l:'Effect',sel:['score','powerup','invincible','speed']}] },
+            // Physics blocks — quantum prefix: 0: (function)
+            gravity_cfg: { cat:'physics', color:'#58a6ff', prefix:'0:',  label:'Gravity',      rows:[{l:'Force',inp:'0.65'},{l:'Max Fall',inp:'15'},{l:'Direction',sel:['down','up','radial']}] },
+            collision:   { cat:'physics', color:'#58a6ff', prefix:'0:',  label:'Collision',    rows:[{l:'Type',sel:['rect','circle','pixel']},{l:'Response',sel:['destroy','bounce','damage','push']}] },
+            bounds:      { cat:'physics', color:'#58a6ff', prefix:'0:',  label:'Bounds',       rows:[{l:'Floor Y',inp:'0.78'},{l:'Ceil Y',inp:'0.1'},{l:'Wrap X',sel:['yes','no']}] },
+            velocity:    { cat:'physics', color:'#58a6ff', prefix:'0:',  label:'Velocity',     rows:[{l:'X',inp:'0'},{l:'Y',inp:'0'},{l:'Friction',inp:'0.98'}] },
+            // Visual blocks — quantum prefix: +3: (output)
+            sprite:      { cat:'visual',  color:'#a78bfa', prefix:'+3:', label:'Sprite',       rows:[{l:'Width',inp:'16'},{l:'Height',inp:'16'},{l:'Frames',inp:'2'},{l:'FPS',inp:'8'}] },
+            particle:    { cat:'visual',  color:'#a78bfa', prefix:'+3:', label:'Particles',    rows:[{l:'Count',inp:'20'},{l:'Life',inp:'30'},{l:'Color',inp:'#e6b422'},{l:'Spread',inp:'5'}] },
+            parallax:    { cat:'visual',  color:'#a78bfa', prefix:'+3:', label:'Parallax',     rows:[{l:'Layers',inp:'3'},{l:'Speed',inp:'0.5'},{l:'Type',sel:['stars','clouds','city','custom']}] },
+            hud_el:      { cat:'visual',  color:'#a78bfa', prefix:'+3:', label:'HUD Element',  rows:[{l:'Show',sel:['score','health','timer','distance','power']},{l:'Position',sel:['top-left','top-right','bottom']}] },
+            // Logic blocks — quantum prefix: +n: (condition)
+            if_cond:     { cat:'logic',   color:'#f0883e', prefix:'+n:', label:'If Condition',  rows:[{l:'When',sel:['collision','timer','score_above','key_press','power_full','random']},{l:'Value',inp:'100'}] },
+            on_event:    { cat:'logic',   color:'#f0883e', prefix:'+n:', label:'On Event',      rows:[{l:'Event',sel:['game_start','game_over','collect','damage','level_up','spawn']},{l:'Action',sel:['emit','spawn','modify','log']}] },
+            random:      { cat:'logic',   color:'#f0883e', prefix:'+n:', label:'Random',        rows:[{l:'Min',inp:'0'},{l:'Max',inp:'100'},{l:'Target',sel:['spawn_timer','speed','position','count']}] },
+            // Loop blocks — quantum prefix: +2: (loop)
+            game_loop:   { cat:'loop',    color:'#e2498a', prefix:'+2:', label:'Game Loop',     rows:[{l:'FPS',inp:'60'},{l:'Time Scale',inp:'1.0'}] },
+            spawn_wave:  { cat:'loop',    color:'#e2498a', prefix:'+2:', label:'Spawn Wave',    rows:[{l:'Min Delay',inp:'60'},{l:'Max Delay',inp:'140'},{l:'Increase',inp:'0.08'}] },
+            repeat:      { cat:'loop',    color:'#e2498a', prefix:'+2:', label:'Repeat',        rows:[{l:'Count',inp:'10'},{l:'Interval',inp:'30'}] },
+            // AI blocks — quantum prefix: -n: (import/data)
+            ai_behavior: { cat:'ai',      color:'#06b6d4', prefix:'-n:', label:'AI Behavior',   rows:[{l:'Mode',sel:['heuristic','nn_simple','random','follow_player']},{l:'React Dist',inp:'150'},{l:'Learn',sel:['yes','no']}] },
+            difficulty:  { cat:'ai',      color:'#06b6d4', prefix:'-n:', label:'Difficulty',     rows:[{l:'Start',inp:'1'},{l:'Max',inp:'10'},{l:'Ramp',sel:['linear','exponential','step']},{l:'Per Score',inp:'50'}] },
+            // Error/damage blocks — quantum prefix: -1: (error)
+            damage:      { cat:'error',   color:'#ff5757', prefix:'-1:', label:'Damage',        rows:[{l:'Amount',inp:'1'},{l:'Effect',sel:['death','knockback','stun','shrink']},{l:'I-Frames',inp:'60'}] },
+            gameover:    { cat:'error',   color:'#ff5757', prefix:'-1:', label:'Game Over',     rows:[{l:'Trigger',sel:['hp_zero','fall','timeout','manual']},{l:'Allow Retry',sel:['yes','no']},{l:'Show Score',sel:['yes','no']}] },
+            // Return/output — quantum prefix: -0: (return)
+            score_rule:  { cat:'output',  color:'#d4a017', prefix:'-0:', label:'Score Rule',    rows:[{l:'Source',sel:['collect','distance','time','combo','kill']},{l:'Multiplier',inp:'1'},{l:'Display',sel:['float_text','hud','both']}] },
+        };
+
+        const CAT_META = {
+            entity:  { label:'Entity',   icon:'&#9632;',  color:'#3fb950' },
+            physics: { label:'Physics',  icon:'&#9881;',  color:'#58a6ff' },
+            visual:  { label:'Visual',   icon:'&#9733;',  color:'#a78bfa' },
+            logic:   { label:'Logic',    icon:'&#9670;',  color:'#f0883e' },
+            loop:    { label:'Loop',     icon:'&#8634;',  color:'#e2498a' },
+            ai:      { label:'AI',       icon:'&#9041;',  color:'#06b6d4' },
+            error:   { label:'Error',    icon:'&#9888;',  color:'#ff5757' },
+            output:  { label:'Output',   icon:'&#9678;',  color:'#d4a017' },
+        };
+
+        let blocks = [];
+        let connections = [];
+        let nextId = 0;
+        let dragBlock = null;
+        let dragOff = { x: 0, y: 0 };
+        let connectingFrom = null;
+
+        const palette = document.getElementById('blocks-palette');
+        const canvas = document.getElementById('blocks-canvas');
+        const svgConns = document.getElementById('blocks-connections');
+        const canvasWrap = document.getElementById('blocks-canvas-wrap');
+
+        // Build palette
+        const cats = {};
+        Object.entries(GB_TYPES).forEach(([k, v]) => {
+            if (!cats[v.cat]) cats[v.cat] = [];
+            cats[v.cat].push({ key: k, ...v });
+        });
+
+        Object.entries(cats).forEach(([catKey, items]) => {
+            const meta = CAT_META[catKey];
+            const div = document.createElement('div');
+            div.className = 'blocks-palette-cat';
+            div.innerHTML = `<div class="blocks-palette-cat-title" style="color:${meta.color};">${meta.icon} ${meta.label}</div>`;
+            items.forEach(item => {
+                const chip = document.createElement('div');
+                chip.className = 'blocks-palette-chip';
+                chip.innerHTML = `<span class="chip-dot" style="background:${item.color};"></span>${item.label}`;
+                chip.addEventListener('click', () => addBlock(item.key, 200 + Math.random() * 300, 30 + blocks.length * 70));
+                chip.setAttribute('draggable', 'true');
+                chip.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', item.key);
+                });
+                div.appendChild(chip);
+            });
+            palette.appendChild(div);
+        });
+
+        // Drop on canvas
+        canvasWrap.addEventListener('dragover', e => e.preventDefault());
+        canvasWrap.addEventListener('drop', e => {
+            e.preventDefault();
+            const type = e.dataTransfer.getData('text/plain');
+            if (!GB_TYPES[type]) return;
+            const rect = canvas.getBoundingClientRect();
+            addBlock(type, e.clientX - rect.left + canvasWrap.scrollLeft, e.clientY - rect.top + canvasWrap.scrollTop);
+        });
+
+        function addBlock(type, x, y) {
+            const def = GB_TYPES[type];
+            if (!def) return;
+            const id = 'gb-' + (nextId++);
+            const el = document.createElement('div');
+            el.className = 'game-block';
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.style.borderColor = def.color;
+            el.dataset.id = id;
+            el.dataset.type = type;
+
+            let bodyHtml = '';
+            def.rows.forEach((r, ri) => {
+                bodyHtml += '<div class="game-block-row">';
+                bodyHtml += `<label>${r.l}</label>`;
+                if (r.sel) {
+                    bodyHtml += `<select data-row="${ri}">` + r.sel.map(o => `<option value="${o}">${o}</option>`).join('') + '</select>';
+                } else if (r.inp !== undefined) {
+                    bodyHtml += `<input type="text" data-row="${ri}" value="${r.inp}">`;
+                } else {
+                    bodyHtml += `<span>${r.l}</span>`;
+                }
+                bodyHtml += '</div>';
+            });
+
+            el.innerHTML = `
+                <div class="game-block-head" style="background:${def.color};">
+                    <span>${def.label}</span>
+                    <span class="block-prefix">${def.prefix}</span>
+                </div>
+                <div class="game-block-body">${bodyHtml}</div>
+                <div class="block-connector out" style="border-color:${def.color};" data-dir="out" title="Connect out"></div>
+                <div class="block-connector in" style="border-color:${def.color};" data-dir="in" title="Connect in"></div>
+            `;
+
+            // Prevent inputs from starting drag
+            el.querySelectorAll('input, select').forEach(inp => {
+                inp.addEventListener('mousedown', e => e.stopPropagation());
+                inp.addEventListener('keydown', e => e.stopPropagation());
+            });
+
+            // Double-click head to remove
+            el.querySelector('.game-block-head').addEventListener('dblclick', () => {
+                removeBlock(id);
+            });
+
+            canvas.appendChild(el);
+            blocks.push({ id, type, el, x, y });
+
+            // Drag
+            el.addEventListener('mousedown', onBlockMouseDown);
+            el.addEventListener('touchstart', onBlockTouchStart, { passive: false });
+
+            // Connector click
+            el.querySelectorAll('.block-connector').forEach(c => {
+                c.addEventListener('mousedown', e => {
+                    e.stopPropagation();
+                    const dir = c.dataset.dir;
+                    if (dir === 'out') {
+                        connectingFrom = id;
+                        c.style.background = def.color;
+                    } else if (dir === 'in' && connectingFrom && connectingFrom !== id) {
+                        // Don't allow duplicate connections
+                        if (!connections.find(cn => cn.from === connectingFrom && cn.to === id)) {
+                            connections.push({ from: connectingFrom, to: id });
+                            drawConnections();
+                        }
+                        connectingFrom = null;
+                        document.querySelectorAll('.block-connector.out').forEach(o => o.style.background = '#0d1117');
+                    }
+                });
+            });
+
+            return id;
+        }
+
+        function removeBlock(id) {
+            const idx = blocks.findIndex(b => b.id === id);
+            if (idx < 0) return;
+            blocks[idx].el.remove();
+            blocks.splice(idx, 1);
+            connections = connections.filter(c => c.from !== id && c.to !== id);
+            drawConnections();
+        }
+
+        function onBlockMouseDown(e) {
+            if (e.target.closest('input, select, .block-connector')) return;
+            const el = e.currentTarget;
+            const b = blocks.find(b => b.el === el);
+            if (!b) return;
+            dragBlock = b;
+            dragOff.x = e.clientX - b.x;
+            dragOff.y = e.clientY - b.y;
+            el.classList.add('dragging');
+            e.preventDefault();
+        }
+
+        function onBlockTouchStart(e) {
+            if (e.target.closest('input, select, .block-connector')) return;
+            const el = e.currentTarget;
+            const b = blocks.find(b => b.el === el);
+            if (!b) return;
+            const t = e.touches[0];
+            dragBlock = b;
+            dragOff.x = t.clientX - b.x;
+            dragOff.y = t.clientY - b.y;
+            el.classList.add('dragging');
+            e.preventDefault();
+        }
+
+        document.addEventListener('mousemove', e => {
+            if (!dragBlock) return;
+            dragBlock.x = e.clientX - dragOff.x;
+            dragBlock.y = e.clientY - dragOff.y;
+            dragBlock.el.style.left = dragBlock.x + 'px';
+            dragBlock.el.style.top = dragBlock.y + 'px';
+            drawConnections();
+        });
+
+        document.addEventListener('touchmove', e => {
+            if (!dragBlock) return;
+            const t = e.touches[0];
+            dragBlock.x = t.clientX - dragOff.x;
+            dragBlock.y = t.clientY - dragOff.y;
+            dragBlock.el.style.left = dragBlock.x + 'px';
+            dragBlock.el.style.top = dragBlock.y + 'px';
+            drawConnections();
+        }, { passive: false });
+
+        document.addEventListener('mouseup', () => {
+            if (dragBlock) {
+                dragBlock.el.classList.remove('dragging');
+                dragBlock = null;
+            }
+            if (connectingFrom) {
+                connectingFrom = null;
+                document.querySelectorAll('.block-connector.out').forEach(o => o.style.background = '#0d1117');
+            }
+        });
+
+        document.addEventListener('touchend', () => {
+            if (dragBlock) {
+                dragBlock.el.classList.remove('dragging');
+                dragBlock = null;
+            }
+        });
+
+        function drawConnections() {
+            while (svgConns.firstChild) svgConns.removeChild(svgConns.firstChild);
+            connections.forEach(cn => {
+                const fromB = blocks.find(b => b.id === cn.from);
+                const toB = blocks.find(b => b.id === cn.to);
+                if (!fromB || !toB) return;
+                const fromEl = fromB.el;
+                const toEl = toB.el;
+                const x1 = fromB.x + fromEl.offsetWidth;
+                const y1 = fromB.y + fromEl.offsetHeight / 2;
+                const x2 = toB.x;
+                const y2 = toB.y + toEl.offsetHeight / 2;
+                const mx = (x1 + x2) / 2;
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`);
+                path.setAttribute('stroke', GB_TYPES[fromB.type].color);
+                path.setAttribute('stroke-width', '2');
+                path.setAttribute('fill', 'none');
+                path.setAttribute('opacity', '0.6');
+                svgConns.appendChild(path);
+                // Arrow
+                const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                arrow.setAttribute('cx', x2);
+                arrow.setAttribute('cy', y2);
+                arrow.setAttribute('r', '3');
+                arrow.setAttribute('fill', GB_TYPES[toB.type].color);
+                svgConns.appendChild(arrow);
+            });
+        }
+
+        function getBlockValues(b) {
+            const def = GB_TYPES[b.type];
+            const vals = {};
+            b.el.querySelectorAll('input, select').forEach(inp => {
+                const ri = parseInt(inp.dataset.row);
+                const row = def.rows[ri];
+                if (row) vals[row.l.toLowerCase().replace(/\s/g,'_')] = inp.value;
+            });
+            return vals;
+        }
+
+        // +0: Export blocks to JavaScript game configuration
+        function exportConfig() {
+            const config = { entities: [], physics: [], visuals: [], logic: [], loops: [], ai: [], errors: [], output: [], connections: [] };
+            blocks.forEach(b => {
+                const def = GB_TYPES[b.type];
+                const vals = getBlockValues(b);
+                const entry = { type: b.type, id: b.id, prefix: def.prefix, category: def.cat, params: vals };
+                if (config[def.cat]) config[def.cat].push(entry);
+                else { /* custom categories */ }
+            });
+            config.connections = connections.map(c => ({ from: c.from, to: c.to }));
+            return config;
+        }
+
+        // +0: Generate injectable JavaScript from block config
+        function generateJS(config) {
+            let js = '// ═══ Game Blocks Builder — Auto-generated ═══\n';
+            js += '// beyondBINARY quantum-prefixed | {' + [...new Set(blocks.map(b => GB_TYPES[b.type].prefix))].join(', ') + '}\n\n';
+
+            // Entity configs — LIVE parameter injection
+            config.entities?.forEach(e => {
+                js += `// ${e.prefix} ${e.type}\n`;
+                if (e.type === 'player') {
+                    const spd = parseFloat(e.params.speed) || 4.5;
+                    const jmp = parseFloat(e.params.jump) || -12;
+                    const grv = parseFloat(e.params.gravity) || 0.65;
+                    js += `game.speed = ${spd};\n`;
+                    js += `game.speedMult = 1;\n`;
+                    js += `game._jumpForce = ${jmp};\n`;
+                    js += `game._gravity = ${grv};\n\n`;
+                } else if (e.type === 'enemy') {
+                    js += `game._enemyType = '${e.params.type || 'ground'}';\n`;
+                    js += `game._enemySpeed = ${parseFloat(e.params.speed) || 1.0};\n\n`;
+                } else if (e.type === 'collectible') {
+                    js += `game._collectPoints = ${parseInt(e.params.points) || 10};\n`;
+                    js += `game._collectEffect = '${e.params.effect || 'score'}';\n\n`;
+                } else if (e.type === 'companion') {
+                    js += `game.freya.power = 0;\n`;
+                    js += `game._freyaPowerMax = ${parseInt(e.params.power_max) || 100};\n\n`;
+                }
+            });
+
+            // Physics — apply to running game instance
+            config.physics?.forEach(p => {
+                js += `// ${p.prefix} ${p.type}\n`;
+                if (p.type === 'gravity_cfg') {
+                    js += `game._gravity = ${parseFloat(p.params.force) || 0.65};\n`;
+                    js += `game._maxFall = ${parseFloat(p.params.max_fall) || 15};\n\n`;
+                }
+                if (p.type === 'collision') {
+                    js += `game._collisionShrink = ${parseFloat(p.params.shrink) || 0.7};\n\n`;
+                }
+                if (p.type === 'bounds') {
+                    js += `game._boundsWrap = ${p.params.wrap === 'true' || p.params.wrap === 'yes'};\n\n`;
+                }
+            });
+
+            // AI — real trainable agents
+            config.ai?.forEach(a => {
+                js += `// ${a.prefix} ${a.type}\n`;
+                if (a.type === 'ai_behavior') {
+                    const mode = a.params.mode || 'heuristic';
+                    if (mode === 'nn_simple') {
+                        js += `// Neural network agent — trains on gameplay\n`;
+                        js += `(function() {\n`;
+                        js += `    var weights = new Float32Array(8).fill(0).map(() => (Math.random() - 0.5) * 0.5);\n`;
+                        js += `    var lr = ${parseFloat(a.params.learn_rate) || 0.01};\n`;
+                        js += `    var prevScore = 0, prevAction = null, prevInput = null;\n`;
+                        js += `    function forward(input) {\n`;
+                        js += `        var sum = 0;\n`;
+                        js += `        for (var i = 0; i < Math.min(input.length, weights.length); i++) sum += input[i] * weights[i];\n`;
+                        js += `        return 1 / (1 + Math.exp(-sum));\n`;
+                        js += `    }\n`;
+                        js += `    numsyAI.onFrame(function(state) {\n`;
+                        js += `        if (!state.alive) { prevScore = 0; return; }\n`;
+                        js += `        var ob = state.obstacles[0] || { dist: 999, type: 'ground', y: 0 };\n`;
+                        js += `        var input = [\n`;
+                        js += `            ob.dist / 300,\n`;
+                        js += `            ob.type === 'flying' ? 1 : 0,\n`;
+                        js += `            state.playerY / state.canvasH,\n`;
+                        js += `            state.playerGrounded ? 1 : 0,\n`;
+                        js += `            state.speed / 20,\n`;
+                        js += `            state.playerDucking ? 1 : 0,\n`;
+                        js += `            (state.obstacles[1] || { dist: 999 }).dist / 500,\n`;
+                        js += `            state.freyaPower / 100\n`;
+                        js += `        ];\n`;
+                        js += `        // Simple reward: score increased = good\n`;
+                        js += `        var reward = state.score - prevScore;\n`;
+                        js += `        if (prevInput && prevAction !== null) {\n`;
+                        js += `            var target = reward > 0 ? prevAction : 1 - prevAction;\n`;
+                        js += `            var pred = forward(prevInput);\n`;
+                        js += `            var error = target - pred;\n`;
+                        js += `            for (var i = 0; i < weights.length; i++) weights[i] += lr * error * prevInput[i];\n`;
+                        js += `        }\n`;
+                        js += `        prevScore = state.score;\n`;
+                        js += `        var out = forward(input);\n`;
+                        js += `        if (out > 0.6 && ob.dist < ${parseInt(a.params.react_dist) || 200} && ob.dist > 0) {\n`;
+                        js += `            var action = ob.type === 'flying' ? 'duck' : 'jump';\n`;
+                        js += `            numsyAI.act(action);\n`;
+                        js += `            prevAction = 1; prevInput = input;\n`;
+                        js += `        } else { prevAction = 0; prevInput = input; }\n`;
+                        js += `        if (state.frame % 300 === 0) console.log('[NN Agent] score:', state.score, 'weights:', Array.from(weights).map(w => w.toFixed(3)));\n`;
+                        js += `    });\n`;
+                        js += `    console.log('[NN Agent] Training started — weights will adapt to gameplay');\n`;
+                        js += `})();\n\n`;
+                    } else if (mode === 'heuristic') {
+                        const react = parseInt(a.params.react_dist) || 150;
+                        js += `numsyAI.onFrame(function(state) {\n`;
+                        js += `    if (!state.alive) return;\n`;
+                        js += `    var ob = state.obstacles[0];\n`;
+                        js += `    if (ob && ob.dist < ${react} && ob.dist > 0) {\n`;
+                        js += `        if (ob.type === 'flying') numsyAI.act('duck');\n`;
+                        js += `        else numsyAI.act('jump');\n`;
+                        js += `    }\n`;
+                        js += `});\n\n`;
+                    } else if (mode === 'follow_player') {
+                        js += `numsyAI.onFrame(function(state) {\n`;
+                        js += `    if (!state.alive) return;\n`;
+                        js += `    // Mirror optimal play — jump early, duck late\n`;
+                        js += `    var ob = state.obstacles[0];\n`;
+                        js += `    if (ob && ob.dist < 180 && ob.dist > 40) {\n`;
+                        js += `        numsyAI.act(ob.type === 'flying' ? 'duck' : 'jump');\n`;
+                        js += `    }\n`;
+                        js += `    // Seek collectibles\n`;
+                        js += `    var c = state.collectibles[0];\n`;
+                        js += `    if (c && c.dist < 120 && c.y < state.playerY && state.playerGrounded) numsyAI.act('jump');\n`;
+                        js += `});\n\n`;
+                    } else {
+                        js += `numsyAI.onFrame(function(state) {\n`;
+                        js += `    if (!state.alive) return;\n`;
+                        js += `    if (Math.random() < 0.05) numsyAI.act(Math.random() > 0.5 ? 'jump' : 'duck');\n`;
+                        js += `});\n\n`;
+                    }
+                }
+                if (a.type === 'difficulty') {
+                    const start = parseFloat(a.params.start) || 1;
+                    const max = parseFloat(a.params.max) || 3;
+                    const per = parseInt(a.params.per_score) || 500;
+                    js += `numsyAI.onFrame(function(state) {\n`;
+                    js += `    var ramp = Math.min(${max}, ${start} + (state.score / ${per}) * 0.1);\n`;
+                    js += `    game.speedMult = ramp;\n`;
+                    js += `});\n\n`;
+                }
+            });
+
+            // Loops — functional spawn and repeat
+            config.loops?.forEach(l => {
+                js += `// ${l.prefix} ${l.type}\n`;
+                if (l.type === 'game_loop') {
+                    js += `// Game loop configured: fps=${l.params.fps || 60}, pause_key=${l.params.pause_key || 'Escape'}\n\n`;
+                } else if (l.type === 'spawn_wave') {
+                    const min = parseInt(l.params.min_delay) || 60;
+                    const max = parseInt(l.params.max_delay) || 120;
+                    js += `game._spawnMin = ${min};\n`;
+                    js += `game._spawnMax = ${max};\n\n`;
+                } else if (l.type === 'repeat') {
+                    js += `(function() { var _rCount = 0, _rMax = ${parseInt(l.params.count) || 10};\n`;
+                    js += `    var _rTimer = setInterval(function() { if (++_rCount >= _rMax) clearInterval(_rTimer); }, ${parseInt(l.params.interval) || 1000});\n`;
+                    js += `})();\n\n`;
+                }
+            });
+
+            // Score rules — live multiplier
+            config.output?.forEach(o => {
+                const mult = parseFloat(o.params.multiplier) || 1;
+                js += `// ${o.prefix} score_rule\n`;
+                js += `game._scoreMult = ${mult};\n\n`;
+            });
+
+            js += '// ═══ End Game Blocks Config ═══\n';
+            js += `console.log('[GameBlocks] Config loaded: ${blocks.length} blocks, ${connections.length} connections');\n`;
+            return js;
+        }
+
+        function exportAndInject() {
+            const config = exportConfig();
+            const js = generateJS(config);
+            // Put generated code in the Live Code Cell editor
+            const codeInput = document.getElementById('code-input');
+            if (codeInput) codeInput.value = js;
+            // Log to terminal
+            const termOutput = document.getElementById('term-output');
+            if (termOutput) {
+                const div = document.createElement('div');
+                div.className = 'term-line info';
+                div.innerHTML = `<b style="color:#f0883e;">[GameBlocks]</b> Exported ${blocks.length} blocks → Live Code Cell`;
+                termOutput.appendChild(div);
+            }
+            // Also log config to console
+            console.log('[GameBlocks] Config:', config);
+            console.log('[GameBlocks] Generated JS:', js);
+        }
+
+        // +2: Preset loaders
+        function loadPreset(name) {
+            clear();
+            if (name === 'runner') {
+                // Current brotherNumsy configuration as blocks
+                const gl = addBlock('game_loop', 40, 30);
+                const pl = addBlock('player', 40, 130);
+                const fr = addBlock('companion', 40, 270);
+                const gv = addBlock('gravity_cfg', 220, 30);
+                const bd = addBlock('bounds', 220, 150);
+                const sw = addBlock('spawn_wave', 220, 270);
+                const e1 = addBlock('enemy', 420, 30);
+                const e2 = addBlock('enemy', 420, 140);
+                const c1 = addBlock('collectible', 420, 260);
+                const c2 = addBlock('collectible', 420, 370);
+                const cl = addBlock('collision', 620, 30);
+                const dm = addBlock('damage', 620, 140);
+                const sr = addBlock('score_rule', 620, 260);
+                const ai = addBlock('ai_behavior', 820, 30);
+                const df = addBlock('difficulty', 820, 160);
+                const hd = addBlock('hud_el', 820, 290);
+                const go = addBlock('gameover', 1000, 30);
+                const px = addBlock('parallax', 1000, 160);
+                const pt = addBlock('particle', 1000, 280);
+                // Set enemy types
+                const e2El = blocks.find(b => b.id === e2);
+                if (e2El) {
+                    const sel = e2El.el.querySelector('select');
+                    if (sel) sel.value = 'flying';
+                }
+                const c2El = blocks.find(b => b.id === c2);
+                if (c2El) {
+                    const sel = c2El.el.querySelector('select[data-row="0"]');
+                    if (sel) sel.value = 'golden';
+                    const efSel = c2El.el.querySelector('select[data-row="2"]');
+                    if (efSel) efSel.value = 'invincible';
+                }
+                // Connect flow
+                connections.push(
+                    { from: gl, to: gv }, { from: gl, to: pl }, { from: pl, to: fr },
+                    { from: gv, to: bd }, { from: bd, to: sw },
+                    { from: sw, to: e1 }, { from: sw, to: e2 }, { from: sw, to: c1 }, { from: sw, to: c2 },
+                    { from: e1, to: cl }, { from: e2, to: cl }, { from: cl, to: dm }, { from: cl, to: sr },
+                    { from: dm, to: go }, { from: sr, to: hd },
+                    { from: ai, to: df }, { from: df, to: sw },
+                    { from: px, to: pt }
+                );
+                drawConnections();
+            } else if (name === 'platformer') {
+                const gl = addBlock('game_loop', 40, 30);
+                const pl = addBlock('player', 40, 150);
+                const gv = addBlock('gravity_cfg', 220, 30);
+                const bd = addBlock('bounds', 220, 150);
+                const e1 = addBlock('enemy', 420, 30);
+                const c1 = addBlock('collectible', 420, 150);
+                const cl = addBlock('collision', 620, 30);
+                const dm = addBlock('damage', 620, 150);
+                const sr = addBlock('score_rule', 620, 280);
+                const rp = addBlock('repeat', 820, 30);
+                const hd = addBlock('hud_el', 820, 150);
+                const go = addBlock('gameover', 1000, 30);
+                // Adjust gravity
+                const gvEl = blocks.find(b => b.id === gv);
+                if (gvEl) {
+                    const forceInp = gvEl.el.querySelector('input[data-row="0"]');
+                    if (forceInp) forceInp.value = '0.45';
+                }
+                // Player config
+                const plEl = blocks.find(b => b.id === pl);
+                if (plEl) {
+                    const jumpInp = plEl.el.querySelector('input[data-row="1"]');
+                    if (jumpInp) jumpInp.value = '-14';
+                }
+                connections.push(
+                    { from: gl, to: gv }, { from: gl, to: pl },
+                    { from: gv, to: bd }, { from: bd, to: rp },
+                    { from: rp, to: e1 }, { from: rp, to: c1 },
+                    { from: e1, to: cl }, { from: c1, to: cl },
+                    { from: cl, to: dm }, { from: cl, to: sr },
+                    { from: dm, to: go }, { from: sr, to: hd }
+                );
+                drawConnections();
+            }
+        }
+
+        function clear() {
+            blocks.forEach(b => b.el.remove());
+            blocks = [];
+            connections = [];
+            nextId = 0;
+            while (svgConns.firstChild) svgConns.removeChild(svgConns.firstChild);
+        }
+
+        // Panel toggle
+        document.getElementById('blocks-panel-toggle').addEventListener('click', () => {
+            document.getElementById('blocks-panel-body').classList.toggle('collapsed');
+        });
+
+        // Expose API
+        window.gameBlocks = { addBlock, removeBlock, exportConfig, generateJS, exportAndInject, loadPreset, clear, blocks, connections, GB_TYPES };
+    })();
+
+    // ──────────────────── TERMINAL ────────────────────
+    (function(){
+        const termOutput = document.getElementById('term-output');
+        const termInput = document.getElementById('term-input');
+        const termHistory = [];
+        let historyIdx = -1;
+
+        function termPrint(text, cls = 'term-line') {
+            const div = document.createElement('div');
+            div.className = 'term-line ' + cls;
+            div.innerHTML = text;
+            termOutput.appendChild(div);
+            termOutput.scrollTop = termOutput.scrollHeight;
+        }
+
+        const TERM_COMMANDS = {
+            help: () => {
+                termPrint('─── Commands ───', 'info');
+                termPrint('<b>status</b>    — game state summary');
+                termPrint('<b>score</b>     — current score & high score');
+                termPrint('<b>state</b>     — full JSON game state');
+                termPrint('<b>speed</b>     — current speed multiplier');
+                termPrint('<b>freya</b>     — Freya companion status');
+                termPrint('<b>distance</b>  — run distance in all FreyaUnits');
+                termPrint('<b>convert &lt;val&gt; &lt;from&gt; &lt;to&gt;</b> — FreyaUnits conversion');
+                termPrint('<b>units</b>     — list all 27 FreyaUnits');
+                termPrint('<b>jump</b>      — make player jump');
+                termPrint('<b>duck</b>      — make player duck');
+                termPrint('<b>reset</b>     — restart the game');
+                termPrint('<b>nyan</b>      — spawn a nyan cat');
+                termPrint('<b>swarm</b>     — spawn a nyan cat swarm');
+                termPrint('<b>eval &lt;js&gt;</b> — evaluate JavaScript');
+                termPrint('<b>blocks</b>    — list game blocks');
+                termPrint('<b>export</b>    — export blocks to code');
+                termPrint('<b>preset &lt;name&gt;</b> — load block preset (runner/platformer)');
+                termPrint('<b>clear</b>     — clear terminal');
+            },
+            status: () => {
+                const s = game.getState();
+                termPrint(`Score: <b style="color:#e6b422;">+n: ${s.score}</b> | Speed: <b style="color:#58a6ff;">${s.speed.toFixed(1)}</b> | Alive: ${s.alive ? '✅' : '❌'}`);
+                termPrint(`Freya: power ${game.freya.power}% | beam ${game.freya.beamActive > 0 ? 'ACTIVE' : 'ready'} | tokens ${game.freya.tokensCollected}`);
+                termPrint(`Distance: ${freyaFormat(game.distMeters)} m | Nyan cats: ${game.nyanCats.length}`);
+            },
+            score: () => {
+                termPrint(`Score: <b style="color:#e6b422;">+n: ${game.score}</b> | High: <b>+n: ${game.highScore}</b>`);
+            },
+            state: () => {
+                const s = game.getState();
+                termPrint(JSON.stringify(s, null, 2), 'result');
+            },
+            speed: () => {
+                termPrint(`Speed: <b style="color:#58a6ff;">${game.speedMult.toFixed(2)}x</b> (base ${BASE_SPEED})`);
+            },
+            freya: () => {
+                const f = game.freya;
+                const u = f.lastUnit;
+                termPrint(`<b style="color:#a78bfa;">Freya</b> — tokens: ${f.tokensCollected} | power: ${f.power}% | beam: ${f.beamActive > 0 ? 'ACTIVE ('+f.beamActive+' frames)' : 'standby'}`);
+                termPrint(`Position: (${f.x.toFixed(0)}, ${f.y.toFixed(0)}) | Current unit: ${u.sym} (${u.name})`);
+            },
+            distance: () => {
+                const m = game.distMeters;
+                termPrint('─── Distance in all FreyaUnits ───', 'info');
+                FREYA_UNITS.forEach(u => {
+                    const v = m / u.m;
+                    termPrint(`<span style="color:#06b6d4;">${u.sym}</span> (${u.name}): <b>${freyaFormat(v)}</b>`);
+                });
+            },
+            units: () => {
+                termPrint('─── 27 FreyaUnits ───', 'info');
+                FREYA_UNITS.forEach(u => {
+                    termPrint(`<span style="color:#06b6d4;">${u.sym}</span> — ${u.name} — ${u.m} m`);
+                });
+            },
+            jump: () => { game.act('jump'); termPrint('⬆ Jump!', 'warn'); },
+            duck: () => { game.act('duck'); termPrint('⬇ Duck!', 'warn'); },
+            reset: () => { game.start(); termPrint('🔄 Game restarted', 'info'); },
+            nyan: () => { game._spawnNyanCat(1); termPrint('🌈 Nyan cat spawned!', 'result'); },
+            swarm: () => { game._spawnNyanCat(15); termPrint('🌈🌈🌈 Nyan swarm! 15 cats!', 'result'); },
+            clear: () => { termOutput.innerHTML = ''; },
+            blocks: () => {
+                if (!window.gameBlocks) { termPrint('GameBlocks not loaded', 'error'); return; }
+                const b = window.gameBlocks;
+                termPrint('─── Game Blocks ───', 'info');
+                termPrint(`Blocks: <b>${b.blocks.length}</b> | Connections: <b>${b.connections.length}</b>`);
+                b.blocks.forEach(bl => {
+                    const def = b.GB_TYPES[bl.type];
+                    termPrint(`  <span style="color:${def.color};">${def.prefix}</span> <b>${def.label}</b> (${bl.id}) at (${Math.round(bl.x)}, ${Math.round(bl.y)})`);
+                });
+            },
+            export: () => {
+                if (!window.gameBlocks) { termPrint('GameBlocks not loaded', 'error'); return; }
+                window.gameBlocks.exportAndInject();
+                termPrint('Exported blocks → Live Code Cell', 'result');
+            },
+            preset: () => {
+                termPrint('Available presets: <b>runner</b>, <b>platformer</b>', 'info');
+                termPrint('Usage: <b>preset runner</b> or <b>preset platformer</b>');
+            },
+        };
+
+        function processCommand(input) {
+            const trimmed = input.trim();
+            if (!trimmed) return;
+            termPrint(`<span style="color:#a78bfa;">numsy&gt;</span> ${trimmed}`);
+            termHistory.unshift(trimmed);
+            historyIdx = -1;
+
+            const parts = trimmed.split(/\s+/);
+            const cmd = parts[0].toLowerCase();
+
+            if (cmd === 'preset' && parts.length >= 2 && window.gameBlocks) {
+                const name = parts[1].toLowerCase();
+                if (name === 'runner' || name === 'platformer') {
+                    window.gameBlocks.loadPreset(name);
+                    termPrint(`Loaded <b>${name}</b> preset — ${window.gameBlocks.blocks.length} blocks`, 'result');
+                } else {
+                    termPrint('Unknown preset. Available: <b>runner</b>, <b>platformer</b>', 'error');
+                }
+            } else if (cmd === 'convert' && parts.length >= 4) {
+                const val = parseFloat(parts[1]);
+                const from = parts[2];
+                const to = parts[3];
+                const result = FreyaUnits.convert(val, from, to);
+                if (result !== null) {
+                    termPrint(`${val} ${from} = <b style="color:#c084fc;">${freyaFormat(result)} ${to}</b>`, 'result');
+                } else {
+                    termPrint(`Unknown unit. Use <b>units</b> to see available symbols.`, 'error');
+                }
+            } else if (cmd === 'eval' || cmd === 'js') {
+                const code = trimmed.slice(cmd.length).trim();
+                try {
+                    const result = eval(code);
+                    if (result !== undefined) termPrint('→ ' + String(result), 'result');
+                } catch (e) {
+                    termPrint('Error: ' + e.message, 'error');
+                }
+            } else if (TERM_COMMANDS[cmd]) {
+                TERM_COMMANDS[cmd]();
+            } else {
+                // Try as JS eval
+                try {
+                    const result = eval(trimmed);
+                    if (result !== undefined) termPrint('→ ' + String(result), 'result');
+                } catch (e) {
+                    termPrint(`Unknown command: <b>${cmd}</b>. Type <b>help</b> for commands.`, 'error');
+                }
+            }
+        }
+
+        termInput.addEventListener('keydown', e => {
+            e.stopPropagation(); // don't trigger game controls
+            if (e.key === 'Enter') {
+                processCommand(termInput.value);
+                termInput.value = '';
+            } else if (e.key === 'ArrowUp') {
+                if (termHistory.length > 0) {
+                    historyIdx = Math.min(historyIdx + 1, termHistory.length - 1);
+                    termInput.value = termHistory[historyIdx];
+                }
+            } else if (e.key === 'ArrowDown') {
+                if (historyIdx > 0) {
+                    historyIdx--;
+                    termInput.value = termHistory[historyIdx];
+                } else {
+                    historyIdx = -1;
+                    termInput.value = '';
+                }
+            }
+        });
+
+        // Panel toggle
+        document.getElementById('term-panel-toggle').addEventListener('click', () => {
+            document.getElementById('term-panel-body').classList.toggle('collapsed');
+        });
+    })();
+
+    // ──────────────────── FULLSCREEN TOGGLE ────────────────────
+    (function(){
+        const btnFs = document.getElementById('btn-fullscreen');
+        const btnExit = document.getElementById('btn-fs-exit');
+
+        function enterFullscreen() {
+            document.body.classList.add('game-fullscreen');
+            game.resize();
+            if (!game.running) game.render();
+            // Also try browser native fullscreen
+            if (document.documentElement.requestFullscreen) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            }
+        }
+
+        function exitFullscreen() {
+            document.body.classList.remove('game-fullscreen');
+            game.resize();
+            if (!game.running) game.render();
+            if (document.fullscreenElement) {
+                document.exitFullscreen().catch(() => {});
+            }
+        }
+
+        btnFs.addEventListener('click', enterFullscreen);
+        btnExit.addEventListener('click', exitFullscreen);
+
+        // Esc key exits fullscreen mode
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && document.body.classList.contains('game-fullscreen')) {
+                document.body.classList.remove('game-fullscreen');
+                game.resize();
+                if (!game.running) game.render();
+            }
+        });
+
+        // Also handle Esc when not in native fullscreen
+        window.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && document.body.classList.contains('game-fullscreen')) {
+                exitFullscreen();
+            }
+        });
+    })();
+
+    // ===== PWA SERVICE WORKER =====
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    // ===== QUANTUM PREFIX LIVE SYNC =====
+    (function() {
+        const QP = window.QuantumPrefixes;
+        if (!QP) return;
+        QP.onStateChange(function(source, state) { if (source === 'brothernumsy' || !state) return; });
+        QP.broadcastState('brothernumsy', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, role: 'numsy-game' });
+        QP.requestStateSync();
+    })();
+
+    </script>
+</body>
+</html>

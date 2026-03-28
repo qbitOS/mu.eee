@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DCA Plan Viewer | uvspeed</title>
+<meta name="theme-color" content="#050810">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{--bg:#050810;--surface:#0d1117;--border:#21262d;--text:#e6edf3;--dim:#484f58;--accent:#58a6ff;
+--green:#3fb950;--red:#f85149;--yellow:#fbbf24;--purple:#a78bfa;--orange:#f0883e;--pink:#ec4899;--cyan:#22d3ee;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;}
+.header{padding:10px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.header h1{font-size:.875rem;font-weight:700;color:var(--accent);}
+.header .meta{font-size:.625rem;color:var(--dim);font-family:'SF Mono',monospace;}
+.toolbar{padding:6px 16px;background:var(--surface);border-bottom:1px solid var(--border);display:flex;gap:8px;flex-wrap:wrap;}
+.toolbar button{padding:4px 10px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--dim);font-size:.625rem;cursor:pointer;}
+.toolbar button:hover{border-color:var(--accent);color:var(--text);}
+.toolbar button.active{border-color:var(--accent);color:var(--accent);}
+.main{flex:1;display:flex;overflow:hidden;}
+.gutter{width:44px;background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:4px 0;}
+.gutter .g-row{font-family:'SF Mono',monospace;font-size:.5625rem;padding:1px 4px;text-align:right;white-space:nowrap;}
+.cards{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px;transition:border-color .15s;}
+.card:hover{border-color:var(--accent);}
+.card-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.card-prefix{font-family:'SF Mono',monospace;font-size:.75rem;font-weight:700;min-width:28px;}
+.card-addr{font-family:'SF Mono',monospace;font-size:.625rem;color:var(--accent);cursor:pointer;}
+.card-addr:hover{text-decoration:underline;}
+.card-title{font-weight:600;font-size:.8125rem;flex:1;}
+.card-status{font-size:.5625rem;padding:2px 8px;border-radius:12px;font-weight:600;text-transform:uppercase;}
+.status-done{background:#238636;color:#fff;}
+.status-build{background:#9e6a03;color:#fff;}
+.status-planned{background:#1f6feb;color:#fff;}
+.status-spec{background:var(--border);color:var(--dim);}
+.card-body{font-size:.6875rem;color:#c9d1d9;line-height:1.5;max-height:200px;overflow-y:auto;}
+.card-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:.5625rem;color:var(--dim);}
+.card-meta span{padding:2px 6px;background:var(--bg);border-radius:4px;border:1px solid var(--border);}
+.card-run{padding:3px 8px;background:#238636;border:1px solid #2ea043;border-radius:4px;color:#fff;font-size:.5625rem;cursor:pointer;font-family:'SF Mono',monospace;}
+.card-run:hover{background:#2ea043;}
+.card-deps a{color:var(--accent);text-decoration:none;font-size:.5625rem;font-family:'SF Mono',monospace;}
+.card-deps a:hover{text-decoration:underline;}
+.card-train{font-size:.5rem;padding:2px 6px;border-radius:4px;cursor:pointer;border:1px solid var(--border);}
+.card-train.active{background:#9e6a03;color:#fff;border-color:#d4a017;}
+.sidebar{width:240px;background:var(--surface);border-left:1px solid var(--border);overflow-y:auto;flex-shrink:0;padding:8px;display:none;}
+.sidebar.open{display:block;}
+.sidebar h3{font-size:.6875rem;color:var(--accent);margin-bottom:6px;}
+.outline-item{font-size:.625rem;padding:3px 6px;cursor:pointer;border-radius:4px;display:flex;gap:4px;align-items:center;}
+.outline-item:hover{background:var(--bg);}
+.outline-item .oi-sym{font-family:'SF Mono',monospace;min-width:24px;font-weight:700;}
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:40px;text-align:center;color:var(--dim);font-size:.875rem;margin:40px;cursor:pointer;transition:border-color .2s;}
+.drop-zone:hover,.drop-zone.over{border-color:var(--accent);color:var(--text);}
+.stats-bar{padding:6px 16px;background:var(--surface);border-top:1px solid var(--border);font-size:.5625rem;color:var(--dim);font-family:'SF Mono',monospace;display:flex;gap:16px;}
+@media(max-width:600px){.sidebar{display:none!important;}.gutter{width:32px;}.cards{padding:8px;}}
+</style>
+</head>
+<body>
+<div class="header">
+    <h1>📋 DCA Plan Viewer</h1>
+    <span class="meta" id="plan-meta">Drop a .plan.md file to begin</span>
+</div>
+<div class="toolbar" id="toolbar" style="display:none;">
+    <button id="btn-all" class="active">All</button>
+    <button id="btn-done">Done</button>
+    <button id="btn-build">Build</button>
+    <button id="btn-planned">Planned</button>
+    <button id="btn-outline">Outline ▸</button>
+    <button id="btn-export">Export JSON</button>
+</div>
+<div class="main">
+    <div class="gutter" id="gutter"></div>
+    <div class="cards" id="cards">
+        <div class="drop-zone" id="drop-zone">
+            <div style="font-size:2rem;margin-bottom:8px;">📋</div>
+            Drop .plan.md here<br>
+            <span style="font-size:.625rem;color:var(--dim);">or click to browse</span>
+            <input type="file" id="file-input" accept=".plan.md,.md" style="display:none;">
+        </div>
+    </div>
+    <div class="sidebar" id="sidebar">
+        <h3>DCA Outline</h3>
+        <div id="outline"></div>
+    </div>
+</div>
+<div class="stats-bar" id="stats-bar" style="display:none;">
+    <span id="st-sections">0 sections</span>
+    <span id="st-blocks">0 blocks</span>
+    <span id="st-lines">0 lines</span>
+    <span id="st-coverage">0% classified</span>
+    <span id="st-dominant">—</span>
+</div>
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script src="plan-corpus-indexer.js"></script>
+<script>
+'use strict';
+var QP = window.QuantumPrefixes;
+var PCI = window.PlanCorpusIndexer;
+var _sections = [];
+var _planText = '';
+var _filename = '';
+
+var prefixColors = {'n:':'#a78bfa','+1:':'#3fb950','-n:':'#58a6ff','+0:':'#f0883e',
+    '0:':'#8b949e','-1:':'#f85149','+n:':'#fbbf24','+2:':'#22d3ee',
+    '-0:':'#c084fc','+3:':'#ec4899','1:':'#e6edf3',' ':'#484f58'};
+
+function parsePlan(text) {
+    var lines = text.split('\n');
+    var sections = [];
+    var current = null;
+    for (var i = 0; i < lines.length; i++) {
+        var hm = lines[i].match(/^(#{1,4})\s+(.*)/);
+        if (hm) {
+            if (current) { current.endLine = i - 1; current.body = lines.slice(current.startLine + 1, i).join('\n').trim(); sections.push(current); }
+            var addrMatch = hm[2].match(/\[P[\d.a-zA-Z-]+\]/);
+            var statusMatch = hm[2].match(/\b(DONE|BUILD|PLANNED|SPEC)\b/i);
+            current = {
+                level: hm[1].length, title: hm[2],
+                address: addrMatch ? addrMatch[0] : null,
+                status: statusMatch ? statusMatch[1].toLowerCase() : null,
+                startLine: i, endLine: i, body: ''
+            };
+        }
+    }
+    if (current) { current.endLine = lines.length - 1; current.body = lines.slice(current.startLine + 1).join('\n').trim(); sections.push(current); }
+    sections.forEach(function(s) {
+        s.blocks = PCI ? PCI.extractBlocks(lines[s.startLine] + '\n' + s.body) : [];
+        var cls = QP ? QP.classifyLine(s.title, 'markdown') : { sym: ' ' };
+        s.prefix = cls.sym || ' ';
+        var runMatch = s.body.match(/`run:\s*(.*?)`/);
+        s.runCmd = runMatch ? runMatch[1] : null;
+        var depsMatch = s.body.match(/`deps:\s*(.*?)`/);
+        s.deps = depsMatch ? depsMatch[1].split(',').map(function(d){return d.trim();}) : [];
+        var fileMatch = s.body.match(/`file:\s*(.*?)`/);
+        s.file = fileMatch ? fileMatch[1] : null;
+        var trainMatch = s.body.match(/`train:\s*(true|false)`/i);
+        s.train = trainMatch ? trainMatch[1] === 'true' : false;
+    });
+    return sections;
+}
+
+function renderCards(filter) {
+    var container = document.getElementById('cards');
+    var gutter = document.getElementById('gutter');
+    container.innerHTML = '';
+    gutter.innerHTML = '';
+    var filtered = filter ? _sections.filter(function(s){ return s.status === filter; }) : _sections;
+
+    filtered.forEach(function(s, idx) {
+        var col = prefixColors[s.prefix] || '#484f58';
+        var statusCls = s.status ? 'status-' + s.status : '';
+
+        var gr = document.createElement('div');
+        gr.className = 'g-row';
+        gr.style.color = col;
+        gr.textContent = s.prefix;
+        gr.style.marginTop = idx === 0 ? '12px' : '0';
+        gr.style.height = '40px';
+        gr.style.lineHeight = '40px';
+        gutter.appendChild(gr);
+
+        var card = document.createElement('div');
+        card.className = 'card';
+        card.id = 'card-' + idx;
+        card.style.borderLeftColor = col;
+        card.style.borderLeftWidth = '3px';
+
+        var head = '<div class="card-head">';
+        head += '<span class="card-prefix" style="color:' + col + ';">' + s.prefix + '</span>';
+        if (s.address) head += '<span class="card-addr" onclick="scrollToAddr(\'' + s.address + '\')">' + s.address + '</span>';
+        head += '<span class="card-title">' + escHtml(s.title.replace(/\[P[\d.a-zA-Z-]+\]\s*/, '')) + '</span>';
+        if (s.status) head += '<span class="card-status ' + statusCls + '">' + s.status + '</span>';
+        head += '</div>';
+
+        var body = '<div class="card-body">' + escHtml(s.body.substring(0, 500)) + (s.body.length > 500 ? '...' : '') + '</div>';
+
+        var meta = '<div class="card-meta">';
+        meta += '<span>L' + s.startLine + '-' + s.endLine + '</span>';
+        if (s.runCmd) meta += '<button class="card-run" title="' + escHtml(s.runCmd) + '">▶ ' + escHtml(s.runCmd.substring(0, 30)) + '</button>';
+        if (s.deps.length) meta += '<span class="card-deps">deps: ' + s.deps.map(function(d){return '<a href="#" onclick="scrollToAddr(\'' + d + '\');return false;">' + d + '</a>';}).join(', ') + '</span>';
+        if (s.file) meta += '<span>📄 ' + escHtml(s.file) + '</span>';
+        meta += '<span class="card-train' + (s.train ? ' active' : '') + '" onclick="toggleTrain(' + idx + ')">' + (s.train ? '🏋️ TRAIN' : 'train') + '</span>';
+        meta += '</div>';
+
+        card.innerHTML = head + body + meta;
+        container.appendChild(card);
+    });
+}
+
+function renderOutline() {
+    var el = document.getElementById('outline');
+    el.innerHTML = '';
+    _sections.forEach(function(s, idx) {
+        var col = prefixColors[s.prefix] || '#484f58';
+        var item = document.createElement('div');
+        item.className = 'outline-item';
+        item.style.paddingLeft = ((s.level - 1) * 12 + 6) + 'px';
+        item.innerHTML = '<span class="oi-sym" style="color:' + col + ';">' + s.prefix + '</span><span>' + escHtml((s.address || '') + ' ' + s.title.substring(0, 40)) + '</span>';
+        item.onclick = function() {
+            var target = document.getElementById('card-' + idx);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        };
+        el.appendChild(item);
+    });
+}
+
+function renderStats() {
+    var lines = _planText.split('\n').length;
+    var classified = 0;
+    var prefixDist = {};
+    _planText.split('\n').forEach(function(line) {
+        if (!line.trim()) return;
+        var r = QP ? QP.classifyLine(line, 'markdown') : { sym: ' ' };
+        var sym = r.sym || ' ';
+        prefixDist[sym] = (prefixDist[sym] || 0) + 1;
+        if (sym !== ' ') classified++;
+    });
+    var dominant = PCI ? PCI.dominantPrefix(prefixDist) : ' ';
+    document.getElementById('st-sections').textContent = _sections.length + ' sections';
+    document.getElementById('st-blocks').textContent = _sections.reduce(function(s,x){return s+x.blocks.length;},0) + ' blocks';
+    document.getElementById('st-lines').textContent = lines + ' lines';
+    document.getElementById('st-coverage').textContent = (lines > 0 ? Math.round(classified / lines * 100) : 0) + '% classified';
+    document.getElementById('st-dominant').textContent = 'dominant: ' + dominant;
+}
+
+function scrollToAddr(addr) {
+    for (var i = 0; i < _sections.length; i++) {
+        if (_sections[i].address === addr) {
+            var target = document.getElementById('card-' + i);
+            if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+    }
+}
+
+function toggleTrain(idx) {
+    _sections[idx].train = !_sections[idx].train;
+    renderCards();
+}
+
+function escHtml(s) { return (s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function loadPlan(text, filename) {
+    _planText = text;
+    _filename = filename;
+    _sections = parsePlan(text);
+    document.getElementById('plan-meta').textContent = filename + ' | ' + _sections.length + ' sections';
+    document.getElementById('toolbar').style.display = 'flex';
+    document.getElementById('stats-bar').style.display = 'flex';
+    renderCards();
+    renderOutline();
+    renderStats();
+}
+
+function exportJSON() {
+    var data = {
+        file: _filename, sections: _sections.map(function(s) {
+            return { address: s.address, title: s.title, prefix: s.prefix, status: s.status, level: s.level, lines: [s.startLine, s.endLine], runCmd: s.runCmd, deps: s.deps, file: s.file, train: s.train };
+        }),
+        stats: { sections: _sections.length, lines: _planText.split('\n').length }
+    };
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = _filename.replace('.plan.md', '') + '-dca.json'; a.click();
+}
+
+// Wire UI
+var dropZone = document.getElementById('drop-zone');
+var fileInput = document.getElementById('file-input');
+dropZone.onclick = function() { fileInput.click(); };
+dropZone.ondragover = function(e) { e.preventDefault(); dropZone.classList.add('over'); };
+dropZone.ondragleave = function() { dropZone.classList.remove('over'); };
+dropZone.ondrop = function(e) {
+    e.preventDefault(); dropZone.classList.remove('over');
+    var file = e.dataTransfer.files[0];
+    if (file) { var r = new FileReader(); r.onload = function(ev) { loadPlan(ev.target.result, file.name); }; r.readAsText(file); }
+};
+fileInput.onchange = function() {
+    if (fileInput.files[0]) { var r = new FileReader(); r.onload = function(ev) { loadPlan(ev.target.result, fileInput.files[0].name); }; r.readAsText(fileInput.files[0]); }
+};
+
+document.getElementById('btn-all').onclick = function() { setFilter(null, this); };
+document.getElementById('btn-done').onclick = function() { setFilter('done', this); };
+document.getElementById('btn-build').onclick = function() { setFilter('build', this); };
+document.getElementById('btn-planned').onclick = function() { setFilter('planned', this); };
+document.getElementById('btn-outline').onclick = function() { document.getElementById('sidebar').classList.toggle('open'); };
+document.getElementById('btn-export').onclick = exportJSON;
+
+function setFilter(f, btn) {
+    document.querySelectorAll('.toolbar button').forEach(function(b){ b.classList.remove('active'); });
+    btn.classList.add('active');
+    renderCards(f);
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+if (QP && QP.broadcastState) QP.broadcastState('plan-viewer', { loaded: true });
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}</script>
+</body>
+</html>

@@ -1,0 +1,1776 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>qbit.search — Iron Line Terminal</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+<link rel="apple-touch-icon" sizes="192x192" href="../icons/icon-192.png">
+<style>
+:root{
+  --bg:#0a0e14;--bg2:#0d1117;--bg3:#161b22;--border:#21262d;
+  --text:#e6edf3;--muted:#6e7681;--accent:#58a6ff;
+  --purple:#a78bfa;--cyan:#56d4dd;--gold:#c9a84c;--green:#34d399;
+  --success:#3fb950;--warning:#f0883e;--error:#f85149;
+  --font-mono:'SF Mono','Fira Code','JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;touch-action:manipulation}
+body{font-family:var(--font-mono);background:var(--bg);color:var(--text);font-size:12px;display:flex;flex-direction:column}
+
+.hdr{display:flex;align-items:center;gap:12px;padding:4px 12px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;height:32px}
+.hdr .logo{font-size:13px;font-weight:700;color:var(--gold);letter-spacing:-.5px}
+.hdr .logo b{color:var(--purple)}
+.hdr .badge{font-size:9px;padding:1px 7px;border-radius:8px;font-weight:700;letter-spacing:.8px}
+.badge-ble{background:rgba(88,166,255,.15);color:var(--accent)}
+.badge-mesh{background:rgba(52,211,153,.15);color:var(--green)}
+.badge-live{background:rgba(63,185,80,.25);color:var(--success);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.hdr-spacer{flex:1}
+.hdr-btn{background:none;border:1px solid var(--border);color:var(--muted);height:22px;padding:0 8px;border-radius:4px;cursor:pointer;font-size:10px;font-family:var(--font-mono);transition:.12s;display:flex;align-items:center;gap:4px}
+.hdr-btn:hover{color:var(--text);border-color:var(--accent)}
+.hdr-btn.active{color:var(--accent);border-color:var(--accent);background:rgba(88,166,255,.08)}
+
+.main{display:flex;flex:1;overflow:hidden}
+
+.term-pane{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+#term-output{flex:1;overflow-y:auto;overflow-x:hidden;padding:8px 12px;font-size:12px;line-height:1.55;white-space:pre-wrap;word-break:break-all;-webkit-overflow-scrolling:touch}
+#term-output .ln{min-height:15px}
+.term-prompt{display:flex;align-items:center;gap:6px;padding:4px 12px;flex-shrink:0;border-top:1px solid var(--border);background:var(--bg)}
+.term-prompt .tp-label{color:var(--gold);font-size:11px;font-family:var(--font-mono);font-weight:600;white-space:nowrap}
+.term-prompt input{flex:1;background:transparent;border:none;color:var(--text);font-family:var(--font-mono);font-size:12px;outline:none;caret-color:var(--accent)}
+.term-prompt input::placeholder{color:var(--muted);opacity:.5}
+.c-prompt{color:var(--gold)}
+.c-cmd{color:var(--text)}
+.c-ok{color:var(--green)}
+.c-err{color:var(--error)}
+.c-warn{color:var(--warning)}
+.c-info{color:var(--accent)}
+.c-dim{color:var(--muted)}
+.c-purple{color:var(--purple)}
+.c-cyan{color:var(--cyan)}
+.c-bold{font-weight:700}
+.c-url{color:var(--accent);cursor:pointer;text-decoration:underline}
+.c-url:hover{color:var(--purple)}
+
+.browser-pane{width:420px;display:flex;flex-direction:column;border-left:1px solid var(--border);flex-shrink:0;background:var(--bg2)}
+.browser-pane.collapsed{width:0!important;min-width:0!important;overflow:hidden;border:none;padding:0;flex-basis:0}
+.bp-bar{display:flex;align-items:center;gap:6px;padding:4px 8px;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0}
+.bp-url{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:var(--text);font-family:var(--font-mono);font-size:10px;padding:3px 8px;outline:none}
+.bp-url:focus{border-color:var(--accent)}
+.bp-btn{background:none;border:1px solid var(--border);color:var(--muted);width:22px;height:22px;border-radius:4px;cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center}
+.bp-btn:hover{color:var(--text);border-color:var(--accent)}
+#browser-frame{flex:1;border:none;background:#000}
+.bp-info{padding:4px 8px;font-size:9px;color:var(--muted);border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0}
+
+.rx-panel{width:260px;display:flex;flex-direction:column;border-left:1px solid var(--border);flex-shrink:0;background:var(--bg2);overflow-y:auto}
+.rx-panel.collapsed{width:0;overflow:hidden;border:none}
+
+.splitter{width:4px;cursor:col-resize;background:#000;flex-shrink:0;position:relative;z-index:10;transition:background .15s}
+.splitter:hover,.splitter.active{background:var(--accent)}
+.splitter::after{content:'';position:absolute;inset:-2px -4px;}
+.rx-section{padding:8px 10px;border-bottom:1px solid var(--border)}
+.rx-title{font-size:9px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+.rx-item{display:flex;align-items:center;gap:6px;padding:4px 6px;border-radius:4px;font-size:10px;cursor:pointer;transition:.1s;border:1px solid transparent}
+.rx-item:hover{background:var(--bg3);border-color:var(--border)}
+.rx-item .rx-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.rx-item .rx-label{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rx-item .rx-time{font-size:8px;color:var(--muted)}
+.rx-empty{color:var(--muted);font-size:10px;padding:4px 6px;font-style:italic}
+
+.search-bar{display:flex;gap:6px;padding:6px 10px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;align-items:center}
+#search-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:var(--font-mono);font-size:12px;padding:6px 10px;outline:none;transition:.15s}
+#search-input:focus{border-color:var(--purple);box-shadow:0 0 0 2px rgba(167,139,250,.15)}
+#search-input::placeholder{color:var(--muted)}
+.sb-btn{background:var(--bg3);border:1px solid var(--border);color:var(--muted);height:30px;padding:0 10px;border-radius:6px;cursor:pointer;font-family:var(--font-mono);font-size:10px;transition:.12s;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.sb-btn:hover{color:var(--text);border-color:var(--accent)}
+.sb-btn.sync-active{color:var(--green);border-color:var(--green);animation:pulse 1.5s infinite}
+
+.sync-popup{position:absolute;bottom:40px;left:0;min-width:220px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:100;display:none;overflow:hidden}
+.sync-popup.open{display:block}
+.sync-popup-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:10px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+.sync-popup-hdr .close-x{cursor:pointer;font-size:13px;color:var(--muted);background:none;border:none;font-family:var(--font-mono)}
+.sync-popup-hdr .close-x:hover{color:var(--error)}
+.sync-item{display:flex;align-items:center;gap:10px;padding:8px 12px;cursor:pointer;transition:.1s;border-bottom:1px solid rgba(33,38,45,.5);font-size:11px}
+.sync-item:last-child{border-bottom:none}
+.sync-item:hover{background:var(--bg3)}
+.sync-item .si-icon{width:24px;text-align:center;font-size:14px;flex-shrink:0}
+.sync-item .si-label{flex:1;color:var(--text)}
+.sync-item .si-badge{font-size:8px;padding:1px 6px;border-radius:6px;font-weight:700;letter-spacing:.5px}
+.si-badge-on{background:rgba(63,185,80,.2);color:var(--success)}
+.si-badge-off{background:rgba(110,118,129,.15);color:var(--muted)}
+.si-badge-beta{background:rgba(167,139,250,.15);color:var(--purple)}
+
+.mesh-popup{position:absolute;bottom:40px;left:70px;width:260px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 32px rgba(0,0,0,.5);z-index:100;display:none;overflow:hidden}
+.mesh-popup.open{display:block}
+.mesh-popup-hdr{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:var(--bg3);border-bottom:1px solid var(--border);font-size:10px;color:var(--green);letter-spacing:.5px}
+.mesh-action{display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;transition:.1s;border-bottom:1px solid rgba(33,38,45,.5);font-size:11px}
+.mesh-action:last-child{border-bottom:none}
+.mesh-action:hover{background:var(--bg3)}
+.mesh-action .ma-icon{font-size:13px;width:20px;text-align:center}
+.mesh-action .ma-label{flex:1;color:var(--text)}
+.mesh-action .ma-key{font-size:8px;color:var(--muted);background:var(--bg);padding:1px 5px;border-radius:3px;border:1px solid var(--border)}
+
+.hdr-sync{font-size:8px;color:var(--muted);display:flex;align-items:center;gap:6px;font-family:var(--font-mono)}
+.hdr-sync .seed{color:var(--gold);font-weight:600;cursor:pointer;transition:.15s}
+.hdr-sync .seed:hover{color:var(--text);text-decoration:underline}
+.hdr-sync .clock{color:var(--cyan);cursor:pointer;transition:.15s}
+.hdr-sync .clock:hover{color:var(--text);text-decoration:underline}
+.hdr-sync .copied{color:var(--green)!important;text-decoration:none!important}
+.hdr-ai{display:flex;align-items:center;gap:4px;font-size:9px;color:var(--green);font-family:var(--font-mono)}
+.hdr-ai .ai-dot{width:5px;height:5px;border-radius:50%;background:var(--green);animation:pulse 2s infinite}
+
+.status{display:flex;align-items:center;gap:10px;padding:2px 12px;background:var(--bg2);border-top:1px solid var(--border);font-size:9px;color:var(--muted);flex-shrink:0;height:20px}
+.status .dot{width:5px;height:5px;border-radius:50%;background:var(--success)}
+.status .sep{color:var(--border)}
+
+#file-drop-overlay{position:fixed;inset:0;background:rgba(167,139,250,.08);border:3px dashed var(--purple);z-index:999;display:none;align-items:center;justify-content:center;font-size:18px;color:var(--purple);font-family:var(--font-mono);font-weight:700;backdrop-filter:blur(4px)}
+#file-drop-overlay.active{display:flex}
+#file-input{display:none}
+
+::-webkit-scrollbar{width:5px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+@media(max-width:800px){.browser-pane,.rx-panel{display:none}}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="logo"><b>{.qbit}</b>.search</div>
+  <span class="badge badge-live" id="badge-status">LIVE</span>
+  <span class="badge badge-ble" id="badge-ble" style="display:none">BLE</span>
+  <span class="badge badge-mesh" id="badge-mesh" style="display:none">MESH</span>
+  <div class="hdr-sync">
+    <span>seed:<span class="seed" id="hdr-seed">—</span></span>
+    <span class="clock" id="hdr-clock">—</span>
+  </div>
+  <div class="hdr-spacer"></div>
+  <div class="hdr-ai" id="hdr-ai" title="AI pipeline status"><span class="ai-dot"></span>AI</div>
+  <button class="hdr-btn" id="btn-browser" title="Toggle browser">⊞ Browser</button>
+  <button class="hdr-btn" id="btn-rx" title="Toggle receive panel">📡 RX</button>
+  <button class="hdr-btn" id="btn-clear" title="Clear terminal">∅ Clear</button>
+  <button class="hdr-btn" id="btn-nuke" title="Clear cache + cookies + hard reload" style="color:var(--error)">⊘ Reset</button>
+  <span data-qp-theme-host></span>
+</div>
+
+<div class="main">
+  <div class="term-pane">
+    <div id="term-output"></div>
+    <div class="term-prompt">
+      <span class="tp-label">qbit ❯</span>
+      <input id="term-input" type="text" placeholder="type command…" autocomplete="off" spellcheck="false">
+    </div>
+  </div>
+
+  <div class="splitter" id="splitter-browser" data-target="browser-pane"></div>
+  <div class="browser-pane" id="browser-pane">
+    <div class="bp-bar">
+      <button class="bp-btn" id="bp-back" title="Back">◁</button>
+      <button class="bp-btn" id="bp-refresh" title="Reload">↻</button>
+      <input class="bp-url" id="bp-url" placeholder="enter URL…" autocomplete="off">
+      <button class="bp-btn" id="bp-go" title="Go">▶</button>
+      <button class="bp-btn" id="bp-extract" title="Extract assets">⚡</button>
+    </div>
+    <iframe id="browser-frame" sandbox="allow-scripts allow-forms allow-popups"></iframe>
+    <div class="bp-info">
+      <span id="bp-status">ready</span>
+      <span id="bp-domain">—</span>
+      <span style="margin-left:auto" id="bp-size">—</span>
+    </div>
+  </div>
+
+  <div class="splitter" id="splitter-rx" data-target="rx-panel"></div>
+  <div class="rx-panel" id="rx-panel">
+    <div class="rx-section">
+      <div class="rx-title">📡 Received Links</div>
+      <div id="rx-list"><div class="rx-empty">No links received yet</div></div>
+    </div>
+    <div class="rx-section">
+      <div class="rx-title">🔗 BLE Devices</div>
+      <div id="ble-list"><div class="rx-empty">Not scanning</div></div>
+    </div>
+    <div class="rx-section">
+      <div class="rx-title">🌐 Mesh Peers</div>
+      <div id="mesh-list"><div class="rx-empty">No peers</div></div>
+    </div>
+    <div class="rx-section">
+      <div class="rx-title">📂 AirDrop / Files</div>
+      <div id="airdrop-list"><div class="rx-empty">Drop files here</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="search-bar" style="position:relative">
+  <input id="search-input" type="text" placeholder="search · URL · command  ⌘K" autocomplete="off">
+  <button class="sb-btn" id="btn-sync" title="Sync channels">◎ Sync</button>
+  <button class="sb-btn" id="btn-mesh-actions" title="Mesh quick actions" style="color:var(--green)">⬡ Mesh</button>
+  <button class="sb-btn" id="btn-run" title="Run / Send">⚡ Run</button>
+
+  <div class="sync-popup" id="sync-popup">
+    <div class="sync-popup-hdr"><span>◎ SYNC CHANNELS</span><button class="close-x" id="sync-close">×</button></div>
+    <div class="sync-item" id="si-ble"><span class="si-icon">📶</span><span class="si-label">Bluetooth LE</span><span class="si-badge si-badge-off" id="si-ble-badge">OFF</span></div>
+    <div class="sync-item" id="si-wifi"><span class="si-icon">📡</span><span class="si-label">WiFi Direct</span><span class="si-badge si-badge-beta">BETA</span></div>
+    <div class="sync-item" id="si-nfc"><span class="si-icon">🔖</span><span class="si-label">NFC Tag</span><span class="si-badge si-badge-beta">BETA</span></div>
+    <div class="sync-item" id="si-airdrop"><span class="si-icon">📂</span><span class="si-label">AirDrop / File</span><span class="si-badge si-badge-off">READY</span></div>
+    <div class="sync-item" id="si-flipper"><span class="si-icon">🐬</span><span class="si-label">Flipper IO</span><span class="si-badge si-badge-beta">SUB-GHz</span></div>
+    <div class="sync-item" id="si-mesh"><span class="si-icon">⬡</span><span class="si-label">Mesh Network</span><span class="si-badge si-badge-off" id="si-mesh-badge">OFF</span></div>
+    <div class="sync-item" id="si-share"><span class="si-icon">🔗</span><span class="si-label">Share Link</span><span class="si-badge si-badge-off">COPY</span></div>
+  </div>
+
+  <div class="mesh-popup" id="mesh-popup">
+    <div class="mesh-popup-hdr"><span>⬡ MESH QUICK ACTIONS</span><button class="close-x" id="mesh-close" style="cursor:pointer;background:none;border:none;color:var(--muted);font-size:13px;font-family:var(--font-mono)">×</button></div>
+    <div class="mesh-action" id="ma-note"><span class="ma-icon">📝</span><span class="ma-label">Send Note</span><span class="ma-key">⌘N</span></div>
+    <div class="mesh-action" id="ma-app"><span class="ma-icon">◎</span><span class="ma-label">Launch App</span><span class="ma-key">⌘L</span></div>
+    <div class="mesh-action" id="ma-file"><span class="ma-icon">📁</span><span class="ma-label">Share File</span><span class="ma-key">⌘F</span></div>
+    <div class="mesh-action" id="ma-url"><span class="ma-icon">🌐</span><span class="ma-label">Broadcast URL</span><span class="ma-key">⌘U</span></div>
+    <div class="mesh-action" id="ma-cmd"><span class="ma-icon">⚡</span><span class="ma-label">Run Command</span><span class="ma-key">⌘R</span></div>
+    <div class="mesh-action" id="ma-custom" style="border-top:1px solid var(--border)"><span class="ma-icon">＋</span><span class="ma-label" style="color:var(--muted)">Add Custom Action…</span></div>
+  </div>
+</div>
+
+<div class="status">
+  <span class="dot" id="st-dot"></span>
+  <span id="st-state">ready</span>
+  <span class="sep">│</span>
+  <span id="st-rx">rx: 0</span>
+  <span class="sep">│</span>
+  <span id="st-ble">ble: off</span>
+  <span class="sep">│</span>
+  <span id="st-mesh">mesh: off</span>
+  <span class="sep">│</span>
+  <span id="st-assets">assets: 0</span>
+  <span class="sep">│</span>
+  <span id="st-iron" style="color:var(--cyan)">⚡ iron line</span>
+  <span style="margin-left:auto">{.qbit}.search v1.1</span>
+</div>
+
+<div id="file-drop-overlay">Drop files / URLs here</div>
+<input type="file" id="file-input" multiple>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script src="plan-corpus-indexer.js"></script>
+<script>
+(function(){
+'use strict';
+
+const $=id=>document.getElementById(id);
+const term=$('term-output');
+const searchInput=$('search-input');
+const bpUrl=$('bp-url');
+const frame=$('browser-frame');
+
+const state={
+  history:[],histIdx:-1,rxLinks:[],bleDevices:[],meshPeers:[],
+  assets:[],bleScanning:false,meshActive:false,rxCount:0,
+  browserHistory:[],browserIdx:-1,
+  pipeline:{active:false,stages:[],current:null,timings:[]},
+  speedStack:null
+};
+
+const COMMANDS={
+  help:'Show all commands',
+  fetch:'fetch <url> — Download page + extract JS/CSS/WASM assets',
+  open:'open <url> — Open URL in browser pane',
+  extract:'extract — Extract assets from current browser page',
+  capture:'capture <url> — Launch Playwright Safari HAR capture',
+  ble:'ble — Toggle BLE scanning for URL beacons',
+  mesh:'mesh — Toggle WebRTC mesh channel',
+  clear:'clear — Clear terminal',
+  assets:'assets — List extracted assets',
+  ingest:'ingest <url> — Fetch + open + extract in one shot',
+  cornerstone:'cornerstone — Download Cornerstone3D libraries',
+  dicom:'dicom — Download sample DICOM files',
+  viewer:'viewer — Generate qbit-medical.html',
+  search:'search <query> — Search across ingested assets',
+  pipeline:'pipeline — Show Iron Line pipeline state + timing',
+  layers:'layers — Show 8-layer stack with status',
+  speed:'speed — Load speed-stack.json + show timing budget',
+  stage:'stage <id> — Emit stage transition on Iron Line bus',
+  tether:'tether <organism> — Bind organism to quantum data (de-extinction)',
+  loop:'loop — Run full cortical loop benchmark',
+  dac:'dac [stats|run|tracks|stripes|complexity|context|mode] — DAC+ classification engine',
+  codec:'codec <content> — Encode content with .qbit codec (prefix gutter)',
+  decode:'decode <prefixed> — Strip prefixes from .qbit-encoded content',
+  history:'history [query] — Search chat corpus for past decisions/context',
+  session:'session <id> — Show session summary from chat corpus',
+  decisions:'decisions — List all cross-session architectural decisions',
+  corpus:'corpus — Load and display chat corpus index',
+  plans:'plans [query] — Search plan corpus (110 plans, 47 categories)',
+  plan:'plan <category> — Show plan category versions and deltas',
+  rules:'rules — List all cursor rules with roles',
+  build:'build [target] — Cross-app build status + runner commands',
+  deploy:'deploy [target] — Deploy checklist + environment config',
+  test:'test [suite] — Run test suite (rust/python/wasm/all)',
+  lint:'lint — Run gold standard linters (ruff, clippy, tsc)',
+  apps:'apps — List all 31 web apps with Iron Line layer + status',
+  config:'config — Show build settings, shared modules, versions',
+  ugrad:'ugrad [train|bg|miami|r5|r6|r0|r1|xor|spiral] — μgrad AI training',
+  train:'train — Single μgrad generation',
+  bg:'bg [start|stop] — Background training (Worker thread)',
+};
+
+function ts(){return new Date().toLocaleTimeString('en',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+
+function print(html,cls=''){
+  const d=document.createElement('div');d.className='ln';
+  if(cls)d.innerHTML=`<span class="${cls}">${html}</span>`;
+  else d.innerHTML=html;
+  term.appendChild(d);
+  term.scrollTop=term.scrollHeight;
+}
+
+function printPrompt(cmd){
+  print(`<span class="c-prompt">${ts()} qbit.search ❯</span> <span class="c-cmd">${esc(cmd)}</span>`);
+}
+
+function ok(msg){print(`<span class="c-ok">  ✓</span> ${msg}`)}
+function err(msg){print(`<span class="c-err">  ✗</span> ${msg}`)}
+function warn(msg){print(`<span class="c-warn">  ⚠</span> ${msg}`)}
+function info(msg){print(`<span class="c-info">  →</span> ${msg}`)}
+function dim(msg){print(msg,'c-dim')}
+function step(msg){print(`<span class="c-purple">  ◆</span> ${msg}`)}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+function urlLink(url){
+  const short=url.length>70?url.slice(0,67)+'…':url;
+  return `<span class="c-url" onclick="window._qbitOpenUrl('${esc(url)}')">${esc(short)}</span>`;
+}
+
+window._qbitOpenUrl=function(url){openInBrowser(url)};
+
+function banner(){
+  print('<span class="c-purple c-bold">  {.qbit}.search</span> <span class="c-dim">— Iron Line Terminal v1.2</span>');
+  print('<span class="c-cyan">  ⚡ L0:speed → L1:search → L2:commander → L3:quantum → L4:notepad → L5:rndr → L6:medical → L7:persona</span>');
+  print('<span class="c-dim">  Type <span class="c-info">help</span> · <span class="c-info">apps</span> · <span class="c-info">build</span> · <span class="c-info">deploy</span> · <span class="c-info">test</span> · <span class="c-info">config</span> · <span class="c-info">layers</span> · <span class="c-info">speed</span></span>');
+  dim('');
+}
+
+async function runCommand(raw){
+  const input=raw.trim();
+  if(!input)return;
+  state.history.push(input);
+  state.histIdx=state.history.length;
+  printPrompt(input);
+
+  const parts=input.split(/\s+/);
+  const cmd=parts[0].toLowerCase();
+  const arg=parts.slice(1).join(' ');
+
+  if(input.match(/^https?:\/\//i)){
+    await cmdIngest(input);
+    return;
+  }
+
+  switch(cmd){
+    case'help':cmdHelp();break;
+    case'clear':term.innerHTML='';banner();break;
+    case'fetch':arg?await cmdFetch(arg):err('Usage: fetch <url>');break;
+    case'open':arg?openInBrowser(arg):err('Usage: open <url>');break;
+    case'extract':cmdExtractCurrent();break;
+    case'capture':arg?await cmdCapture(arg):err('Usage: capture <url>');break;
+    case'ble':toggleBLE();break;
+    case'mesh':toggleMesh();break;
+    case'assets':cmdAssets();break;
+    case'ingest':arg?await cmdIngest(arg):err('Usage: ingest <url>');break;
+    case'cornerstone':await cmdPipeline('cornerstone');break;
+    case'dicom':await cmdPipeline('dicom');break;
+    case'viewer':await cmdPipeline('viewer');break;
+    case'search':arg?cmdSearch(arg):err('Usage: search <query>');break;
+    case'pipeline':cmdPipelineStatus();break;
+    case'layers':cmdLayers();break;
+    case'speed':await cmdSpeed();break;
+    case'stage':arg?emitStage(arg):err('Usage: stage <id>');break;
+    case'tether':arg?cmdTether(arg):err('Usage: tether <organism>');break;
+    case'loop':cmdLoop();break;
+    case'dac':cmdDAC(arg);break;
+    case'codec':arg?cmdCodec(arg):err('Usage: codec <content>');break;
+    case'decode':arg?cmdDecode(arg):err('Usage: decode <prefixed>');break;
+    case'history':cmdHistory(arg);break;
+    case'session':arg?cmdSession(arg):err('Usage: session <id>');break;
+    case'decisions':cmdDecisions();break;
+    case'corpus':cmdCorpus();break;
+    case'plans':cmdPlans(arg);break;
+    case'plan':arg?cmdPlan(arg):err('Usage: plan <category>');break;
+    case'rules':cmdRules();break;
+    case'build':cmdBuild(arg);break;
+    case'deploy':cmdDeploy(arg);break;
+    case'test':cmdTest(arg);break;
+    case'lint':cmdLint();break;
+    case'apps':cmdApps();break;
+    case'config':cmdConfig();break;
+    case'ugrad':cmdUgrad(parts.slice(1));break;
+    case'train':cmdUgrad(['train']);break;
+    case'bg':cmdUgrad(['bg'].concat(parts.slice(1)));break;
+    default:
+      if(input.includes('.')){await cmdIngest(input.match(/^https?:\/\//)?input:'https://'+input);}
+      else err(`Unknown command: ${esc(cmd)} — type <span class="c-info">help</span>`);
+  }
+}
+
+function cmdHelp(){
+  step('Commands');
+  Object.entries(COMMANDS).forEach(([k,v])=>{
+    info(`<span class="c-bold">${k}</span> — ${v}`);
+  });
+  dim('');
+  info('Paste any URL to auto-ingest · domains auto-prepend https://');
+  info('BLE scans for Eddystone-URL / Physical Web beacons from phone');
+  info('Mesh opens a WebRTC data channel for peer-to-peer URL sharing');
+  info('Drop files anywhere for AirDrop ingestion');
+}
+
+async function cmdFetch(url){
+  step(`Fetching: ${urlLink(url)}`);
+  updateStatus('fetching…');
+  try{
+    const t0=performance.now();
+    const r=await fetch(url,{mode:'no-cors'}).catch(()=>null);
+    const elapsed=performance.now()-t0;
+
+    info(`Response in ${elapsed.toFixed(0)}ms`);
+
+    const pageUrl=new URL(url);
+    info(`Domain: ${pageUrl.hostname}`);
+
+    openInBrowser(url);
+
+    const probeUrls=await probeAssets(url);
+    if(probeUrls.length>0){
+      ok(`Discovered ${probeUrls.length} asset URLs`);
+      probeUrls.forEach(u=>{
+        const type=u.match(/\.wasm/i)?'wasm':u.match(/\.css/i)?'css':u.match(/\.js/i)?'js':'other';
+        state.assets.push({url:u,type,source:'fetch',ts:Date.now()});
+        dim(`  [${type}] ${urlLink(u)}`);
+      });
+    }
+    updateAssetCount();
+    ok('Fetch complete');
+  }catch(e){
+    err(`Fetch failed: ${esc(e.message)}`);
+  }
+  updateStatus('ready');
+}
+
+async function probeAssets(baseUrl){
+  const found=[];
+  const origin=new URL(baseUrl).origin;
+  const commonPaths=[
+    '/static/js/','/js/','/assets/js/','/dist/','/build/',
+    '/static/css/','/css/','/assets/css/',
+    '/wasm/','/static/wasm/',
+  ];
+  try{
+    const r=await fetch(baseUrl);
+    if(!r.ok)return found;
+    const html=await r.text();
+    const srcMatches=html.matchAll(/(?:src|href)=["']([^"']+\.(?:js|css|wasm|mjs)[^"']*)/gi);
+    for(const m of srcMatches){
+      let u=m[1];
+      if(u.startsWith('/'))u=origin+u;
+      else if(!u.startsWith('http'))u=origin+'/'+u;
+      found.push(u);
+    }
+  }catch(e){}
+  return[...new Set(found)];
+}
+
+async function cmdIngest(url){
+  if(!url.match(/^https?:\/\//i))url='https://'+url;
+  step(`Ingesting: ${urlLink(url)}`);
+  openInBrowser(url);
+  await cmdFetch(url);
+  ok('Ingestion complete — assets listed above');
+}
+
+function cmdExtractCurrent(){
+  const url=bpUrl.value;
+  if(!url||url==='about:blank'){err('No page loaded in browser');return;}
+  step(`Extracting from: ${urlLink(url)}`);
+  info('Scanning iframe DOM for script/link tags…');
+  try{
+    const doc=frame.contentDocument;
+    if(!doc){warn('Cannot access iframe content (cross-origin)');warn('Use fetch <url> for cross-origin extraction');return;}
+    const scripts=[...doc.querySelectorAll('script[src]')].map(s=>s.src);
+    const css=[...doc.querySelectorAll('link[rel="stylesheet"]')].map(l=>l.href);
+    scripts.forEach(u=>{state.assets.push({url:u,type:'js',source:'extract',ts:Date.now()});dim(`  [js] ${urlLink(u)}`)});
+    css.forEach(u=>{state.assets.push({url:u,type:'css',source:'extract',ts:Date.now()});dim(`  [css] ${urlLink(u)}`)});
+    ok(`Extracted ${scripts.length} JS + ${css.length} CSS`);
+    updateAssetCount();
+  }catch(e){
+    warn(`Cross-origin blocked — use <span class="c-info">fetch ${esc(url)}</span> instead`);
+  }
+}
+
+async function cmdCapture(url){
+  step(`Capture requires Playwright — run in terminal:`);
+  info(`<span class="c-bold">uv run scripts/visage-extract.py capture "${esc(url)}" --browser=safari</span>`);
+  dim('  This opens a Safari window. Interact with the page, then close to save HAR.');
+  dim('  Then run: extract medical-viewer/har/*.har');
+  broadcastCmd('capture',url);
+}
+
+async function cmdPipeline(cmd){
+  step(`Running visage-extract.py ${cmd}…`);
+  info(`<span class="c-bold">uv run scripts/visage-extract.py ${cmd}</span>`);
+  broadcastCmd(cmd,'');
+  ok(`Command broadcast to terminal — run manually if not connected`);
+}
+
+function cmdAssets(){
+  if(state.assets.length===0){info('No assets ingested yet');return;}
+  step(`${state.assets.length} assets`);
+  const byType={};
+  state.assets.forEach(a=>{byType[a.type]=(byType[a.type]||[]);byType[a.type].push(a)});
+  Object.entries(byType).forEach(([type,items])=>{
+    info(`<span class="c-bold">${type}</span> (${items.length})`);
+    items.forEach(a=>dim(`  ${urlLink(a.url)}`));
+  });
+}
+
+function cmdSearch(query){
+  step(`Searching: "${esc(query)}"`);
+  const q=query.toLowerCase();
+  const hits=state.assets.filter(a=>a.url.toLowerCase().includes(q)||a.type.includes(q));
+  if(hits.length===0){info('No matches');return;}
+  ok(`${hits.length} match${hits.length>1?'es':''}`);
+  hits.forEach(a=>dim(`  [${a.type}] ${urlLink(a.url)}`));
+}
+
+// ─── BROWSER PANE ────────────────────────────────────────────────
+
+function openInBrowser(url){
+  if(!url.match(/^https?:\/\//i))url='https://'+url;
+  bpUrl.value=url;
+  frame.src=url;
+  $('bp-status').textContent='loading…';
+  $('bp-domain').textContent=new URL(url).hostname;
+  state.browserHistory.push(url);
+  state.browserIdx=state.browserHistory.length-1;
+  $('browser-pane').classList.remove('collapsed');
+  $('splitter-browser').style.display='';
+}
+
+frame.addEventListener('load',()=>{
+  $('bp-status').textContent='loaded';
+  try{$('bp-size').textContent=frame.contentDocument?.documentElement?.innerHTML?.length+' bytes'||'—'}catch(e){$('bp-size').textContent='cross-origin'}
+});
+
+$('bp-go').addEventListener('click',()=>{const u=bpUrl.value.trim();if(u)openInBrowser(u)});
+$('bp-url').addEventListener('keydown',e=>{if(e.key==='Enter'){const u=bpUrl.value.trim();if(u)openInBrowser(u)}});
+$('bp-back').addEventListener('click',()=>{if(state.browserIdx>0){state.browserIdx--;const u=state.browserHistory[state.browserIdx];bpUrl.value=u;frame.src=u}});
+$('bp-refresh').addEventListener('click',()=>{if(frame.src&&frame.src!=='about:blank')frame.src=frame.src});
+$('bp-extract').addEventListener('click',()=>{cmdExtractCurrent()});
+$('btn-browser').addEventListener('click',()=>{const bp=$('browser-pane');bp.classList.toggle('collapsed');const closed=bp.classList.contains('collapsed');$('splitter-browser').style.display=closed?'none':'';$('btn-browser').classList.toggle('active',!closed);if(closed)frame.src='about:blank';});
+$('btn-rx').addEventListener('click',()=>{$('rx-panel').classList.toggle('collapsed');$('splitter-rx').style.display=$('rx-panel').classList.contains('collapsed')?'none':''});
+$('btn-clear').addEventListener('click',()=>{term.innerHTML='';banner()});
+$('btn-nuke').addEventListener('click',()=>{
+  try{localStorage.clear()}catch(e){}
+  try{sessionStorage.clear()}catch(e){}
+  try{document.cookie.split(';').forEach(c=>{document.cookie=c.replace(/^ +/,'').replace(/=.*/,'=;expires='+new Date(0).toUTCString()+';path=/')})}catch(e){}
+  if('caches' in window){caches.keys().then(names=>Promise.all(names.map(n=>caches.delete(n)))).then(()=>{location.href=location.pathname+'?t='+Date.now()})}
+  else{location.href=location.pathname+'?t='+Date.now()}
+});
+
+
+// ─── BLE RECEIVER ────────────────────────────────────────────────
+
+async function toggleBLE(){
+  if(!navigator.bluetooth){err('Web Bluetooth not available in this browser');info('Use Chrome or Edge with BLE support');return;}
+  if(state.bleScanning){
+    state.bleScanning=false;
+    $('si-ble-badge').textContent='OFF';$('si-ble-badge').className='si-badge si-badge-off';
+    $('badge-ble').style.display='none';
+    $('st-ble').textContent='ble: off';
+    ok('BLE scanning stopped');
+    return;
+  }
+  step('Starting BLE scan for URL beacons…');
+  info('Looking for Eddystone-URL / Physical Web / custom URL services');
+  try{
+    const device=await navigator.bluetooth.requestDevice({
+      acceptAllDevices:true,
+      optionalServices:['0000feaa-0000-1000-8000-00805f9b34fb','battery_service']
+    });
+    state.bleScanning=true;
+    $('si-ble-badge').textContent='ON';$('si-ble-badge').className='si-badge si-badge-on';
+    $('badge-ble').style.display='';
+    $('st-ble').textContent='ble: scanning';
+    ok(`Connected: ${esc(device.name||'Unknown device')}`);
+
+    const server=await device.gatt.connect();
+    info(`GATT connected — looking for URL characteristics…`);
+
+    try{
+      const svc=await server.getPrimaryService('0000feaa-0000-1000-8000-00805f9b34fb');
+      const chars=await svc.getCharacteristics();
+      for(const c of chars){
+        try{
+          const val=await c.readValue();
+          const decoded=new TextDecoder().decode(val);
+          if(decoded.match(/https?:\/\//)){
+            receiveLink(decoded,'ble',device.name||'BLE device');
+          }
+        }catch(e){}
+      }
+    }catch(e){
+      info('No Eddystone service — trying generic read…');
+      const services=await server.getPrimaryServices();
+      for(const svc of services){
+        try{
+          const chars=await svc.getCharacteristics();
+          for(const c of chars){
+            try{
+              const val=await c.readValue();
+              const decoded=new TextDecoder().decode(val);
+              if(decoded.match(/https?:\/\//)){
+                receiveLink(decoded,'ble',device.name||'BLE device');
+              }
+            }catch(e){}
+          }
+        }catch(e){}
+      }
+    }
+
+    const bleItem=document.createElement('div');
+    bleItem.className='rx-item';
+    bleItem.innerHTML=`<div class="rx-dot" style="background:var(--accent)"></div><span class="rx-label">${esc(device.name||device.id)}</span><span class="rx-time">connected</span>`;
+    $('ble-list').innerHTML='';
+    $('ble-list').appendChild(bleItem);
+
+    device.addEventListener('gattserverdisconnected',()=>{
+      state.bleScanning=false;
+      $('si-ble-badge').textContent='OFF';$('si-ble-badge').className='si-badge si-badge-off';
+      $('st-ble').textContent='ble: off';
+      warn('BLE device disconnected');
+    });
+  }catch(e){
+    if(e.name==='NotFoundError')info('BLE scan cancelled by user');
+    else err(`BLE error: ${esc(e.message)}`);
+    state.bleScanning=false;
+    $('si-ble-badge').textContent='OFF';$('si-ble-badge').className='si-badge si-badge-off';
+  }
+}
+
+// ─── SYNC POPUP ─────────────────────────────────────────────────
+const syncPopup=$('sync-popup'), meshPopup=$('mesh-popup');
+$('btn-sync').addEventListener('click',()=>{meshPopup.classList.remove('open');syncPopup.classList.toggle('open');if(syncPopup.classList.contains('open'))$('btn-sync').classList.add('sync-active');else $('btn-sync').classList.remove('sync-active')});
+$('sync-close').addEventListener('click',()=>{syncPopup.classList.remove('open');$('btn-sync').classList.remove('sync-active')});
+$('btn-mesh-actions').addEventListener('click',()=>{syncPopup.classList.remove('open');meshPopup.classList.toggle('open')});
+$('mesh-close').addEventListener('click',()=>meshPopup.classList.remove('open'));
+document.addEventListener('click',e=>{if(!e.target.closest('.sync-popup,.mesh-popup,#btn-sync,#btn-mesh-actions')){syncPopup.classList.remove('open');meshPopup.classList.remove('open');$('btn-sync').classList.remove('sync-active')}});
+
+$('si-ble').addEventListener('click',()=>{toggleBLE();syncPopup.classList.remove('open')});
+$('si-airdrop').addEventListener('click',()=>{$('file-input').click();syncPopup.classList.remove('open')});
+$('si-mesh').addEventListener('click',()=>{toggleMesh();syncPopup.classList.remove('open')});
+$('si-share').addEventListener('click',()=>{navigator.clipboard.writeText(location.href).then(()=>ok('Link copied to clipboard')).catch(()=>err('Copy failed'));syncPopup.classList.remove('open')});
+$('si-wifi').addEventListener('click',()=>{step('WiFi Direct — scanning for mDNS/Bonjour peers…');info('Requires local network API (experimental)');syncPopup.classList.remove('open')});
+$('si-nfc').addEventListener('click',()=>{
+  if('NDEFReader' in window){step('NFC — tap device to read/write tag…');const r=new NDEFReader();r.scan().then(()=>{ok('NFC reader active');r.addEventListener('reading',({serialNumber,message})=>{ok(`NFC tag: ${serialNumber}`);for(const rec of message.records){if(rec.recordType==='url')receiveLink(new TextDecoder().decode(rec.data),'nfc','tag')}})}).catch(e=>err('NFC: '+e.message))}
+  else{info('NFC not available — use Chrome on Android');info('For iOS: use NFC Shortcuts app → share to qbit.search')}
+  syncPopup.classList.remove('open');
+});
+$('si-flipper').addEventListener('click',()=>{step('Flipper IO — Sub-GHz / IR / RFID bridge');info('Connect Flipper Zero via Web Serial API');info('Supports: Sub-GHz capture, IR replay, RFID read, GPIO');
+  if('serial' in navigator){navigator.serial.requestPort().then(port=>{ok('Flipper connected via Serial');port.open({baudRate:115200}).then(()=>{ok('Serial port open @ 115200 baud');const reader=port.readable.getReader();(async()=>{while(true){const{value,done}=await reader.read();if(done)break;const txt=new TextDecoder().decode(value);if(txt.match(/https?:\/\//))receiveLink(txt.trim(),'flipper','sub-ghz')}})()})}).catch(e=>{if(e.name!=='NotFoundError')err('Serial: '+e.message)})}
+  else info('Web Serial not available — use Chrome/Edge');
+  syncPopup.classList.remove('open');
+});
+
+// ─── MESH QUICK ACTIONS ─────────────────────────────────────────
+$('ma-note').addEventListener('click',()=>{
+  const note=prompt('Note to broadcast to mesh:');
+  if(note&&state.meshActive){meshBC.postMessage({type:'note',text:note,from:state.meshPeerId||'self',ts:Date.now()});ok(`Note sent to mesh: ${esc(note)}`)}
+  else if(!state.meshActive)warn('Mesh is off — enable in Sync menu first');
+  meshPopup.classList.remove('open');
+});
+$('ma-app').addEventListener('click',()=>{
+  const apps=['terminal.html','qbit-search.html','nterminal.html','uvqbit.html','quantum-notepad.html','hexbench.html','research-lab.html'];
+  const app=prompt('App to launch on peers:\\n'+apps.map((a,i)=>`${i+1}. ${a}`).join('\\n')+'\\n\\nEnter name or number:');
+  if(app){const target=apps[parseInt(app)-1]||app;if(state.meshActive)meshBC.postMessage({type:'launch',app:target,from:state.meshPeerId||'self'});window.open(target,'_blank');ok(`Launching: ${esc(target)}`)}
+  meshPopup.classList.remove('open');
+});
+$('ma-file').addEventListener('click',()=>{$('file-input').click();meshPopup.classList.remove('open')});
+$('ma-url').addEventListener('click',()=>{
+  const url=prompt('URL to broadcast:');
+  if(url&&state.meshActive){meshBC.postMessage({type:'url',url,from:state.meshPeerId||'self'});ok(`URL broadcast: ${esc(url)}`)}
+  else if(url)warn('Mesh is off — URL not broadcast');
+  meshPopup.classList.remove('open');
+});
+$('ma-cmd').addEventListener('click',()=>{
+  const cmd=prompt('Command to run:');
+  if(cmd){$('search-input').value=cmd;$('search-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}))}
+  meshPopup.classList.remove('open');
+});
+$('ma-custom').addEventListener('click',()=>{
+  const label=prompt('Custom action label:');
+  if(!label)return;
+  const cmd=prompt('Command or URL to run:');
+  if(!cmd)return;
+  const customs=JSON.parse(localStorage.getItem('qbit-mesh-customs')||'[]');
+  customs.push({label,cmd});
+  localStorage.setItem('qbit-mesh-customs',JSON.stringify(customs));
+  const el=document.createElement('div');el.className='mesh-action';
+  el.innerHTML=`<span class="ma-icon">⚙</span><span class="ma-label">${esc(label)}</span>`;
+  el.addEventListener('click',()=>{if(cmd.match(/^https?:\/\//))window.open(cmd,'_blank');else{$('search-input').value=cmd;$('search-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}))}meshPopup.classList.remove('open')});
+  $('ma-custom').before(el);
+  ok(`Custom action added: ${esc(label)}`);
+});
+(function loadCustomActions(){
+  const customs=JSON.parse(localStorage.getItem('qbit-mesh-customs')||'[]');
+  customs.forEach(({label,cmd})=>{
+    const el=document.createElement('div');el.className='mesh-action';
+    el.innerHTML=`<span class="ma-icon">⚙</span><span class="ma-label">${esc(label)}</span>`;
+    el.addEventListener('click',()=>{if(cmd.match(/^https?:\/\//))window.open(cmd,'_blank');else{$('search-input').value=cmd;$('search-input').dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}))}meshPopup.classList.remove('open')});
+    $('ma-custom').before(el);
+  });
+})();
+
+
+// ─── BLE / MESH CORE (unchanged logic, updated badge refs) ──────
+
+// BLE toggle (readouts stay in RX panel)
+// (toggleBLE function above at line ~499 handles everything)
+
+// MESH / WEBRTC P2P
+let meshChannel=null;
+const meshBC=new BroadcastChannel('qbit-search-mesh');
+
+function toggleMesh(){
+  if(state.meshActive){
+    state.meshActive=false;
+    $('badge-mesh').style.display='none';
+    $('st-mesh').textContent='mesh: off';
+    $('si-mesh-badge').textContent='OFF';$('si-mesh-badge').className='si-badge si-badge-off';
+    ok('Mesh channel closed');
+    return;
+  }
+  state.meshActive=true;
+  state.meshPeerId='qbit-'+Math.random().toString(36).slice(2,8);
+  $('badge-mesh').style.display='';
+  $('st-mesh').textContent='mesh: on';
+  $('si-mesh-badge').textContent='ON';$('si-mesh-badge').className='si-badge si-badge-on';
+  step('Mesh channel open — listening for peer URLs');
+  info('Other qbit.search tabs and apps can send URLs via mesh');
+
+  meshBC.postMessage({type:'announce',peerId:state.meshPeerId,ts:Date.now()});
+
+  const peerItem=document.createElement('div');
+  peerItem.className='rx-item';
+  peerItem.innerHTML=`<div class="rx-dot" style="background:var(--green)"></div><span class="rx-label">Self: ${state.meshPeerId}</span><span class="rx-time">local</span>`;
+  $('mesh-list').innerHTML='';
+  $('mesh-list').appendChild(peerItem);
+}
+
+meshBC.addEventListener('message',e=>{
+  const msg=e.data;
+  if(msg.type==='announce'){
+    const item=document.createElement('div');
+    item.className='rx-item';
+    item.innerHTML=`<div class="rx-dot" style="background:var(--green)"></div><span class="rx-label">${esc(msg.peerId)}</span><span class="rx-time">${ts()}</span>`;
+    $('mesh-list').appendChild(item);
+    state.meshPeers.push(msg.peerId);
+    ok(`Mesh peer joined: ${msg.peerId}`);
+  }else if(msg.type==='url'){
+    receiveLink(msg.url,'mesh',msg.from||'peer');
+  }else if(msg.type==='note'){
+    ok(`📝 Mesh note from ${esc(msg.from)}: ${esc(msg.text)}`);
+  }else if(msg.type==='launch'){
+    info(`◎ Mesh launch request: ${esc(msg.app)} from ${esc(msg.from)}`);
+  }
+});
+
+// ─── AIRDROP / FILE DROP ─────────────────────────────────────────
+
+const dropOverlay=$('file-drop-overlay');
+
+['dragenter','dragover'].forEach(ev=>{
+  document.body.addEventListener(ev,e=>{e.preventDefault();dropOverlay.classList.add('active')});
+});
+['dragleave','drop'].forEach(ev=>{
+  document.body.addEventListener(ev,()=>{dropOverlay.classList.remove('active')});
+});
+
+document.body.addEventListener('drop',e=>{
+  e.preventDefault();
+  const text=e.dataTransfer.getData('text/plain')||e.dataTransfer.getData('text/uri-list');
+  if(text&&text.match(/https?:\/\//)){
+    receiveLink(text.trim(),'airdrop','drag-drop');
+    return;
+  }
+  const files=[...e.dataTransfer.files];
+  if(files.length>0){
+    step(`Received ${files.length} file(s) via drop`);
+    files.forEach(f=>{
+      info(`📂 ${esc(f.name)} (${(f.size/1024).toFixed(1)} KB)`);
+      if(f.name.match(/\.(url|webloc|html?)$/i)){
+        const reader=new FileReader();
+        reader.onload=ev=>{
+          const content=ev.target.result;
+          const urlMatch=content.match(/https?:\/\/[^\s<>"']+/);
+          if(urlMatch)receiveLink(urlMatch[0],'airdrop',f.name);
+        };
+        reader.readAsText(f);
+      }else if(f.name.match(/\.(dcm|dicom)$/i)){
+        ok(`DICOM file detected — open in qbit-medical viewer`);
+      }
+      const item=document.createElement('div');
+      item.className='rx-item';
+      item.innerHTML=`<div class="rx-dot" style="background:var(--purple)"></div><span class="rx-label">${esc(f.name)}</span><span class="rx-time">${(f.size/1024).toFixed(0)}KB</span>`;
+      $('airdrop-list').innerHTML='';
+      $('airdrop-list').appendChild(item);
+    });
+  }
+});
+
+$('file-input').addEventListener('change',e=>{
+  [...e.target.files].forEach(f=>{
+    info(`📂 ${esc(f.name)} (${(f.size/1024).toFixed(1)} KB)`);
+    if(f.name.match(/\.(url|webloc|html?)$/i)){
+      const reader=new FileReader();
+      reader.onload=ev=>{
+        const urlMatch=ev.target.result.match(/https?:\/\/[^\s<>"']+/);
+        if(urlMatch)receiveLink(urlMatch[0],'file',f.name);
+      };
+      reader.readAsText(f);
+    }
+  });
+});
+
+
+// ─── LINK RECEIVER (unified) ────────────────────────────────────
+
+function receiveLink(url,source,from){
+  state.rxCount++;
+  state.rxLinks.push({url,source,from,ts:Date.now()});
+  $('st-rx').textContent=`rx: ${state.rxCount}`;
+  ok(`<span class="c-bold">Received</span> [${source}] from ${esc(from)}: ${urlLink(url)}`);
+
+  const item=document.createElement('div');
+  item.className='rx-item';
+  item.onclick=()=>openInBrowser(url);
+  const colors={ble:'var(--accent)',mesh:'var(--green)',airdrop:'var(--purple)',file:'var(--gold)',broadcast:'var(--cyan)'};
+  item.innerHTML=`<div class="rx-dot" style="background:${colors[source]||'var(--muted)'}"></div><span class="rx-label">${esc(url.slice(0,50))}</span><span class="rx-time">${ts()}</span>`;
+
+  const list=$('rx-list');
+  if(list.querySelector('.rx-empty'))list.innerHTML='';
+  list.prepend(item);
+
+  $('rx-panel').classList.remove('collapsed');
+  $('splitter-rx').style.display='';
+}
+
+
+// ─── BROADCAST CHANNELS ─────────────────────────────────────────
+
+const termBC=new BroadcastChannel('hexterm');
+const searchBC=new BroadcastChannel('qbit-search');
+const prefixBC=new BroadcastChannel('quantum-prefixes');
+
+function broadcastCmd(cmd,arg){
+  termBC.postMessage({type:'command',cmd,arg,source:'qbit-search',ts:Date.now()});
+  searchBC.postMessage({type:'command',cmd,arg,ts:Date.now()});
+}
+
+termBC.addEventListener('message',e=>{
+  const msg=e.data;
+  if(msg.type==='url'&&msg.url)receiveLink(msg.url,'broadcast',msg.source||'hexterm');
+  if(msg.type==='command'&&msg.cmd==='search'&&msg.arg)cmdSearch(msg.arg);
+});
+
+searchBC.addEventListener('message',e=>{
+  const msg=e.data;
+  if(msg.type==='url')receiveLink(msg.url,'broadcast',msg.source||'app');
+  if(msg.type==='ingest'&&msg.url)cmdIngest(msg.url);
+});
+
+
+// ─── PLANS / RULES ──────────────────────────────────────────────
+
+async function cmdPlans(query){
+  step('<span class="c-purple c-bold">Plan Corpus</span>');
+  const c=await loadCorpus();
+  if(!c||!c.plan_corpus){
+    info('Plan corpus info not in chat-corpus.json');
+    info('Index: plans/plan-corpus-index.json (110 plans, 47 categories)');
+    return;
+  }
+  const pc=c.plan_corpus;
+  ok(`${pc.total_plans} plans · ${pc.total_categories} categories · ${pc.total_lines.toLocaleString()} lines · ${pc.coverage_percent}% DCA`);
+  dim('');
+  if(query){
+    const q=query.toLowerCase();
+    step(`Searching plans for: "${esc(query)}"`);
+    const cats=pc.top_categories.filter(t=>t.name.toLowerCase().includes(q));
+    if(cats.length>0){
+      cats.forEach(t=>info(`<span class="c-bold">${esc(t.name)}</span> (${t.versions} versions)`));
+    }
+    const phases=Object.entries(pc.p_address_phases).filter(([k,v])=>v.toLowerCase().includes(q)||k.toLowerCase().includes(q));
+    if(phases.length>0){
+      phases.forEach(([k,v])=>info(`<span class="c-bold">[${k}]</span> ${esc(v)}`));
+    }
+    if(cats.length===0&&phases.length===0)info('No matches — try: plans codec, plans quantum, plans search');
+    return;
+  }
+  step('Top Categories (by iteration count)');
+  pc.top_categories.forEach(t=>info(`<span class="c-bold">${esc(t.name)}</span> — ${t.versions} versions`));
+  dim('');
+  step('P-Address Phases');
+  Object.entries(pc.p_address_phases).forEach(([k,v])=>info(`<span class="c-bold">[${k}]</span> ${esc(v)}`));
+  dim('');
+  info('Master plan: prefix_pipeline_product_plan (4,000+ lines)');
+  info('Indexer: <span class="c-info">PlanCorpusIndexer.indexPlans()</span>');
+}
+
+async function cmdPlan(category){
+  step(`Plan category: <span class="c-bold">${esc(category)}</span>`);
+  try{
+    const r=await fetch('../plans/plan-corpus-index.json');
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    const idx=await r.json();
+    const cat=idx.categories[category];
+    if(!cat){
+      const keys=Object.keys(idx.categories);
+      const matches=keys.filter(k=>k.toLowerCase().includes(category.toLowerCase()));
+      if(matches.length>0){
+        info('Did you mean:');
+        matches.slice(0,10).forEach(m=>dim(`  ${m} (${idx.categories[m].iterationCount} versions)`));
+      }else{
+        err(`Category not found. ${keys.length} categories available.`);
+        info('Try: plan search_context_intelligence');
+      }
+      return;
+    }
+    ok(`${cat.iterationCount} version(s)`);
+    cat.versions.forEach((v,i)=>{
+      info(`v${i+1}: <span class="c-bold">${esc(v.file)}</span> — ${v.lineCount} lines · ${Math.round(v.classified/v.lineCount*100)}% DCA · dominant: ${v.dominantPrefix}`);
+    });
+    if(cat.deltas&&cat.deltas.length>0){
+      dim('');
+      step('Deltas');
+      cat.deltas.forEach(d=>{
+        const shifts=Object.entries(d.prefixShift).map(([s,n])=>`${s}${n>0?'+':''}${n}`).join(' ');
+        dim(`  ${esc(d.from)} → ${esc(d.to)}: +${d.linesAdded}/-${d.linesRemoved} lines · ${shifts}`);
+      });
+    }
+  }catch(e){
+    err(`Failed to load plan-corpus-index.json: ${esc(e.message)}`);
+  }
+}
+
+function cmdRules(){
+  step('<span class="c-gold c-bold">Cursor Rules (11 files)</span>');
+  const RULES=[
+    {f:'uvspeed-project-context.mdc',r:'Main project context — 24 apps, 59 languages',a:true},
+    {f:'quantum-prefix-gutter.mdc',r:'11-symbol prefix system, quantum gate mapping',a:true},
+    {f:'workstation-tools.mdc',r:'M4 tool stack — rg/fd/uv/nu',a:true},
+    {f:'pre-push-lingo.mdc',r:'Pre-push commands — pre/folder/inspect/gold/push',a:true},
+    {f:'chunked-file-writing.mdc',r:'Prevent resource_exhausted — chunk large writes',a:true},
+    {f:'chat-corpus-commander.mdc',r:'L2 Commander — sessions, decisions, plans, rules'},
+    {f:'plan-corpus-context.mdc',r:'110 plans, P-addresses, DCA growth loop'},
+    {f:'auto-tasks.mdc',r:'Auto-suggest tests/builds after edits'},
+    {f:'prefix-autocomplete.mdc',r:'Gap analysis — target 80%+ DCA coverage'},
+    {f:'kbatch-expansion-plan.mdc',r:'KBatch layouts, dictionary, capsules, quantum'},
+    {f:'quantum-commands.mdc',r:'Bridge server commands and API shortcuts'},
+  ];
+  RULES.forEach(r=>{
+    const icon=r.a?'<span class="c-ok">✓ ON</span>':'<span class="c-dim">· off</span>';
+    info(`${icon} <span class="c-bold">${esc(r.f)}</span> — ${esc(r.r)}`);
+  });
+  dim('');
+  info('5 alwaysApply rules load on every new AI session');
+  info('6 contextual rules load when matching file globs or manually referenced');
+}
+
+// ─── DAC / .qbit CODEC ──────────────────────────────────────────
+
+const DAC_SAMPLE='#!/usr/bin/env python3\nimport sys\nclass App:\n  def run(self):\n    for i in range(10):\n      if i % 2 == 0:\n        try:\n          print(i)\n        except Exception as e:\n          return -1\n    return 0\napp = App()\napp.run()';
+
+function cmdDAC(arg){
+  var parts=(arg||'').split(/\s+/);
+  var sub=parts[0]||'help';
+  var rest=arg?(arg.slice(sub.length).trim()||DAC_SAMPLE):DAC_SAMPLE;
+  var lang=parts[1]||'auto';
+
+  if(sub==='stats'){
+    var s=window.dacStats?window.dacStats():{};
+    step('<span class="c-gold c-bold">DAC+ Stats</span>');
+    info(`Calls: <span class="c-bold">${(s.calls||0).toLocaleString()}</span> · Lines: <span class="c-bold">${(s.lines||0).toLocaleString()}</span> · Rate: <span class="c-bold">${(s.lps||0).toLocaleString()} l/s</span>`);
+    info(`Uptime: ${s.elapsed||'0s'} · Mode: <span class="c-bold">${window.dacMode?window.dacMode():'?'}</span>`);
+    if(s.classifications){
+      var syms=Object.entries(s.classifications).sort((a,b)=>b[1]-a[1]);
+      if(syms.length>0){
+        dim('  Prefix distribution:');
+        syms.forEach(([sym,ct])=>{
+          var gate=(window.GATE_MAP||{})[sym]||'?';
+          dim(`    ${sym.padEnd(4)} → ${gate.padEnd(5)} ${ct.toLocaleString()}`);
+        });
+      }
+    }
+    if(s.sources){
+      var srcs=Object.entries(s.sources);
+      if(srcs.length>0)dim('  Sources: '+srcs.map(([k,v])=>k+' ('+v+')').join(', '));
+    }
+
+  }else if(sub==='run'){
+    var r=window.prefixDAC?window.prefixDAC(rest,lang,'terminal'):null;
+    if(!r||!r.meta){err('DAC not loaded');return;}
+    step(`<span class="c-gold">DAC Prefix</span> coverage: <span class="c-bold">${Math.round(r.meta.coverage*100)}%</span> · ${r.meta.totalLines} lines`);
+    r.prefixed.split('\n').forEach(l=>{
+      var sym=l.slice(0,3).trim()||' ';
+      var color=(window.SYM_COLOR||{})[sym+'']||'#6e7681';
+      print(`<span style="color:${color}">${esc(l)}</span>`);
+    });
+
+  }else if(sub==='tracks'){
+    if(!window.dacTrackHtml){err('dacTrackHtml not loaded');return;}
+    step('<span class="c-purple c-bold">DAC+ Train Tracks</span> — 2D structural depth map');
+    var html=window.dacTrackHtml(rest,lang,{dots:true,gates:true});
+    var wrap=document.createElement('div');wrap.innerHTML=html;
+    wrap.style.cssText='font-family:var(--font-mono);font-size:11px;line-height:1.4';
+    term.appendChild(wrap);
+    term.scrollTop=term.scrollHeight;
+
+  }else if(sub==='stripes'||sub==='stripe'){
+    if(!window.dacStripeHtml){err('dacStripeHtml not loaded');return;}
+    step('<span class="c-cyan c-bold">DAC+ Word Stripes</span> — token-level classification');
+    var html=window.dacStripeHtml(rest,lang,{});
+    var wrap=document.createElement('div');wrap.innerHTML=html;
+    wrap.style.cssText='font-family:var(--font-mono);font-size:11px;line-height:1.4';
+    term.appendChild(wrap);
+    term.scrollTop=term.scrollHeight;
+
+  }else if(sub==='complexity'){
+    if(!window.dacComplexity){err('dacComplexity not loaded');return;}
+    var cx=window.dacComplexity(rest,lang);
+    step('<span class="c-warn c-bold">DAC+ Complexity Analysis</span>');
+    info(`Score: <span class="c-bold">${cx.score}</span> · Max depth: <span class="c-bold">${cx.maxDepth}</span> · Avg depth: <span class="c-bold">${cx.avgDepth.toFixed(1)}</span>`);
+    if(cx.printsInLoops>0)warn(`Prints inside loops: <span class="c-bold">${cx.printsInLoops}</span>`);
+    if(cx.returnsInTry>0)info(`Returns in try blocks: <span class="c-bold">${cx.returnsInTry}</span>`);
+    if(cx.hotspots&&cx.hotspots.length>0){
+      dim('  Hotspots (deepest nesting):');
+      cx.hotspots.slice(0,8).forEach(h=>{
+        dim(`    L${String(h.line).padStart(3)} depth:${h.depth} ${esc(h.text.slice(0,60))}`);
+      });
+    }
+    if(cx.histogram){
+      dim('  Depth histogram:');
+      Object.entries(cx.histogram).forEach(([d,ct])=>{
+        var bar='█'.repeat(Math.min(ct,40));
+        dim(`    ${d}: ${bar} ${ct}`);
+      });
+    }
+
+  }else if(sub==='context'){
+    if(!window.dacTrackContext){err('dacTrackContext not loaded');return;}
+    var lineNum=parseInt(parts[1])||1;
+    var ctx=window.dacTrackContext(rest,lang,lineNum);
+    step(`<span class="c-info c-bold">DAC+ Context</span> — line ${lineNum}`);
+    info(`Scope path: <span class="c-bold">${esc(ctx.scopePath||'(root)')}</span>`);
+    if(ctx.quantum)info(`Quantum coordinate: <span class="c-bold">[${ctx.quantum.join(', ')}]</span> (gate, depth, line)`);
+
+  }else if(sub==='mode'){
+    if(!window.dacMode){err('dacMode not loaded');return;}
+    var newMode=parts[1];
+    if(newMode){
+      window.dacMode(newMode);
+      ok(`DAC mode set to: <span class="c-bold">${newMode}</span>`);
+    }else{
+      info(`Current mode: <span class="c-bold">${window.dacMode()}</span>`);
+      info('Available: <span class="c-gold">raw</span> · <span class="c-gold">prefix</span> · <span class="c-gold">tracks</span> · <span class="c-gold">stripe</span>');
+    }
+
+  }else{
+    step('<span class="c-gold c-bold">DAC+ Commands</span>');
+    var cmds=[
+      ['dac stats','Classification stats + prefix distribution'],
+      ['dac run [code]','Prefix classification with coverage'],
+      ['dac tracks [code]','Train tracks — 2D structural depth map with dots+gates'],
+      ['dac stripes [code]','Word stripes — token-level colored classification'],
+      ['dac complexity [code]','Complexity score, hotspots, depth histogram'],
+      ['dac context [line#]','Scope path + quantum coordinate for a line'],
+      ['dac mode [raw|prefix|tracks|stripe]','Get/set DAC rendering mode'],
+    ];
+    cmds.forEach(([c,d])=>print(`  <span class="c-info">${c.padEnd(32)}</span> <span class="c-dim">${d}</span>`));
+    info('All commands use sample Python if no code provided');
+  }
+}
+
+function cmdCodec(content){
+  var codec=window.qbitCodec;
+  if(!codec){err('.qbit codec not loaded — include qbit-dac.js');return;}
+  step('<span class="c-purple c-bold">.qbit Codec Encode</span>');
+  var result=codec.encode(content,'auto','qbit-search');
+  if(!result.meta){err('No classification result');return;}
+  ok(`Coverage: ${Math.round(result.meta.coverage*100)}% · ${result.meta.totalLines} lines · ${result.meta.classified} classified`);
+  print(`<span class="c-dim">${esc(codec.header(result.meta))}</span>`);
+  result.prefixed.split('\n').forEach(l=>{
+    var sym=l.slice(0,3).trim()||' ';
+    var color=(window.SYM_COLOR||{})[sym]||'#6e7681';
+    print(`<span style="color:${color}">${esc(l)}</span>`);
+  });
+  emitStage('classify',{timing_us:0,budget_us:50});
+}
+
+function cmdDecode(content){
+  var codec=window.qbitCodec;
+  if(!codec){err('.qbit codec not loaded');return;}
+  step('<span class="c-purple c-bold">.qbit Codec Decode</span>');
+  var decoded=codec.decode(content);
+  ok('Prefixes stripped');
+  decoded.split('\n').forEach(l=>dim('  '+esc(l)));
+}
+
+// ─── CHAT CORPUS / L2 COMMANDER ─────────────────────────────────
+
+var chatCorpus=null;
+
+async function loadCorpus(){
+  if(chatCorpus)return chatCorpus;
+  try{
+    const r=await fetch('../chat-corpus.json');
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    chatCorpus=await r.json();
+    return chatCorpus;
+  }catch(e){
+    err(`Failed to load chat-corpus.json: ${esc(e.message)}`);
+    return null;
+  }
+}
+
+async function cmdCorpus(){
+  step('<span class="c-purple c-bold">Chat Corpus Index</span>');
+  const c=await loadCorpus();
+  if(!c)return;
+  ok(`${c.total_sessions} sessions · ${c.total_size_mb} MB total`);
+  dim('');
+  c.sessions.forEach(s=>{
+    const layer=s.layer!==undefined?`L${s.layer}`:'--';
+    info(`<span class="c-bold">${esc(s.id)}</span> [${layer}] ${esc(s.title)} <span class="c-dim">${esc(s.date)} · ${s.size_mb}MB</span>`);
+  });
+  dim('');
+  info('Commands: <span class="c-info">session &lt;id&gt;</span> · <span class="c-info">history &lt;query&gt;</span> · <span class="c-info">decisions</span>');
+}
+
+async function cmdSession(id){
+  const c=await loadCorpus();
+  if(!c)return;
+  const s=c.sessions.find(x=>x.id===id||x.uuid===id||x.uuid?.startsWith(id));
+  if(!s){err(`Session not found: ${esc(id)}`);info('Available: '+c.sessions.map(x=>x.id).join(', '));return;}
+  step(`<span class="c-purple c-bold">${esc(s.title)}</span> <span class="c-dim">[${s.id}]</span>`);
+  info(`Date: ${esc(s.date)} · Size: ${s.size_mb}MB · Layer: L${s.layer}`);
+  dim('');
+  if(s.topics&&s.topics.length){
+    step('Topics');
+    s.topics.forEach(t=>dim(`  · ${esc(t)}`));
+    dim('');
+  }
+  if(s.decisions&&s.decisions.length){
+    step('Decisions');
+    s.decisions.forEach(d=>dim(`  ✦ ${esc(d)}`));
+    dim('');
+  }
+  if(s.files&&s.files.length){
+    step(`Files (${s.files.length})`);
+    s.files.slice(0,15).forEach(f=>dim(`  ${esc(f)}`));
+    if(s.files.length>15)dim(`  … and ${s.files.length-15} more`);
+    dim('');
+  }
+  if(s.tools&&s.tools.length){
+    step('Tools');
+    info(s.tools.map(t=>esc(t)).join(' · '));
+  }
+}
+
+async function cmdHistory(query){
+  const c=await loadCorpus();
+  if(!c)return;
+  if(!query){
+    step('Chat corpus loaded — search with: <span class="c-info">history &lt;query&gt;</span>');
+    info(`${c.total_sessions} sessions · ${c.total_size_mb} MB`);
+    return;
+  }
+  const q=query.toLowerCase();
+  step(`Searching corpus for: "${esc(query)}"`);
+  const hits=[];
+  c.sessions.forEach(s=>{
+    const matchedTopics=(s.topics||[]).filter(t=>t.toLowerCase().includes(q));
+    const matchedDecisions=(s.decisions||[]).filter(d=>d.toLowerCase().includes(q));
+    const matchedFiles=(s.files||[]).filter(f=>f.toLowerCase().includes(q));
+    const matchedTools=(s.tools||[]).filter(t=>t.toLowerCase().includes(q));
+    const titleMatch=s.title.toLowerCase().includes(q);
+    const total=matchedTopics.length+matchedDecisions.length+matchedFiles.length+matchedTools.length+(titleMatch?1:0);
+    if(total>0)hits.push({s,matchedTopics,matchedDecisions,matchedFiles,matchedTools,titleMatch,total});
+  });
+  if(hits.length===0){info('No matches across any session');return;}
+  ok(`${hits.length} session(s) matched`);
+  hits.sort((a,b)=>b.total-a.total);
+  hits.forEach(h=>{
+    info(`<span class="c-bold">${esc(h.s.id)}</span> [L${h.s.layer}] ${esc(h.s.title)} — ${h.total} hit(s)`);
+    h.matchedTopics.forEach(t=>dim(`  topic: ${esc(t)}`));
+    h.matchedDecisions.forEach(d=>dim(`  decision: ${esc(d)}`));
+    h.matchedFiles.slice(0,5).forEach(f=>dim(`  file: ${esc(f)}`));
+    h.matchedTools.forEach(t=>dim(`  tool: ${esc(t)}`));
+  });
+}
+
+async function cmdDecisions(){
+  const c=await loadCorpus();
+  if(!c)return;
+  step('<span class="c-gold c-bold">Cross-Session Architectural Decisions</span>');
+  dim('');
+  const DECISIONS=[
+    {d:'All apps = single-file PWAs, inline CSS + JS, no build system',s:'b0db7e4b'},
+    {d:'quantum-prefixes.js = universal, 11 symbols, 59 languages, every app includes it',s:'b0db7e4b → 433a9f3d'},
+    {d:'DAC = classification layer, prefixDAC wraps classifyLine with stats',s:'433a9f3d'},
+    {d:'Iron Line = 8 layers, L0:speed → L7:persona, timing budgets, BroadcastChannel bus',s:'433a9f3d'},
+    {d:'21 organisms / 8 de-extinction targets, quantum circuits → IK rig → fingerprint',s:'433a9f3d'},
+    {d:'Plugin = 3-tier: Community free / Pro $9/mo / Enterprise $29/seat/mo',s:'04e7ffb6'},
+    {d:'luvukid0 = 51-char quantum message, comment-only prefix, two Marrakesh runs',s:'3334b352 + b3e88b59'},
+    {d:'Gold standard = 10 languages, pre-push audit: folder/inspect/gold/readme/push',s:'b3e88b59'},
+    {d:'59 languages covering AI/LLM, quantum, hardware, data, infra, scripting, mobile, editor',s:'433a9f3d'},
+    {d:'Cortical loop target: 24ms round-trip, faster than conscious perception',s:'433a9f3d'},
+  ];
+  DECISIONS.forEach((x,i)=>{
+    info(`<span class="c-bold">${i+1}.</span> ${esc(x.d)} <span class="c-dim">[${x.s}]</span>`);
+  });
+}
+
+// ─── IRON LINE BUS ──────────────────────────────────────────────
+
+const ironLine=new BroadcastChannel('iron-line');
+
+function emitStage(stageId,data={}){
+  const prev=state.pipeline.current;
+  const t0=performance.now();
+  const msg={
+    stage:stageId,prev,data_id:data.id||`asset-${Date.now()}`,
+    timing_us:data.timing_us||0,budget_us:data.budget_us||0,
+    over_budget:false,organism:data.organism||null,
+    ts:Date.now(),source:'qbit-search'
+  };
+  ironLine.postMessage(msg);
+  state.pipeline.current=stageId;
+  state.pipeline.timings.push({stage:stageId,us:data.timing_us||0,ts:Date.now()});
+  const elapsed_us=(performance.now()-t0)*1000;
+  ok(`<span class="c-cyan">⚡ IRON LINE</span> stage: <span class="c-bold">${esc(stageId)}</span>${prev?' ← '+prev:''} [${elapsed_us.toFixed(1)}μs hop]`);
+  $('st-state').textContent=`⚡ ${stageId}`;
+}
+
+ironLine.addEventListener('message',e=>{
+  const msg=e.data;
+  if(msg.source==='qbit-search')return;
+  const label=msg.source||'remote';
+  state.pipeline.timings.push({stage:msg.stage,us:msg.timing_us,ts:msg.ts,from:label});
+  dim(`  <span class="c-cyan">⚡</span> [${esc(label)}] → ${msg.stage} (${msg.timing_us}μs / budget ${msg.budget_us}μs)${msg.over_budget?' <span class="c-err">OVER BUDGET</span>':''}`);
+  if(msg.organism)info(`  organism: <span class="c-bold">${esc(msg.organism)}</span>`);
+});
+
+function cmdPipelineStatus(){
+  step('<span class="c-cyan">⚡ Iron Line Pipeline</span>');
+  if(state.pipeline.timings.length===0){info('No stage transitions yet — run <span class="c-info">stage receive</span> to start');return;}
+  const total=state.pipeline.timings.reduce((s,t)=>s+t.us,0);
+  info(`Current stage: <span class="c-bold">${state.pipeline.current||'none'}</span>`);
+  info(`${state.pipeline.timings.length} transitions · total: ${total.toFixed(1)}μs`);
+  state.pipeline.timings.forEach(t=>{
+    dim(`  ${t.stage}: ${t.us.toFixed(1)}μs${t.from?' ['+t.from+']':''}`);
+  });
+}
+
+async function cmdSpeed(){
+  step('Loading speed-stack.json…');
+  try{
+    const r=await fetch('../speed-stack.json');
+    if(!r.ok)throw new Error(`HTTP ${r.status}`);
+    state.speedStack=await r.json();
+    ok(`<span class="c-bold">${state.speedStack.name}</span> v${state.speedStack.version}`);
+    info(`Target: <span class="c-gold c-bold">${state.speedStack.target}</span>`);
+    dim('');
+    step('Timing Reference');
+    Object.entries(state.speedStack.timing_reference).forEach(([k,v])=>{
+      dim(`  ${k.padEnd(20)} ${v}`);
+    });
+    dim('');
+    step(`${state.speedStack.iron_line.stages.length} Pipeline Stages`);
+    state.speedStack.iron_line.stages.forEach(s=>{
+      const st=s.status==='built'?'<span class="c-ok">✓</span>':s.status==='planned'?'<span class="c-warn">○</span>':'<span class="c-dim">·</span>';
+      info(`${st} <span class="c-bold">${s.name}</span> — ${s.budget_us}μs — ${s.app}`);
+    });
+    dim('');
+    if(state.speedStack.layers){
+      step(`${state.speedStack.layers.length} Layers`);
+      state.speedStack.layers.forEach(l=>{
+        const st=l.status==='built'?'<span class="c-ok">✓</span>':l.status==='partial'?'<span class="c-warn">◐</span>':'<span class="c-dim">○</span>';
+        info(`${st} L${l.id}: <span class="c-bold">${l.name}</span> — ${l.budget_us}μs`);
+      });
+    }
+  }catch(e){
+    err(`Failed to load speed-stack.json: ${esc(e.message)}`);
+    info('Make sure speed-stack.json exists at project root');
+  }
+}
+
+function cmdLayers(){
+  const LAYERS=[
+    {id:0,name:'Super Speed Terminal',status:'built',budget:'<1ms',apps:['qbit-search.html']},
+    {id:1,name:'Terminal + Search',status:'built',budget:'270ms/0ms',apps:['qbit-search.html','visage-extract.py']},
+    {id:2,name:'Terminal Commander',status:'pending',budget:'<500ms',apps:['AI race dispatch']},
+    {id:3,name:'Quantum Terminal',status:'built',budget:'0.0001μs/gate',apps:['nterminal.html','uvqbit.html']},
+    {id:4,name:'Notepad / Everything',status:'built',budget:'16.6ms',apps:['quantum-notepad.html','qbit-studio.html']},
+    {id:5,name:'RNDR + Data Handler',status:'partial',budget:'5ms',apps:['qbit-medical.html','hexcast.html']},
+    {id:6,name:'Research / Medical / AI',status:'partial',budget:'1ms',apps:['qbit-medical.html','Act VI']},
+    {id:7,name:'Security / Search / Persona',status:'partial',budget:'real-time',apps:['kbatch.html','search.html']},
+  ];
+  step('<span class="c-purple c-bold">qbitOS Iron Line — 8 Layer Stack</span>');
+  dim('  Neuralink → Quantum → RNDR → Viewer/Device → back');
+  dim('');
+  LAYERS.forEach(l=>{
+    const icon=l.status==='built'?'<span class="c-ok">✓</span>':l.status==='partial'?'<span class="c-warn">◐</span>':'<span class="c-dim">○</span>';
+    info(`${icon} L${l.id}: <span class="c-bold">${l.name}</span> [${l.budget}] — ${l.apps.join(', ')}`);
+  });
+  dim('');
+  info('Cortical loop: L7 → L6 → L3 → L5 → L7 → cortex (~24ms round-trip)');
+  info('Quantum gate target: <span class="c-gold c-bold">0.0001μs (100ps)</span>');
+}
+
+function cmdTether(organism){
+  step(`<span class="c-cyan">⚡ De-Extinction Tether:</span> <span class="c-bold">${esc(organism)}</span>`);
+  const ORGANISMS={
+    amoeba:{q:3,j:8,m:'pseudopod flow'},sponge:{q:4,j:12,m:'filter pulse'},
+    jellyfish:{q:6,j:16,m:'bell contraction'},starfish:{q:8,j:15,m:'arm crawl'},
+    coral:{q:10,j:20,m:'polyp extension'},flatworm:{q:12,j:24,m:'ciliary glide'},
+    ant:{q:18,j:32,m:'hexapod gait'},cuttlefish:{q:24,j:40,m:'chromatophore wave'},
+    octopus:{q:35,j:65,m:'arm coordination'},whale:{q:35,j:45,m:'fluking + song'},
+    cat:{q:48,j:55,m:'quadruped gait'},human:{q:76,j:65,m:'bipedal + hands'},
+    thylacine:{q:52,j:55,m:'marsupial bound'},dodo:{q:32,j:42,m:'flightless waddle'},
+    mammoth:{q:80,j:60,m:'proboscidean stride'},'passenger pigeon':{q:28,j:38,m:'flock murmuration'},
+    quagga:{q:56,j:52,m:'equine gallop'},'tasmanian tiger':{q:52,j:55,m:'jaw gape + stalk'},
+    'great auk':{q:30,j:36,m:'diving propulsion'},'steller sea cow':{q:64,j:48,m:'sirenian drift'},
+    'baiji dolphin':{q:44,j:42,m:'echolocation spiral'},
+  };
+  const key=organism.toLowerCase();
+  const org=ORGANISMS[key];
+  if(!org){err(`Unknown organism. Available: ${Object.keys(ORGANISMS).join(', ')}`);return;}
+  info(`Qubits: ${org.q} · Joints: ${org.j} · Motion: ${org.m}`);
+  const t0=performance.now();
+  const fingerprint=Array.from({length:org.q},()=>+(Math.random()*2-1).toFixed(4));
+  const elapsed_us=(performance.now()-t0)*1000;
+  ok(`Vibrational fingerprint computed: ${elapsed_us.toFixed(1)}μs`);
+  dim(`  [${fingerprint.slice(0,8).join(', ')}${org.q>8?', …':''}]`);
+  emitStage('de_extinction_tether',{organism:key,timing_us:elapsed_us,budget_us:1000});
+  ironLine.postMessage({type:'tether',organism:key,qubits:org.q,joints:org.j,motion:org.m,fingerprint,ts:Date.now(),source:'qbit-search'});
+  ok(`Tether active — ${esc(organism)} bound to Iron Line`);
+}
+
+function cmdLoop(){
+  step('<span class="c-purple c-bold">Cortical Loop Benchmark</span>');
+  info('Simulating: Neuralink → L7 → L6 → L3 → L5 → L7 → cortex');
+  dim('');
+  const steps=[
+    {name:'Neural decode (L7→L6)',budget:1000},
+    {name:'Body system map (L6)',budget:10},
+    {name:'Quantum exec (L3)',budget:0.1},
+    {name:'RNDR render (L5)',budget:5000},
+    {name:'Device output (L5→L7)',budget:16666},
+    {name:'Cortical feedback (L7)',budget:1000},
+  ];
+  let total=0;
+  steps.forEach(s=>{
+    const t0=performance.now();
+    for(let i=0;i<1000;i++)Math.sin(i)*Math.cos(i);
+    const actual_us=(performance.now()-t0)*1000;
+    total+=actual_us;
+    const over=actual_us>s.budget;
+    const icon=over?'<span class="c-err">✗</span>':'<span class="c-ok">✓</span>';
+    info(`${icon} ${s.name}: ${actual_us.toFixed(1)}μs (budget: ${s.budget}μs)`);
+    emitStage(s.name.split('(')[0].trim().toLowerCase().replace(/\s+/g,'_'),{timing_us:actual_us,budget_us:s.budget});
+  });
+  dim('');
+  ok(`Full loop: <span class="c-bold">${total.toFixed(1)}μs</span> (target: 23,676μs)`);
+  info(`Quantum gate target: <span class="c-gold c-bold">0.0001μs</span> — ${(total/0.0001).toFixed(0)}× gate speed`);
+}
+
+// ─── BUILD / DEPLOY / TEST / CONFIG ─────────────────────────────
+
+const APPS_REGISTRY=[
+  {file:'qbit-search.html',layer:'L0-L1',role:'Iron Line terminal'},
+  {file:'terminal.html',layer:'L1',role:'xterm.js terminal'},
+  {file:'search.html',layer:'L1',role:'17-connector search PWA'},
+  {file:'nterminal.html',layer:'L3',role:'Quantum terminal + cinema'},
+  {file:'uvqbit.html',layer:'L3',role:'Quantum IDE — flagship'},
+  {file:'qbit-globe.html',layer:'L3',role:'3D quantum globe'},
+  {file:'blackwell.html',layer:'L3',role:'GPU dashboard'},
+  {file:'quantum-notepad.html',layer:'L4',role:'Main notebook'},
+  {file:'hexbench.html',layer:'L4',role:'Voltage lab + Arduino'},
+  {file:'archflow.html',layer:'L4',role:'Node visualizer'},
+  {file:'qbit-studio.html',layer:'L4',role:'Section designer'},
+  {file:'plan-viewer.html',layer:'L4',role:'Plan corpus browser'},
+  {file:'quantum-gutter.html',layer:'L4',role:'Prefix showcase'},
+  {file:'hexcast.html',layer:'L5',role:'Video broadcast'},
+  {file:'hexcast-send.html',layer:'L5',role:'Camera streaming'},
+  {file:'feed.html',layer:'L5',role:'Camera feed viewer'},
+  {file:'grid.html',layer:'L5',role:'Multi-feed grid'},
+  {file:'numsy.html',layer:'L5',role:'Instagram visual'},
+  {file:'brothernumsy.html',layer:'L5',role:'Numsy game'},
+  {file:'qbit-medical.html',layer:'L5-L6',role:'DICOM viewer'},
+  {file:'research-lab.html',layer:'L6',role:'Markdown editor'},
+  {file:'jawta-audio.html',layer:'L6',role:'Spatial audio + Morse'},
+  {file:'freya.html',layer:'L6',role:'Galactic converter'},
+  {file:'freya-landing.html',layer:'L6',role:'FreyaUnits showcase'},
+  {file:'questcast.html',layer:'L5-L6',role:'Quest broadcast'},
+  {file:'kbatch.html',layer:'L7',role:'Keyboard analyzer'},
+  {file:'history.html',layer:'L7',role:'Timeline knowledge graph'},
+  {file:'github-dashboard.html',layer:'L7',role:'Repo dashboard'},
+  {file:'sponsor.html',layer:'L7',role:'Sponsor page'},
+  {file:'qa.html',layer:'L7',role:'QA walkthrough'},
+  {file:'launcher.html',layer:'L0',role:'App launcher hub'},
+];
+
+function cmdApps(){
+  step('31 Web Applications — Iron Line Registry');
+  print('<span class="c-dim">  #  Layer    File                       Role</span>');
+  APPS_REGISTRY.forEach((a,i)=>{
+    const n=String(i+1).padStart(2,' ');
+    const l=a.layer.padEnd(6,' ');
+    const f=a.file.padEnd(26,' ');
+    print(`  <span class="c-cyan">${n}</span>  <span class="c-gold">${l}</span>  <span class="c-info">${f}</span> <span class="c-dim">${a.role}</span>`);
+  });
+  info(`All 31 apps include <span class="c-bold">quantum-prefixes.js</span> + <span class="c-bold">qbit-dac.js</span> (gluelam)`);
+}
+
+function cmdConfig(){
+  step('Build Configuration — Gold Standard');
+  print('');
+  info('<span class="c-bold">Shared Modules</span>');
+  print('  <span class="c-cyan">quantum-prefixes.js</span>  59 languages · 11 symbols · isomorphic');
+  print('  <span class="c-cyan">qbit-dac.js</span>          551 lines · tracks/stripes/complexity · isomorphic');
+  print('  <span class="c-cyan">plan-corpus-indexer.js</span> 110 plans · 47 categories');
+  print('  <span class="c-cyan">quantum-theme.css</span>     light/dark theming');
+  print('');
+  info('<span class="c-bold">10-Language Build Stack</span>');
+  const langs=[['TypeScript','tsc --noEmit'],['Rust','cargo test -p uvspeed-prefix-engine'],['WASM','bash scripts/build-wasm.sh'],['Go','go build src/bridge/main.go'],['WGSL','WebGPU runtime'],['CSS','quantum-theme.css'],['Nushell','nu scripts/*.nu'],['Shell','bash scripts/*.sh'],['CI/CD','GitHub Actions ci.yml'],['Config','.pre-commit-config.yaml']];
+  langs.forEach(([l,r])=>print(`  <span class="c-gold">${l.padEnd(12)}</span> <span class="c-dim">${r}</span>`));
+  print('');
+  info('<span class="c-bold">Plugin Stack (Gluelam)</span>');
+  print('  <span class="c-purple">Cursor Plugin</span>   extension.ts → require() shared modules');
+  print('  <span class="c-purple">MCP Server</span>      mcp_server.py → 16 tools (5 DAC+) via node bridge');
+  print('  <span class="c-purple">Git Hooks</span>       prefix-audit.py → Node.js batch classifier');
+  print('  <span class="c-purple">Cursor Hooks</span>    hooks.json → on-save, pre-commit, new-file');
+  print('');
+  info('<span class="c-bold">Versions</span>');
+  print('  <span class="c-dim">SW cache:</span>  uvspeed-v4.82');
+  print('  <span class="c-dim">Package:</span>   v4.33.0');
+  print('  <span class="c-dim">Apps:</span>      31');
+  print('  <span class="c-dim">Languages:</span> 59');
+}
+
+function cmdBuild(target){
+  step('Cross-App Build — Gold Standard Runners');
+  print('');
+  const targets={
+    all:  ['nu scripts/build.nu all','Full pipeline — all targets'],
+    wasm: ['bash scripts/build-wasm.sh','Rust → WASM → web/wasm/'],
+    tauri:['cargo tauri build --bundles app','Tauri desktop (6 MB)'],
+    rust: ['cargo build -p uvspeed-prefix-engine','Prefix engine library'],
+    web:  ['cp -r web/* tauri-dist/','Sync web → tauri-dist'],
+    ts:   ['tsc --noEmit','TypeScript type check'],
+  };
+  if(target&&targets[target]){
+    const[cmd,desc]=targets[target];
+    ok(`<span class="c-bold">${target}</span>: ${desc}`);
+    print(`  <span class="c-cyan">$ ${cmd}</span>`);
+  }else{
+    info('Available build targets:');
+    Object.entries(targets).forEach(([k,[cmd,desc]])=>{
+      print(`  <span class="c-gold">${k.padEnd(8)}</span> <span class="c-dim">${desc}</span>`);
+      print(`           <span class="c-cyan">$ ${cmd}</span>`);
+    });
+  }
+  print('');
+  info('Pre-push: <span class="c-cyan">nu scripts/pre.nu</span> (folder + inspect 31 apps + gold)');
+}
+
+function cmdDeploy(target){
+  step('Deploy Checklist');
+  print('');
+  const checks=[
+    ['Pre-push audit','nu scripts/pre.nu','Folder + inspect + gold + idiot'],
+    ['Version sync','bash scripts/version-sync.sh','Align all version strings'],
+    ['SW cache bump','web/sw.js → CACHE_NAME','Increment cache version'],
+    ['Git commit','git add . && git commit','Stage + commit changes'],
+    ['Push to remote','git push origin main','Deploy to GitHub Pages'],
+    ['CI/CD verify','.github/workflows/ci.yml','Auto-run on push'],
+  ];
+  checks.forEach(([name,cmd,note],i)=>{
+    print(`  <span class="c-${i<3?'gold':'green'}">${String(i+1).padStart(2)}.</span> <span class="c-bold">${name.padEnd(18)}</span> <span class="c-cyan">${cmd}</span>`);
+    print(`      <span class="c-dim">${note}</span>`);
+  });
+  print('');
+  if(target==='gh-pages')info('Target: GitHub Pages — <span class="c-cyan">qbitos.github.io/uvspeed/web/</span>');
+  else if(target==='tauri')info('Target: Tauri desktop — <span class="c-cyan">cargo tauri build --bundles app</span>');
+  else info('Targets: <span class="c-gold">gh-pages</span> | <span class="c-gold">tauri</span> | <span class="c-gold">npm</span>');
+}
+
+function cmdTest(suite){
+  step('Test Suites — Gold Standard');
+  print('');
+  const suites={
+    rust: ['cargo test -p uvspeed-prefix-engine','Rust unit tests (fastest)'],
+    python:['uv run pytest','Python tests via uv'],
+    wasm: ['bash scripts/build-wasm.sh && node -e "require(\'./web/wasm/\')"','WASM build + smoke test'],
+    lint: ['uv run ruff check . && cargo clippy -- -D warnings','Python + Rust lint'],
+    all:  ['nu scripts/test.nu all','All test suites'],
+    node: ['node -e "const QP=require(\'./web/quantum-prefixes.js\');console.log(Object.keys(QP).length);process.exit(0)"','Node.js isomorphic check'],
+    dac:  ['node -e "const D=require(\'./web/qbit-dac.js\');console.log(Object.keys(D));process.exit(0)"','DAC+ isomorphic check'],
+  };
+  if(suite&&suites[suite]){
+    const[cmd,desc]=suites[suite];
+    ok(`<span class="c-bold">${suite}</span>: ${desc}`);
+    print(`  <span class="c-cyan">$ ${cmd}</span>`);
+  }else{
+    info('Available test suites:');
+    Object.entries(suites).forEach(([k,[cmd,desc]])=>{
+      print(`  <span class="c-gold">${k.padEnd(8)}</span> <span class="c-dim">${desc}</span>`);
+      print(`           <span class="c-cyan">$ ${cmd}</span>`);
+    });
+  }
+}
+
+function cmdLint(){
+  step('Lint — Gold Standard Runners');
+  print('');
+  const lints=[
+    ['Python','uv run ruff check .','NEVER bare ruff'],
+    ['Py Format','uv run ruff format --check .','Check formatting'],
+    ['Rust','cargo clippy -p uvspeed-prefix-engine -- -D warnings','Clippy strict'],
+    ['Rust Fmt','cargo fmt -p uvspeed-prefix-engine --check','Rustfmt check'],
+    ['TypeScript','tsc --noEmit','Type check only'],
+  ];
+  lints.forEach(([lang,cmd,note])=>{
+    print(`  <span class="c-gold">${lang.padEnd(11)}</span> <span class="c-cyan">${cmd}</span>`);
+    print(`             <span class="c-dim">${note}</span>`);
+  });
+}
+
+// ─── INPUT / KEYBINDS / STATUS ───────────────────────────────────
+
+function updateStatus(s){$('st-state').textContent=s}
+function updateAssetCount(){$('st-assets').textContent=`assets: ${state.assets.length}`}
+
+const termInput=$('term-input');
+
+function handleCommandInput(input){
+  const v=input.value.trim();
+  if(v){runCommand(v);input.value='';}
+}
+function handleHistoryNav(e,input){
+  if(e.key==='ArrowUp'){e.preventDefault();if(state.histIdx>0){state.histIdx--;input.value=state.history[state.histIdx]||'';}}
+  else if(e.key==='ArrowDown'){e.preventDefault();if(state.histIdx<state.history.length-1){state.histIdx++;input.value=state.history[state.histIdx]||'';}else{state.histIdx=state.history.length;input.value='';}}
+}
+
+searchInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter')handleCommandInput(searchInput);
+  else handleHistoryNav(e,searchInput);
+});
+termInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter')handleCommandInput(termInput);
+  else handleHistoryNav(e,termInput);
+});
+
+$('btn-run').addEventListener('click',()=>handleCommandInput(searchInput));
+
+document.addEventListener('keydown',e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key==='k'){
+    e.preventDefault();
+    searchInput.focus();
+    searchInput.select();
+  }
+  if(e.key==='Escape'){
+    searchInput.blur();
+    termInput.blur();
+  }
+  if(!document.activeElement||document.activeElement===document.body){
+    termInput.focus();
+  }
+});
+term.addEventListener('click',e=>{if(!window.getSelection().toString())termInput.focus()});
+
+navigator.clipboard&&document.addEventListener('paste',e=>{
+  if(document.activeElement===searchInput||document.activeElement===bpUrl)return;
+  const text=(e.clipboardData||window.clipboardData).getData('text');
+  if(text&&text.match(/^https?:\/\//)){
+    e.preventDefault();
+    receiveLink(text.trim(),'clipboard','paste');
+  }
+});
+
+window.addEventListener('resize',()=>{});
+
+// ─── SYNCLOCK + SEED + AI ────────────────────────────────────────
+(function initSynclock(){
+  const elSeed=$('hdr-seed'),elClock=$('hdr-clock');
+  if(!elSeed)return;
+  const seed=Math.random().toString(36).slice(2,8).toUpperCase();
+  elSeed.textContent=seed;
+  elSeed.title='Click to copy seed';
+  elClock.title='Click to copy timestamp';
+
+  function flashCopied(el){
+    el.classList.add('copied');
+    const orig=el.textContent;
+    el.textContent='✓ copied';
+    setTimeout(()=>{el.classList.remove('copied');el.textContent=orig},800);
+  }
+  elSeed.addEventListener('click',()=>{
+    navigator.clipboard.writeText(seed).then(()=>flashCopied(elSeed));
+  });
+  elClock.addEventListener('click',()=>{
+    const now=new Date();
+    const val=now.toISOString().slice(0,19)+'Z · '+Math.floor(now.getTime()/1000);
+    navigator.clipboard.writeText(val).then(()=>flashCopied(elClock));
+  });
+
+  function tick(){
+    const now=new Date();
+    const unix=Math.floor(now.getTime()/1000);
+    const iso=now.toISOString().slice(11,19);
+    if(!elClock.classList.contains('copied'))elClock.textContent=iso+' · '+unix;
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+(function initAI(){
+  const el=$('hdr-ai');
+  if(!el)return;
+  el.title='AI pipeline: DAC+ active · 59 languages · tracks mode';
+  const dot=el.querySelector('.ai-dot');
+  if(typeof window.QuantumPrefixes!=='undefined'){
+    dot.style.background='var(--green)';
+    el.title='AI: quantum-prefixes.js loaded · '+Object.keys(window.QuantumPrefixes).length+' methods';
+  }
+})();
+
+(function initSplitters(){
+  document.querySelectorAll('.splitter').forEach(sp=>{
+    const tid=sp.dataset.target;
+    const pane=$(tid);
+    if(!pane)return;
+    let startX,startW,dragging=false;
+    sp.addEventListener('pointerdown',e=>{
+      if(pane.classList.contains('collapsed'))return;
+      e.preventDefault();
+      dragging=true;
+      startX=e.clientX;
+      startW=pane.offsetWidth;
+      sp.classList.add('active');
+      sp.setPointerCapture(e.pointerId);
+    });
+    sp.addEventListener('pointermove',e=>{
+      if(!dragging)return;
+      const dx=startX-e.clientX;
+      const nw=Math.max(120,Math.min(startW+dx,window.innerWidth*0.6));
+      pane.style.width=nw+'px';
+    });
+    const stop=()=>{if(dragging){dragging=false;sp.classList.remove('active')}};
+    sp.addEventListener('pointerup',stop);
+    sp.addEventListener('pointercancel',stop);
+  });
+})();
+
+banner();
+requestAnimationFrame(()=>$('term-input').focus());
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+  navigator.serviceWorker.addEventListener('message',e=>{
+    if(e.data&&e.data.type==='share-target'&&e.data.url){
+      receiveLink(e.data.url,'share','phone-share');
+    }
+  });
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+var QP=window.QuantumPrefixes;
+if(QP){
+  QP.broadcastState('qbit-search',{coverage:0,totalLines:0,classifiedLines:0,prefixCounts:{}});
+  QP.onStateChange(function(s){
+    if(s&&s.source!=='qbit-search'){
+      dim(`  <span class="c-dim">[prefix-sync] ${s.source||'app'}: ${Math.round((s.coverage||0)*100)}% coverage</span>`);
+    }
+  });
+  QP.requestStateSync();
+}
+// ===== END QUANTUM PREFIX LIVE SYNC =====
+
+// ===== μgrad Worker Integration =====
+var ugW=null,ugState={active:false,gen:0,bgGens:0,weights:null,arch:[2,8,8,1],dataset:'xor',engine:'r0'};
+function ugWorker(){
+if(ugW)return ugW;
+ugW=new Worker('ugrad-worker.js');
+ugW.onmessage=function(e){var d=e.data;
+if(d.type==='ready')ok('μgrad worker ready: '+d.capabilities.length+' capabilities');
+else if(d.type==='generation'){ugState.gen=d.gen;ugState.weights=d.weights;
+step(`<span class="c-bold">⚛ G${d.gen}</span> ${d.engine} · loss=${d.loss.toFixed(6)} · acc=${(d.acc*100).toFixed(0)}% · ${d.ms.toFixed(0)}ms${d.bg?' · bg':''} · ${d.dataset}`)}
+else if(d.type==='bg-started'){ugState.active=true;ok('⬡ μgrad bg: ACTIVE — Worker thread, no throttling')}
+else if(d.type==='bg-stopped'){ugState.active=false;ugState.bgGens=d.bgGens;
+step(`⬡ μgrad bg: stopped · ${d.bgGens} gens · ${(d.elapsed/1000).toFixed(1)}s`)}
+else if(d.type==='converged')ok(`⚛ CONVERGED G${d.gen} · loss=${d.loss.toFixed(6)}`)
+else if(d.type==='curriculum')info(`⚛ curriculum: → ${d.dataset} · ${d.arch.join('→')}`)
+else if(d.type==='quantum-miami'){step('═══ IBM Miami · Nighthawk r1 · 120Q ═══');
+info(`  ${d.gateCount} gates on ${d.nQ} qubits · cal: ${d.cal}`);
+info(`  physical: ${d.physQ.map(q=>'$'+q).join(', ')}`);
+navigator.clipboard.writeText(d.qasm).then(()=>ok('QASM copied'),()=>dim(`QASM generated (${d.qasm.length} chars)`))}
+else if(d.type==='cortical'){step(`⚛ μcortical L0→L7 · ${d.elapsed.toFixed(3)}ms${d.withinBudget?' ✓':' ⚠ >24ms'}`);
+dim(`  L3 cortex=${d.layers.L3.toFixed(4)} L4=${d.layers.L4} L5=${d.layers.L5} L7=${d.layers.L7.toFixed(4)}`)}
+else if(d.type==='organoid'){step('⚛ μorganoid DNA cycle');
+dim(`  ${d.dnaLength} bases · ${d.mutations} mutations · child acc=${(d.childAcc*100).toFixed(0)}%`);
+dim(`  ${d.dna}`)}
+else if(d.type==='status'){step('⚛ μgrad');
+dim(`  bg=${d.bgActive} · G${d.gen} · ${d.engine} · ${d.dataset} · arch=${d.arch.join('→')}`)}
+else if(d.type==='vqe-started')info(`⚛ VQE started: ${d.nQ}Q · ${d.layers} layers · ${d.bonds} bonds · ${d.maxIter} iters`)
+else if(d.type==='vqe-progress'){}
+else if(d.type==='vqe-result'){ok(`⚛ VQE converged: E=${d.energy.toFixed(6)} · ${d.iterations} iters · ${d.ms.toFixed(0)}ms`);
+dim(`  ${d.nParams} params · ${d.gateCount} gates · ${d.nQ}Q × ${d.layers} layers`);
+navigator.clipboard.writeText(d.qasm).then(()=>ok('VQE QASM copied'),()=>{})}
+else if(d.type==='qbt-started')info(`⚛ QBT ${d.mode}: Mach=${d.mach} alt=${d.alt}${d.altName?' ('+d.altName+')':''}`)
+else if(d.type==='qbt-result'){ok(`⚛ QBT: Mach ${d.mach} · ${d.altName} · E=${d.energy.toFixed(4)} · shock=${d.shock}`);dim(`  ρ=${d.density} · g=${d.gravity} · data=${(d.dataIntegrity*100).toFixed(0)}%${d.blackout?' ⚠ PLASMA BLACKOUT':''}`)}
+else if(d.type==='qbt-sweep'){ok(`⚛ QBT sweep: ${d.results.length} configs · ${d.ms.toFixed(0)}ms`);for(var ri=0;ri<d.results.length;ri++){var r=d.results[ri];dim(`  M${r.mach} ${r.altName.padEnd(14)} E=${r.energy.toFixed(3)} ${r.shock.padEnd(9)} ${r.blackout?'BLACKOUT':r.dataIntegrity*100+'%'}`)}}
+else if(d.type==='qas-started')info(`⚛ QAS ${d.mode}: ${d.freq||''}Hz`)
+else if(d.type==='qas-result'){ok(`⚛ QAS: az=${d.azimuth}° el=${d.elevation}° freq=${d.freq}Hz`);dim(`  binaural: ILD=${d.binaural.ild_dB}dB ITD=${d.binaural.itd_us}μs · L=${d.channels.L_ILD} R=${d.channels.R_ILD}`);dim(`  dispersion: ω=${d.dispersion.omega.toFixed(4)} v_g=${d.dispersion.vGroup.toFixed(4)}`)}
+else if(d.type==='qas-sweep'){ok(`⚛ QAS sweep: ${d.results.length} angles · ${d.ms.toFixed(0)}ms`);for(var ri=0;ri<d.results.length;ri++){var r=d.results[ri];dim(`  ${r.azimuth}° ILD=${r.ild_dB}dB ITD=${r.itd_us}μs L=${r.L} R=${r.R}`)}}
+else if(d.type==='audio-cv-result'){ok(`⚛ Audio CV frame #${d.frame} · ${d.ms.toFixed(1)}ms`);dim(`  cv: energy=${d.cv.energy.toFixed(3)} centroid=${d.cv.centroid.toFixed(1)} flux=${d.cv.flux.toFixed(3)}`);dim(`  bands: sub=${d.cv.sub.toFixed(2)} bass=${d.cv.bass.toFixed(2)} mid=${d.cv.mid.toFixed(2)} pres=${d.cv.pres.toFixed(2)}`);dim(`  quantum: E=${d.energy.toFixed(4)} qubits=[${d.qubits.map(q=>q.toFixed(2)).join(',')}]`);dim(`  spatial: ILD=${d.spatial.ild_dB}dB ITD=${d.spatial.itd_us}μs L=${d.spatial.L_ILD} R=${d.spatial.R_ILD}`);try{var bc=new BroadcastChannel('quantum-loopback');bc.postMessage({type:'audio-cv',source:'qbit-search',frame:d.frame,cv:d.cv,qubits:d.qubits,energy:d.energy,spatial:d.spatial});bc.close()}catch(e){}}
+else if(d.type==='error')err('⚛ '+d.msg)};
+ugW.onerror=function(e){err('⚛ worker error: '+e.message)};
+return ugW}
+
+function cmdUgrad(args){var sub=args[0]||'status';
+if(sub==='train')ugWorker().postMessage({type:'train',arch:ugState.arch,lr:0.05,epochs:500,dataset:ugState.dataset,engine:ugState.engine,weights:ugState.weights,gen:ugState.gen});
+else if(sub==='bg'||sub==='background'){var s2=args[1]||'start';
+if(s2==='start'||s2==='on')ugWorker().postMessage({type:'bg-start',arch:ugState.arch,lr:0.05,epochs:500,dataset:ugState.dataset,engine:ugState.engine,weights:ugState.weights,gen:ugState.gen});
+else if(s2==='stop'||s2==='off')ugWorker().postMessage({type:'bg-stop'});
+else ugWorker().postMessage({type:'status'})}
+else if(sub==='miami'||sub==='qpu')ugWorker().postMessage({type:'quantum-miami',arch:ugState.arch,weights:ugState.weights,gen:ugState.gen});
+else if(sub==='vqe'){var vL=parseInt(args[1])||3,vI=parseInt(args[2])||30;ugWorker().postMessage({type:'vqe',patch:'11q',layers:vL,maxIter:vI,lr:0.1,J:1.0,h:0.5})}
+else if(sub==='qbt'||sub==='ballistic'||sub==='mach'){var qS=args[1]||'';if(qS==='sweep')ugWorker().postMessage({type:'qbt',sweep:true,maxIter:30});else{var mm=parseFloat(args[1])||1.0,aa=parseInt(args[2])||0;ugWorker().postMessage({type:'qbt',mach:mm,alt:aa,maxIter:40})}}
+else if(sub==='qas'||sub==='binaural'||sub==='surround'){var qS2=args[1]||'';if(qS2==='sweep')ugWorker().postMessage({type:'qas',sweep:true,freq:parseFloat(args[2])||1000,maxIter:25});else ugWorker().postMessage({type:'qas',azimuth:parseFloat(args[1])||0,elevation:parseFloat(args[2])||0,freq:parseFloat(args[3])||1000,roomSize:5,maxIter:30})}
+else if(sub==='audio'||sub==='cv'||sub==='pipe'){writeln('\x1b[36m\u26db Audio CV pipe\x1b[0m \x1b[90muse qbit-studio Audio CV tab for live visualizer\x1b[0m');var tb=new Float32Array(64);for(var ti=0;ti<64;ti++)tb[ti]=Math.random()*0.5;ugWorker().postMessage({type:'audio-cv',bands:tb,azimuth:parseFloat(args[1])||0,elevation:parseFloat(args[2])||0,freq:parseFloat(args[3])||1000,roomSize:5,frame:0})}
+else if(sub==='cortical'||sub==='r5')ugWorker().postMessage({type:'cortical',weights:ugState.weights,dataset:ugState.dataset,gen:ugState.gen});
+else if(sub==='organoid'||sub==='r6'||sub==='dna')ugWorker().postMessage({type:'organoid',weights:ugState.weights,dataset:ugState.dataset,arch:ugState.arch,gen:ugState.gen});
+else if(sub==='r1'){ugState.engine='r1';ok('⚛ engine: R1 Tensor')}
+else if(sub==='r0'){ugState.engine='r0';ok('⚛ engine: R0 Scalar')}
+else if(['xor','circle','spiral','and','or'].includes(sub)){ugState.dataset=sub;ugState.weights=null;ok('⚛ dataset: '+sub)}
+else ugWorker().postMessage({type:'status'})}
+
+document.addEventListener('visibilitychange',function(){
+if(!document.hidden&&ugState.bgGens>0)dim(`⬡ tab visible — ${ugState.bgGens} μgrad gens completed in bg`)});
+
+searchInput.focus();
+})();
+
+</script>
+</body>
+</html>

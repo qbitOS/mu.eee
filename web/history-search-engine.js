@@ -81,14 +81,14 @@ const CONNECTORS = [
             }))).catch(() => [])
     },
     {
+        /** CDX API has no CORS from browsers — link-out avoids console noise on mueee / PWAs. */
         name: 'Wayback Machine', icon: 'WB', enabled: true,
-        search: q => fetch('https://web.archive.org/cdx/search/cdx?url=*' + encodeURIComponent(q) + '*&output=json&limit=5&fl=original,timestamp')
-            .then(r => r.json())
-            .then(d => d.slice(1).map(r => ({
-                title: r[0], source: 'wayback',
-                snippet: 'Archived: ' + r[1].substring(0, 4) + '-' + r[1].substring(4, 6) + '-' + r[1].substring(6, 8),
-                url: 'https://web.archive.org/web/' + r[1] + '/' + r[0]
-            }))).catch(() => [])
+        search: q => Promise.resolve([{
+            title: 'Wayback / Archive.org — search: ' + q,
+            source: 'wayback',
+            snippet: 'Open archive.org (CDX JSON is not CORS-safe in-browser).',
+            url: 'https://archive.org/search.php?query=' + encodeURIComponent(q)
+        }])
     },
     {
         name: 'Sacred Texts', icon: 'ST', enabled: true,
@@ -182,14 +182,14 @@ const CONNECTORS = [
     },
     // ── Economic / Monetary connectors ──
     {
+        /** FRED REST API does not allow browser CORS — link to on-site search (same-origin proxy could restore API). */
         name: 'FRED', icon: 'FR', enabled: true,
-        search: q => fetch('https://api.stlouisfed.org/fred/series/search?search_text=' + encodeURIComponent(q) + '&api_key=DEMO_KEY&file_type=json&limit=4')
-            .then(r => r.json())
-            .then(d => (d.seriess || []).map(s => ({
-                title: s.title, source: 'fred',
-                snippet: s.frequency + ' \u2014 ' + (s.observation_start || '') + ' to ' + (s.observation_end || '') + ' \u2014 ' + (s.notes || '').substring(0, 100),
-                url: 'https://fred.stlouisfed.org/series/' + s.id
-            }))).catch(() => [])
+        search: q => Promise.resolve([{
+            title: 'FRED — search: ' + q,
+            source: 'fred',
+            snippet: 'St. Louis Fed (API blocked by CORS in browsers).',
+            url: 'https://fred.stlouisfed.org/search?st=' + encodeURIComponent(q)
+        }])
     },
     {
         name: 'World Bank', icon: 'WB$', enabled: true,

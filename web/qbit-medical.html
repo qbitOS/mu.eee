@@ -1,0 +1,763 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>qbit medical — 3D neuron speed tests</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+<link rel="icon" type="image/x-icon" href="../icons/favicon.ico">
+<link rel="apple-touch-icon" sizes="192x192" href="../icons/icon-192.png">
+<style>
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;
+  --text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;
+  --purple:#a78bfa;--cyan:#56d4dd;--gold:#c9a84c;--green:#34d399;
+  --success:#3fb950;--warning:#f0883e;--error:#f85149;
+  --font-mono:'SF Mono','Fira Code','JetBrains Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:13px;display:flex;flex-direction:column}
+
+.header{display:flex;align-items:center;gap:16px;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0}
+.header .logo{font-size:15px;font-weight:700;font-family:var(--font-mono);color:var(--gold)}
+.header .logo span{color:var(--purple)}
+.header .badge{background:var(--error);color:#fff;padding:1px 8px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.5px}
+.hdr-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 12px;border-radius:6px;cursor:pointer;font-size:11px;font-family:var(--font-mono);transition:.15s}
+.hdr-btn:hover{color:var(--text);border-color:var(--accent)}
+.hdr-btn.active{color:var(--accent);border-color:var(--accent);background:rgba(88,166,255,.08)}
+
+.main{display:flex;flex:1;overflow:hidden}
+
+.sidebar{width:240px;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0}
+.sb-section{padding:8px 16px}
+.sb-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;font-family:var(--font-mono)}
+.sb-item{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12px;transition:.15s;border:1px solid transparent}
+.sb-item:hover{background:var(--bg3);border-color:var(--border)}
+.sb-item.active{background:rgba(167,139,250,.1);border-color:var(--purple)}
+.sb-icon{font-size:16px;width:28px;text-align:center}
+.sb-label{flex:1}
+.sb-count{font-size:10px;color:var(--muted);font-family:var(--font-mono)}
+.sb-divider{height:1px;background:var(--border);margin:4px 16px}
+
+.workspace{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+#viewport-container{flex:1;position:relative;background:#000;overflow:hidden}
+#viewport-canvas{width:100%;height:100%;display:block;touch-action:none;-webkit-touch-callout:none}
+#drop-zone{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:5;pointer-events:all}
+#drop-zone.has-image{display:none}
+.drop-border{border:2px dashed var(--border);border-radius:12px;padding:60px 40px;text-align:center;transition:.3s}
+.drop-border.dragover{border-color:var(--purple);background:rgba(167,139,250,.05)}
+.drop-title{font-size:20px;font-weight:700;margin-bottom:8px;color:var(--text)}
+.drop-sub{color:var(--muted);font-size:13px;margin-bottom:16px}
+.drop-btn{background:var(--purple);color:#fff;border:none;padding:10px 24px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font-mono)}
+.drop-btn:hover{filter:brightness(1.15)}
+.drop-formats{margin-top:16px;font-size:10px;color:var(--muted);font-family:var(--font-mono)}
+
+.info-bar{display:flex;gap:16px;padding:8px 16px;background:var(--bg2);border-top:1px solid var(--border);font-family:var(--font-mono);font-size:10px;color:var(--muted);flex-shrink:0;flex-wrap:wrap}
+.info-item{display:flex;align-items:center;gap:4px}
+.info-item .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+.right-panel{width:320px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto}
+.rp-section{padding:12px 16px;border-bottom:1px solid var(--border)}
+.rp-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:8px;font-family:var(--font-mono)}
+.rp-row{display:flex;justify-content:space-between;font-size:11px;padding:3px 0}
+.rp-row .rp-k{color:var(--muted)}
+.rp-row .rp-v{color:var(--text);font-family:var(--font-mono)}
+.bench-bar{height:6px;background:var(--bg3);border-radius:3px;margin-top:4px;overflow:hidden}
+.bench-fill{height:100%;border-radius:3px;transition:width .4s}
+
+.speed-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.speed-card{background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:10px;text-align:center}
+.speed-val{font-size:20px;font-weight:800;font-family:var(--font-mono)}
+.speed-label{font-size:9px;color:var(--muted);margin-top:2px;text-transform:uppercase;letter-spacing:.5px}
+
+.status-bar{display:flex;align-items:center;gap:16px;padding:3px 16px;background:var(--bg2);border-top:1px solid var(--border);font-family:var(--font-mono);font-size:10px;color:var(--muted);flex-shrink:0}
+.status-bar .st-dot{width:6px;height:6px;border-radius:50%;background:var(--success)}
+
+#file-input{display:none}
+
+@media(max-width:900px){.sidebar,.right-panel{display:none}}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo"><span>{.qbit}</span> medical</div>
+  <div class="badge">NEURO</div>
+  <div style="display:flex;gap:4px;margin-left:auto">
+    <button class="hdr-btn active" data-view="2d">2D</button>
+    <button class="hdr-btn" data-view="3d">3D</button>
+    <button class="hdr-btn" data-view="mpr">MPR</button>
+  </div>
+  <button class="hdr-btn" id="btn-bench" title="Run speed test">⚡ Benchmark</button>
+  <button class="hdr-btn" id="btn-theme" title="Toggle theme">◐</button>
+</div>
+
+<div class="main">
+  <div class="sidebar" id="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">Body Systems</div>
+      <div id="body-systems-list"></div>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section">
+      <div class="sb-title">DICOM Series</div>
+      <div id="dicom-series-list">
+        <div style="color:var(--muted);font-size:11px;padding:8px">Drop DICOM files to load</div>
+      </div>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section">
+      <div class="sb-title">Free Datasets</div>
+      <a href="https://fastmri.med.nyu.edu/" target="_blank" class="sb-item"><span class="sb-icon">🧠</span><span class="sb-label">fastMRI (NYU)</span><span class="sb-count">6,970</span></a>
+      <a href="https://openneuro.org/" target="_blank" class="sb-item"><span class="sb-icon">📊</span><span class="sb-label">OpenNeuro</span><span class="sb-count">95+</span></a>
+      <a href="https://www.cancerimagingarchive.net/" target="_blank" class="sb-item"><span class="sb-icon">🔬</span><span class="sb-label">TCIA</span></a>
+      <a href="https://humanconnectome.org/" target="_blank" class="sb-item"><span class="sb-icon">🌐</span><span class="sb-label">HCP</span><span class="sb-count">1,113</span></a>
+      <a href="https://brainweb.bic.mni.mcgill.ca/" target="_blank" class="sb-item"><span class="sb-icon">🧪</span><span class="sb-label">BrainWeb</span></a>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section">
+      <div class="sb-title">Cornerstone3D</div>
+      <a href="https://github.com/cornerstonejs/cornerstone3D" target="_blank" class="sb-item"><span class="sb-icon">📦</span><span class="sb-label">cornerstone3D</span><span class="sb-count">v4.15</span></a>
+      <a href="https://github.com/OHIF/Viewers" target="_blank" class="sb-item"><span class="sb-icon">🏥</span><span class="sb-label">OHIF Viewer</span></a>
+      <a href="https://cornerstonejs.org/docs/examples" target="_blank" class="sb-item"><span class="sb-icon">📖</span><span class="sb-label">Examples</span></a>
+    </div>
+  </div>
+
+  <div class="workspace">
+    <div id="viewport-container">
+      <canvas id="viewport-canvas"></canvas>
+      <div id="drop-zone">
+        <div class="drop-border" id="drop-border">
+          <div class="drop-title">🧠 Drop DICOM Files</div>
+          <div class="drop-sub">Drag & drop .dcm files or a folder, or click to browse</div>
+          <button class="drop-btn" id="btn-browse">Browse Files</button>
+          <div class="drop-formats">Supports: DICOM (.dcm) · NIfTI (.nii) · PNG/JPG (as texture)</div>
+        </div>
+      </div>
+      <input type="file" id="file-input" multiple accept=".dcm,.dicom,.nii,.nii.gz,.png,.jpg,*">
+    </div>
+    <div class="info-bar" id="info-bar">
+      <div class="info-item"><div class="dot" style="background:var(--success)"></div><span id="info-status">Ready</span></div>
+      <div class="info-item"><span id="info-patient">—</span></div>
+      <div class="info-item"><span id="info-modality">—</span></div>
+      <div class="info-item"><span id="info-size">—</span></div>
+      <div class="info-item"><span id="info-wl">W/L: —</span></div>
+      <div class="info-item" style="margin-left:auto"><span id="info-fps">— fps</span></div>
+    </div>
+  </div>
+
+  <div class="right-panel" id="right-panel">
+    <div class="rp-section">
+      <div class="rp-title">⚡ Neuron Speed Tests</div>
+      <div class="speed-grid">
+        <div class="speed-card"><div class="speed-val" id="sp-decode" style="color:var(--purple)">—</div><div class="speed-label">Decode ms</div></div>
+        <div class="speed-card"><div class="speed-val" id="sp-render" style="color:var(--green)">—</div><div class="speed-label">Render ms</div></div>
+        <div class="speed-card"><div class="speed-val" id="sp-fps" style="color:var(--gold)">—</div><div class="speed-label">FPS</div></div>
+        <div class="speed-card"><div class="speed-val" id="sp-mem" style="color:var(--cyan)">—</div><div class="speed-label">MB Used</div></div>
+      </div>
+    </div>
+    <div class="rp-section">
+      <div class="rp-title">Benchmark History</div>
+      <div id="bench-log" style="max-height:150px;overflow-y:auto;font-size:10px;font-family:var(--font-mono)"></div>
+    </div>
+    <div class="rp-section">
+      <div class="rp-title">DICOM Metadata</div>
+      <div id="dicom-meta">
+        <div class="rp-row"><span class="rp-k">Patient</span><span class="rp-v" id="meta-patient">—</span></div>
+        <div class="rp-row"><span class="rp-k">Study</span><span class="rp-v" id="meta-study">—</span></div>
+        <div class="rp-row"><span class="rp-k">Modality</span><span class="rp-v" id="meta-modality">—</span></div>
+        <div class="rp-row"><span class="rp-k">Dimensions</span><span class="rp-v" id="meta-dims">—</span></div>
+        <div class="rp-row"><span class="rp-k">Pixel Spacing</span><span class="rp-v" id="meta-spacing">—</span></div>
+        <div class="rp-row"><span class="rp-k">Bits Allocated</span><span class="rp-v" id="meta-bits">—</span></div>
+        <div class="rp-row"><span class="rp-k">Transfer Syntax</span><span class="rp-v" id="meta-syntax">—</span></div>
+        <div class="rp-row"><span class="rp-k">Window</span><span class="rp-v" id="meta-window">—</span></div>
+      </div>
+    </div>
+    <div class="rp-section">
+      <div class="rp-title">Active Body System</div>
+      <div id="active-system-detail" style="font-size:11px;color:var(--muted)">Select a body system from sidebar</div>
+    </div>
+  </div>
+</div>
+
+<div class="status-bar">
+  <span class="st-dot"></span>
+  <span id="st-mode">2d</span>
+  <span style="color:var(--border)">│</span>
+  <span id="st-series">0 series</span>
+  <span style="color:var(--border)">│</span>
+  <span id="st-slices">0 slices</span>
+  <span style="color:var(--border)">│</span>
+  <span id="st-engine">canvas</span>
+  <span style="margin-left:auto">{.qbit} medical v1.0</span>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+(function(){
+'use strict';
+
+const BODY_SYSTEMS = [
+  {
+    "id": "nervous",
+    "label": "Nervous System",
+    "icon": "\ud83e\udde0",
+    "color": "#a78bfa",
+    "regions": [
+      "brain",
+      "spinal-cord",
+      "peripheral-nerves",
+      "cranial-nerves"
+    ]
+  },
+  {
+    "id": "cardiovascular",
+    "label": "Cardiovascular",
+    "icon": "\u2764\ufe0f",
+    "color": "#f85149",
+    "regions": [
+      "heart",
+      "aorta",
+      "coronary-arteries",
+      "pulmonary"
+    ]
+  },
+  {
+    "id": "respiratory",
+    "label": "Respiratory",
+    "icon": "\ud83e\udec1",
+    "color": "#56d4dd",
+    "regions": [
+      "lungs",
+      "bronchi",
+      "trachea",
+      "diaphragm"
+    ]
+  },
+  {
+    "id": "musculoskeletal",
+    "label": "Musculoskeletal",
+    "icon": "\ud83e\uddb4",
+    "color": "#c9a84c",
+    "regions": [
+      "spine",
+      "pelvis",
+      "knee",
+      "shoulder",
+      "hand"
+    ]
+  },
+  {
+    "id": "digestive",
+    "label": "Digestive",
+    "icon": "\ud83e\udec4",
+    "color": "#f0883e",
+    "regions": [
+      "liver",
+      "stomach",
+      "intestines",
+      "pancreas"
+    ]
+  },
+  {
+    "id": "urinary",
+    "label": "Urinary",
+    "icon": "\ud83e\uded8",
+    "color": "#34d399",
+    "regions": [
+      "kidneys",
+      "bladder",
+      "ureters"
+    ]
+  },
+  {
+    "id": "endocrine",
+    "label": "Endocrine",
+    "icon": "\u2697\ufe0f",
+    "color": "#ffbe0b",
+    "regions": [
+      "thyroid",
+      "pituitary",
+      "adrenal",
+      "pancreas-endocrine"
+    ]
+  },
+  {
+    "id": "reproductive",
+    "label": "Reproductive",
+    "icon": "\ud83e\uddec",
+    "color": "#ff6b6b",
+    "regions": [
+      "ovaries",
+      "uterus",
+      "testes",
+      "prostate"
+    ]
+  },
+  {
+    "id": "lymphatic",
+    "label": "Lymphatic / Immune",
+    "icon": "\ud83d\udee1\ufe0f",
+    "color": "#3fb950",
+    "regions": [
+      "lymph-nodes",
+      "spleen",
+      "thymus",
+      "bone-marrow"
+    ]
+  },
+  {
+    "id": "integumentary",
+    "label": "Integumentary",
+    "icon": "\ud83e\uddf4",
+    "color": "#8b949e",
+    "regions": [
+      "skin",
+      "subcutaneous",
+      "dermis"
+    ]
+  }
+];
+
+const state = {
+  files: [], slices: [], currentSlice: 0,
+  ww: 400, wl: 40, zoom: 1, panX: 0, panY: 0,
+  dragging: false, lastX: 0, lastY: 0, tool: 'wl',
+  activeSystem: null, benchmarks: [], viewMode: '2d',
+  pixelData: null, rows: 0, cols: 0, fps: 0, frameCount: 0
+};
+
+const $ = id => document.getElementById(id);
+const canvas = $('viewport-canvas');
+const ctx = canvas.getContext('2d');
+
+function resize() {
+  const c = $('viewport-container');
+  canvas.width = c.clientWidth;
+  canvas.height = c.clientHeight;
+  renderSlice();
+}
+
+function renderBodySystems() {
+  const el = $('body-systems-list');
+  el.innerHTML = BODY_SYSTEMS.map(s =>
+    `<div class="sb-item${state.activeSystem === s.id ? ' active' : ''}" data-sys="${s.id}">` +
+    `<span class="sb-icon">${s.icon}</span>` +
+    `<span class="sb-label">${s.label}</span>` +
+    `<span class="sb-count">${s.regions.length}</span></div>`
+  ).join('');
+  el.querySelectorAll('.sb-item').forEach(item => {
+    item.addEventListener('click', () => selectSystem(item.dataset.sys));
+  });
+}
+
+function selectSystem(id) {
+  state.activeSystem = id;
+  renderBodySystems();
+  const sys = BODY_SYSTEMS.find(s => s.id === id);
+  if (!sys) return;
+  $('active-system-detail').innerHTML =
+    `<div style="margin-bottom:8px"><span style="font-size:20px">${sys.icon}</span> <strong style="color:${sys.color}">${sys.label}</strong></div>` +
+    `<div style="display:flex;flex-wrap:wrap;gap:4px">` +
+    sys.regions.map(r => `<span style="background:rgba(167,139,250,.1);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-size:10px;font-family:var(--font-mono)">${r}</span>`).join('') +
+    `</div>`;
+}
+
+function parseDICOM(arrayBuffer) {
+  const t0 = performance.now();
+  const bytes = new Uint8Array(arrayBuffer);
+  const dv = new DataView(arrayBuffer);
+  const meta = {};
+
+  if (bytes.length > 132 && bytes[128] === 0x44 && bytes[129] === 0x49 && bytes[130] === 0x43 && bytes[131] === 0x4D) {
+    meta.hasPreamble = true;
+  }
+
+  const LONG_VRS = new Set(['OB','OD','OF','OL','OW','SQ','UC','UN','UR','UT']);
+  const VALID_VR = /^[A-Z]{2}$/;
+
+  function isExplicitVR(off) {
+    if (off + 6 > bytes.length) return false;
+    const c0 = bytes[off + 4], c1 = bytes[off + 5];
+    return c0 >= 0x41 && c0 <= 0x5A && c1 >= 0x41 && c1 <= 0x5A;
+  }
+
+  function readTag(offset, forceExplicit) {
+    if (offset + 8 > bytes.length) return null;
+    const group = dv.getUint16(offset, true);
+    const element = dv.getUint16(offset + 2, true);
+
+    const explicit = forceExplicit || isExplicitVR(offset);
+    let vl, dataOffset;
+
+    if (explicit) {
+      const vr = String.fromCharCode(bytes[offset + 4], bytes[offset + 5]);
+      if (LONG_VRS.has(vr)) {
+        if (offset + 12 > bytes.length) return null;
+        vl = dv.getUint32(offset + 8, true);
+        dataOffset = offset + 12;
+      } else {
+        vl = dv.getUint16(offset + 6, true);
+        dataOffset = offset + 8;
+      }
+      return { group, element, vr, vl, offset: dataOffset, explicit: true };
+    } else {
+      vl = dv.getUint32(offset + 4, true);
+      dataOffset = offset + 8;
+      return { group, element, vr: '??', vl, offset: dataOffset, explicit: false };
+    }
+  }
+
+  function readUint16(off) { return dv.getUint16(off, true); }
+  function readString(off, len) {
+    let s = '';
+    for (let i = 0; i < len && off+i < bytes.length; i++) {
+      const c = bytes[off+i];
+      if (c === 0) break;
+      s += String.fromCharCode(c);
+    }
+    return s.trim();
+  }
+
+  let pos = meta.hasPreamble ? 132 : 0;
+  let rows = 0, cols = 0, bits = 16, pixelOffset = -1, pixelLength = 0;
+  let patientName = '', modality = '', studyDesc = '';
+  let windowWidth = 0, windowCenter = 0, pixelSpacing = '';
+  let transferSyntax = '';
+  let forceExplicit = true;
+
+  const maxScan = Math.min(bytes.length, 4194304);
+  while (pos < maxScan) {
+    const tag = readTag(pos, pos < 1024 ? true : forceExplicit);
+    if (!tag) break;
+    if (tag.vl === 0xFFFFFFFF) { pos = tag.offset + 2; continue; }
+    if (tag.vl < 0 || tag.vl > bytes.length) break;
+    const gTag = (tag.group << 16) | tag.element;
+
+    if (gTag === 0x00100010) patientName = readString(tag.offset, Math.min(tag.vl, 64));
+    else if (gTag === 0x00080060) modality = readString(tag.offset, Math.min(tag.vl, 16));
+    else if (gTag === 0x00081030) studyDesc = readString(tag.offset, Math.min(tag.vl, 64));
+    else if (gTag === 0x00020010) {
+      transferSyntax = readString(tag.offset, Math.min(tag.vl, 64));
+      if (transferSyntax === '1.2.840.10008.1.2') forceExplicit = false;
+    }
+    else if (gTag === 0x00280010) rows = readUint16(tag.offset);
+    else if (gTag === 0x00280011) cols = readUint16(tag.offset);
+    else if (gTag === 0x00280100) bits = readUint16(tag.offset);
+    else if (gTag === 0x00281050) windowCenter = parseFloat(readString(tag.offset, Math.min(tag.vl, 16))) || 40;
+    else if (gTag === 0x00281051) windowWidth = parseFloat(readString(tag.offset, Math.min(tag.vl, 16))) || 400;
+    else if (gTag === 0x00280030) pixelSpacing = readString(tag.offset, Math.min(tag.vl, 32));
+    else if (gTag === 0x7FE00010) { pixelOffset = tag.offset; pixelLength = tag.vl; break; }
+
+    pos = tag.offset + (tag.vl > 0 && tag.vl < maxScan ? tag.vl : 2);
+    if (tag.vl % 2 !== 0 && tag.vl > 0 && tag.vl < maxScan) pos++;
+  }
+
+  const decodeMs = performance.now() - t0;
+
+  if (windowWidth === 0) windowWidth = 400;
+  if (windowCenter === 0) windowCenter = 40;
+
+  let pixelData = null;
+  if (pixelOffset >= 0 && rows > 0 && cols > 0) {
+    const expected = rows * cols * (bits <= 8 ? 1 : 2);
+    const available = Math.min(expected, bytes.length - pixelOffset);
+    if (bits <= 8) {
+      pixelData = new Uint8Array(bytes.buffer, pixelOffset, available);
+    } else {
+      pixelData = new Int16Array(bytes.buffer.slice(pixelOffset, pixelOffset + available));
+    }
+  }
+
+  return {
+    patientName, modality, studyDesc, transferSyntax,
+    rows, cols, bits, pixelSpacing,
+    windowWidth, windowCenter,
+    pixelData, decodeMs
+  };
+}
+
+function renderSlice() {
+  if (!state.pixelData || state.rows === 0 || state.cols === 0) return;
+  const t0 = performance.now();
+
+  const w = state.cols, h = state.rows;
+  const imgData = ctx.createImageData(w, h);
+  const data = imgData.data;
+  const pixels = state.pixelData;
+  const ww = state.ww, wl = state.wl;
+  const lo = wl - ww / 2, hi = wl + ww / 2, range = hi - lo;
+
+  for (let i = 0; i < pixels.length && i < w * h; i++) {
+    let v = pixels[i];
+    v = ((v - lo) / range) * 255;
+    v = v < 0 ? 0 : v > 255 ? 255 : v;
+    const idx = i * 4;
+    data[idx] = data[idx+1] = data[idx+2] = v;
+    data[idx+3] = 255;
+  }
+
+  if (!state._tmpCanvas || state._tmpCanvas.width !== w || state._tmpCanvas.height !== h) {
+    state._tmpCanvas = document.createElement('canvas');
+    state._tmpCanvas.width = w;
+    state._tmpCanvas.height = h;
+  }
+  const tmpCtx = state._tmpCanvas.getContext('2d');
+  tmpCtx.putImageData(imgData, 0, 0);
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.translate(canvas.width / 2 + state.panX, canvas.height / 2 + state.panY);
+  ctx.scale(state.zoom, state.zoom);
+  ctx.drawImage(state._tmpCanvas, -w / 2, -h / 2);
+  ctx.restore();
+
+  const renderMs = performance.now() - t0;
+  state.frameCount++;
+
+  $('info-wl').textContent = `W/L: ${Math.round(ww)}/${Math.round(wl)}`;
+  $('sp-render').textContent = renderMs.toFixed(1);
+}
+
+function loadDICOMFile(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const parsed = parseDICOM(e.target.result);
+    if (!parsed.pixelData) {
+      $('info-status').textContent = 'No pixel data found';
+      return;
+    }
+
+    state.pixelData = parsed.pixelData;
+    state.rows = parsed.rows;
+    state.cols = parsed.cols;
+    state.ww = parsed.windowWidth;
+    state.wl = parsed.windowCenter;
+    state.zoom = Math.min(canvas.width / parsed.cols, canvas.height / parsed.rows) * 0.9;
+    state.panX = 0;
+    state.panY = 0;
+    state.slices.push(parsed);
+    state.currentSlice = state.slices.length - 1;
+
+    $('drop-zone').classList.add('has-image');
+    $('info-status').textContent = 'Loaded';
+    $('info-patient').textContent = parsed.patientName || 'Anonymous';
+    $('info-modality').textContent = parsed.modality || '—';
+    $('info-size').textContent = `${parsed.cols}×${parsed.rows}`;
+    $('sp-decode').textContent = parsed.decodeMs.toFixed(1);
+
+    let mem = '—';
+    if (performance.memory) mem = (performance.memory.usedJSHeapSize / 1048576).toFixed(0);
+    else if (performance.measureUserAgentSpecificMemory) {
+      performance.measureUserAgentSpecificMemory().then(r => {
+        $('sp-mem').textContent = (r.bytes / 1048576).toFixed(0);
+      }).catch(() => {});
+    }
+    $('sp-mem').textContent = mem;
+
+    $('meta-patient').textContent = parsed.patientName || '—';
+    $('meta-study').textContent = parsed.studyDesc || '—';
+    $('meta-modality').textContent = parsed.modality || '—';
+    $('meta-dims').textContent = `${parsed.cols} × ${parsed.rows}`;
+    $('meta-spacing').textContent = parsed.pixelSpacing || '—';
+    $('meta-bits').textContent = parsed.bits;
+    $('meta-syntax').textContent = parsed.transferSyntax || '—';
+    $('meta-window').textContent = `${Math.round(parsed.windowWidth)} / ${Math.round(parsed.windowCenter)}`;
+    $('st-slices').textContent = state.slices.length + ' slice' + (state.slices.length !== 1 ? 's' : '');
+
+    renderSlice();
+    addBenchEntry(parsed);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function addBenchEntry(parsed) {
+  const entry = {
+    ts: Date.now(), file: state.files[state.files.length - 1]?.name || 'unknown',
+    decodeMs: parsed.decodeMs, dims: `${parsed.cols}×${parsed.rows}`,
+    bits: parsed.bits, modality: parsed.modality
+  };
+  state.benchmarks.push(entry);
+  const log = $('bench-log');
+  const d = document.createElement('div');
+  d.style.cssText = 'padding:3px 0;border-bottom:1px solid var(--border)';
+  d.innerHTML = `<span style="color:var(--green)">✓</span> ${entry.dims} ${entry.modality} — decode: <span style="color:var(--purple)">${entry.decodeMs.toFixed(1)}ms</span>`;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+
+let fpsInterval;
+function startFPSCounter() {
+  if (fpsInterval) return;
+  let last = performance.now();
+  let frames = 0;
+  fpsInterval = setInterval(() => {
+    const now = performance.now();
+    const elapsed = now - last;
+    if (elapsed > 0) {
+      state.fps = Math.round((state.frameCount - frames) / (elapsed / 1000));
+      $('info-fps').textContent = state.fps + ' fps';
+      $('sp-fps').textContent = state.fps;
+    }
+    frames = state.frameCount;
+    last = now;
+  }, 1000);
+}
+
+canvas.addEventListener('mousedown', e => {
+  state.dragging = true;
+  state.lastX = e.clientX;
+  state.lastY = e.clientY;
+});
+canvas.addEventListener('mousemove', e => {
+  if (!state.dragging) return;
+  const dx = e.clientX - state.lastX, dy = e.clientY - state.lastY;
+  if (e.buttons === 1 && !e.shiftKey) {
+    state.ww = Math.max(1, state.ww + dx);
+    state.wl += dy;
+    $('info-wl').textContent = `W/L: ${Math.round(state.ww)}/${Math.round(state.wl)}`;
+  } else {
+    state.panX += dx;
+    state.panY += dy;
+  }
+  state.lastX = e.clientX;
+  state.lastY = e.clientY;
+  renderSlice();
+});
+canvas.addEventListener('mouseup', () => { state.dragging = false; });
+canvas.addEventListener('mouseleave', () => { state.dragging = false; });
+
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  state.dragging = true;
+  state.lastX = t.clientX;
+  state.lastY = t.clientY;
+  if (e.touches.length === 2) {
+    state._pinchDist = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY);
+  }
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (e.touches.length === 2 && state._pinchDist) {
+    const dist = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY);
+    state.zoom *= dist / state._pinchDist;
+    state.zoom = Math.max(0.1, Math.min(20, state.zoom));
+    state._pinchDist = dist;
+    renderSlice();
+    return;
+  }
+  if (!state.dragging || !e.touches[0]) return;
+  const t = e.touches[0];
+  const dx = t.clientX - state.lastX, dy = t.clientY - state.lastY;
+  state.ww = Math.max(1, state.ww + dx);
+  state.wl += dy;
+  $('info-wl').textContent = `W/L: ${Math.round(state.ww)}/${Math.round(state.wl)}`;
+  state.lastX = t.clientX;
+  state.lastY = t.clientY;
+  renderSlice();
+}, { passive: false });
+canvas.addEventListener('touchend', () => { state.dragging = false; state._pinchDist = null; });
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  if (e.ctrlKey || e.metaKey) {
+    state.zoom *= e.deltaY > 0 ? 0.9 : 1.1;
+    state.zoom = Math.max(0.1, Math.min(20, state.zoom));
+  } else if (state.slices.length > 1) {
+    state.currentSlice += e.deltaY > 0 ? 1 : -1;
+    state.currentSlice = Math.max(0, Math.min(state.slices.length - 1, state.currentSlice));
+    const s = state.slices[state.currentSlice];
+    state.pixelData = s.pixelData;
+    state.rows = s.rows;
+    state.cols = s.cols;
+  }
+  renderSlice();
+}, { passive: false });
+
+const dropZone = $('drop-zone');
+const dropBorder = $('drop-border');
+['dragenter', 'dragover'].forEach(ev => {
+  dropZone.addEventListener(ev, e => { e.preventDefault(); dropBorder.classList.add('dragover'); });
+});
+['dragleave', 'drop'].forEach(ev => {
+  dropZone.addEventListener(ev, () => { dropBorder.classList.remove('dragover'); });
+});
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  const files = [...e.dataTransfer.files].filter(f => f.name.match(/\.(dcm|dicom|DCM)$/i) || !f.name.includes('.') || f.size > 10000);
+  if (files.length === 0) return;
+  $('info-status').textContent = `Loading ${files.length} file(s)…`;
+  state.files = files;
+  $('st-series').textContent = files.length + ' file' + (files.length !== 1 ? 's' : '');
+  files.forEach(f => loadDICOMFile(f));
+  startFPSCounter();
+});
+
+$('btn-browse').addEventListener('click', () => $('file-input').click());
+$('file-input').addEventListener('change', e => {
+  const files = [...e.target.files];
+  if (files.length === 0) return;
+  state.files = files;
+  $('info-status').textContent = `Loading ${files.length} file(s)…`;
+  $('st-series').textContent = files.length + ' file' + (files.length !== 1 ? 's' : '');
+  files.forEach(f => loadDICOMFile(f));
+  startFPSCounter();
+});
+
+document.querySelectorAll('[data-view]').forEach(b => {
+  b.addEventListener('click', () => {
+    document.querySelectorAll('[data-view]').forEach(b2 => b2.classList.remove('active'));
+    b.classList.add('active');
+    state.viewMode = b.dataset.view;
+    $('st-mode').textContent = b.dataset.view;
+    $('st-engine').textContent = b.dataset.view === '3d' ? 'webgl' : 'canvas';
+  });
+});
+
+$('btn-bench').addEventListener('click', () => {
+  if (!state.pixelData) { $('info-status').textContent = 'Load a DICOM first'; return; }
+  $('info-status').textContent = 'Benchmarking…';
+  const iterations = 100;
+  const t0 = performance.now();
+  for (let i = 0; i < iterations; i++) renderSlice();
+  const total = performance.now() - t0;
+  const avg = total / iterations;
+  $('sp-render').textContent = avg.toFixed(2);
+  $('sp-fps').textContent = Math.round(1000 / avg);
+  const d = document.createElement('div');
+  d.style.cssText = 'padding:3px 0;border-bottom:1px solid var(--border)';
+  d.innerHTML = `<span style="color:var(--gold)">⚡</span> ${iterations}× render: <span style="color:var(--purple)">${avg.toFixed(2)}ms/frame</span> (${Math.round(1000/avg)} fps)`;
+  $('bench-log').appendChild(d);
+  $('info-status').textContent = `Bench: ${avg.toFixed(2)}ms/frame`;
+});
+
+$('btn-theme').addEventListener('click', () => document.documentElement.classList.toggle('light'));
+
+window.addEventListener('resize', resize);
+resize();
+renderBodySystems();
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+var QP = window.QuantumPrefixes;
+if (QP) {
+  QP.broadcastState('qbit-medical', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {} });
+  QP.onStateChange(function(s) {});
+  QP.requestStateSync();
+}
+// ===== END QUANTUM PREFIX LIVE SYNC =====
+
+// DAC: classify DICOM metadata through prefix codec on load
+if (window.qbitCodec && state.dicomData.length > 0) {
+  var meta = state.dicomData.map(function(d) { return d.patientName + ' ' + d.studyDesc; }).join('\n');
+  window.qbitCodec.encode(meta, 'auto', 'qbit-medical');
+}
+})();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}</script>
+</body>
+</html>

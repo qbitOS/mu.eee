@@ -1,0 +1,1173 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+<link rel="apple-touch-icon" sizes="192x192" href="../icons/icon-192.png">
+<title>uvspeed — Sponsor</title>
+<style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html {
+        scroll-behavior: smooth;
+        scrollbar-width: thin;
+        scrollbar-color: #30363d #0d1117;
+        -webkit-text-size-adjust: 100%;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    body {
+        background: var(--qp-bg, #0d1117); color: var(--qp-text, #e6edf3);
+        font-family: -apple-system, 'SF Pro Display', BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        line-height: 1.6;
+        overflow-x: hidden;
+    }
+    a { color: #58a6ff; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0d1117; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 3px; }
+
+    /* ── Rainbow bars ── */
+    .rainbow { display: flex; flex-shrink: 0; height: 3px; width: 100%; }
+    .rainbow span { flex: 1; }
+    .rainbow .r1 { background: #ff3838; }
+    .rainbow .r2 { background: #ff8c38; }
+    .rainbow .r3 { background: #ffe138; }
+    .rainbow .r4 { background: #3fb950; }
+    .rainbow .r5 { background: #38a5ff; }
+    .rainbow .r6 { background: #bc8cff; }
+    .rainbow-glow {
+        height: 60px; width: 100%;
+        background: linear-gradient(180deg,
+            rgba(255,56,56,0.08) 0%,
+            rgba(255,140,56,0.06) 16%,
+            rgba(255,225,56,0.05) 33%,
+            rgba(63,185,80,0.04) 50%,
+            rgba(56,165,255,0.03) 66%,
+            rgba(188,140,255,0.02) 83%,
+            transparent 100%
+        );
+    }
+
+    /* ── Hero ── */
+    .hero {
+        position: relative;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        min-height: 100vh; padding: 80px 24px 60px;
+        text-align: center; overflow: hidden;
+    }
+    #hero-stars { position: absolute; inset: 0; z-index: 0; }
+    .hero-content { position: relative; z-index: 1; max-width: 720px; }
+    .hero-badge {
+        display: inline-block;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 0.6875rem; color: #8b949e;
+        border: 1px solid #30363d; border-radius: 999px;
+        padding: 4px 14px; margin-bottom: 24px;
+        background: rgba(22,27,34,0.8);
+        backdrop-filter: blur(8px);
+    }
+    .hero-badge .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #3fb950; margin-right: 6px; vertical-align: middle; }
+    .hero h1 {
+        font-family: 'SF Pro Display', -apple-system, sans-serif;
+        font-size: clamp(2.5rem, 6vw, 4.5rem);
+        font-weight: 800; letter-spacing: -2px;
+        line-height: 1.05; margin-bottom: 16px;
+    }
+    .hero h1 .gradient {
+        background: linear-gradient(135deg, #ff3838 0%, #ff8c38 20%, #ffe138 40%, #3fb950 55%, #38a5ff 75%, #bc8cff 100%);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .hero p {
+        font-size: 1.125rem; color: #8b949e;
+        max-width: 540px; margin: 0 auto 32px;
+    }
+    .hero-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 12px 28px; border-radius: 8px; border: none;
+        font-size: 0.9375rem; font-weight: 600; cursor: pointer;
+        text-decoration: none; transition: all 0.2s;
+        font-family: inherit;
+    }
+    .btn-primary {
+        background: linear-gradient(135deg, #ff3838, #ff8c38, #ffe138, #3fb950, #38a5ff, #bc8cff);
+        background-size: 300% 300%;
+        animation: gradientShift 4s ease infinite;
+        color: #0d1117;
+    }
+    .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(88,166,255,0.3); text-decoration: none; }
+    .btn-secondary {
+        background: rgba(22,27,34,0.8); color: #e6edf3;
+        border: 1px solid #30363d;
+        backdrop-filter: blur(8px);
+    }
+    .btn-secondary:hover { background: #21262d; border-color: #484f58; text-decoration: none; }
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+
+    /* ── Stats ribbon ── */
+    .stats-ribbon {
+        display: flex; justify-content: center; gap: 40px;
+        padding: 32px 24px;
+        border-top: 1px solid #21262d;
+        border-bottom: 1px solid #21262d;
+        background: #161b22;
+        flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat .number {
+        font-family: 'SF Mono', monospace;
+        font-size: 2rem; font-weight: 800;
+        background: linear-gradient(135deg, #58a6ff, #bc8cff);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .stat .label { font-size: 0.75rem; color: #8b949e; text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
+
+    /* ── Section ── */
+    section {
+        max-width: 1100px; margin: 0 auto;
+        padding: 80px 24px;
+    }
+    section h2 {
+        font-size: 2rem; font-weight: 700; letter-spacing: -0.5px;
+        margin-bottom: 8px;
+    }
+    section .section-sub {
+        color: #8b949e; font-size: 1rem; margin-bottom: 48px;
+        max-width: 600px;
+    }
+
+    /* ── Tool Grid ── */
+    .tool-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 16px;
+    }
+    .tool-card {
+        background: #161b22; border: 1px solid #21262d; border-radius: 12px;
+        padding: 24px; transition: all 0.25s;
+        position: relative; overflow: hidden;
+    }
+    .tool-card:hover {
+        border-color: #30363d;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .tool-card .tool-accent {
+        position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    }
+    .tool-card h3 {
+        font-family: 'SF Mono', monospace; font-size: 1rem; font-weight: 700;
+        margin-bottom: 6px; display: flex; align-items: center; gap: 8px;
+    }
+    .tool-card h3 .icon { font-size: 1.25rem; }
+    .tool-card p { color: #8b949e; font-size: 0.8125rem; line-height: 1.5; }
+    .tool-card .tag {
+        display: inline-block; font-size: 0.625rem;
+        font-family: 'SF Mono', monospace;
+        padding: 2px 8px; border-radius: 999px;
+        background: rgba(88,166,255,0.1); color: #58a6ff;
+        margin-top: 12px;
+    }
+
+    /* ── Tiers ── */
+    .tiers {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+    }
+    .tier-card {
+        background: #161b22; border: 1px solid #21262d; border-radius: 12px;
+        padding: 28px 24px; text-align: center;
+        transition: all 0.25s; position: relative;
+    }
+    .tier-card:hover {
+        border-color: #30363d;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .tier-card.featured {
+        border-color: #58a6ff;
+        background: linear-gradient(180deg, rgba(88,166,255,0.05) 0%, #161b22 100%);
+    }
+    .tier-card.featured::before {
+        content: 'Popular';
+        position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+        font-size: 0.625rem; font-weight: 700; text-transform: uppercase;
+        background: #58a6ff; color: #0d1117;
+        padding: 2px 12px; border-radius: 999px;
+        letter-spacing: 0.5px;
+    }
+    .tier-card .tier-name {
+        font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px;
+        color: #8b949e; margin-bottom: 8px;
+    }
+    .tier-card .tier-price {
+        font-family: 'SF Mono', monospace;
+        font-size: 2rem; font-weight: 800; color: #e6edf3;
+        margin-bottom: 4px;
+    }
+    .tier-card .tier-price .currency { font-size: 1rem; color: #8b949e; vertical-align: super; }
+    .tier-card .tier-price .period { font-size: 0.75rem; color: #484f58; font-weight: 400; }
+    .tier-card .tier-perks {
+        list-style: none; margin-top: 16px; text-align: left;
+        font-size: 0.8125rem; color: #8b949e;
+    }
+    .tier-card .tier-perks li {
+        padding: 4px 0;
+    }
+    .tier-card .tier-perks li::before {
+        content: '\2713'; color: #3fb950; margin-right: 8px; font-weight: 700;
+    }
+    .tier-card .btn { width: 100%; justify-content: center; margin-top: 20px; padding: 10px; font-size: 0.8125rem; }
+
+    /* ── Prefix showcase ── */
+    .prefix-demo {
+        background: #161b22; border: 1px solid #21262d; border-radius: 12px;
+        padding: 32px; overflow-x: auto;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 0.8125rem; line-height: 2;
+    }
+    .prefix-demo .line { display: flex; gap: 12px; }
+    .prefix-demo .gutter {
+        width: 28px; text-align: right; flex-shrink: 0;
+        font-weight: 700;
+    }
+    .prefix-demo .code { color: #8b949e; }
+    .prefix-demo .code .kw { color: #ff7b72; }
+    .prefix-demo .code .fn { color: #d2a8ff; }
+    .prefix-demo .code .str { color: #a5d6ff; }
+    .prefix-demo .code .cm { color: #484f58; }
+    .prefix-demo .code .num { color: #79c0ff; }
+
+    /* ── Fund allocation ── */
+    .alloc-bars { max-width: 500px; }
+    .alloc-row {
+        display: flex; align-items: center; gap: 12px;
+        margin-bottom: 14px;
+    }
+    .alloc-row .alloc-label { width: 140px; font-size: 0.8125rem; color: #8b949e; flex-shrink: 0; }
+    .alloc-row .alloc-bar {
+        flex: 1; height: 8px; background: #21262d; border-radius: 4px;
+        overflow: hidden;
+    }
+    .alloc-row .alloc-bar .fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+    .alloc-row .alloc-pct {
+        width: 40px; text-align: right;
+        font-family: 'SF Mono', monospace; font-size: 0.75rem; color: #8b949e;
+    }
+
+    /* ── Grants ── */
+    .grant-list { display: flex; flex-direction: column; gap: 12px; }
+    .grant-item {
+        display: flex; align-items: center; gap: 16px;
+        background: #161b22; border: 1px solid #21262d; border-radius: 10px;
+        padding: 16px 20px; transition: border-color 0.2s;
+    }
+    .grant-item:hover { border-color: #30363d; }
+    .grant-item .grant-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.25rem; flex-shrink: 0;
+    }
+    .grant-item .grant-info { flex: 1; }
+    .grant-item .grant-info h4 { font-size: 0.875rem; font-weight: 600; margin-bottom: 2px; }
+    .grant-item .grant-info p { font-size: 0.75rem; color: #8b949e; }
+    .grant-item .grant-amount {
+        font-family: 'SF Mono', monospace; font-size: 0.8125rem;
+        color: #3fb950; font-weight: 600; white-space: nowrap;
+    }
+
+    /* ── CTA ── */
+    .cta {
+        text-align: center; padding: 80px 24px;
+        position: relative; overflow: hidden;
+    }
+    #cta-stars { position: absolute; inset: 0; z-index: 0; }
+    .cta-content { position: relative; z-index: 1; }
+    .cta h2 {
+        font-size: 2.5rem; font-weight: 800; letter-spacing: -1px;
+        margin-bottom: 12px;
+    }
+    .cta p { color: #8b949e; font-size: 1rem; margin-bottom: 32px; }
+    .payment-links {
+        display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+        margin-top: 24px;
+    }
+    .payment-links a {
+        font-size: 0.8125rem; color: #8b949e; padding: 6px 16px;
+        border: 1px solid #21262d; border-radius: 6px;
+        transition: all 0.2s;
+    }
+    .payment-links a:hover { color: #e6edf3; border-color: #484f58; background: #161b22; text-decoration: none; }
+
+    /* ── Footer ── */
+    .footer {
+        text-align: center; padding: 24px;
+        font-size: 0.6875rem; color: #484f58;
+        border-top: 1px solid #21262d;
+        font-family: 'SF Mono', monospace;
+    }
+
+    /* ── Character divider ── */
+    .char-divider {
+        position: relative; height: 80px;
+        overflow: visible;
+        background: #161b22;
+        border-top: 1px solid #21262d;
+        border-bottom: 1px solid #21262d;
+    }
+    .char-divider canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    /* ── Orb nav showcase ── */
+    .orb-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px; max-width: 900px;
+    }
+    .orb-card {
+        background: #161b22; border: 1px solid #21262d; border-radius: 12px;
+        padding: 28px 24px; text-align: center;
+        transition: all 0.3s; position: relative;
+    }
+    .orb-card:hover {
+        border-color: #30363d; transform: translateY(-3px);
+        box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+    }
+    .orb-card .orb-visual {
+        width: 64px; height: 64px; margin: 0 auto 16px;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 1.75rem;
+    }
+    .orb-card h4 { font-size: 0.9375rem; font-weight: 700; margin-bottom: 6px; }
+    .orb-card p { font-size: 0.75rem; color: #8b949e; line-height: 1.5; }
+
+    /* ── Rubik's cube ── */
+    .rubik-demo { position: relative; perspective: 600px; width: 120px; height: 120px; margin: 0 auto; }
+    .rubik-cube {
+        width: 100%; height: 100%; position: relative;
+        transform-style: preserve-3d;
+        animation: rubikSpin 12s ease-in-out infinite;
+    }
+    .rubik-face {
+        position: absolute; width: 120px; height: 120px;
+        display: grid; grid-template-columns: repeat(3,1fr); gap: 2px;
+        padding: 2px; background: rgba(13,17,23,0.6);
+        border: 1px solid #30363d; border-radius: 4px;
+    }
+    .rubik-face span {
+        border-radius: 2px; display: flex; align-items: center; justify-content: center;
+        font-family: 'SF Mono', monospace; font-size: 7px; font-weight: 700;
+        color: rgba(0,0,0,0.5);
+    }
+    .rubik-face.front  { transform: translateZ(60px); }
+    .rubik-face.back   { transform: rotateY(180deg) translateZ(60px); }
+    .rubik-face.right  { transform: rotateY(90deg) translateZ(60px); }
+    .rubik-face.left   { transform: rotateY(-90deg) translateZ(60px); }
+    .rubik-face.top    { transform: rotateX(90deg) translateZ(60px); }
+    .rubik-face.bottom { transform: rotateX(-90deg) translateZ(60px); }
+    @keyframes rubikSpin {
+        0%   { transform: rotateX(-15deg) rotateY(0deg); }
+        25%  { transform: rotateX(-20deg) rotateY(90deg); }
+        50%  { transform: rotateX(-10deg) rotateY(180deg); }
+        75%  { transform: rotateX(-25deg) rotateY(270deg); }
+        100% { transform: rotateX(-15deg) rotateY(360deg); }
+    }
+
+    /* ── Deep dive cards ── */
+    .deep-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 20px;
+    }
+    .deep-card {
+        background: #161b22; border: 1px solid #21262d; border-radius: 12px;
+        padding: 28px; transition: all 0.25s;
+    }
+    .deep-card:hover {
+        border-color: #30363d; transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .deep-card h4 {
+        font-size: 0.9375rem; font-weight: 700; margin-bottom: 8px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .deep-card p { font-size: 0.8125rem; color: #8b949e; line-height: 1.6; }
+    .deep-card .example {
+        margin-top: 12px; padding: 10px 14px;
+        background: #0d1117; border: 1px solid #21262d; border-radius: 6px;
+        font-family: 'SF Mono', monospace; font-size: 0.6875rem; color: #8b949e;
+        line-height: 1.8; overflow-x: auto;
+    }
+    .deep-card .example .g { font-weight: 700; margin-right: 8px; }
+
+    /* ── Animated elements ── */
+    .fade-up {
+        opacity: 0; transform: translateY(20px);
+        transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-up.visible { opacity: 1; transform: translateY(0); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+        .hero h1 { font-size: 2rem; letter-spacing: -1px; }
+        .hero p { font-size: 0.9375rem; }
+        .stats-ribbon { gap: 20px; }
+        .stat .number { font-size: 1.5rem; }
+        section { padding: 60px 16px; }
+        .tool-grid { grid-template-columns: 1fr; }
+        .tiers { grid-template-columns: 1fr; }
+        .orb-grid { grid-template-columns: 1fr; }
+        .deep-grid { grid-template-columns: 1fr; }
+    }
+</style>
+</head>
+<body>
+
+<!-- ━━━ Top Rainbow ━━━ -->
+<div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+<div class="rainbow-glow"></div>
+
+<!-- ━━━ Hero ━━━ -->
+<div class="hero">
+    <canvas id="hero-stars"></canvas>
+    <div class="hero-content">
+        <div class="hero-badge"><span class="dot"></span> Open Source &middot; MIT License</div>
+        <h1>
+            Fund the future of<br>
+            <span class="gradient">beyondBINARY</span>
+        </h1>
+        <div style="font-family:'SF Mono','Fira Code',monospace;font-size:clamp(0.75rem,1.8vw,1rem);color:#8b949e;margin-bottom:8px;letter-spacing:0.5px;">
+            Quantum beyondBINARY notepad
+        </div>
+        <div style="font-family:'SF Mono','Fira Code',monospace;font-size:clamp(0.6875rem,1.5vw,0.875rem);color:#c9d1d9;margin-bottom:6px;">
+            {<span style="color:#ff3838">+1</span>, <span style="color:#58a6ff">1</span>, <span style="color:#f0883e">-1</span>, <span style="color:#ffe138">+0</span>, <span style="color:#569cd6">0</span>, <span style="color:#484f58">-0</span>, <span style="color:#bc8cff">+n</span>, <span style="color:#3fb950">n</span>, <span style="color:#da3633">-n</span>}
+        </div>
+        <div style="display:flex;height:3px;width:min(280px,60%);margin:0 auto 12px;border-radius:2px;overflow:hidden;">
+            <span style="flex:1;background:#ff3838"></span><span style="flex:1;background:#ff8c38"></span><span style="flex:1;background:#ffe138"></span><span style="flex:1;background:#3fb950"></span><span style="flex:1;background:#38a5ff"></span><span style="flex:1;background:#bc8cff"></span>
+        </div>
+        <p style="font-size:clamp(0.75rem,1.4vw,0.875rem);color:#6e7681;margin-bottom:24px;letter-spacing:0.3px;font-family:'SF Mono','Fira Code',monospace;">
+            dimensional code addressing &middot; charm visual layer
+        </p>
+        <p>
+            uvspeed replaces binary {0, 1} with an 11-symbol prefix system (9 core + 2 extended) for structurally
+            addressing code in 20+ languages. 24 tools. Zero install. One developer.
+        </p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/sponsors/fornevercollective" target="_blank">
+                &#x2764;&#xFE0F; Sponsor on GitHub
+            </a>
+            <a class="btn btn-secondary" href="https://github.com/qbitOS/uvspeed" target="_blank">
+                View Repository
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- ━━━ Character Divider (Numsy + Freya bouncing, Nyan cats flying) ━━━ -->
+<div class="char-divider">
+    <canvas id="char-canvas"></canvas>
+</div>
+
+<!-- ━━━ Stats Ribbon ━━━ -->
+<div class="stats-ribbon">
+    <div class="stat"><div class="number">16</div><div class="label">Web Tools</div></div>
+    <div class="stat"><div class="number">20+</div><div class="label">Languages</div></div>
+    <div class="stat"><div class="number">9</div><div class="label">Prefix Symbols</div></div>
+    <div class="stat"><div class="number">0</div><div class="label">Install Required</div></div>
+    <div class="stat"><div class="number">1</div><div class="label">Developer</div></div>
+</div>
+
+<!-- ━━━ Tools Showcase ━━━ -->
+<section>
+    <h2 class="fade-up">What you're funding</h2>
+    <p class="section-sub fade-up">Every tool ships as a standalone PWA — no npm, no pip, no build step. Just open and go.</p>
+
+    <div class="tool-grid">
+        <div class="tool-card fade-up">
+            <div class="tool-accent" style="background:linear-gradient(90deg,#ff3838,#ff8c38)"></div>
+            <h3><span class="icon">&#x1F4BB;</span> hexterm</h3>
+            <p>Full terminal emulator with virtual filesystem, 50+ device presets (iPhone through Quest VR), quantum prefix gutter on every output line, multi-stream feed management, kbatch keyboard sync, built-in <code>charm</code>/<code>chartgpu</code>/<code>grepai</code> tools, and real-time system benchmarks. Runs as a PWA on any phone or as a native Tauri v2 macOS desktop app with native menus, custom title bars, and starfield chrome.</p>
+            <span class="tag">terminal &middot; tauri &middot; pwa &middot; 50+ devices</span>
+        </div>
+        <div class="tool-card fade-up">
+            <div class="tool-accent" style="background:linear-gradient(90deg,#ff8c38,#ffe138)"></div>
+            <h3><span class="icon">&#x1F4F9;</span> hexcast</h3>
+            <p>Stream your camera to any terminal over WebSocket — truecolor ANSI half-block rendering at 15+ FPS. Four encode modes (raw, quarter, hex, ascii), front/back camera swap, LAN discovery via mDNS, latency benchmarking, and a lightweight Pillow fallback for iSH/Alpine. Works as a Python CLI (<code>pip install uvspeed-quantum</code>) or from any browser via the hexcast PWA sender.</p>
+            <span class="tag">video &middot; cli &middot; websocket &middot; ansi</span>
+        </div>
+        <div class="tool-card fade-up">
+            <div class="tool-accent" style="background:linear-gradient(90deg,#ffe138,#3fb950)"></div>
+            <h3><span class="icon">&#x2328;&#xFE0F;</span> kbatch</h3>
+            <p>Every keystroke becomes data. Thermal heatmap with rainbow contrails, geometric pattern detection, key-frequency sparklines, 3D language model fingerprinting, and real-time WebSocket sync so multiple phones share one keyboard visualization. The heatmap canvas renders at 60fps with per-key glow, fade trails, and configurable QWERTY layouts.</p>
+            <span class="tag">keyboard &middot; heatmap &middot; sync &middot; 60fps</span>
+        </div>
+        <div class="tool-card fade-up">
+            <div class="tool-accent" style="background:linear-gradient(90deg,#3fb950,#38a5ff)"></div>
+            <h3><span class="icon">&#x1F4DD;</span> quantum notepad</h3>
+            <p>The flagship editor. Every line gets a color-coded prefix in the gutter — imports glow purple, classes glow red, loops glow green. Mermaid diagram rendering inline, a convert timeline bar for version navigation, 3D spatial code navigation, stream history for undo trees, and cells for mixing code with rich output. Supports Python, JS, Rust, Go, Swift, Kotlin, and 14 more languages out of the box.</p>
+            <span class="tag">editor &middot; prefix gutter &middot; mermaid &middot; 17+ languages</span>
+        </div>
+        <div class="tool-card fade-up">
+            <div class="tool-accent" style="background:linear-gradient(90deg,#38a5ff,#bc8cff)"></div>
+            <h3><span class="icon">&#x1F3AE;</span> brotherNumsy &amp; Freya</h3>
+            <p>An endless runner where Numsy — the golden-robed code monk — dodges binary {0,1} enemies while Freya the precision companion measures your journey from Planck length to Parsec. Collect quantum prefix tokens, trigger Freya's conversion beam, and train the AI via <code>window.numsyAI</code>. Nyan cats streak across the starfield background leaving rainbow and golden trails.</p>
+            <span class="tag">game &middot; pixel art &middot; freyaunits &middot; ai api</span>
+        </div>
+        <div class="tool-card fade-up">
+            <div class="tool-accent" style="background:linear-gradient(90deg,#bc8cff,#ff3838)"></div>
+            <h3><span class="icon">&#x1F4CA;</span> grid + feed + launcher</h3>
+            <p>Multi-stream architecture: the <b>grid</b> renders 2x2/3x3/4x4 live video feeds on a single canvas — click any cell to pop it out. <b>Feed</b> windows carry video, audio waveform, and speech-to-text transcript with phrase-watch alerts. The <b>launcher</b> ties it together with a command console for sending stop/reload/mute to any device. All communicate via BroadcastChannel.</p>
+            <span class="tag">multi-stream &middot; grid &middot; speech-to-text &middot; broadcast</span>
+        </div>
+        <div class="tool-card fade-up">
+            <div class="tool-accent" style="background:linear-gradient(90deg,#ff3838,#3fb950)"></div>
+            <h3><span class="icon">&#x1F680;</span> blackwell + archflow + jawta</h3>
+            <p><b>Blackwell</b>: NVIDIA data visualization with SM heatmaps and deploy targets for DGX Spark, Supermicro, Lambda. <b>archflow</b>: n8n-style drag-and-drop architecture node visualizer for mapping system designs. <b>jawta-audio</b>: Dolby Atmos spatial audio playground with Strudel live-coding — write music in real time.</p>
+            <span class="tag">nvidia &middot; architecture &middot; spatial audio &middot; live code</span>
+        </div>
+        <div class="tool-card fade-up">
+            <div class="tool-accent" style="background:linear-gradient(90deg,#3fb950,#bc8cff)"></div>
+            <h3><span class="icon">&#x1F30D;</span> questcast + research + dashboard + qa</h3>
+            <p><b>questcast</b>: Meta Quest broadcast and XR research tools. <b>research-lab</b>: experimental interface for testing new prefix algorithms. <b>github-dashboard</b>: project health tracker with contribution graphs, dependency audits, traffic charts, funding checklist, and release pipeline visualization. <b>qa</b>: stage-based walkthrough tool for testing all 24 apps with device simulation, annotations, and change order export.</p>
+            <span class="tag">xr &middot; meta quest &middot; research &middot; health dashboard &middot; qa</span>
+        </div>
+        <div class="tool-card fade-up">
+            <div class="tool-accent" style="background:linear-gradient(90deg,#a855f7,#06b6d4)"></div>
+            <h3><span class="icon">&#x1F30C;</span> history + search + freya</h3>
+            <p><b>history</b>: Universal timeline knowledge graph — ZPF to cosmic scale, block canvas, AI persona builder, 17 search connectors. <b>search</b>: Mobile-first universal search PWA with document viewer and tone analysis. <b>freya</b>: Galactic unit converter, scientific calculator, celestial charts, quantum geo navigation — 70+ units across 9 categories.</p>
+            <span class="tag">timeline &middot; knowledge graph &middot; search &middot; units &middot; celestial</span>
+        </div>
+        <div class="tool-card fade-up">
+            <div class="tool-accent" style="background:linear-gradient(90deg,#f97316,#ec4899)"></div>
+            <h3><span class="icon">&#x1F4A1;</span> 121 knowledge capsules</h3>
+            <p>10 category arrays spanning 23 project portfolios (ClayDayzZ, HaloID, Mars Boarding Pass, OP-1 Field, GeoSonic, FontLab, and more), 6 compliance frameworks (HIPAA, OpenSSF, SPDX, SOC2, CMMI, OSINT), acoustics, stroke analysis, ancient scripts, and 20+ language grammars. Every capsule feeds the StenoEngine ML benchmark.</p>
+            <span class="tag">capsules &middot; compliance &middot; portfolio &middot; ML &middot; steno</span>
+        </div>
+    </div>
+</section>
+
+<div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+
+<!-- ━━━ Gutter → Orb → Rubik's Section ━━━ -->
+<section>
+    <h2 class="fade-up">From gutter to galaxy</h2>
+    <p class="section-sub fade-up">The prefix system isn't just colors in a margin — it's a new way to <em>navigate</em>, <em>layer</em>, and <em>understand</em> code at any scale.</p>
+
+    <div class="orb-grid fade-up" style="margin-bottom:60px;">
+        <div class="orb-card">
+            <div class="orb-visual" style="background:linear-gradient(135deg,rgba(255,56,56,0.15),rgba(255,140,56,0.15));border:1px solid #30363d;">
+                <span style="font-size:1.5rem;">&#x2503;</span>
+            </div>
+            <h4>Quantum Gutter</h4>
+            <p>Every line of output gets a colored prefix in the left margin. At a glance you see the <em>shape</em> of code — a wall of purple means imports, a block of green means loops, red streaks mean I/O. It's like a heat signature for your codebase.</p>
+        </div>
+        <div class="orb-card">
+            <div class="orb-visual" style="background:radial-gradient(circle,rgba(88,166,255,0.2),rgba(188,140,255,0.1));border:1px solid #30363d;">
+                <span style="font-size:1.5rem;">&#x1F52E;</span>
+            </div>
+            <h4>Orb Navigation</h4>
+            <p>Zoom out from the gutter and prefixes become a 3D constellation. Each symbol is a point in 9-dimensional space — click an orb to jump to that code region. Navigate by <em>structure</em> instead of line numbers. Find all I/O in one click.</p>
+        </div>
+        <div class="orb-card">
+            <div class="orb-visual" style="background:linear-gradient(135deg,rgba(63,185,80,0.15),rgba(255,225,56,0.15));border:1px solid #30363d;">
+                <span style="font-size:1.5rem;">&#x1F9E9;</span>
+            </div>
+            <h4>Rubik's Layering</h4>
+            <p>The core 9 symbols map to 9 faces of a 3x3 cube. Rotate a face to isolate a code layer — show only declarations, or only I/O, or only control flow. Twist the cube to refactor: move imports before classes, group returns together.</p>
+        </div>
+    </div>
+
+    <!-- Rubik's Cube + Code Side-by-Side -->
+    <div style="display:flex;gap:40px;align-items:center;justify-content:center;flex-wrap:wrap;margin-bottom:60px;" class="fade-up">
+        <div class="rubik-demo">
+            <div class="rubik-cube">
+                <div class="rubik-face front">
+                    <span style="background:#ff3838">+1</span><span style="background:#58a6ff">1</span><span style="background:#ff8c38">-1</span>
+                    <span style="background:#ffe138">+0</span><span style="background:#8b949e">0</span><span style="background:#484f58">-0</span>
+                    <span style="background:#bc8cff">+n</span><span style="background:#3fb950">n</span><span style="background:#da3633">-n</span>
+                </div>
+                <div class="rubik-face back">
+                    <span style="background:#3fb950">n</span><span style="background:#da3633">-n</span><span style="background:#bc8cff">+n</span>
+                    <span style="background:#484f58">-0</span><span style="background:#8b949e">0</span><span style="background:#ffe138">+0</span>
+                    <span style="background:#ff8c38">-1</span><span style="background:#58a6ff">1</span><span style="background:#ff3838">+1</span>
+                </div>
+                <div class="rubik-face right">
+                    <span style="background:#ff8c38">-1</span><span style="background:#ffe138">+0</span><span style="background:#3fb950">n</span>
+                    <span style="background:#ff3838">+1</span><span style="background:#8b949e">0</span><span style="background:#da3633">-n</span>
+                    <span style="background:#58a6ff">1</span><span style="background:#484f58">-0</span><span style="background:#bc8cff">+n</span>
+                </div>
+                <div class="rubik-face left">
+                    <span style="background:#bc8cff">+n</span><span style="background:#484f58">-0</span><span style="background:#58a6ff">1</span>
+                    <span style="background:#da3633">-n</span><span style="background:#8b949e">0</span><span style="background:#ff3838">+1</span>
+                    <span style="background:#3fb950">n</span><span style="background:#ffe138">+0</span><span style="background:#ff8c38">-1</span>
+                </div>
+                <div class="rubik-face top">
+                    <span style="background:#bc8cff">+n</span><span style="background:#bc8cff">+n</span><span style="background:#bc8cff">+n</span>
+                    <span style="background:#ff3838">+1</span><span style="background:#ff3838">+1</span><span style="background:#ff3838">+1</span>
+                    <span style="background:#ffe138">+0</span><span style="background:#ffe138">+0</span><span style="background:#ffe138">+0</span>
+                </div>
+                <div class="rubik-face bottom">
+                    <span style="background:#da3633">-n</span><span style="background:#da3633">-n</span><span style="background:#da3633">-n</span>
+                    <span style="background:#ff8c38">-1</span><span style="background:#ff8c38">-1</span><span style="background:#ff8c38">-1</span>
+                    <span style="background:#484f58">-0</span><span style="background:#484f58">-0</span><span style="background:#484f58">-0</span>
+                </div>
+            </div>
+        </div>
+        <div style="max-width:400px;">
+            <h3 style="font-size:1.125rem;margin-bottom:8px;">11 symbols. 6 faces. Infinite refactoring.</h3>
+            <p style="color:#8b949e;font-size:0.8125rem;line-height:1.6;">
+                The top face is all positive prefixes (+n, +1, +0) — entries, declarations, assignments.
+                The bottom face is all negative (-n, -1, -0) — exits, I/O, annotations.
+                Twist a layer to reorganize an entire code dimension without touching the logic.
+            </p>
+        </div>
+    </div>
+
+    <!-- Deep dive: what prefixes do for simple code -->
+    <h3 class="fade-up" style="font-size:1.25rem;margin-bottom:8px;">What this means for simple code</h3>
+    <p class="section-sub fade-up">Even a 10-line function becomes navigable, layerable, and structurally visible.</p>
+
+    <div class="deep-grid">
+        <div class="deep-card fade-up">
+            <h4><span style="color:#ff3838;">&#x2503;</span> Instant code shape</h4>
+            <p>Without reading a single keyword, the gutter colors tell you: this function starts with imports (purple), declares a class (red), does some logic (blue), loops (green), and returns (dark red). You see the <em>architecture</em> before the syntax.</p>
+            <div class="example">
+                <div><span class="g" style="color:#bc8cff">+n:</span> import axios from 'axios'</div>
+                <div><span class="g" style="color:#ffe138">+0:</span> const API = 'https://...'</div>
+                <div><span class="g" style="color:#ff3838">+1:</span> async function fetchUsers() {</div>
+                <div><span class="g" style="color:#58a6ff">&nbsp;1:</span> &nbsp; if (!token) throw new Error()</div>
+                <div><span class="g" style="color:#3fb950">&nbsp;n:</span> &nbsp; for (const u of users) {</div>
+                <div><span class="g" style="color:#ff8c38">-1:</span> &nbsp;&nbsp;&nbsp; await db.save(u)</div>
+                <div><span class="g" style="color:#da3633">-n:</span> &nbsp; return users</div>
+            </div>
+        </div>
+        <div class="deep-card fade-up">
+            <h4><span style="color:#58a6ff;">&#x1F52E;</span> Navigate by meaning</h4>
+            <p>In a 5,000-line file, orb navigation lets you jump to "all I/O" (<span style="color:#ff8c38">-1:</span>) or "all returns" (<span style="color:#da3633">-n:</span>) across the entire codebase. It's like grep, but structural — find every place your code talks to the outside world, in one click.</p>
+            <div class="example">
+                <div><span class="g" style="color:#ff8c38">-1:</span> console.log('debug:', x)</div>
+                <div><span class="g" style="color:#ff8c38">-1:</span> await fetch('/api/data')</div>
+                <div><span class="g" style="color:#ff8c38">-1:</span> fs.writeFileSync('out.json')</div>
+                <div style="color:#484f58;margin-top:4px;">&#x2191; all I/O in your project, one list</div>
+            </div>
+        </div>
+        <div class="deep-card fade-up">
+            <h4><span style="color:#3fb950;">&#x1F9E9;</span> Layered refactoring</h4>
+            <p>Twist the Rubik's cube: isolate the <span style="color:#bc8cff">+n:</span> layer to see every import. Move all <span style="color:#ffe138">+0:</span> assignments to the top. Group <span style="color:#da3633">-n:</span> returns at the bottom. You're reorganizing code by <em>structural role</em>, not by line number.</p>
+            <div class="example">
+                <div style="color:#484f58;">Before: scattered imports</div>
+                <div><span class="g" style="color:#ff3838">+1:</span> class Router {</div>
+                <div><span class="g" style="color:#bc8cff">+n:</span> &nbsp; import express</div>
+                <div><span class="g" style="color:#58a6ff">&nbsp;1:</span> &nbsp; if (path) ...</div>
+                <div><span class="g" style="color:#bc8cff">+n:</span> &nbsp; import cors</div>
+                <div style="color:#484f58;margin-top:4px;">After: one twist groups them &#x2193;</div>
+                <div><span class="g" style="color:#bc8cff">+n:</span> import express</div>
+                <div><span class="g" style="color:#bc8cff">+n:</span> import cors</div>
+                <div><span class="g" style="color:#ff3838">+1:</span> class Router { ...</div>
+            </div>
+        </div>
+        <div class="deep-card fade-up">
+            <h4><span style="color:#bc8cff;">&#x1F310;</span> Language-agnostic</h4>
+            <p>The same 11 symbols work in Python, JavaScript, Rust, Go, Swift, Kotlin, C++, Java, C#, Ruby, PHP, Dart, Lua, Shell, R, Haskell, Elixir, Zig, WGSL, and more. Learn the prefixes once, see code structure everywhere — even in languages you don't know.</p>
+            <div class="example">
+                <div><span class="g" style="color:#bc8cff">+n:</span> use std::io; <span style="color:#484f58">// Rust</span></div>
+                <div><span class="g" style="color:#bc8cff">+n:</span> import SwiftUI <span style="color:#484f58">// Swift</span></div>
+                <div><span class="g" style="color:#bc8cff">+n:</span> from flask import app <span style="color:#484f58"># Python</span></div>
+                <div><span class="g" style="color:#bc8cff">+n:</span> require 'sinatra' <span style="color:#484f58"># Ruby</span></div>
+                <div style="color:#484f58;margin-top:4px;">Same prefix. Same color. Same meaning.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+
+<!-- ━━━ Prefix Code Demo ━━━ -->
+<section>
+    <h2 class="fade-up">See it in action</h2>
+    <p class="section-sub fade-up">A simple function, structurally addressed. Every line has meaning beyond syntax.</p>
+
+    <div class="prefix-demo fade-up">
+        <div class="line"><span class="gutter" style="color:#bc8cff">+n:</span><span class="code"><span class="kw">import</span> quantum <span class="kw">from</span> <span class="str">'./engine'</span></span></div>
+        <div class="line"><span class="gutter" style="color:#bc8cff">+n:</span><span class="code"><span class="kw">import</span> { classify } <span class="kw">from</span> <span class="str">'./prefix'</span></span></div>
+        <div class="line"><span class="gutter" style="color:#484f58">-0:</span><span class="code"><span class="cm">// beyondBINARY prefix engine — 9 dimensions</span></span></div>
+        <div class="line"><span class="gutter" style="color:#ff3838">+1:</span><span class="code"><span class="kw">class</span> <span class="fn">PrefixEngine</span> {</span></div>
+        <div class="line"><span class="gutter" style="color:#ffe138">+0:</span><span class="code">&nbsp; <span class="kw">const</span> symbols = [<span class="str">'+1'</span>,<span class="str">'1'</span>,<span class="str">'-1'</span>,<span class="str">'+0'</span>,<span class="str">'0'</span>,<span class="str">'-0'</span>,<span class="str">'+n'</span>,<span class="str">'n'</span>,<span class="str">'-n'</span>]</span></div>
+        <div class="line"><span class="gutter" style="color:#58a6ff"> 1:</span><span class="code">&nbsp; <span class="kw">if</span> (line.isImport) <span class="kw">return</span> <span class="str">'+n:'</span></span></div>
+        <div class="line"><span class="gutter" style="color:#8b949e"> 0:</span><span class="code">&nbsp; <span class="kw">else</span> <span class="kw">if</span> (line.isNoop) <span class="kw">return</span> <span class="str">'0:'</span></span></div>
+        <div class="line"><span class="gutter" style="color:#3fb950"> n:</span><span class="code">&nbsp; <span class="kw">for</span> (<span class="kw">const</span> sym <span class="kw">of</span> symbols) {</span></div>
+        <div class="line"><span class="gutter" style="color:#ff8c38">-1:</span><span class="code">&nbsp;&nbsp;&nbsp; console.<span class="fn">log</span>(<span class="str">`${sym}: ${classify(line)}`</span>)</span></div>
+        <div class="line"><span class="gutter" style="color:#da3633">-n:</span><span class="code">&nbsp; <span class="kw">return</span> result</span></div>
+    </div>
+</section>
+
+<!-- ━━━ Tiers ━━━ -->
+<section>
+    <h2 class="fade-up">Sponsor tiers</h2>
+    <p class="section-sub fade-up">Every contribution directly funds development, infrastructure, and hardware for testing.</p>
+
+    <div class="tiers">
+        <div class="tier-card fade-up">
+            <div class="tier-name">Contributor</div>
+            <div class="tier-price"><span class="currency">$</span>5<span class="period">/mo</span></div>
+            <ul class="tier-perks">
+                <li>Name in README</li>
+                <li>Sponsor badge</li>
+                <li>Support updates</li>
+            </ul>
+            <a class="btn btn-secondary" href="https://github.com/sponsors/fornevercollective" target="_blank">Select</a>
+        </div>
+        <div class="tier-card featured fade-up">
+            <div class="tier-name">Builder</div>
+            <div class="tier-price"><span class="currency">$</span>15<span class="period">/mo</span></div>
+            <ul class="tier-perks">
+                <li>Everything in Contributor</li>
+                <li>Priority issue responses</li>
+                <li>Early access builds</li>
+            </ul>
+            <a class="btn btn-primary" href="https://github.com/sponsors/fornevercollective" target="_blank">Select</a>
+        </div>
+        <div class="tier-card fade-up">
+            <div class="tier-name">Studio</div>
+            <div class="tier-price"><span class="currency">$</span>50<span class="period">/mo</span></div>
+            <ul class="tier-perks">
+                <li>Everything in Builder</li>
+                <li>Quarterly roadmap input</li>
+                <li>Custom prefix configs</li>
+            </ul>
+            <a class="btn btn-secondary" href="https://github.com/sponsors/fornevercollective" target="_blank">Select</a>
+        </div>
+        <div class="tier-card fade-up">
+            <div class="tier-name">Agency</div>
+            <div class="tier-price"><span class="currency">$</span>200<span class="period">/mo</span></div>
+            <ul class="tier-perks">
+                <li>Everything in Studio</li>
+                <li>Logo in README</li>
+                <li>Dedicated support channel</li>
+                <li>Co-development sessions</li>
+            </ul>
+            <a class="btn btn-secondary" href="https://github.com/sponsors/fornevercollective" target="_blank">Select</a>
+        </div>
+        <div class="tier-card fade-up">
+            <div class="tier-name">Enterprise</div>
+            <div class="tier-price"><span class="currency">$</span>500<span class="period">/mo</span></div>
+            <ul class="tier-perks">
+                <li>Everything in Agency</li>
+                <li>Custom integrations</li>
+                <li>White-label licensing</li>
+                <li>Direct access</li>
+            </ul>
+            <a class="btn btn-secondary" href="https://github.com/sponsors/fornevercollective" target="_blank">Select</a>
+        </div>
+    </div>
+
+    <!-- One-time -->
+    <div style="text-align:center;margin-top:40px;" class="fade-up">
+        <p style="color:#8b949e;font-size:0.875rem;margin-bottom:16px;">Prefer a one-time donation?</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+            <a class="btn btn-secondary" href="https://github.com/sponsors/fornevercollective" target="_blank" style="font-size:0.8125rem;">$5</a>
+            <a class="btn btn-secondary" href="https://github.com/sponsors/fornevercollective" target="_blank" style="font-size:0.8125rem;">$25</a>
+            <a class="btn btn-secondary" href="https://github.com/sponsors/fornevercollective" target="_blank" style="font-size:0.8125rem;">$100</a>
+            <a class="btn btn-secondary" href="https://github.com/sponsors/fornevercollective" target="_blank" style="font-size:0.8125rem;">Custom</a>
+        </div>
+    </div>
+</section>
+
+<div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+
+<!-- ━━━ Where Funds Go ━━━ -->
+<section>
+    <h2 class="fade-up">Where funds go</h2>
+    <p class="section-sub fade-up">100% transparent. Every dollar goes to making these tools better.</p>
+
+    <div class="alloc-bars fade-up">
+        <div class="alloc-row">
+            <span class="alloc-label">Development</span>
+            <div class="alloc-bar"><div class="fill" style="width:60%;background:linear-gradient(90deg,#3fb950,#58a6ff)"></div></div>
+            <span class="alloc-pct">60%</span>
+        </div>
+        <div class="alloc-row">
+            <span class="alloc-label">Infrastructure</span>
+            <div class="alloc-bar"><div class="fill" style="width:15%;background:linear-gradient(90deg,#58a6ff,#bc8cff)"></div></div>
+            <span class="alloc-pct">15%</span>
+        </div>
+        <div class="alloc-row">
+            <span class="alloc-label">Test Hardware</span>
+            <div class="alloc-bar"><div class="fill" style="width:15%;background:linear-gradient(90deg,#bc8cff,#ff8c38)"></div></div>
+            <span class="alloc-pct">15%</span>
+        </div>
+        <div class="alloc-row">
+            <span class="alloc-label">Community</span>
+            <div class="alloc-bar"><div class="fill" style="width:10%;background:linear-gradient(90deg,#ff8c38,#ffe138)"></div></div>
+            <span class="alloc-pct">10%</span>
+        </div>
+    </div>
+</section>
+
+<!-- ━━━ Grants & Partners ━━━ -->
+<section>
+    <h2 class="fade-up">Grants & partnerships</h2>
+    <p class="section-sub fade-up">Beyond individual sponsors — organizations and programs that align with uvspeed's mission.</p>
+
+    <div class="grant-list">
+        <div class="grant-item fade-up">
+            <div class="grant-icon" style="background:rgba(88,166,255,0.1);">&#x1F3DB;</div>
+            <div class="grant-info">
+                <h4>GitHub Accelerator</h4>
+                <p>10-week program for open-source maintainers with stipend and mentorship</p>
+            </div>
+            <div class="grant-amount">$20,000</div>
+        </div>
+        <div class="grant-item fade-up">
+            <div class="grant-icon" style="background:rgba(63,185,80,0.1);">&#x1F30D;</div>
+            <div class="grant-info">
+                <h4>NLnet Foundation</h4>
+                <p>European grants for innovative internet technology and developer tools</p>
+            </div>
+            <div class="grant-amount">EUR 50,000</div>
+        </div>
+        <div class="grant-item fade-up">
+            <div class="grant-icon" style="background:rgba(188,140,255,0.1);">&#x1F3F0;</div>
+            <div class="grant-info">
+                <h4>Sovereign Tech Fund</h4>
+                <p>German government fund for open-source digital infrastructure</p>
+            </div>
+            <div class="grant-amount">EUR 50-300K</div>
+        </div>
+        <div class="grant-item fade-up">
+            <div class="grant-icon" style="background:rgba(255,140,56,0.1);">&#x1F91D;</div>
+            <div class="grant-info">
+                <h4>Cursor / Anthropic / Astral</h4>
+                <p>IDE and AI partnerships — uvspeed is a showcase for MCP, .cursor/rules, and uv workflows</p>
+            </div>
+            <div class="grant-amount">Partnership</div>
+        </div>
+    </div>
+</section>
+
+<!-- ━━━ CTA ━━━ -->
+<div class="cta">
+    <canvas id="cta-stars"></canvas>
+    <div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+    <div class="rainbow-glow"></div>
+    <div class="cta-content">
+        <h2>Every star counts.<br>Every sponsor matters.</h2>
+        <p>Help build the future of code structure — one prefix at a time.</p>
+        <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/sponsors/fornevercollective" target="_blank">
+                &#x2764;&#xFE0F; Become a Sponsor
+            </a>
+            <a class="btn btn-secondary" href="https://github.com/qbitOS/uvspeed" target="_blank">
+                &#x2B50; Star on GitHub
+            </a>
+        </div>
+        <div class="payment-links">
+            <a href="https://ko-fi.com/fornevercollective" target="_blank">Ko-fi</a>
+            <a href="https://paypal.me/fornevercollective" target="_blank">PayPal</a>
+            <a href="https://opencollective.com/uvspeed" target="_blank">Open Collective</a>
+            <a href="https://patreon.com/fornevercollective" target="_blank">Patreon</a>
+        </div>
+    </div>
+</div>
+
+<!-- ━━━ Footer ━━━ -->
+<div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+<div class="footer">
+    <div>{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</div>
+    <div style="margin-top:4px;">
+        <a href="quantum-notepad.html">notepad</a> &middot;
+        <a href="terminal.html">terminal</a> &middot;
+        <a href="hexcast.html">hexcast</a> &middot;
+        <a href="kbatch.html">kbatch</a> &middot;
+        <a href="github-dashboard.html">dashboard</a> &middot;
+        <a href="https://github.com/qbitOS/uvspeed" target="_blank">github</a>
+    </div>
+    <div style="margin-top:8px;">uvspeed v4.33 &middot; fornevercollective &middot; MIT</div>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+// ── Inverse Starfield (theme-aware: bright on dark, dark on light) ──
+function initStarfield(cvs, count) {
+    if (!cvs) return;
+    const ctx = cvs.getContext('2d');
+    const stars = [];
+    function resize() {
+        cvs.width = cvs.parentElement.offsetWidth;
+        cvs.height = cvs.parentElement.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    const starColors = ['255,255,255','200,200,220','180,160,255','160,220,255','255,200,140','200,255,180'];
+    for (let i = 0; i < count; i++) {
+        stars.push({
+            x: Math.random() * 3000, y: Math.random() * 1200,
+            r: Math.random() * 1.6 + 0.2, a: Math.random() * 0.7 + 0.15,
+            tw: Math.random() * 2 + 0.5, ph: Math.random() * Math.PI * 2,
+            c: starColors[Math.floor(Math.random() * starColors.length)],
+            ci: Math.random() < 0.3 ? '40,50,60' : '0,0,0'
+        });
+    }
+    function draw() {
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+        const t = Date.now() / 1000;
+        const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+        for (const s of stars) {
+            const alpha = 0.1 + 0.9 * s.a * (0.5 + 0.5 * Math.sin(t * s.tw + s.ph));
+            if (isLight) {
+                ctx.fillStyle = `rgba(${s.ci},${alpha * 0.35})`;
+            } else {
+                ctx.fillStyle = `rgba(${s.c},${alpha})`;
+            }
+            ctx.beginPath();
+            ctx.arc(s.x % cvs.width, s.y % cvs.height, s.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        requestAnimationFrame(draw);
+    }
+    draw();
+}
+initStarfield(document.getElementById('hero-stars'), 250);
+initStarfield(document.getElementById('cta-stars'), 150);
+
+// ── Sprite Data ──
+const NUMSY_PAL = [null,'#1a1a2e','#2d2040','#4a3560','#e6b422','#ffd700','#ffffff','#ff4444','#b8860b','#888899'];
+const NUMSY_RUN1 = [[0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],[0,0,0,0,0,1,4,4,4,4,1,0,0,0,0,0],[0,0,0,0,1,4,6,1,1,6,4,1,0,0,0,0],[0,0,0,0,1,4,4,4,4,4,4,1,0,0,0,0],[0,0,0,0,0,1,4,7,4,1,0,0,0,0,0,0],[0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0],[0,0,0,1,3,3,5,5,5,3,3,1,0,0,0,0],[0,0,1,3,3,3,5,5,5,3,3,3,1,0,0,0],[0,0,1,2,3,3,3,3,3,3,3,2,1,0,0,0],[0,0,1,2,2,3,3,3,3,3,2,2,1,0,0,0],[0,0,0,1,2,2,3,3,3,2,2,1,0,0,0,0],[0,0,0,1,2,2,2,2,2,2,2,1,0,0,0,0],[0,0,0,0,1,2,2,2,2,2,1,0,0,0,0,0],[0,0,0,0,1,1,0,0,1,1,0,0,0,0,0,0],[0,0,0,1,9,1,0,0,0,1,9,1,0,0,0,0],[0,0,0,1,1,0,0,0,0,0,1,1,0,0,0,0]];
+const NUMSY_RUN2 = [[0,0,0,0,0,0,1,1,1,1,0,0,0,0,0,0],[0,0,0,0,0,1,4,4,4,4,1,0,0,0,0,0],[0,0,0,0,1,4,6,1,1,6,4,1,0,0,0,0],[0,0,0,0,1,4,4,4,4,4,4,1,0,0,0,0],[0,0,0,0,0,1,4,7,4,1,0,0,0,0,0,0],[0,0,0,0,1,1,1,1,1,1,1,0,0,0,0,0],[0,0,0,1,3,3,5,5,5,3,3,1,0,0,0,0],[0,0,1,3,3,3,5,5,5,3,3,3,1,0,0,0],[0,0,1,2,3,3,3,3,3,3,3,2,1,0,0,0],[0,0,1,2,2,3,3,3,3,3,2,2,1,0,0,0],[0,0,0,1,2,2,3,3,3,2,2,1,0,0,0,0],[0,0,0,1,2,2,2,2,2,2,2,1,0,0,0,0],[0,0,0,0,1,2,2,2,2,2,1,0,0,0,0,0],[0,0,0,0,0,1,1,1,1,0,0,0,0,0,0,0],[0,0,0,0,1,9,1,0,1,9,1,0,0,0,0,0],[0,0,0,0,0,1,1,0,0,1,1,0,0,0,0,0]];
+const FREYA_PAL = [null,'#1a1a2e','#4c1d95','#7c3aed','#a78bfa','#06b6d4','#ffffff','#3b82f6','#f472b6','#c084fc'];
+const FREYA_FLY1 = [[0,0,0,0,1,1,1,1,0,0,0,0],[0,0,0,1,4,4,4,4,1,0,0,0],[0,0,1,4,6,1,1,6,4,1,0,0],[0,0,1,4,4,8,4,4,4,1,0,0],[0,0,0,1,1,1,1,1,1,0,0,0],[0,1,5,1,3,3,3,3,1,5,1,0],[1,5,1,3,3,9,9,3,3,1,5,1],[0,1,1,2,3,3,3,3,2,1,1,0],[0,0,1,2,2,3,3,2,2,1,0,0],[0,0,0,1,2,2,2,2,1,0,0,0],[0,0,0,1,1,0,0,1,1,0,0,0],[0,0,0,1,7,0,0,7,1,0,0,0]];
+const FREYA_FLY2 = [[0,0,0,0,1,1,1,1,0,0,0,0],[0,0,0,1,4,4,4,4,1,0,0,0],[0,0,1,4,6,1,1,6,4,1,0,0],[0,0,1,4,4,8,4,4,4,1,0,0],[0,0,0,1,1,1,1,1,1,0,0,0],[0,0,1,3,3,3,3,3,3,1,0,0],[0,1,5,3,3,9,9,3,3,5,1,0],[1,5,1,2,3,3,3,3,2,1,5,1],[0,1,1,2,2,3,3,2,2,1,1,0],[0,0,0,1,2,2,2,2,1,0,0,0],[0,0,0,0,1,1,1,1,0,0,0,0],[0,0,0,0,1,7,7,1,0,0,0,0]];
+
+// Nyan cat sprite + palettes
+const NYAN_SPRITE = [[0,0,0,1,1,1,1,1,1,0],[0,0,1,4,5,4,5,4,5,1],[0,1,2,1,4,4,4,4,1,2],[1,2,6,1,2,2,2,2,1,2],[1,2,1,1,2,3,2,3,1,1],[0,1,2,2,2,2,2,2,2,1],[0,1,1,0,1,1,0,1,1,0]];
+const NYAN_PALS = [
+    [null,'#222','#999','#ff6699','#ffcc99','#ff99cc','#fff'],
+    [null,'#1a1a2e','#e6b422','#ff4444','#b8860b','#ffd700','#fff'],
+    [null,'#1a1a2e','#7c3aed','#f472b6','#4c1d95','#06b6d4','#fff'],
+];
+const NYAN_TRAILS = [
+    ['#ff0000','#ff9900','#ffff00','#33ff00','#0099ff','#6633ff'],
+    ['#ffd700','#e6b422','#b8860b','#daa520','#f0c040','#ffec80'],
+    ['#c084fc','#a78bfa','#7c3aed','#6366f1','#06b6d4','#22d3ee'],
+];
+
+function drawSprite(ctx, sprite, pal, x, y, s) {
+    for (let r = 0; r < sprite.length; r++) {
+        for (let c = 0; c < sprite[r].length; c++) {
+            const idx = sprite[r][c];
+            if (idx === 0) continue;
+            const color = pal[idx];
+            if (!color) continue;
+            ctx.fillStyle = color;
+            ctx.fillRect(x + c * s, y + r * s, s, s);
+        }
+    }
+}
+
+// ── Character Divider Animation ──
+(function initCharDivider() {
+    const cvs = document.getElementById('char-canvas');
+    if (!cvs) return;
+    const ctx = cvs.getContext('2d');
+    const ps = 2; // pixel scale
+
+    // Numsy character state
+    const numsy = { x: -40, y: 8, frame: 0, speed: 1.2, bounceT: 0 };
+    // Freya character state (follows behind, floating)
+    const freya = { x: -70, y: 4, frame: 0, floatT: 0 };
+
+    // Background nyan cats (3 variants)
+    const bgCats = [];
+    for (let i = 0; i < 5; i++) {
+        const palIdx = i % 3;
+        bgCats.push({
+            x: Math.random() * 2000, y: 8 + Math.random() * 50,
+            speed: 0.4 + Math.random() * 0.6,
+            palIdx, trailLen: 6 + Math.floor(Math.random() * 8),
+            legFrame: 0, legTimer: 0
+        });
+    }
+
+    function resize() {
+        cvs.width = cvs.parentElement.offsetWidth;
+        cvs.height = cvs.parentElement.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    let tick = 0;
+    function render() {
+        const W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        tick++;
+
+        // Draw background nyan cats
+        for (const nc of bgCats) {
+            nc.x += nc.speed;
+            if (nc.x > W + 100) { nc.x = -80; nc.y = 8 + Math.random() * 50; }
+            nc.legTimer++;
+            if (nc.legTimer > 8) { nc.legTimer = 0; nc.legFrame = 1 - nc.legFrame; }
+
+            const trail = NYAN_TRAILS[nc.palIdx];
+            const pal = NYAN_PALS[nc.palIdx];
+            // Rainbow trail
+            for (let t = 0; t < nc.trailLen; t++) {
+                ctx.globalAlpha = 0.5 - (t / nc.trailLen) * 0.45;
+                for (let r = 0; r < trail.length; r++) {
+                    ctx.fillStyle = trail[r];
+                    const bandH = (7 * ps) / trail.length;
+                    ctx.fillRect(nc.x - (t + 1) * 3 * ps, nc.y + r * bandH, 3 * ps, bandH);
+                }
+            }
+            ctx.globalAlpha = 1;
+            // Cat sprite
+            drawSprite(ctx, NYAN_SPRITE, pal, nc.x, nc.y, ps);
+        }
+
+        // Numsy bouncing across
+        numsy.x += numsy.speed;
+        numsy.bounceT += 0.12;
+        const bounceY = 12 + Math.abs(Math.sin(numsy.bounceT)) * 18;
+        numsy.y = H - bounceY - 16 * ps;
+        if (tick % 8 === 0) numsy.frame = 1 - numsy.frame;
+        if (numsy.x > W + 40) { numsy.x = -40; numsy.bounceT = 0; }
+
+        const numsySprite = numsy.frame === 0 ? NUMSY_RUN1 : NUMSY_RUN2;
+        drawSprite(ctx, numsySprite, NUMSY_PAL, numsy.x, numsy.y, ps);
+
+        // "N" label above Numsy
+        ctx.fillStyle = '#e6b422';
+        ctx.font = 'bold 8px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('N', numsy.x + 8 * ps, numsy.y - 2);
+
+        // Freya floating behind
+        freya.x = numsy.x - 28;
+        freya.floatT += 0.06;
+        freya.y = numsy.y - 6 + Math.sin(freya.floatT) * 5;
+        if (tick % 12 === 0) freya.frame = 1 - freya.frame;
+
+        const freyaSprite = freya.frame === 0 ? FREYA_FLY1 : FREYA_FLY2;
+        // Aura
+        ctx.fillStyle = 'rgba(167,139,250,0.15)';
+        ctx.beginPath();
+        ctx.arc(freya.x + 6 * ps, freya.y + 6 * ps, 10 * ps, 0, Math.PI * 2);
+        ctx.fill();
+        drawSprite(ctx, freyaSprite, FREYA_PAL, freya.x, freya.y, ps);
+
+        // "F" label above Freya
+        ctx.fillStyle = '#a78bfa';
+        ctx.fillText('F', freya.x + 6 * ps, freya.y - 2);
+        ctx.textAlign = 'start';
+
+        requestAnimationFrame(render);
+    }
+    render();
+})();
+
+// ── Hero flying nyan cats ──
+(function initHeroNyans() {
+    const heroCanvas = document.getElementById('hero-stars');
+    if (!heroCanvas) return;
+    const ctx = heroCanvas.getContext('2d');
+    // We'll draw nyan cats on top of the existing starfield by hooking into the animation
+    const cats = [];
+    for (let i = 0; i < 4; i++) {
+        cats.push({
+            x: Math.random() * 2000, y: 60 + Math.random() * 300,
+            speed: 0.3 + Math.random() * 0.5,
+            palIdx: i % 3, sz: 1.5 + Math.random() * 1.5,
+            trailLen: 8 + Math.floor(Math.random() * 10),
+            legFrame: 0, legTimer: 0, alpha: 0.25 + Math.random() * 0.3,
+        });
+    }
+    function drawHeroCats() {
+        const W = heroCanvas.width, H = heroCanvas.height;
+        for (const nc of cats) {
+            nc.x += nc.speed;
+            if (nc.x > W + 100) { nc.x = -80; nc.y = 40 + Math.random() * (H - 100); }
+            nc.legTimer++;
+            if (nc.legTimer > 10) { nc.legTimer = 0; nc.legFrame = 1 - nc.legFrame; }
+            const trail = NYAN_TRAILS[nc.palIdx];
+            const pal = NYAN_PALS[nc.palIdx];
+            const ps = nc.sz;
+            // Trail
+            for (let t = 0; t < nc.trailLen; t++) {
+                ctx.globalAlpha = nc.alpha * (1 - t / nc.trailLen) * 0.7;
+                for (let r = 0; r < trail.length; r++) {
+                    ctx.fillStyle = trail[r];
+                    const bandH = (7 * ps) / trail.length;
+                    ctx.fillRect(nc.x - (t + 1) * 3 * ps, nc.y + r * bandH, 3 * ps, bandH);
+                }
+            }
+            ctx.globalAlpha = nc.alpha;
+            drawSprite(ctx, NYAN_SPRITE, pal, nc.x, nc.y, ps);
+            ctx.globalAlpha = 1;
+        }
+        requestAnimationFrame(drawHeroCats);
+    }
+    drawHeroCats();
+})();
+
+// ── Scroll reveal ──
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// ── Animated alloc bars (start at 0, fill on scroll) ──
+const allocObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.querySelectorAll('.fill').forEach(fill => {
+                const width = fill.style.width;
+                fill.style.width = '0%';
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        fill.style.width = width;
+                    });
+                });
+            });
+            allocObserver.unobserve(entry.target);
+        }
+    });
+}, { threshold: 0.3 });
+document.querySelectorAll('.alloc-bars').forEach(el => allocObserver.observe(el));
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function() {
+    const QP = window.QuantumPrefixes;
+    if (!QP) return;
+    QP.onStateChange(function(source, state) {
+        if (source === 'sponsor' || !state) return;
+    });
+    QP.broadcastState('sponsor', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, role: 'sponsor-page' });
+    QP.requestStateSync();
+})();
+</script>
+</body>
+</html>

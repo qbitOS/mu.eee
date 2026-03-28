@@ -1,0 +1,783 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="terminal-manifest.json">
+<title>hexterm — grid</title>
+<style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        width: 100%; height: 100%;
+        background: var(--qp-bg, #0d1117); color: var(--qp-text, #e6edf3);
+        font-family: -apple-system, 'SF Pro', system-ui, sans-serif;
+        overflow: hidden;
+        -webkit-text-size-adjust: 100%;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none; user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+    #app { display: flex; flex-direction: column; width: 100%; height: 100%; }
+
+    /* Title bar */
+    #titlebar {
+        display: flex; align-items: center;
+        flex-shrink: 0; height: 38px;
+        background: #0d1117; position: relative;
+        -webkit-app-region: drag;
+        overflow: hidden; border-bottom: 1px solid #21262d;
+    }
+    #titlebar-stars { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+    #titlebar .traffic-spacer { width: 78px; flex-shrink: 0; }
+    #titlebar .info {
+        z-index: 1; flex: 1; display: flex; align-items: center; gap: 8px;
+        font-size: .6875rem; font-family: 'SF Mono', monospace;
+        color: #8b949e; -webkit-app-region: no-drag;
+    }
+    #titlebar .info .label { color: #e6edf3; font-weight: 600; }
+    .title-center {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        font-size: .5625rem; color: #484f58; font-family: 'SF Mono', monospace;
+        z-index: 0; pointer-events: none;
+    }
+    .grid-controls {
+        z-index: 1; display: flex; gap: 4px; align-items: center;
+        -webkit-app-region: no-drag; margin-right: 10px;
+    }
+    .grid-btn {
+        background: #21262d; border: 1px solid #30363d; color: #8b949e;
+        padding: 2px 8px; border-radius: 4px; cursor: pointer;
+        font-size: .5625rem; font-family: 'SF Mono', monospace;
+        touch-action: manipulation;
+    }
+    .grid-btn:hover { background: #30363d; color: #e6edf3; }
+    .grid-btn.active { background: #388bfd30; border-color: #388bfd; color: #58a6ff; }
+
+    /* Rainbow */
+    .rainbow { display: flex; flex-shrink: 0; height: 2px; width: 100%; }
+    .rainbow span { flex: 1; }
+    .rainbow .r1 { background: #ff3838; }
+    .rainbow .r2 { background: #ff8c38; }
+    .rainbow .r3 { background: #ffe138; }
+    .rainbow .r4 { background: #3fb950; }
+    .rainbow .r5 { background: #38a5ff; }
+    .rainbow .r6 { background: #bc8cff; }
+
+    /* Grid canvas area */
+    #grid-wrap {
+        flex: 1; position: relative; overflow: hidden; background: #010409;
+    }
+    #grid-canvas { width: 100%; height: 100%; }
+    .cell-label {
+        position: absolute; font-size: .5rem; font-family: 'SF Mono', monospace;
+        color: #8b949e; background: rgba(13,17,23,0.8); padding: 1px 4px;
+        border-radius: 2px; pointer-events: none;
+    }
+
+    /* Add stream overlay */
+    #add-overlay {
+        display: none; position: absolute; inset: 0;
+        background: rgba(13,17,23,0.9); z-index: 10;
+        flex-direction: column; align-items: center; justify-content: center; gap: 12px;
+    }
+    #add-overlay.active { display: flex; }
+    #add-overlay input {
+        width: 260px; background: #161b22; border: 1px solid #30363d; color: #e6edf3;
+        padding: 8px 12px; border-radius: 6px; font-size: .875rem;
+        font-family: 'SF Mono', monospace; outline: none; text-align: center;
+    }
+    #add-overlay input:focus { border-color: #388bfd; }
+    .add-btns { display: flex; gap: 8px; }
+    .add-btn {
+        padding: 8px 18px; border-radius: 6px; border: none; cursor: pointer;
+        font-family: 'SF Mono', monospace; font-size: .75rem; font-weight: 600;
+        touch-action: manipulation;
+    }
+    .add-btn.primary { background: #238636; color: #fff; }
+    .add-btn.primary:hover { background: #2ea043; }
+    .add-btn.camera { background: #1f6feb; color: #fff; }
+    .add-btn.camera:hover { background: #388bfd; }
+    .add-btn.cancel { background: #21262d; color: #8b949e; }
+    .add-btn.cancel:hover { background: #30363d; color: #e6edf3; }
+
+    /* Stats bar */
+    #stats-bar {
+        display: flex; align-items: center; gap: 8px;
+        padding: 2px 8px; min-height: 18px;
+        background: #0d1117; flex-shrink: 0;
+        font-size: .5rem; font-family: 'SF Mono', monospace; color: #484f58;
+        border-top: 1px solid #21262d;
+    }
+    #stats-bar .val { color: #3fb950; }
+    #stats-bar .warn { color: #d29922; }
+    #stats-bar .bad { color: #da3633; }
+    #stats-bar .spacer { flex: 1; }
+
+    /* Device count bar */
+    #device-bar {
+        display: flex; align-items: center; gap: 6px;
+        padding: 1px 8px; min-height: 16px;
+        background: #0d1117; flex-shrink: 0;
+        font-size: .5rem; font-family: 'SF Mono', monospace; color: #484f58;
+        border-top: 1px solid #161b22;
+    }
+    #device-bar .active { color: #3fb950; }
+    #device-bar .idle { color: #d29922; }
+    #device-bar .offline { color: #484f58; }
+
+    /* Bench bar */
+    #bench-bar {
+        display: flex; align-items: center; gap: 6px;
+        padding: 1px 8px; min-height: 16px;
+        background: #0d1117; flex-shrink: 0;
+        font-size: .5rem; font-family: 'SF Mono', monospace; color: #484f58;
+        border-top: 1px solid #161b22;
+    }
+    #bench-bar .good { color: #3fb950; }
+    #bench-bar .warn { color: #d29922; }
+    #bench-bar .bad { color: #da3633; }
+
+    /* Dev console */
+    #dev-console {
+        flex-shrink: 0; max-height: 100px; overflow: hidden;
+        background: #161b22; border-top: 1px solid #21262d;
+        font-size: .5rem; font-family: 'SF Mono', monospace; color: #6e7681;
+    }
+    #dev-log {
+        overflow-y: auto; max-height: 80px; padding: 2px 8px;
+    }
+    #dev-cmd-bar {
+        display: flex; border-top: 1px solid #21262d;
+    }
+    #dev-cmd-bar input {
+        flex: 1; background: #0d1117; border: none; color: #e6edf3;
+        padding: 3px 8px; font-size: .5rem; font-family: 'SF Mono', monospace;
+        outline: none;
+    }
+    #dev-cmd-bar .prompt {
+        color: #58a6ff; padding: 3px 4px; background: #0d1117;
+        font-size: .5rem; font-family: 'SF Mono', monospace;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 600px) {
+        html, body {
+            font-size: 14px;
+        }
+        #titlebar {
+            height: 32px;
+            padding: 0 4px;
+        }
+        #titlebar .info {
+            font-size: .625rem;
+            gap: 4px;
+        }
+        .title-center {
+            font-size: .5rem;
+        }
+        .grid-controls {
+            gap: 2px;
+            margin-right: 4px;
+        }
+        .grid-btn {
+            padding: 2px 6px;
+            font-size: .5rem;
+        }
+        #stats-bar, #device-bar, #bench-bar {
+            padding: 2px 4px;
+            font-size: .4375rem;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        #dev-console {
+            max-height: 80px;
+        }
+        #dev-log {
+            max-height: 60px;
+            padding: 2px 4px;
+            font-size: .4375rem;
+        }
+        #dev-cmd-bar input {
+            padding: 2px 4px;
+            font-size: .4375rem;
+        }
+        #dev-cmd-bar .prompt {
+            padding: 2px 3px;
+            font-size: .4375rem;
+        }
+        #add-overlay input {
+            width: 90%;
+            max-width: 280px;
+            padding: 10px;
+            font-size: .875rem;
+        }
+        .add-btns {
+            flex-direction: column;
+            width: 90%;
+            max-width: 280px;
+            gap: 6px;
+        }
+        .add-btn {
+            width: 100%;
+            padding: 10px;
+        }
+        /* Force single column grid on mobile */
+        #grid-canvas {
+            /* Grid layout is handled in JS, but we ensure single column via JS override */
+        }
+    }
+</style>
+</head>
+<body>
+<div id="app">
+    <div id="titlebar">
+        <canvas id="titlebar-stars"></canvas>
+        <div class="traffic-spacer"></div>
+        <div class="info">
+            <span class="label">grid</span>
+            <span id="stream-count">0 streams</span>
+        </div>
+        <span class="title-center">hexterm — grid view</span>
+        <div class="grid-controls">
+            <button class="grid-btn active" id="btn-2x2" onclick="setLayout(2)">2×2</button>
+            <button class="grid-btn" id="btn-3x3" onclick="setLayout(3)">3×3</button>
+            <button class="grid-btn" id="btn-4x4" onclick="setLayout(4)">4×4</button>
+            <button class="grid-btn" onclick="showAddStream()">+ add</button>
+        </div>
+    </div>
+    <div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+
+    <div id="grid-wrap">
+        <canvas id="grid-canvas"></canvas>
+        <div id="add-overlay">
+            <div style="font-family:'SF Mono',monospace;font-size:1.25rem;color:#e6edf3;margin-bottom:8px">add stream</div>
+            <input type="text" id="add-ip" placeholder="IP address or ws://host:port" onkeydown="if(event.key==='Enter')addStreamFromInput()">
+            <div class="add-btns">
+                <button class="add-btn primary" onclick="addStreamFromInput()">connect</button>
+                <button class="add-btn camera" onclick="addCameraStream('user')">front cam</button>
+                <button class="add-btn camera" onclick="addCameraStream('environment')">back cam</button>
+                <button class="add-btn cancel" onclick="hideAddStream()">cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="stats-bar">
+        <span>streams:</span><span class="val" id="sb-streams">0</span>
+        <span>total fps:</span><span class="val" id="sb-fps">0</span>
+        <span>frames:</span><span class="val" id="sb-frames">0</span>
+        <span class="spacer"></span>
+        <span>cpu:</span><span class="val" id="sb-cpu">—</span>
+        <span>throttle:</span><span class="val" id="sb-throttle">none</span>
+        <span>bottleneck:</span><span class="val" id="sb-bottleneck">—</span>
+    </div>
+
+    <div id="device-bar">
+        <span>devices:</span>
+        <span class="active" id="db-active">0 active</span>
+        <span class="idle" id="db-idle">0 idle</span>
+        <span class="offline" id="db-offline">0 offline</span>
+        <span style="flex:1"></span>
+        <span>total: <span id="db-total">0</span></span>
+    </div>
+
+    <div id="bench-bar">
+        <span>mem:</span><span id="bb-mem" class="good">—</span>
+        <span>net:</span><span id="bb-net" class="good">—</span>
+        <span style="flex:1"></span>
+        <span id="bb-health" class="good">✓ healthy</span>
+    </div>
+
+    <div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+
+    <div id="dev-console">
+        <div id="dev-log"></div>
+        <div id="dev-cmd-bar">
+            <span class="prompt">▸</span>
+            <input type="text" id="dev-input" placeholder="stop <id> | mute <id> | add <ip> | layout 2|3|4 | list | help" onkeydown="if(event.key==='Enter')devCmd()">
+        </div>
+    </div>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+'use strict';
+
+const IS_TAURI = !!window.__TAURI__;
+const HEXCAST_PORT = 9876;
+const bc = new BroadcastChannel('hexterm');
+
+// ── Grid state ──
+let gridCols = 2;
+const streams = []; // { id, ws, img, lastFrame, fps, frameCount, fpsCounter, src, status, video, audioCtx, analyser }
+
+const gridCanvas = document.getElementById('grid-canvas');
+const gctx = gridCanvas.getContext('2d');
+
+// ── Starfield ──
+(function initStarfield() {
+    const cvs = document.getElementById('titlebar-stars');
+    if (!cvs) return;
+    const sctx = cvs.getContext('2d');
+    const stars = [];
+    function resize() { cvs.width = cvs.parentElement.offsetWidth; cvs.height = cvs.parentElement.offsetHeight; }
+    resize(); window.addEventListener('resize', resize);
+    for (let i = 0; i < 50; i++) stars.push({ x: Math.random()*2000, y: Math.random()*40, r: Math.random()*1+0.2, a: Math.random()*0.5+0.2, tw: Math.random()*2+1, ph: Math.random()*Math.PI*2 });
+    function draw() {
+        sctx.clearRect(0, 0, cvs.width, cvs.height);
+        const t = Date.now()/1000;
+        for (const s of stars) { const alpha = 0.2+0.8*s.a*(0.5+0.5*Math.sin(t*s.tw+s.ph)); sctx.fillStyle=`rgba(255,255,255,${alpha})`; sctx.beginPath(); sctx.arc(s.x%cvs.width,s.y%cvs.height,s.r,0,Math.PI*2); sctx.fill(); }
+        requestAnimationFrame(draw);
+    }
+    draw();
+})();
+
+// ── Grid layout ──
+function setLayout(cols) {
+    // Force single column on mobile
+    if (window.innerWidth <= 600) {
+        gridCols = 1;
+        // Don't update button states on mobile since 1x1 button doesn't exist
+    } else {
+        gridCols = cols;
+        document.querySelectorAll('.grid-btn').forEach(b => b.classList.remove('active'));
+        const btn = document.getElementById('btn-' + cols + 'x' + cols);
+        if (btn) btn.classList.add('active');
+    }
+    devPrint(`layout: ${gridCols}x${gridCols}`);
+}
+
+// Auto-adjust layout on resize for mobile
+function checkMobileLayout() {
+    if (window.innerWidth <= 600 && gridCols > 1) {
+        gridCols = 1;
+        // Clear active states on mobile
+        document.querySelectorAll('.grid-btn').forEach(b => b.classList.remove('active'));
+    }
+}
+window.addEventListener('resize', checkMobileLayout);
+checkMobileLayout(); // Check on load
+
+function resizeGrid() {
+    gridCanvas.width = gridCanvas.parentElement.offsetWidth;
+    gridCanvas.height = gridCanvas.parentElement.offsetHeight;
+}
+resizeGrid();
+window.addEventListener('resize', resizeGrid);
+
+// ── Add / remove streams ──
+function showAddStream() {
+    document.getElementById('add-overlay').classList.add('active');
+    document.getElementById('add-ip').focus();
+}
+function hideAddStream() {
+    document.getElementById('add-overlay').classList.remove('active');
+    document.getElementById('add-ip').value = '';
+}
+
+function addStreamFromInput() {
+    let val = document.getElementById('add-ip').value.trim();
+    if (!val) return;
+    if (!val.includes(':')) val += ':' + HEXCAST_PORT;
+    if (!val.startsWith('ws://') && !val.startsWith('wss://')) val = 'ws://' + val;
+    addWebSocketStream(val);
+    hideAddStream();
+}
+
+function addWebSocketStream(wsUrl) {
+    const id = 'ws-' + Date.now() % 10000;
+    const entry = { id, src: wsUrl, status: 'connecting', ws: null, img: null, lastFrame: null, fps: 0, frameCount: 0, fpsCounter: 0, fpsLastSec: Date.now(), video: null, audioCtx: null, analyser: null };
+
+    const ws = new WebSocket(wsUrl);
+    entry.ws = ws;
+
+    ws.onopen = () => { entry.status = 'connected'; devPrint(`<span style="color:#3fb950">connected</span> ${id} → ${wsUrl}`); };
+    ws.onmessage = (evt) => {
+        try {
+            const parts = evt.data.split('\n', 2);
+            const meta = JSON.parse(parts[0]);
+            if (meta.type !== 'frame' || !parts[1]) return;
+            const img = new Image();
+            img.onload = () => { entry.lastFrame = img; entry.frameCount++; entry.fpsCounter++; };
+            img.src = 'data:image/jpeg;base64,' + parts[1];
+        } catch(e) {}
+    };
+    ws.onerror = () => { entry.status = 'error'; devPrint(`<span style="color:#da3633">error</span> ${id}`); };
+    ws.onclose = () => { entry.status = 'disconnected'; devPrint(`disconnected ${id}`); };
+
+    streams.push(entry);
+    devPrint(`+ stream ${id} → ${wsUrl}`);
+    bc.postMessage({ type: 'feed-open', feedId: id, src: wsUrl });
+    return id;
+}
+
+function addCameraStream(facing) {
+    const id = 'cam-' + Date.now() % 10000;
+    const entry = { id, src: 'camera:' + facing, status: 'requesting', ws: null, img: null, lastFrame: null, fps: 0, frameCount: 0, fpsCounter: 0, fpsLastSec: Date.now(), video: null, audioCtx: null, analyser: null };
+
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: true
+    }).then(stream => {
+        const vid = document.createElement('video');
+        vid.srcObject = stream;
+        vid.setAttribute('playsinline', '');
+        vid.muted = true;
+        vid.play();
+        entry.video = vid;
+        entry.status = 'active';
+
+        // Audio waveform
+        try {
+            const actx = new (window.AudioContext || window.webkitAudioContext)();
+            const src = actx.createMediaStreamSource(stream);
+            const analyser = actx.createAnalyser();
+            analyser.fftSize = 64;
+            src.connect(analyser);
+            entry.audioCtx = actx;
+            entry.analyser = analyser;
+        } catch(e) {}
+
+        devPrint(`<span style="color:#3fb950">camera active</span> ${id}`);
+    }).catch(err => {
+        entry.status = 'error';
+        devPrint(`<span style="color:#da3633">camera error</span>: ${err.message}`);
+    });
+
+    streams.push(entry);
+    devPrint(`+ camera ${id}`);
+    hideAddStream();
+    bc.postMessage({ type: 'feed-open', feedId: id, src: entry.src });
+    return id;
+}
+
+function removeStream(id) {
+    const idx = streams.findIndex(s => s.id === id);
+    if (idx < 0) return;
+    const s = streams[idx];
+    if (s.ws) try { s.ws.close(); } catch(e) {}
+    if (s.video && s.video.srcObject) s.video.srcObject.getTracks().forEach(t => t.stop());
+    if (s.audioCtx) try { s.audioCtx.close(); } catch(e) {}
+    streams.splice(idx, 1);
+    devPrint(`- removed ${id}`);
+    bc.postMessage({ type: 'feed-close', feedId: id });
+}
+
+// ── Render loop ──
+const RAINBOW = ['#ff3838','#ff8c38','#ffe138','#3fb950','#38a5ff','#bc8cff'];
+
+function renderGrid() {
+    requestAnimationFrame(renderGrid);
+
+    const W = gridCanvas.width;
+    const H = gridCanvas.height;
+    if (W === 0 || H === 0) return;
+
+    gctx.fillStyle = '#010409';
+    gctx.fillRect(0, 0, W, H);
+
+    const cols = gridCols;
+    const rows = Math.ceil(streams.length / cols) || cols;
+    const cellW = W / cols;
+    const cellH = H / rows;
+
+    for (let i = 0; i < streams.length; i++) {
+        const s = streams[i];
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = col * cellW;
+        const y = row * cellH;
+
+        // Draw frame
+        const frame = s.video || s.lastFrame;
+        if (frame) {
+            try {
+                if (s.video) {
+                    gctx.drawImage(s.video, x + 1, y + 1, cellW - 2, cellH - 2);
+                    s.frameCount++; s.fpsCounter++;
+                } else {
+                    gctx.drawImage(frame, x + 1, y + 1, cellW - 2, cellH - 2);
+                }
+            } catch(e) {}
+        } else {
+            // Placeholder
+            gctx.fillStyle = '#161b22';
+            gctx.fillRect(x + 1, y + 1, cellW - 2, cellH - 2);
+            gctx.fillStyle = '#484f58';
+            gctx.font = '10px "SF Mono", monospace';
+            gctx.textAlign = 'center';
+            gctx.fillText(s.status || 'waiting', x + cellW/2, y + cellH/2);
+        }
+
+        // Border color based on status
+        const borderColor = s.status === 'connected' || s.status === 'active' ? '#3fb95060' :
+                           s.status === 'error' ? '#da363360' : '#21262d';
+        gctx.strokeStyle = borderColor;
+        gctx.lineWidth = 1;
+        gctx.strokeRect(x, y, cellW, cellH);
+
+        // Label
+        gctx.fillStyle = 'rgba(13,17,23,0.75)';
+        gctx.fillRect(x + 2, y + 2, 100, 14);
+        gctx.fillStyle = '#8b949e';
+        gctx.font = '9px "SF Mono", monospace';
+        gctx.textAlign = 'left';
+        gctx.fillText(`${s.id}  ${s.fps}fps`, x + 4, y + 12);
+
+        // Mini waveform in bottom-left if audio
+        if (s.analyser) {
+            const data = new Uint8Array(s.analyser.frequencyBinCount);
+            s.analyser.getByteFrequencyData(data);
+            const barW = 60 / data.length;
+            for (let j = 0; j < data.length; j++) {
+                const h = (data[j] / 255) * 16;
+                const hue = (j / data.length) * 360;
+                gctx.fillStyle = `hsla(${hue}, 70%, 55%, 0.6)`;
+                gctx.fillRect(x + 2 + j * barW, y + cellH - 2 - h, barW - 0.5, h);
+            }
+        }
+
+        // FPS counter
+        const now = Date.now();
+        if (now - s.fpsLastSec >= 1000) {
+            s.fps = s.fpsCounter;
+            s.fpsCounter = 0;
+            s.fpsLastSec = now;
+        }
+    }
+
+    // Draw empty cells
+    const total = cols * rows;
+    for (let i = streams.length; i < total; i++) {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
+        const x = col * cellW;
+        const y = row * cellH;
+        gctx.strokeStyle = '#21262d';
+        gctx.lineWidth = 1;
+        gctx.strokeRect(x, y, cellW, cellH);
+        gctx.fillStyle = '#30363d';
+        gctx.font = '20px "SF Mono", monospace';
+        gctx.textAlign = 'center';
+        gctx.fillText('+', x + cellW/2, y + cellH/2 + 7);
+    }
+}
+requestAnimationFrame(renderGrid);
+
+// ── Click to open individual instance or add stream ──
+gridCanvas.addEventListener('click', (e) => {
+    const rect = gridCanvas.getBoundingClientRect();
+    const mx = (e.clientX - rect.left) * (gridCanvas.width / rect.width);
+    const my = (e.clientY - rect.top) * (gridCanvas.height / rect.height);
+
+    const cols = gridCols;
+    const rows = Math.ceil(streams.length / cols) || cols;
+    const cellW = gridCanvas.width / cols;
+    const cellH = gridCanvas.height / rows;
+    const col = Math.floor(mx / cellW);
+    const row = Math.floor(my / cellH);
+    const idx = row * cols + col;
+
+    if (idx < streams.length) {
+        // Open individual feed window for this stream
+        const s = streams[idx];
+        devPrint(`opening instance for: ${s.id}`);
+        if (IS_TAURI) {
+            window.__TAURI__.core.invoke('open_feed', { feedId: s.id + '-inst', source: s.src || '' });
+        } else {
+            window.open(`feed.html?id=${s.id}-inst&src=${encodeURIComponent(s.src || '')}`, s.id, 'width=480,height=640');
+        }
+    } else {
+        // Empty cell — show add dialog
+        showAddStream();
+    }
+});
+
+// ── Stats & benchmark ──
+setInterval(() => {
+    const totalFps = streams.reduce((a, s) => a + s.fps, 0);
+    const totalFrames = streams.reduce((a, s) => a + s.frameCount, 0);
+    document.getElementById('sb-streams').textContent = streams.length;
+    document.getElementById('sb-fps').textContent = totalFps;
+    document.getElementById('sb-frames').textContent = totalFrames;
+    document.getElementById('stream-count').textContent = streams.length + ' streams';
+
+    // CPU benchmark
+    const t0 = performance.now();
+    setTimeout(() => {
+        const lag = performance.now() - t0;
+        const cpu = document.getElementById('sb-cpu');
+        cpu.textContent = (lag - 1).toFixed(1) + 'ms';
+        cpu.className = lag < 10 ? 'val' : lag < 50 ? 'warn' : 'bad';
+
+        // Throttle
+        const throttled = lag > 100 || document.hidden;
+        const thr = document.getElementById('sb-throttle');
+        thr.textContent = throttled ? 'yes' : 'none';
+        thr.className = throttled ? 'bad' : 'val';
+
+        // Bottleneck
+        let bn = 'none';
+        if (lag > 50) bn = 'CPU';
+        else if (performance.memory && performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit > 0.85) bn = 'MEM';
+        const bnEl = document.getElementById('sb-bottleneck');
+        bnEl.textContent = bn === 'none' ? '✓' : '⚠ ' + bn;
+        bnEl.className = bn === 'none' ? 'val' : 'bad';
+    }, 1);
+
+    // Memory
+    const mem = document.getElementById('bb-mem');
+    if (performance.memory) {
+        const mb = (performance.memory.usedJSHeapSize / 1048576).toFixed(0);
+        mem.textContent = mb + 'MB';
+        const pct = performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit;
+        mem.className = pct < 0.6 ? 'good' : pct < 0.85 ? 'warn' : 'bad';
+    }
+
+    // Device counts
+    let active = 0, idle = 0, offline = 0;
+    for (const s of streams) {
+        if (s.status === 'connected' || s.status === 'active') active++;
+        else if (s.status === 'disconnected' || s.status === 'error') offline++;
+        else idle++;
+    }
+    document.getElementById('db-active').textContent = active + ' active';
+    document.getElementById('db-idle').textContent = idle + ' idle';
+    document.getElementById('db-offline').textContent = offline + ' offline';
+    document.getElementById('db-total').textContent = streams.length;
+
+    // Health
+    const health = document.getElementById('bb-health');
+    if (streams.length === 0) { health.textContent = '— no streams'; health.className = 'good'; }
+    else if (offline > active) { health.textContent = '⚠ degraded'; health.className = 'warn'; }
+    else { health.textContent = '✓ healthy'; health.className = 'good'; }
+
+    // Broadcast
+    bc.postMessage({ type: 'grid-stats', streams: streams.length, fps: totalFps, active, idle, offline });
+}, 2000);
+
+// ── Dev console ──
+const devLog = document.getElementById('dev-log');
+const devInput = document.getElementById('dev-input');
+
+function devPrint(msg) {
+    const line = document.createElement('div');
+    const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    line.innerHTML = `<span style="color:#484f58">${t}</span> ${msg}`;
+    devLog.appendChild(line);
+    if (devLog.children.length > 200) devLog.removeChild(devLog.firstChild);
+    devLog.scrollTop = devLog.scrollHeight;
+}
+
+function devCmd() {
+    const raw = devInput.value.trim();
+    if (!raw) return;
+    devInput.value = '';
+    devPrint(`<span style="color:#58a6ff">▸</span> ${raw}`);
+
+    const [cmd, ...rest] = raw.split(/\s+/);
+    const arg = rest.join(' ');
+
+    switch (cmd) {
+        case 'stop':
+        case 'remove':
+        case 'rm':
+            if (arg === 'all') { while (streams.length) removeStream(streams[0].id); }
+            else if (arg) removeStream(arg);
+            else devPrint('<span style="color:#d29922">usage: stop &lt;id|all&gt;</span>');
+            break;
+        case 'add':
+            if (arg) {
+                let url = arg;
+                if (!url.includes(':')) url += ':' + HEXCAST_PORT;
+                if (!url.startsWith('ws://')) url = 'ws://' + url;
+                addWebSocketStream(url);
+            } else devPrint('<span style="color:#d29922">usage: add &lt;ip&gt;</span>');
+            break;
+        case 'cam':
+        case 'camera':
+            addCameraStream(arg === 'back' ? 'environment' : 'user');
+            break;
+        case 'mute':
+            devPrint('mute: not yet implemented for grid audio');
+            break;
+        case 'layout':
+            if (arg === '2' || arg === '3' || arg === '4') setLayout(parseInt(arg));
+            else devPrint('<span style="color:#d29922">usage: layout 2|3|4</span>');
+            break;
+        case 'list':
+        case 'ls':
+            if (streams.length === 0) devPrint('no streams');
+            else streams.forEach(s => devPrint(`  ${s.id}  src:${s.src}  status:${s.status}  fps:${s.fps}`));
+            break;
+        case 'instance':
+        case 'open':
+            if (arg) {
+                const s = streams.find(s => s.id === arg);
+                if (s) {
+                    if (IS_TAURI) window.__TAURI__.core.invoke('open_feed', { feedId: s.id + '-inst', source: s.src || '' });
+                    else window.open(`feed.html?id=${s.id}-inst&src=${encodeURIComponent(s.src||'')}`, s.id, 'width=480,height=640');
+                    devPrint(`opened instance: ${s.id}`);
+                } else devPrint(`not found: ${arg}`);
+            } else devPrint('<span style="color:#d29922">usage: instance &lt;id&gt;</span>');
+            break;
+        case 'help':
+            devPrint('add &lt;ip&gt; | cam [back] | stop &lt;id|all&gt; | mute &lt;id&gt; | layout 2|3|4 | list | instance &lt;id&gt;');
+            break;
+        default:
+            devPrint(`<span style="color:#da3633">unknown: ${cmd}</span> — type help`);
+    }
+}
+
+devPrint('hexterm grid — ready');
+devPrint('type <span style="color:#58a6ff">help</span> for commands, click + to add streams');
+
+// ── BroadcastChannel ──
+bc.onmessage = (evt) => {
+    const msg = evt.data;
+    if (!msg) return;
+    // Route keystrokes to master kbatch
+    if (msg.type === 'key' || msg.type === 'feed-open' || msg.type === 'feed-close') {
+        // Already handled by master terminal if running
+    }
+};
+
+// ── Auto-connect from URL params ──
+const params = new URLSearchParams(location.search);
+const autoSrc = params.get('src');
+if (autoSrc) {
+    if (autoSrc === 'camera') addCameraStream('user');
+    else {
+        let url = autoSrc;
+        if (!url.startsWith('ws://')) url = 'ws://' + url;
+        addWebSocketStream(url);
+    }
+}
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function() {
+    const QP = window.QuantumPrefixes;
+    if (!QP) return;
+    QP.onStateChange(function(source, state) {
+        if (source === 'grid' || !state) return;
+        // Grid can display live coverage overlay per tile
+    });
+    QP.broadcastState('grid', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, role: 'grid-viewer' });
+    QP.requestStateSync();
+})();
+
+</script>
+</body>
+</html>

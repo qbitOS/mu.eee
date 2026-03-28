@@ -1,0 +1,1994 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uvspeed — GPU Architecture Live Visualization</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+    <link rel="icon" type="image/x-icon" href="../icons/favicon.ico">
+    <link rel="apple-touch-icon" sizes="192x192" href="../icons/icon-192.png">
+    <style>
+        /* ===== Inlined Design System ===== */
+        :root {
+            --cursor-bg: var(--qp-bg, #0d1117);
+            --cursor-bg-secondary: var(--qp-bg-secondary, #161b22);
+            --cursor-bg-tertiary: var(--qp-bg-tertiary, #21262d);
+            --cursor-border: var(--qp-border, #30363d);
+            --cursor-text: var(--qp-text, #e6edf3);
+            --cursor-text-muted: var(--qp-text-muted, #8b949e);
+            --cursor-accent: #58a6ff;
+            --cursor-success: #3fb950;
+            --cursor-warning: #f0883e;
+            --cursor-error: #f85149;
+            --cursor-purple: #a78bfa;
+            --cursor-cyan: #56d4dd;
+            --nv-green: #76b900;
+            --nv-green-dim: #76b90033;
+            --nv-dark: #1a1a2e;
+            --nv-glow: rgba(118, 185, 0, 0.25);
+            --cursor-space-xs: 4px;
+            --cursor-space-sm: 8px;
+            --cursor-space-md: 16px;
+            --cursor-space-lg: 24px;
+            --cursor-space-xl: 32px;
+            --cursor-radius: 6px;
+            --cursor-font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', 'Cascadia Code', monospace;
+            --layer-icache: #4fc3f7;
+            --layer-warp: #ab47bc;
+            --layer-regfile: #ff7043;
+            --layer-int32: #66bb6a;
+            --layer-fp32: #29b6f6;
+            --layer-fp64: #ffa726;
+            --layer-tensor: #76b900;
+            --layer-ldst: #ef5350;
+            --layer-sfu: #ec407a;
+            --layer-l1: #26c6da;
+            --layer-tex: #7e57c2;
+            --layer-l2: #78909c;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; overflow: hidden; -webkit-text-size-adjust: 100%; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--cursor-bg);
+            color: var(--cursor-text);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        a { color: var(--cursor-accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* ===== Layout ===== */
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ===== Header ===== */
+        .app-header {
+            background: var(--cursor-bg-secondary);
+            border-bottom: 1px solid var(--cursor-border);
+            padding: var(--cursor-space-sm) var(--cursor-space-lg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: var(--cursor-space-md);
+            flex-shrink: 0;
+            min-height: 52px;
+        }
+        .header-title {
+            display: flex;
+            align-items: center;
+            gap: var(--cursor-space-sm);
+            font-size: 1.125rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .header-logo {
+            height: 28px; width: auto; border-radius: 4px; flex-shrink: 0;
+            filter: drop-shadow(0 0 6px rgba(139, 92, 246, 0.4));
+        }
+
+        /* ===== SM Architecture Layers ===== */
+        .sm-arch-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            position: relative;
+        }
+        .sm-arch-stack::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg,
+                var(--layer-icache) 0%, var(--layer-warp) 14%, var(--layer-regfile) 28%,
+                var(--layer-tensor) 42%, var(--layer-ldst) 56%, var(--layer-l1) 72%,
+                var(--layer-l2) 100%);
+            opacity: 0.15;
+            z-index: 0;
+        }
+        .sm-layer {
+            position: relative;
+            z-index: 1;
+            border: 1px solid var(--cursor-border);
+            border-radius: var(--cursor-radius);
+            margin-bottom: -1px;
+            background: var(--cursor-bg-secondary);
+            transition: all 0.25s ease;
+            overflow: hidden;
+        }
+        .sm-layer:first-child { border-radius: var(--cursor-radius) var(--cursor-radius) 0 0; }
+        .sm-layer:last-child { border-radius: 0 0 var(--cursor-radius) var(--cursor-radius); margin-bottom: 0; }
+        .sm-layer:hover {
+            z-index: 2;
+            box-shadow: 0 0 20px rgba(118, 185, 0, 0.1);
+        }
+        .sm-layer.expanded {
+            z-index: 3;
+        }
+        .sm-layer-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            cursor: pointer;
+            user-select: none;
+            position: relative;
+        }
+        .sm-layer-header:hover { background: rgba(255,255,255,0.03); }
+        .layer-color-bar {
+            width: 4px;
+            height: 28px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .layer-icon {
+            font-size: 1rem;
+            width: 24px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .layer-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .layer-name {
+            font-weight: 600;
+            font-size: 0.8125rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .layer-desc {
+            font-size: 0.6875rem;
+            color: var(--cursor-text-muted);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .layer-live-bar {
+            width: 80px;
+            height: 6px;
+            background: var(--cursor-bg-tertiary);
+            border-radius: 3px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .layer-live-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        .layer-live-val {
+            font-family: var(--cursor-font-mono);
+            font-size: 0.6875rem;
+            min-width: 42px;
+            text-align: right;
+            flex-shrink: 0;
+        }
+        .layer-expand-icon {
+            font-size: 0.625rem;
+            color: var(--cursor-text-muted);
+            flex-shrink: 0;
+            transition: transform 0.2s;
+        }
+        .sm-layer.expanded .layer-expand-icon { transform: rotate(180deg); }
+        .layer-detail {
+            display: none;
+            padding: 0 14px 12px 14px;
+            animation: layerSlideDown 0.2s ease;
+        }
+        .sm-layer.expanded .layer-detail { display: block; }
+        @keyframes layerSlideDown { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .layer-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        .layer-param {
+            background: var(--cursor-bg-tertiary);
+            border: 1px solid var(--cursor-border);
+            border-radius: 4px;
+            padding: 6px 10px;
+        }
+        .layer-param-label {
+            font-size: 0.625rem;
+            color: var(--cursor-text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        .layer-param-val {
+            font-family: var(--cursor-font-mono);
+            font-size: 0.8125rem;
+            font-weight: 600;
+        }
+        .layer-param-slider {
+            width: 100%;
+            height: 4px;
+            margin-top: 4px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: var(--cursor-border);
+            border-radius: 2px;
+            outline: none;
+        }
+        .layer-param-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--nv-green);
+            cursor: pointer;
+            border: 2px solid var(--cursor-bg);
+        }
+        .layer-data-flow {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 8px;
+            padding: 6px 10px;
+            background: var(--cursor-bg);
+            border-radius: 4px;
+            font-size: 0.6875rem;
+            font-family: var(--cursor-font-mono);
+            color: var(--cursor-text-muted);
+            overflow-x: auto;
+        }
+        .data-flow-arrow {
+            color: var(--nv-green);
+            flex-shrink: 0;
+        }
+        .data-flow-node {
+            padding: 2px 6px;
+            border-radius: 3px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .layer-mini-canvas {
+            width: 100%;
+            height: 40px;
+            border-radius: 4px;
+            margin-top: 8px;
+            background: var(--cursor-bg);
+        }
+
+        /* Processing sub-units within the core layer */
+        .core-units-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 4px;
+            margin-top: 8px;
+        }
+        .core-unit {
+            padding: 6px;
+            border-radius: 4px;
+            border: 1px solid var(--cursor-border);
+            text-align: center;
+            background: var(--cursor-bg);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .core-unit:hover {
+            border-color: var(--nv-green);
+            box-shadow: 0 0 8px var(--nv-glow);
+        }
+        .core-unit-name {
+            font-size: 0.625rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        .core-unit-count {
+            font-family: var(--cursor-font-mono);
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-top: 2px;
+        }
+        .core-unit-bar {
+            width: 100%;
+            height: 3px;
+            border-radius: 2px;
+            background: var(--cursor-border);
+            margin-top: 4px;
+            overflow: hidden;
+        }
+        .core-unit-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+
+        /* Data flow animation dots */
+        .flow-connector {
+            display: flex;
+            justify-content: center;
+            padding: 0;
+            height: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .flow-connector::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--nv-green);
+            opacity: 0.6;
+            animation: flowDot 1.5s ease-in-out infinite;
+        }
+        @keyframes flowDot {
+            0% { top: -6px; opacity: 0; }
+            50% { opacity: 0.8; }
+            100% { top: 12px; opacity: 0; }
+        }
+        .header-nv-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: var(--nv-green-dim); border: 1px solid var(--nv-green);
+            color: var(--nv-green); border-radius: 12px;
+            padding: 2px 10px; font-size: 0.6875rem; font-weight: 600;
+        }
+        .header-nav {
+            display: flex; align-items: center; gap: var(--cursor-space-sm);
+            font-size: 0.8125rem; flex-wrap: wrap;
+        }
+        .header-nav a {
+            padding: 4px 10px; border-radius: var(--cursor-radius);
+            background: var(--cursor-bg-tertiary); border: 1px solid var(--cursor-border);
+            color: var(--cursor-text-muted); transition: all 0.15s; font-size:.6875rem;
+        }
+        .header-nav a:hover { color: var(--cursor-accent); border-color: var(--cursor-accent); text-decoration: none; }
+        .arch-chip {
+            padding: 3px 8px; border-radius: var(--cursor-radius); font-size: .625rem; font-weight: 700;
+            border: 1px solid var(--cursor-border); background: var(--cursor-bg-tertiary);
+            color: var(--cursor-text-muted); cursor: pointer; transition: all .15s; white-space: nowrap;
+        }
+        .arch-chip:hover { border-color: var(--ac); color: var(--ac); }
+        .arch-chip.active { background: color-mix(in srgb, var(--ac) 12%, transparent); border-color: var(--ac); color: var(--ac); }
+
+        /* ===== Main Layout (sidebar + content) ===== */
+        .main-area {
+            display: flex; flex: 1; overflow: hidden;
+        }
+
+        /* ===== Content ===== */
+        .content {
+            flex: 1; overflow-y: auto; padding: var(--cursor-space-lg);
+            display: flex; flex-direction: column; gap: var(--cursor-space-lg);
+        }
+
+        /* ===== Cards ===== */
+        .card {
+            background: var(--cursor-bg-secondary);
+            border: 1px solid var(--cursor-border);
+            border-radius: var(--cursor-radius);
+            overflow: hidden;
+        }
+        .card-header {
+            padding: var(--cursor-space-sm) var(--cursor-space-md);
+            border-bottom: 1px solid var(--cursor-border);
+            display: flex; align-items: center; justify-content: space-between;
+            font-size: 0.8125rem; font-weight: 600;
+        }
+        .card-header .tag { font-size: 0.625rem; padding: 2px 8px; border-radius: 10px; font-weight: 500; }
+        .tag-live { background: #3fb95022; color: var(--cursor-success); border: 1px solid #3fb95055; }
+        .tag-nv { background: var(--nv-green-dim); color: var(--nv-green); border: 1px solid #76b90055; }
+        .tag-stream { background: #58a6ff22; color: var(--cursor-accent); border: 1px solid #58a6ff55; }
+        .card-body { padding: var(--cursor-space-md); }
+
+        /* ===== Hero Section ===== */
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--cursor-space-lg);
+        }
+        @media (max-width: 900px) { .hero-grid { grid-template-columns: 1fr; } }
+        .hero-img {
+            width: 100%; border-radius: var(--cursor-radius);
+            border: 1px solid var(--cursor-border);
+        }
+
+        /* ===== Arch Diagram ===== */
+        .arch-flow {
+            display: flex; align-items: center; gap: 6px;
+            flex-wrap: wrap; font-size: 0.75rem; font-family: var(--cursor-font-mono);
+        }
+        .arch-node {
+            background: var(--cursor-bg-tertiary); border: 1px solid var(--cursor-border);
+            padding: 6px 12px; border-radius: var(--cursor-radius);
+            white-space: nowrap;
+        }
+        .arch-node.nv { border-color: var(--nv-green); color: var(--nv-green); background: var(--nv-green-dim); }
+        .arch-node.uv { border-color: var(--cursor-purple); color: var(--cursor-purple); background: #a78bfa18; }
+        .arch-arrow { color: var(--cursor-text-muted); font-size: 1rem; }
+
+        /* ===== Canvas Viz ===== */
+        .viz-canvas-wrap {
+            position: relative;
+            background: #000;
+            border-radius: var(--cursor-radius);
+            overflow: hidden;
+            aspect-ratio: 16/9;
+            max-height: 420px;
+        }
+        .viz-canvas-wrap canvas {
+            width: 100%; height: 100%; display: block;
+        }
+        .viz-overlay {
+            position: absolute; top: 8px; left: 8px;
+            font-family: var(--cursor-font-mono); font-size: 0.625rem;
+            color: var(--nv-green); background: rgba(0,0,0,0.7);
+            padding: 4px 8px; border-radius: 4px;
+            pointer-events: none;
+        }
+
+        /* ===== SM Grid ===== */
+        .sm-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(28px, 1fr));
+            gap: 3px;
+        }
+        .sm-cell {
+            aspect-ratio: 1; border-radius: 3px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.5rem; font-family: var(--cursor-font-mono);
+            color: rgba(255,255,255,0.7);
+            transition: background 0.3s, box-shadow 0.3s;
+            cursor: default;
+        }
+
+        /* ===== Data Stream ===== */
+        .stream-bar {
+            height: 4px; border-radius: 2px;
+            background: var(--cursor-bg-tertiary);
+            overflow: hidden; margin-bottom: 4px;
+        }
+        .stream-bar-fill {
+            height: 100%; border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+        .stream-row {
+            display: flex; align-items: center; gap: var(--cursor-space-sm);
+            font-size: 0.75rem; margin-bottom: 8px;
+        }
+        .stream-label { min-width: 100px; color: var(--cursor-text-muted); }
+        .stream-value { font-family: var(--cursor-font-mono); font-weight: 600; min-width: 60px; text-align: right; }
+
+        /* ===== Server Stack ===== */
+        .server-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: var(--cursor-space-sm);
+        }
+        .server-node {
+            background: var(--cursor-bg-tertiary);
+            border: 1px solid var(--cursor-border);
+            border-radius: var(--cursor-radius);
+            padding: var(--cursor-space-sm) var(--cursor-space-md);
+            font-size: 0.75rem;
+        }
+        .server-name { font-weight: 600; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+        .server-stat { display: flex; justify-content: space-between; color: var(--cursor-text-muted); margin-top: 2px; }
+        .server-stat span:last-child { font-family: var(--cursor-font-mono); color: var(--cursor-text); }
+        .pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; animation: pulse 2s infinite; }
+        .pulse-green { background: var(--cursor-success); box-shadow: 0 0 6px var(--cursor-success); }
+        .pulse-nv { background: var(--nv-green); box-shadow: 0 0 6px var(--nv-green); }
+        .pulse-yellow { background: var(--cursor-warning); box-shadow: 0 0 6px var(--cursor-warning); }
+        .pulse-blue { background: var(--cursor-accent); box-shadow: 0 0 6px var(--cursor-accent); }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.85); }
+        }
+
+        /* ===== Quantum Sidebar ===== */
+        .quantum-sidebar {
+            width: 240px; flex-shrink: 0;
+            background: var(--cursor-bg-secondary);
+            border-left: 1px solid var(--cursor-border);
+            overflow-y: auto; font-size: 0.75rem;
+            display: flex; flex-direction: column;
+        }
+        .sidebar-tabs {
+            display: flex; border-bottom: 1px solid var(--cursor-border);
+        }
+        .sidebar-tab {
+            flex: 1; padding: 8px 0; text-align: center;
+            background: transparent; border: none; color: var(--cursor-text-muted);
+            cursor: pointer; font-size: 0.6875rem; font-weight: 600;
+            border-bottom: 2px solid transparent; transition: all 0.15s;
+        }
+        .sidebar-tab:hover { color: var(--cursor-text); }
+        .sidebar-tab.active { color: var(--cursor-accent); border-bottom-color: var(--cursor-accent); }
+        .sidebar-tab-panel { display: none; padding: var(--cursor-space-sm); }
+        .sidebar-tab-panel.active { display: block; }
+        .sidebar-title {
+            font-size: 0.6875rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.5px; color: var(--cursor-text-muted);
+            margin-bottom: var(--cursor-space-sm);
+        }
+        .sidebar-section {
+            padding: var(--cursor-space-sm);
+            border-bottom: 1px solid var(--cursor-border);
+        }
+
+        /* ===== Quantum Nav Grid ===== */
+        .quantum-nav-mini {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3px; margin-bottom: 8px;
+        }
+        .nav-btn {
+            background: var(--cursor-bg-tertiary);
+            border: 1px solid var(--cursor-border);
+            color: var(--cursor-text);
+            padding: 6px 0; border-radius: 4px;
+            font-family: var(--cursor-font-mono);
+            font-size: 0.625rem; font-weight: 700;
+            cursor: pointer; text-align: center;
+            transition: all 0.15s;
+        }
+        .nav-btn:hover { border-color: var(--cursor-accent); color: var(--cursor-accent); }
+        .nav-btn.active { background: var(--cursor-accent); color: #fff; border-color: var(--cursor-accent); }
+
+        .layer-nav {
+            display: flex; align-items: center; gap: 4px; margin-bottom: 6px;
+        }
+        .layer-btn {
+            background: var(--cursor-bg-tertiary); border: 1px solid var(--cursor-border);
+            color: var(--cursor-text-muted); padding: 3px 8px; border-radius: 4px;
+            cursor: pointer; font-size: 0.625rem;
+        }
+        .layer-btn:hover { border-color: var(--cursor-accent); color: var(--cursor-accent); }
+        .layer-label {
+            flex: 1; text-align: center; font-family: var(--cursor-font-mono);
+            font-size: 0.625rem;
+        }
+        .position-display {
+            text-align: center; font-family: var(--cursor-font-mono);
+            font-size: 0.625rem; color: var(--cursor-accent);
+            padding: 4px; background: var(--cursor-bg);
+            border-radius: 4px; margin-bottom: 8px;
+        }
+        .stream-log {
+            max-height: 120px; overflow-y: auto; font-family: var(--cursor-font-mono);
+            font-size: 0.5625rem; background: var(--cursor-bg);
+            border-radius: 4px; padding: 4px 6px;
+        }
+        .stream-entry { padding: 1px 0; color: var(--cursor-text-muted); }
+        .stream-entry.stream-origin { color: var(--cursor-accent); }
+
+        /* ===== Deploy Stat Grid ===== */
+        .deploy-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 4px;
+        }
+        .deploy-stat {
+            background: var(--cursor-bg); border-radius: 4px; padding: 6px;
+            text-align: center;
+        }
+        .deploy-stat-val { font-family: var(--cursor-font-mono); font-size: 0.875rem; font-weight: 700; }
+        .deploy-stat-label { font-size: 0.5625rem; color: var(--cursor-text-muted); }
+
+        /* ===== Specs Table ===== */
+        .specs-table {
+            width: 100%; border-collapse: collapse; font-size: 0.75rem;
+        }
+        .specs-table th {
+            text-align: left; padding: 6px 8px;
+            background: var(--cursor-bg-tertiary); border: 1px solid var(--cursor-border);
+            color: var(--cursor-text-muted); font-weight: 600;
+        }
+        .specs-table td {
+            padding: 6px 8px; border: 1px solid var(--cursor-border);
+        }
+        .specs-table tr:hover td { background: var(--cursor-bg-tertiary); }
+
+        /* ===== Footer ===== */
+        .app-footer {
+            background: var(--cursor-bg-secondary);
+            border-top: 1px solid var(--cursor-border);
+            padding: 6px var(--cursor-space-lg);
+            display: flex; align-items: center; gap: var(--cursor-space-sm);
+            font-size: 0.6875rem; color: var(--cursor-text-muted);
+            flex-wrap: wrap; flex-shrink: 0;
+        }
+        .footer-stat { font-family: var(--cursor-font-mono); }
+        .footer-sep { opacity: 0.3; }
+
+        /* ===== Scrollbar ===== */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--cursor-border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 768px) {
+            .quantum-sidebar { display: none; }
+            .hero-grid { grid-template-columns: 1fr; }
+            .server-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div style="display:flex;height:2px;width:100%;flex-shrink:0"><span style="flex:1;background:#ff3838"></span><span style="flex:1;background:#ff8c38"></span><span style="flex:1;background:#ffe138"></span><span style="flex:1;background:#3fb950"></span><span style="flex:1;background:#38a5ff"></span><span style="flex:1;background:#bc8cff"></span></div>
+    <div class="app-container">
+        <!-- ===== Header ===== -->
+        <div class="app-header">
+            <div class="header-title">
+                <img src="../icons/nyan-banner.png" alt="uvspeed" class="header-logo" title="uvspeed — beyondBINARY">
+                uvspeed — <span id="arch-title-span" style="color:var(--nv-green);">Blackwell</span> Live
+                <span class="header-nv-badge" id="arch-badge"><span class="pulse pulse-nv"></span> <span id="arch-badge-text">NVIDIA</span></span>
+            </div>
+            <div class="header-nav" style="gap:3px;">
+                <span class="arch-chip active" data-arch="nvidia" style="--ac:#76b900;">NVIDIA</span>
+                <span class="arch-chip" data-arch="amd" style="--ac:#ed1c24;">AMD</span>
+                <span class="arch-chip" data-arch="intel" style="--ac:#0071c5;">Intel</span>
+                <span class="arch-chip" data-arch="apple" style="--ac:#a2aaad;">Apple</span>
+                <span class="arch-chip" data-arch="qualcomm" style="--ac:#3253dc;">Qualcomm</span>
+                <span style="opacity:.2;margin:0 2px">|</span>
+                <a href="quantum-notepad.html">Notepad</a>
+                <a href="research-lab.html">Research</a>
+                <a href="archflow.html">archflow</a>
+                <a href="hexcast.html">hexcast</a>
+            </div>
+        </div>
+
+        <!-- ===== Main ===== -->
+        <div class="main-area">
+            <div class="content" id="content">
+
+                <!-- ===== SM Architecture Layer Stack ===== -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>Blackwell Ultra SM — Layer Architecture</span>
+                        <span class="tag tag-nv">192 SMs × B200</span>
+                        <span class="tag tag-live" style="margin-left:4px;"><span class="pulse pulse-green"></span>&nbsp; Live</span>
+                    </div>
+                    <div class="card-body" style="padding:8px;">
+                        <div class="sm-arch-stack" id="sm-arch-stack">
+
+                            <!-- L0: Instruction Cache -->
+                            <div class="sm-layer" data-layer="icache">
+                                <div class="sm-layer-header">
+                                    <div class="layer-color-bar" style="background:var(--layer-icache);"></div>
+                                    <div class="layer-icon">📥</div>
+                                    <div class="layer-info">
+                                        <div class="layer-name">Instruction Cache</div>
+                                        <div class="layer-desc">L0/L1 I-cache — fetch, decode, predicate</div>
+                                    </div>
+                                    <div class="layer-live-bar"><div class="layer-live-fill" id="lf-icache" style="width:60%;background:var(--layer-icache);"></div></div>
+                                    <div class="layer-live-val" id="lv-icache" style="color:var(--layer-icache);">60%</div>
+                                    <div class="layer-expand-icon">▼</div>
+                                </div>
+                                <div class="layer-detail">
+                                    <div class="layer-data-flow">
+                                        <span class="data-flow-node" style="background:var(--layer-icache)22;color:var(--layer-icache);">Host / L2</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--layer-icache)22;color:var(--layer-icache);">I-Cache 128KB</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--layer-warp)22;color:var(--layer-warp);">Warp Schedulers</span>
+                                    </div>
+                                    <div class="layer-detail-grid">
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Cache Size</div>
+                                            <div class="layer-param-val" style="color:var(--layer-icache);">128 KB</div>
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Hit Rate</div>
+                                            <div class="layer-param-val" id="lp-icache-hit" style="color:var(--layer-icache);">96.2%</div>
+                                            <input type="range" class="layer-param-slider" data-param="icache-hit" min="0" max="100" value="96">
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Fetch Bandwidth</div>
+                                            <div class="layer-param-val" id="lp-icache-bw" style="color:var(--layer-icache);">256 B/clk</div>
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Misses / 1K Instr</div>
+                                            <div class="layer-param-val" id="lp-icache-miss" style="color:var(--cursor-warning);">3.8</div>
+                                        </div>
+                                    </div>
+                                    <canvas class="layer-mini-canvas" id="mc-icache"></canvas>
+                                </div>
+                            </div>
+                            <div class="flow-connector"></div>
+
+                            <!-- L1: Warp Schedulers -->
+                            <div class="sm-layer" data-layer="warp">
+                                <div class="sm-layer-header">
+                                    <div class="layer-color-bar" style="background:var(--layer-warp);"></div>
+                                    <div class="layer-icon">🔀</div>
+                                    <div class="layer-info">
+                                        <div class="layer-name">Warp Schedulers × 4</div>
+                                        <div class="layer-desc">4 schedulers, 4 dispatch units — 128 threads/warp</div>
+                                    </div>
+                                    <div class="layer-live-bar"><div class="layer-live-fill" id="lf-warp" style="width:74%;background:var(--layer-warp);"></div></div>
+                                    <div class="layer-live-val" id="lv-warp" style="color:var(--layer-warp);">74%</div>
+                                    <div class="layer-expand-icon">▼</div>
+                                </div>
+                                <div class="layer-detail">
+                                    <div class="layer-data-flow">
+                                        <span class="data-flow-node" style="background:var(--layer-icache)22;color:var(--layer-icache);">I-Cache</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--layer-warp)22;color:var(--layer-warp);">Decode</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--layer-warp)22;color:var(--layer-warp);">Schedule</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--layer-warp)22;color:var(--layer-warp);">Dispatch ×4</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--layer-regfile)22;color:var(--layer-regfile);">RegFile</span>
+                                    </div>
+                                    <div class="layer-detail-grid">
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Active Warps</div>
+                                            <div class="layer-param-val" id="lp-warp-active" style="color:var(--layer-warp);">48 / 64</div>
+                                            <input type="range" class="layer-param-slider" data-param="warp-active" min="0" max="64" value="48">
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Occupancy</div>
+                                            <div class="layer-param-val" id="lp-warp-occ" style="color:var(--layer-warp);">75%</div>
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Stall Cycles</div>
+                                            <div class="layer-param-val" id="lp-warp-stall" style="color:var(--cursor-warning);">12.4%</div>
+                                            <input type="range" class="layer-param-slider" data-param="warp-stall" min="0" max="100" value="12">
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">IPC (Instr/Clk)</div>
+                                            <div class="layer-param-val" id="lp-warp-ipc" style="color:var(--nv-green);">3.2</div>
+                                        </div>
+                                    </div>
+                                    <canvas class="layer-mini-canvas" id="mc-warp"></canvas>
+                                </div>
+                            </div>
+                            <div class="flow-connector"></div>
+
+                            <!-- L2: Register File -->
+                            <div class="sm-layer" data-layer="regfile">
+                                <div class="sm-layer-header">
+                                    <div class="layer-color-bar" style="background:var(--layer-regfile);"></div>
+                                    <div class="layer-icon">🗄️</div>
+                                    <div class="layer-info">
+                                        <div class="layer-name">Register File</div>
+                                        <div class="layer-desc">65,536 × 32-bit registers — operand source for all units</div>
+                                    </div>
+                                    <div class="layer-live-bar"><div class="layer-live-fill" id="lf-regfile" style="width:68%;background:var(--layer-regfile);"></div></div>
+                                    <div class="layer-live-val" id="lv-regfile" style="color:var(--layer-regfile);">68%</div>
+                                    <div class="layer-expand-icon">▼</div>
+                                </div>
+                                <div class="layer-detail">
+                                    <div class="layer-data-flow">
+                                        <span class="data-flow-node" style="background:var(--layer-warp)22;color:var(--layer-warp);">Dispatch</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--layer-regfile)22;color:var(--layer-regfile);">RegFile 256KB</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--layer-int32)22;color:var(--layer-int32);">INT32</span>
+                                        <span>/</span>
+                                        <span class="data-flow-node" style="background:var(--layer-fp32)22;color:var(--layer-fp32);">FP32</span>
+                                        <span>/</span>
+                                        <span class="data-flow-node" style="background:var(--layer-tensor)22;color:var(--layer-tensor);">Tensor</span>
+                                    </div>
+                                    <div class="layer-detail-grid">
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Total Registers</div>
+                                            <div class="layer-param-val" style="color:var(--layer-regfile);">65,536</div>
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Per Thread</div>
+                                            <div class="layer-param-val" id="lp-reg-thread" style="color:var(--layer-regfile);">255 max</div>
+                                            <input type="range" class="layer-param-slider" data-param="reg-thread" min="32" max="255" value="128">
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Utilization</div>
+                                            <div class="layer-param-val" id="lp-reg-util" style="color:var(--layer-regfile);">68%</div>
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Bank Conflicts</div>
+                                            <div class="layer-param-val" id="lp-reg-bank" style="color:var(--cursor-error);">2.1%</div>
+                                        </div>
+                                    </div>
+                                    <canvas class="layer-mini-canvas" id="mc-regfile"></canvas>
+                                </div>
+                            </div>
+                            <div class="flow-connector"></div>
+
+                            <!-- L3: Processing Cores (INT32, FP32, FP64, Tensor) -->
+                            <div class="sm-layer" data-layer="cores">
+                                <div class="sm-layer-header">
+                                    <div class="layer-color-bar" style="background:linear-gradient(180deg,var(--layer-int32),var(--layer-fp32),var(--layer-tensor));"></div>
+                                    <div class="layer-icon">⚡</div>
+                                    <div class="layer-info">
+                                        <div class="layer-name">Processing Cores</div>
+                                        <div class="layer-desc">INT32 + FP32 + FP64 + 5th Gen Tensor Cores (FP4/FP6/FP8)</div>
+                                    </div>
+                                    <div class="layer-live-bar"><div class="layer-live-fill" id="lf-cores" style="width:82%;background:var(--layer-tensor);"></div></div>
+                                    <div class="layer-live-val" id="lv-cores" style="color:var(--layer-tensor);">82%</div>
+                                    <div class="layer-expand-icon">▼</div>
+                                </div>
+                                <div class="layer-detail">
+                                    <div class="core-units-row">
+                                        <div class="core-unit" data-unit="int32">
+                                            <div class="core-unit-name" style="color:var(--layer-int32);">INT32</div>
+                                            <div class="core-unit-count" id="cu-int32-count" style="color:var(--layer-int32);">128</div>
+                                            <div class="core-unit-bar"><div class="core-unit-bar-fill" id="cu-int32-bar" style="width:71%;background:var(--layer-int32);"></div></div>
+                                        </div>
+                                        <div class="core-unit" data-unit="fp32">
+                                            <div class="core-unit-name" style="color:var(--layer-fp32);">FP32</div>
+                                            <div class="core-unit-count" id="cu-fp32-count" style="color:var(--layer-fp32);">128</div>
+                                            <div class="core-unit-bar"><div class="core-unit-bar-fill" id="cu-fp32-bar" style="width:76%;background:var(--layer-fp32);"></div></div>
+                                        </div>
+                                        <div class="core-unit" data-unit="fp64">
+                                            <div class="core-unit-name" style="color:var(--layer-fp64);">FP64</div>
+                                            <div class="core-unit-count" id="cu-fp64-count" style="color:var(--layer-fp64);">2</div>
+                                            <div class="core-unit-bar"><div class="core-unit-bar-fill" id="cu-fp64-bar" style="width:45%;background:var(--layer-fp64);"></div></div>
+                                        </div>
+                                        <div class="core-unit" data-unit="tensor">
+                                            <div class="core-unit-name" style="color:var(--layer-tensor);">TENSOR 5G</div>
+                                            <div class="core-unit-count" id="cu-tensor-count" style="color:var(--layer-tensor);">4</div>
+                                            <div class="core-unit-bar"><div class="core-unit-bar-fill" id="cu-tensor-bar" style="width:88%;background:var(--layer-tensor);"></div></div>
+                                        </div>
+                                    </div>
+                                    <div class="layer-detail-grid" style="margin-top:8px;">
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Tensor FP4 PFLOPS</div>
+                                            <div class="layer-param-val" id="lp-core-fp4" style="color:var(--layer-tensor);">20.0</div>
+                                            <input type="range" class="layer-param-slider" data-param="core-fp4" min="0" max="100" value="88">
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Tensor FP8 PFLOPS</div>
+                                            <div class="layer-param-val" id="lp-core-fp8" style="color:var(--layer-tensor);">10.0</div>
+                                            <input type="range" class="layer-param-slider" data-param="core-fp8" min="0" max="100" value="82">
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">FP32 TFLOPS</div>
+                                            <div class="layer-param-val" id="lp-core-fp32" style="color:var(--layer-fp32);">90</div>
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">INT32 TOPS</div>
+                                            <div class="layer-param-val" id="lp-core-int32" style="color:var(--layer-int32);">90</div>
+                                        </div>
+                                    </div>
+                                    <canvas class="layer-mini-canvas" id="mc-cores"></canvas>
+                                </div>
+                            </div>
+                            <div class="flow-connector"></div>
+
+                            <!-- L4: Load/Store + SFU -->
+                            <div class="sm-layer" data-layer="ldst">
+                                <div class="sm-layer-header">
+                                    <div class="layer-color-bar" style="background:linear-gradient(180deg,var(--layer-ldst),var(--layer-sfu));"></div>
+                                    <div class="layer-icon">📦</div>
+                                    <div class="layer-info">
+                                        <div class="layer-name">Load/Store + SFU</div>
+                                        <div class="layer-desc">32 LD/ST units + 8 Special Function Units (sin, cos, rcp, sqrt)</div>
+                                    </div>
+                                    <div class="layer-live-bar"><div class="layer-live-fill" id="lf-ldst" style="width:55%;background:var(--layer-ldst);"></div></div>
+                                    <div class="layer-live-val" id="lv-ldst" style="color:var(--layer-ldst);">55%</div>
+                                    <div class="layer-expand-icon">▼</div>
+                                </div>
+                                <div class="layer-detail">
+                                    <div class="layer-data-flow">
+                                        <span class="data-flow-node" style="background:var(--layer-regfile)22;color:var(--layer-regfile);">RegFile</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--layer-ldst)22;color:var(--layer-ldst);">LD/ST ×32</span>
+                                        <span class="data-flow-arrow">⇄</span>
+                                        <span class="data-flow-node" style="background:var(--layer-l1)22;color:var(--layer-l1);">L1 / Shared</span>
+                                        <span style="margin-left:12px;color:var(--cursor-text-muted);">|</span>
+                                        <span class="data-flow-node" style="background:var(--layer-sfu)22;color:var(--layer-sfu);">SFU ×8</span>
+                                    </div>
+                                    <div class="layer-detail-grid">
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">LD/ST Units</div>
+                                            <div class="layer-param-val" style="color:var(--layer-ldst);">32</div>
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">SFU Units</div>
+                                            <div class="layer-param-val" style="color:var(--layer-sfu);">8</div>
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">LD/ST Throughput</div>
+                                            <div class="layer-param-val" id="lp-ldst-tp" style="color:var(--layer-ldst);">128 B/clk</div>
+                                            <input type="range" class="layer-param-slider" data-param="ldst-tp" min="0" max="100" value="55">
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Pending Requests</div>
+                                            <div class="layer-param-val" id="lp-ldst-pend" style="color:var(--cursor-warning);">24</div>
+                                        </div>
+                                    </div>
+                                    <canvas class="layer-mini-canvas" id="mc-ldst"></canvas>
+                                </div>
+                            </div>
+                            <div class="flow-connector"></div>
+
+                            <!-- L5: L1 Data Cache / Shared Memory -->
+                            <div class="sm-layer" data-layer="l1">
+                                <div class="sm-layer-header">
+                                    <div class="layer-color-bar" style="background:var(--layer-l1);"></div>
+                                    <div class="layer-icon">💾</div>
+                                    <div class="layer-info">
+                                        <div class="layer-name">L1 Data Cache / Shared Memory</div>
+                                        <div class="layer-desc">256 KB configurable — L1 + Shared + Texture cache</div>
+                                    </div>
+                                    <div class="layer-live-bar"><div class="layer-live-fill" id="lf-l1" style="width:72%;background:var(--layer-l1);"></div></div>
+                                    <div class="layer-live-val" id="lv-l1" style="color:var(--layer-l1);">72%</div>
+                                    <div class="layer-expand-icon">▼</div>
+                                </div>
+                                <div class="layer-detail">
+                                    <div class="layer-data-flow">
+                                        <span class="data-flow-node" style="background:var(--layer-ldst)22;color:var(--layer-ldst);">LD/ST</span>
+                                        <span class="data-flow-arrow">⇄</span>
+                                        <span class="data-flow-node" style="background:var(--layer-l1)22;color:var(--layer-l1);">L1 256KB</span>
+                                        <span class="data-flow-arrow">⇄</span>
+                                        <span class="data-flow-node" style="background:var(--layer-tex)22;color:var(--layer-tex);">TEX ×4</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--layer-l2)22;color:var(--layer-l2);">L2 Cache</span>
+                                    </div>
+                                    <div class="layer-detail-grid">
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">L1 Size</div>
+                                            <div class="layer-param-val" id="lp-l1-size" style="color:var(--layer-l1);">128 KB</div>
+                                            <input type="range" class="layer-param-slider" data-param="l1-size" min="0" max="256" value="128">
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Shared Mem</div>
+                                            <div class="layer-param-val" id="lp-l1-shared" style="color:var(--layer-l1);">128 KB</div>
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Hit Rate</div>
+                                            <div class="layer-param-val" id="lp-l1-hit" style="color:var(--layer-l1);">89.4%</div>
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">TEX Throughput</div>
+                                            <div class="layer-param-val" id="lp-l1-tex" style="color:var(--layer-tex);">4 filtered/clk</div>
+                                        </div>
+                                    </div>
+                                    <canvas class="layer-mini-canvas" id="mc-l1"></canvas>
+                                </div>
+                            </div>
+                            <div class="flow-connector"></div>
+
+                            <!-- L6: L2 Cache + HBM3e Interface -->
+                            <div class="sm-layer" data-layer="l2">
+                                <div class="sm-layer-header">
+                                    <div class="layer-color-bar" style="background:var(--layer-l2);"></div>
+                                    <div class="layer-icon">🌐</div>
+                                    <div class="layer-info">
+                                        <div class="layer-name">L2 Cache → HBM3e → NVLink 5.0</div>
+                                        <div class="layer-desc">96 MB L2 — 192 GB HBM3e @ 8 TB/s — NVLink 5.0 @ 1.8 TB/s</div>
+                                    </div>
+                                    <div class="layer-live-bar"><div class="layer-live-fill" id="lf-l2" style="width:65%;background:var(--layer-l2);"></div></div>
+                                    <div class="layer-live-val" id="lv-l2" style="color:var(--layer-l2);">65%</div>
+                                    <div class="layer-expand-icon">▼</div>
+                                </div>
+                                <div class="layer-detail">
+                                    <div class="layer-data-flow">
+                                        <span class="data-flow-node" style="background:var(--layer-l1)22;color:var(--layer-l1);">L1</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--layer-l2)22;color:var(--layer-l2);">L2 96MB</span>
+                                        <span class="data-flow-arrow">⇄</span>
+                                        <span class="data-flow-node" style="background:var(--cursor-accent)22;color:var(--cursor-accent);">HBM3e 192GB</span>
+                                        <span class="data-flow-arrow">⇄</span>
+                                        <span class="data-flow-node" style="background:var(--cursor-purple)22;color:var(--cursor-purple);">NVLink 5.0</span>
+                                        <span class="data-flow-arrow">→</span>
+                                        <span class="data-flow-node" style="background:var(--nv-green)22;color:var(--nv-green);">uvspeed</span>
+                                    </div>
+                                    <div class="layer-detail-grid">
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">L2 Hit Rate</div>
+                                            <div class="layer-param-val" id="lp-l2-hit" style="color:var(--layer-l2);">82.1%</div>
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">HBM3e Bandwidth</div>
+                                            <div class="layer-param-val" id="lp-l2-hbm" style="color:var(--cursor-accent);">5.2 TB/s</div>
+                                            <input type="range" class="layer-param-slider" data-param="l2-hbm" min="0" max="100" value="65">
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">NVLink BW</div>
+                                            <div class="layer-param-val" id="lp-l2-nvl" style="color:var(--cursor-purple);">1.17 TB/s</div>
+                                            <input type="range" class="layer-param-slider" data-param="l2-nvl" min="0" max="100" value="65">
+                                        </div>
+                                        <div class="layer-param">
+                                            <div class="layer-param-label">Power Draw</div>
+                                            <div class="layer-param-val" id="lp-l2-power" style="color:var(--cursor-error);">840W</div>
+                                        </div>
+                                    </div>
+                                    <canvas class="layer-mini-canvas" id="mc-l2"></canvas>
+                                </div>
+                            </div>
+
+                        </div><!-- /sm-arch-stack -->
+                    </div>
+                </div>
+
+                <!-- ===== Live Aggregate Streams ===== -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>Aggregate Data Flow — All Layers</span>
+                        <span class="tag tag-live"><span class="pulse pulse-green"></span>&nbsp; Streaming</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="viz-canvas-wrap">
+                            <canvas id="stream-canvas"></canvas>
+                            <div class="viz-overlay" id="stream-overlay">
+                                FPS: 60 | SMs: 192 | Bandwidth: 1.8 TB/s | Utilization: —%
+                            </div>
+                        </div>
+                        <div style="margin-top:12px;">
+                            <div class="stream-row">
+                                <span class="stream-label">SM Throughput</span>
+                                <div class="stream-bar" style="flex:1;"><div class="stream-bar-fill" id="bar-sm" style="width:72%;background:var(--nv-green);"></div></div>
+                                <span class="stream-value" id="val-sm" style="color:var(--nv-green);">72%</span>
+                            </div>
+                            <div class="stream-row">
+                                <span class="stream-label">HBM3e BW</span>
+                                <div class="stream-bar" style="flex:1;"><div class="stream-bar-fill" id="bar-hbm" style="width:65%;background:var(--cursor-accent);"></div></div>
+                                <span class="stream-value" id="val-hbm" style="color:var(--cursor-accent);">1.17 TB/s</span>
+                            </div>
+                            <div class="stream-row">
+                                <span class="stream-label">NVLink Traffic</span>
+                                <div class="stream-bar" style="flex:1;"><div class="stream-bar-fill" id="bar-nvlink" style="width:58%;background:var(--cursor-purple);"></div></div>
+                                <span class="stream-value" id="val-nvlink" style="color:var(--cursor-purple);">1.04 TB/s</span>
+                            </div>
+                            <div class="stream-row">
+                                <span class="stream-label">Tensor Core FP4</span>
+                                <div class="stream-bar" style="flex:1;"><div class="stream-bar-fill" id="bar-fp4" style="width:81%;background:var(--cursor-warning);"></div></div>
+                                <span class="stream-value" id="val-fp4" style="color:var(--cursor-warning);">81%</span>
+                            </div>
+                            <div class="stream-row">
+                                <span class="stream-label">Power Draw</span>
+                                <div class="stream-bar" style="flex:1;"><div class="stream-bar-fill" id="bar-power" style="width:70%;background:var(--cursor-error);"></div></div>
+                                <span class="stream-value" id="val-power" style="color:var(--cursor-error);">840W</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== SM Heatmap ===== -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>SM Activity Heatmap — 192 Streaming Multiprocessors</span>
+                        <span class="tag tag-stream">Real-time</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="sm-grid" id="sm-grid"></div>
+                        <div style="display:flex;align-items:center;gap:16px;margin-top:12px;font-size:0.6875rem;color:var(--cursor-text-muted);">
+                            <span>Idle</span>
+                            <div style="flex:1;height:8px;border-radius:4px;background:linear-gradient(90deg,#21262d,#76b900,#f0883e,#f85149);"></div>
+                            <span>Saturated</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== Blackwell Specs (collapsed) ===== -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>Blackwell Ultra Specifications</span>
+                        <span class="tag tag-nv">B200 / GB200</span>
+                    </div>
+                    <div class="card-body">
+                        <table class="specs-table">
+                            <thead><tr><th>Specification</th><th>Blackwell Ultra (B200)</th><th>Blackwell (B100)</th><th>Hopper (H100)</th></tr></thead>
+                            <tbody>
+                                <tr><td>Transistors</td><td style="color:var(--nv-green);">208B</td><td>208B</td><td>80B</td></tr>
+                                <tr><td>Process</td><td style="color:var(--nv-green);">TSMC 4NP</td><td>TSMC 4NP</td><td>TSMC 4N</td></tr>
+                                <tr><td>SMs</td><td style="color:var(--nv-green);">192</td><td>180</td><td>132</td></tr>
+                                <tr><td>FP4 Tensor</td><td style="color:var(--nv-green);">20 PFLOPS</td><td>18 PFLOPS</td><td>—</td></tr>
+                                <tr><td>FP8 Tensor</td><td style="color:var(--nv-green);">10 PFLOPS</td><td>9 PFLOPS</td><td>3.96 PFLOPS</td></tr>
+                                <tr><td>HBM</td><td style="color:var(--nv-green);">HBM3e 192GB</td><td>HBM3e 192GB</td><td>HBM3 80GB</td></tr>
+                                <tr><td>Memory BW</td><td style="color:var(--nv-green);">8 TB/s</td><td>8 TB/s</td><td>3.35 TB/s</td></tr>
+                                <tr><td>NVLink BW</td><td style="color:var(--nv-green);">1.8 TB/s (NVL5)</td><td>1.8 TB/s</td><td>900 GB/s</td></tr>
+                                <tr><td>TDP</td><td>1200W</td><td>1000W</td><td>700W</td></tr>
+                                <tr><td>Interconnect</td><td style="color:var(--nv-green);">NVLink 5.0</td><td>NVLink 5.0</td><td>NVLink 4.0</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ===== Server Stack / Deploy Targets ===== -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>Localized Deploy Targets — Server Stacks</span>
+                        <span class="tag tag-live"><span class="pulse pulse-green"></span>&nbsp; Colab Ready</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="server-grid" id="server-grid">
+                            <div class="server-node" id="srv-dgx">
+                                <div class="server-name"><span class="pulse pulse-nv"></span> DGX Spark</div>
+                                <div class="server-stat"><span>GPUs</span><span>1× GB200 Grace</span></div>
+                                <div class="server-stat"><span>Memory</span><span>128 GB unified</span></div>
+                                <div class="server-stat"><span>Perf</span><span id="dgx-perf">1000 TOPS AI</span></div>
+                                <div class="server-stat"><span>Status</span><span style="color:var(--cursor-success);" id="dgx-status">ready</span></div>
+                            </div>
+                            <div class="server-node" id="srv-supermicro">
+                                <div class="server-name"><span class="pulse pulse-green"></span> Supermicro GPU</div>
+                                <div class="server-stat"><span>GPUs</span><span>8× B200</span></div>
+                                <div class="server-stat"><span>Memory</span><span>8× 192GB HBM3e</span></div>
+                                <div class="server-stat"><span>Perf</span><span id="smc-perf">160 PFLOPS FP4</span></div>
+                                <div class="server-stat"><span>Status</span><span style="color:var(--cursor-success);" id="smc-status">ready</span></div>
+                            </div>
+                            <div class="server-node" id="srv-lambda">
+                                <div class="server-name"><span class="pulse pulse-blue"></span> Lambda Supercluster</div>
+                                <div class="server-stat"><span>GPUs</span><span>3,584× B200</span></div>
+                                <div class="server-stat"><span>Fabric</span><span>NVLink + InfiniBand</span></div>
+                                <div class="server-stat"><span>Perf</span><span id="lambda-perf">~71 EFLOPS FP4</span></div>
+                                <div class="server-stat"><span>Status</span><span style="color:var(--cursor-accent);" id="lambda-status">cloud</span></div>
+                            </div>
+                            <div class="server-node" id="srv-local">
+                                <div class="server-name"><span class="pulse pulse-yellow"></span> Local Dev (uvspeed)</div>
+                                <div class="server-stat"><span>Bridge</span><span>:8085 HTTP + :8086 WS</span></div>
+                                <div class="server-stat"><span>Engine</span><span>Quantum Prefix 3.0</span></div>
+                                <div class="server-stat"><span>Deploy</span><span id="local-deploy">Electron / Web</span></div>
+                                <div class="server-stat"><span>Status</span><span style="color:var(--cursor-warning);" id="local-status">local</span></div>
+                            </div>
+                            <div class="server-node" id="srv-colab">
+                                <div class="server-name"><span class="pulse pulse-blue"></span> Google Colab</div>
+                                <div class="server-stat"><span>GPUs</span><span>T4 / A100 / L4</span></div>
+                                <div class="server-stat"><span>Runtime</span><span>Python + Jupyter</span></div>
+                                <div class="server-stat"><span>Bridge</span><span id="colab-bridge">ngrok tunnel</span></div>
+                                <div class="server-stat"><span>Status</span><span style="color:var(--cursor-accent);" id="colab-status">cloud</span></div>
+                            </div>
+                            <div class="server-node" id="srv-dgx-cloud">
+                                <div class="server-name"><span class="pulse pulse-nv"></span> DGX Cloud</div>
+                                <div class="server-stat"><span>GPUs</span><span>8× B200 per node</span></div>
+                                <div class="server-stat"><span>Network</span><span>NVLink + IB NDR</span></div>
+                                <div class="server-stat"><span>Perf</span><span id="dgxc-perf">160 PFLOPS/node</span></div>
+                                <div class="server-stat"><span>Status</span><span style="color:var(--cursor-accent);" id="dgxc-status">cloud</span></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== References ===== -->
+                <div class="card">
+                    <div class="card-header">
+                        <span>References &amp; Resources</span>
+                    </div>
+                    <div class="card-body" style="font-size:0.8125rem;">
+                        <ul style="list-style:none;display:flex;flex-direction:column;gap:6px;">
+                            <li>🔗 <a href="https://developer.nvidia.com/blog/inside-nvidia-blackwell-ultra-the-chip-powering-the-ai-factory-era/" target="_blank">Inside NVIDIA Blackwell Ultra — Developer Blog</a></li>
+                            <li>🔗 <a href="https://en.wikipedia.org/wiki/Blackwell_(microarchitecture)" target="_blank">Blackwell Microarchitecture — Wikipedia</a></li>
+                            <li>🔗 <a href="https://lambda.ai/superclusters" target="_blank">Lambda AI Superclusters — Blackwell B200 Clusters</a></li>
+                            <li>🔗 <a href="https://www.supermicro.com/en/accelerators/nvidia" target="_blank">Supermicro NVIDIA GPU Servers</a></li>
+                            <li>🔗 <a href="https://www.nvidia.com/en-us/data-center/dgx-spark/" target="_blank">NVIDIA DGX Spark — Desktop AI Supercomputer</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ===== Quantum Sidebar ===== -->
+            <div class="quantum-sidebar">
+                <div class="sidebar-tabs">
+                    <button class="sidebar-tab active" data-tab="nav-tab" id="tab-nav">⚛ Nav</button>
+                    <button class="sidebar-tab" data-tab="deploy-tab" id="tab-deploy">🚀 Deploy</button>
+                    <button class="sidebar-tab" data-tab="stream-tab" id="tab-stream">📡 Stream</button>
+                </div>
+
+                <!-- TAB 1: Quantum Navigation -->
+                <div class="sidebar-tab-panel active" id="nav-tab">
+                    <div class="sidebar-section">
+                        <div class="sidebar-title">Quantum Navigation</div>
+                        <div class="quantum-nav-mini">
+                            <button class="nav-btn" data-direction="+1" title="Lines up (+Y)">+1</button>
+                            <button class="nav-btn" data-direction="0" title="Neutral">0</button>
+                            <button class="nav-btn" data-direction="-1" title="Lines down (-Y)">-1</button>
+                            <button class="nav-btn" data-direction="+n" title="Complexity up (+Z)">+n</button>
+                            <button class="nav-btn active" data-direction="⚛" id="nav-center-btn" title="Reset to origin">∞</button>
+                            <button class="nav-btn" data-direction="-n" title="Complexity down (-Z)">-n</button>
+                            <button class="nav-btn" data-direction="+0" title="Dependencies right (+X)">+0</button>
+                            <button class="nav-btn" data-direction="-0" title="Dependencies left (-X)">-0</button>
+                            <button class="nav-btn" data-direction="+2" title="Jump +2 lines">+2</button>
+                        </div>
+                        <div class="layer-nav">
+                            <button class="layer-btn" id="layer-down" title="Layer down">▼</button>
+                            <div class="layer-label">Layer <strong id="layer-value">0</strong> <span style="opacity:0.5">Z</span></div>
+                            <button class="layer-btn" id="layer-up" title="Layer up">▲</button>
+                        </div>
+                        <div class="position-display" id="position-display">[0, 0, 0]</div>
+                        <div class="stream-log" id="stream-log">
+                            <div class="stream-entry stream-origin">∞ origin [0, 0, 0]</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: Deploy -->
+                <div class="sidebar-tab-panel" id="deploy-tab">
+                    <div class="sidebar-section">
+                        <div class="sidebar-title">Deploy Status</div>
+                        <div class="deploy-grid">
+                            <div class="deploy-stat">
+                                <div class="deploy-stat-val" style="color:var(--nv-green);" id="deploy-nodes">6</div>
+                                <div class="deploy-stat-label">Targets</div>
+                            </div>
+                            <div class="deploy-stat">
+                                <div class="deploy-stat-val" style="color:var(--cursor-success);" id="deploy-ready">4</div>
+                                <div class="deploy-stat-label">Ready</div>
+                            </div>
+                            <div class="deploy-stat">
+                                <div class="deploy-stat-val" style="color:var(--cursor-accent);" id="deploy-cloud">2</div>
+                                <div class="deploy-stat-label">Cloud</div>
+                            </div>
+                            <div class="deploy-stat">
+                                <div class="deploy-stat-val" style="color:var(--cursor-warning);" id="deploy-local">1</div>
+                                <div class="deploy-stat-label">Local</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="sidebar-section">
+                        <div class="sidebar-title">Quick Deploy</div>
+                        <div style="display:flex;flex-direction:column;gap:4px;">
+                            <button class="nav-btn" id="deploy-dgx" style="text-align:left;padding:6px 8px;">🟢 DGX Spark → uvspeed bridge</button>
+                            <button class="nav-btn" id="deploy-smc" style="text-align:left;padding:6px 8px;">🟢 Supermicro → multi-GPU</button>
+                            <button class="nav-btn" id="deploy-lambda" style="text-align:left;padding:6px 8px;">🔵 Lambda → supercluster</button>
+                            <button class="nav-btn" id="deploy-colab" style="text-align:left;padding:6px 8px;">🔵 Colab → ngrok tunnel</button>
+                            <button class="nav-btn" id="deploy-local" style="text-align:left;padding:6px 8px;">🟡 Local → Electron app</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Stream -->
+                <div class="sidebar-tab-panel" id="stream-tab">
+                    <div class="sidebar-section">
+                        <div class="sidebar-title">Data Stream Monitor</div>
+                        <div style="display:flex;flex-direction:column;gap:6px;">
+                            <div style="display:flex;justify-content:space-between;"><span style="color:var(--cursor-text-muted);">Frames/s</span><span style="font-family:var(--cursor-font-mono);color:var(--nv-green);" id="side-fps">60</span></div>
+                            <div style="display:flex;justify-content:space-between;"><span style="color:var(--cursor-text-muted);">SM Load</span><span style="font-family:var(--cursor-font-mono);color:var(--nv-green);" id="side-sm">72%</span></div>
+                            <div style="display:flex;justify-content:space-between;"><span style="color:var(--cursor-text-muted);">HBM3e</span><span style="font-family:var(--cursor-font-mono);color:var(--cursor-accent);" id="side-hbm">1.17 TB/s</span></div>
+                            <div style="display:flex;justify-content:space-between;"><span style="color:var(--cursor-text-muted);">NVLink</span><span style="font-family:var(--cursor-font-mono);color:var(--cursor-purple);" id="side-nvlink">1.04 TB/s</span></div>
+                            <div style="display:flex;justify-content:space-between;"><span style="color:var(--cursor-text-muted);">Power</span><span style="font-family:var(--cursor-font-mono);color:var(--cursor-error);" id="side-power">840W</span></div>
+                            <div style="display:flex;justify-content:space-between;"><span style="color:var(--cursor-text-muted);">Temp</span><span style="font-family:var(--cursor-font-mono);color:var(--cursor-warning);" id="side-temp">72°C</span></div>
+                        </div>
+                    </div>
+                    <div class="sidebar-section">
+                        <div class="sidebar-title">Stream Log</div>
+                        <div class="stream-log" id="data-stream-log" style="max-height:200px;">
+                            <div class="stream-entry stream-origin">⚛ stream initialized</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Always visible -->
+                <div class="sidebar-section" style="margin-top:auto;">
+                    <div class="sidebar-title">beyondBINARY</div>
+                    <div style="font-size:0.625rem;color:var(--cursor-text-muted);font-family:var(--cursor-font-mono);">
+                        {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ===== Footer ===== -->
+        <div class="app-footer">
+            <span>⚛ uvspeed Blackwell Live</span>
+            <span class="footer-sep">|</span>
+            <span class="footer-stat" id="footer-fps">60 FPS</span>
+            <span class="footer-sep">|</span>
+            <span class="footer-stat" id="footer-sm">192 SMs</span>
+            <span class="footer-sep">|</span>
+            <span class="footer-stat" id="footer-bw">8 TB/s HBM3e</span>
+            <span class="footer-sep">|</span>
+            <span class="footer-stat" id="footer-pos">[0, 0, 0]</span>
+            <span style="flex:1;"></span>
+            <span style="color:var(--nv-green);font-family:var(--cursor-font-mono);">NVIDIA Blackwell Ultra</span>
+        </div>
+    </div>
+
+    <!-- ===== JavaScript ===== -->
+    <script src="quantum-prefixes.js"></script>
+    <script src="qbit-dac.js"></script>
+    <script src="qbit-steno.js"></script>
+    <script>
+    (function() {
+        'use strict';
+
+        // ===== Sidebar Tabs =====
+        const tabs = document.querySelectorAll('.sidebar-tab');
+        const panels = document.querySelectorAll('.sidebar-tab-panel');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                panels.forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.tab).classList.add('active');
+            });
+        });
+
+        // ===== Quantum Navigation =====
+        const pos = [0, 0, 0];
+        const posDisplay = document.getElementById('position-display');
+        const layerVal = document.getElementById('layer-value');
+        const streamLog = document.getElementById('stream-log');
+        const footerPos = document.getElementById('footer-pos');
+
+        function updatePosition(dir) {
+            switch (dir) {
+                case '+1': pos[1]++; break;
+                case '-1': pos[1]--; break;
+                case '+0': pos[0]++; break;
+                case '-0': pos[0]--; break;
+                case '+n': pos[2]++; break;
+                case '-n': pos[2]--; break;
+                case '+2': pos[1] += 2; break;
+                case '0': break;
+                case '⚛': pos[0] = pos[1] = pos[2] = 0; break;
+            }
+            layerVal.textContent = pos[2];
+            const str = `[${pos.join(', ')}]`;
+            posDisplay.textContent = str;
+            footerPos.textContent = str;
+            const entry = document.createElement('div');
+            entry.className = 'stream-entry';
+            entry.textContent = `${dir} → ${str}`;
+            streamLog.appendChild(entry);
+            streamLog.scrollTop = streamLog.scrollHeight;
+        }
+
+        document.querySelectorAll('.nav-btn[data-direction]').forEach(btn => {
+            btn.addEventListener('click', () => updatePosition(btn.dataset.direction));
+        });
+        document.getElementById('layer-up').addEventListener('click', () => updatePosition('+n'));
+        document.getElementById('layer-down').addEventListener('click', () => updatePosition('-n'));
+
+        // ===== SM Layer Expand/Collapse =====
+        document.querySelectorAll('.sm-layer-header').forEach(hdr => {
+            hdr.addEventListener('click', (e) => {
+                if (e.target.closest('.layer-param-slider')) return;
+                hdr.closest('.sm-layer').classList.toggle('expanded');
+            });
+        });
+
+        // ===== Multi-Architecture Definitions =====
+        const ARCHITECTURES = {
+            nvidia: {
+                name: 'Blackwell', vendor: 'NVIDIA', color: '#76b900',
+                chip: 'B200 Ultra', smLabel: 'SM', smCount: 192,
+                layers: [
+                    { id: 'icache', name: 'Instruction Cache', desc: '128 KB per SM — fetch + decode + branch predictor', icon: '📦', color: '#4fc3f7' },
+                    { id: 'warp', name: 'Warp Schedulers ×4', desc: '128 threads/warp — Blackwell extended warps', icon: '🔀', color: '#ab47bc' },
+                    { id: 'regfile', name: 'Register File', desc: '65,536 × 32-bit — 256 KB per SM', icon: '📋', color: '#ff7043' },
+                    { id: 'cores', name: 'Processing Cores', desc: 'INT32 (128) + FP32 (128) + FP64 (2) + Tensor 5th Gen (4)', icon: '⚡', color: '#66bb6a' },
+                    { id: 'ldst', name: 'Load/Store + SFU', desc: '32 LD/ST units + 8 Special Function Units', icon: '💾', color: '#ef5350' },
+                    { id: 'l1', name: 'L1 Data Cache / Shared Memory', desc: '256 KB configurable — L1 + Shared + Texture', icon: '💾', color: '#26c6da' },
+                    { id: 'l2', name: 'L2 Cache → HBM3e → NVLink 5.0', desc: '96 MB L2, 192 GB HBM3e @ 8 TB/s, NVLink 5.0 @ 1.8 TB/s', icon: '🌐', color: '#78909c' },
+                ],
+                specs: [
+                    ['FP4 Tensor', '20 PFLOPS', '18 PFLOPS', '—'],
+                    ['FP8 Tensor', '10 PFLOPS', '9 PFLOPS', '3.96 PFLOPS'],
+                    ['HBM', 'HBM3e 192GB', 'HBM3e 192GB', 'HBM3 80GB'],
+                    ['Memory BW', '8 TB/s', '8 TB/s', '3.35 TB/s'],
+                    ['NVLink BW', '1.8 TB/s (NVL5)', '1.8 TB/s', '900 GB/s'],
+                    ['TDP', '1200W', '1000W', '700W'],
+                    ['Interconnect', 'NVLink 5.0', 'NVLink 5.0', 'NVLink 4.0'],
+                ],
+                specCols: ['B200 Ultra', 'B100', 'H100'],
+                memBW: '8 TB/s',
+            },
+            amd: {
+                name: 'CDNA 4', vendor: 'AMD', color: '#ed1c24',
+                chip: 'MI350X', smLabel: 'CU', smCount: 304,
+                layers: [
+                    { id: 'icache', name: 'Instruction Cache', desc: '64 KB per CU — GFX12 ISA fetch/decode', icon: '📦', color: '#e53935' },
+                    { id: 'warp', name: 'Wavefront Schedulers ×4', desc: '64 threads/wavefront — CDNA 4 dual-issue', icon: '🔀', color: '#8e24aa' },
+                    { id: 'regfile', name: 'Vector Register File', desc: '256 × 256-bit VGPR — 512 KB per CU', icon: '📋', color: '#ff7043' },
+                    { id: 'cores', name: 'Processing Cores', desc: 'INT32 (128) + FP32 (128) + FP64 (64:1) + Matrix (MFMA 4th Gen)', icon: '⚡', color: '#43a047' },
+                    { id: 'ldst', name: 'Load/Store + Texture', desc: '32 LD/ST + 16 texture address + 16 filter units', icon: '💾', color: '#e53935' },
+                    { id: 'l1', name: 'L1 Vector Cache / LDS', desc: '128 KB L1 + 128 KB LDS configurable per CU', icon: '💾', color: '#00acc1' },
+                    { id: 'l2', name: 'Infinity Cache → HBM3e → Infinity Fabric', desc: '256 MB Infinity Cache, 192 GB HBM3e @ 6.4 TB/s', icon: '🌐', color: '#78909c' },
+                ],
+                specs: [
+                    ['FP8 Matrix', '~24 PFLOPS', '—', '1.3 PFLOPS'],
+                    ['FP16 Matrix', '~12 PFLOPS', '—', '1.3 PFLOPS'],
+                    ['HBM', 'HBM3e 288GB', '—', 'HBM3 192GB'],
+                    ['Memory BW', '6.4 TB/s', '—', '5.3 TB/s'],
+                    ['Interconnect', 'Infinity Fabric 4', '—', 'Infinity Fabric 3'],
+                    ['TDP', '750W', '—', '750W'],
+                    ['Architecture', 'CDNA 4 (GFX12)', '—', 'CDNA 3 (GFX9)'],
+                ],
+                specCols: ['MI350X', '—', 'MI300X'],
+                memBW: '6.4 TB/s',
+            },
+            intel: {
+                name: 'Xe3 Battlemage', vendor: 'Intel', color: '#0071c5',
+                chip: 'Falcon Shores', smLabel: 'Xe-Core', smCount: 160,
+                layers: [
+                    { id: 'icache', name: 'Thread Dispatch', desc: 'EU thread dispatch — 8 threads per EU', icon: '📦', color: '#42a5f5' },
+                    { id: 'warp', name: 'EU Schedulers ×8', desc: '8 hardware threads per Execution Unit', icon: '🔀', color: '#7e57c2' },
+                    { id: 'regfile', name: 'GRF (General Register File)', desc: '128 × 256-bit per EU — 4 KB per thread', icon: '📋', color: '#ff7043' },
+                    { id: 'cores', name: 'Execution Units', desc: 'FP32 (8 ALU) + INT32 (8) + FP64 (4) + XMX Matrix (systolic)', icon: '⚡', color: '#66bb6a' },
+                    { id: 'ldst', name: 'Load/Store + Sampler', desc: '16 LD/ST + 4 texture samplers per Xe-Core', icon: '💾', color: '#ef5350' },
+                    { id: 'l1', name: 'L1 Cache / SLM', desc: '192 KB L1 + 128 KB Shared Local Memory per Xe-Core', icon: '💾', color: '#26c6da' },
+                    { id: 'l2', name: 'L2 → HBM2e → CXL', desc: '96 MB L2, 128 GB HBM2e @ 3.2 TB/s, CXL 2.0', icon: '🌐', color: '#78909c' },
+                ],
+                specs: [
+                    ['XMX FP8', '~8 PFLOPS', '~2 PFLOPS', '—'],
+                    ['FP32 Vector', '~120 TFLOPS', '~50 TFLOPS', '—'],
+                    ['HBM', 'HBM2e 128GB', 'HBM2e 64GB', '—'],
+                    ['Memory BW', '3.2 TB/s', '1.6 TB/s', '—'],
+                    ['Interconnect', 'CXL 2.0', 'PCIe 5.0', '—'],
+                    ['TDP', '600W', '300W', '—'],
+                    ['Architecture', 'Xe3 (Falcon Shores)', 'Xe2 (Battlemage)', '—'],
+                ],
+                specCols: ['Falcon Shores', 'Battlemage', '—'],
+                memBW: '3.2 TB/s',
+            },
+            apple: {
+                name: 'M4 Ultra', vendor: 'Apple', color: '#a2aaad',
+                chip: 'M4 Ultra', smLabel: 'GPU Core', smCount: 80,
+                layers: [
+                    { id: 'icache', name: 'Instruction Cache', desc: '64 KB per core cluster — Apple GPU ISA', icon: '📦', color: '#78909c' },
+                    { id: 'warp', name: 'SIMD-group Scheduler', desc: '32 threads per SIMD-group — 1024 concurrent threads/core', icon: '🔀', color: '#ab47bc' },
+                    { id: 'regfile', name: 'Tile Register File', desc: 'Tile-based deferred rendering — register spill to unified memory', icon: '📋', color: '#ff7043' },
+                    { id: 'cores', name: 'ALU + FP + RT + Neural', desc: 'FP32 (128) + FP16 (256) + Ray Tracing + Neural Engine (38 TOPS)', icon: '⚡', color: '#66bb6a' },
+                    { id: 'ldst', name: 'Load/Store + Texture', desc: 'Tile-based memory access — zero-copy unified memory', icon: '💾', color: '#ef5350' },
+                    { id: 'l1', name: 'Tile Buffer / Threadgroup Memory', desc: '96 KB tile buffer + 32 KB threadgroup memory per core', icon: '💾', color: '#26c6da' },
+                    { id: 'l2', name: 'SLC → Unified Memory', desc: '64 MB System Level Cache, 192 GB unified @ 800 GB/s', icon: '🌐', color: '#78909c' },
+                ],
+                specs: [
+                    ['FP32 GPU', '~28 TFLOPS', '~14 TFLOPS', '~7 TFLOPS'],
+                    ['FP16 GPU', '~56 TFLOPS', '~28 TFLOPS', '~14 TFLOPS'],
+                    ['Neural Engine', '38 TOPS', '38 TOPS', '18 TOPS'],
+                    ['Unified Memory', '192 GB', '128 GB', '32 GB'],
+                    ['Memory BW', '800 GB/s', '400 GB/s', '200 GB/s'],
+                    ['TDP', '~150W', '~75W', '~22W'],
+                    ['Architecture', 'M4 Ultra', 'M4 Max', 'M4 Pro'],
+                ],
+                specCols: ['M4 Ultra', 'M4 Max', 'M4 Pro'],
+                memBW: '800 GB/s',
+            },
+            qualcomm: {
+                name: 'Adreno X1', vendor: 'Qualcomm', color: '#3253dc',
+                chip: 'Snapdragon X Elite', smLabel: 'SP', smCount: 48,
+                layers: [
+                    { id: 'icache', name: 'Instruction Cache', desc: '32 KB per SP — Adreno X1 ISA', icon: '📦', color: '#5c6bc0' },
+                    { id: 'warp', name: 'Fiber Scheduler', desc: '64 fibers per SP — wavefront parallelism', icon: '🔀', color: '#7e57c2' },
+                    { id: 'regfile', name: 'Unified Register File', desc: '128 × 128-bit — VGPR + SGPR unified', icon: '📋', color: '#ff7043' },
+                    { id: 'cores', name: 'ALU + Tensor', desc: 'FP32 (32) + FP16 (64) + INT8 (128) + Hexagon NPU (45 TOPS)', icon: '⚡', color: '#66bb6a' },
+                    { id: 'ldst', name: 'Load/Store + Texture', desc: '8 LD/ST + 4 texture units — FlexRender tiling', icon: '💾', color: '#ef5350' },
+                    { id: 'l1', name: 'L1 Cache / GMEM', desc: '64 KB L1 + 6 MB Global Memory (tile buffer)', icon: '💾', color: '#26c6da' },
+                    { id: 'l2', name: 'System Cache → LPDDR5x', desc: '12 MB SLC, 32 GB LPDDR5x @ 135 GB/s', icon: '🌐', color: '#78909c' },
+                ],
+                specs: [
+                    ['FP32 GPU', '~4.6 TFLOPS', '~3.8 TFLOPS', '—'],
+                    ['FP16 GPU', '~9.2 TFLOPS', '~7.6 TFLOPS', '—'],
+                    ['NPU (INT8)', '45 TOPS', '45 TOPS', '—'],
+                    ['Memory', '32 GB LPDDR5x', '16 GB LPDDR5x', '—'],
+                    ['Memory BW', '135 GB/s', '135 GB/s', '—'],
+                    ['TDP', '~25W', '~15W', '—'],
+                    ['Architecture', 'Adreno X1-85', 'Adreno X1-80', '—'],
+                ],
+                specCols: ['X Elite', 'X Plus', '—'],
+                memBW: '135 GB/s',
+            },
+        };
+
+        let currentArch = 'nvidia';
+
+        function switchArchitecture(archId) {
+            const arch = ARCHITECTURES[archId];
+            if (!arch) return;
+            currentArch = archId;
+
+            // Update chips
+            document.querySelectorAll('.arch-chip').forEach(c => {
+                c.classList.toggle('active', c.dataset.arch === archId);
+            });
+
+            // Header
+            const titleSpan = document.getElementById('arch-title-span');
+            titleSpan.textContent = arch.name;
+            titleSpan.style.color = arch.color;
+            document.getElementById('arch-badge-text').textContent = arch.vendor;
+
+            // Layer stack card header
+            const stackHeader = document.querySelector('.sm-arch-stack')?.closest('.card')?.querySelector('.card-header');
+            if (stackHeader) {
+                stackHeader.querySelector('span:first-child').textContent = `${arch.name} ${arch.smLabel} — Layer Architecture`;
+                const tag = stackHeader.querySelector('.tag-nv,.tag-arch');
+                if (tag) { tag.textContent = `${arch.smCount} ${arch.smLabel}s × ${arch.chip}`; tag.className = 'tag tag-arch'; tag.style.color = arch.color; tag.style.borderColor = arch.color; tag.style.background = arch.color + '15'; }
+            }
+
+            // SM Heatmap header
+            const hmHeader = document.querySelector('#sm-heatmap')?.closest('.card')?.querySelector('.card-header span:first-child');
+            if (hmHeader) hmHeader.textContent = `${arch.smLabel} Activity Heatmap (${arch.smCount} ${arch.smLabel}s)`;
+
+            // Specs table
+            const specTable = document.querySelector('.specs-table');
+            if (specTable) {
+                const thead = specTable.querySelector('thead tr');
+                if (thead && arch.specCols) {
+                    const ths = thead.querySelectorAll('th');
+                    for (let i = 1; i < ths.length && i - 1 < arch.specCols.length; i++) {
+                        ths[i].textContent = arch.specCols[i - 1];
+                        ths[i].style.color = i === 1 ? arch.color : '';
+                    }
+                }
+                const tbody = specTable.querySelector('tbody');
+                if (tbody && arch.specs) {
+                    tbody.innerHTML = arch.specs.map(row =>
+                        `<tr>${row.map((cell, i) =>
+                            `<td${i === 1 ? ` style="color:${arch.color};"` : ''}>${cell}</td>`
+                        ).join('')}</tr>`
+                    ).join('');
+                }
+                // Update specs card header
+                const specHeader = specTable.closest('.card')?.querySelector('.card-header span:first-child');
+                if (specHeader) specHeader.textContent = `${arch.name} Specifications`;
+            }
+
+            // SM cell count
+            const heatmap = document.getElementById('sm-heatmap');
+            if (heatmap) {
+                const cells = heatmap.querySelectorAll('.sm-cell');
+                cells.forEach((cell, i) => {
+                    cell.style.display = i < arch.smCount ? '' : 'none';
+                });
+            }
+
+            // Footer
+            const footerSm = document.getElementById('footer-sm');
+            if (footerSm) footerSm.textContent = `${arch.smCount} ${arch.smLabel}s`;
+            const footerBW = document.getElementById('footer-bw');
+            if (footerBW) footerBW.textContent = arch.memBW;
+            const footerBrand = document.querySelector('.app-footer span:first-child');
+            if (footerBrand) footerBrand.textContent = `⚛ uvspeed ${arch.name} Live`;
+
+            // Log it
+            if (streamLog) {
+                const entry = document.createElement('div');
+                entry.className = 'stream-entry';
+                entry.style.color = arch.color;
+                entry.textContent = `⚛ Switched to ${arch.vendor} ${arch.name} (${arch.smCount} ${arch.smLabel}s × ${arch.chip})`;
+                streamLog.appendChild(entry);
+                streamLog.scrollTop = streamLog.scrollHeight;
+            }
+        }
+
+        // Bind arch chip clicks
+        document.querySelectorAll('.arch-chip[data-arch]').forEach(chip => {
+            chip.addEventListener('click', () => switchArchitecture(chip.dataset.arch));
+        });
+
+        // ===== Layer Data Model =====
+        const layerState = {
+            icache: { util: 0.60, hitRate: 0.962, bw: 256, misses: 3.8, history: [] },
+            warp:   { util: 0.74, active: 48, occ: 0.75, stall: 0.124, ipc: 3.2, history: [] },
+            regfile:{ util: 0.68, perThread: 128, bankConflict: 0.021, history: [] },
+            cores:  { util: 0.82, int32: 0.71, fp32: 0.76, fp64: 0.45, tensor: 0.88, history: [] },
+            ldst:   { util: 0.55, tp: 128, pending: 24, history: [] },
+            l1:     { util: 0.72, l1Size: 128, hitRate: 0.894, history: [] },
+            l2:     { util: 0.65, hitRate: 0.821, hbmBW: 0.65, nvlBW: 0.65, power: 840, history: [] }
+        };
+        const LAYER_MAX_HIST = 60;
+
+        // ===== Slider Interaction =====
+        document.querySelectorAll('.layer-param-slider').forEach(slider => {
+            slider.addEventListener('input', (e) => {
+                e.stopPropagation();
+                const param = slider.dataset.param;
+                const val = parseFloat(slider.value);
+                switch (param) {
+                    case 'icache-hit': layerState.icache.hitRate = val / 100; break;
+                    case 'warp-active': layerState.warp.active = val; layerState.warp.occ = val / 64; break;
+                    case 'warp-stall': layerState.warp.stall = val / 100; break;
+                    case 'reg-thread': layerState.regfile.perThread = val; break;
+                    case 'core-fp4': layerState.cores.tensor = val / 100; break;
+                    case 'core-fp8': layerState.cores.fp32 = val / 100; break;
+                    case 'ldst-tp': layerState.ldst.util = val / 100; break;
+                    case 'l1-size': {
+                        layerState.l1.l1Size = val;
+                        const shared = 256 - val;
+                        document.getElementById('lp-l1-shared').textContent = shared + ' KB';
+                        break;
+                    }
+                    case 'l2-hbm': layerState.l2.hbmBW = val / 100; break;
+                    case 'l2-nvl': layerState.l2.nvlBW = val / 100; break;
+                }
+            });
+            slider.addEventListener('click', e => e.stopPropagation());
+        });
+
+        // ===== Mini Canvas Sparklines per Layer =====
+        const miniCanvases = {};
+        ['icache','warp','regfile','cores','ldst','l1','l2'].forEach(id => {
+            const el = document.getElementById('mc-' + id);
+            if (el) {
+                const dpr = window.devicePixelRatio || 1;
+                el.width = el.offsetWidth * dpr || 400;
+                el.height = 40 * dpr;
+                el.style.width = '100%';
+                el.style.height = '40px';
+                miniCanvases[id] = { el: el, ctx: el.getContext('2d'), dpr: dpr };
+            }
+        });
+
+        const layerColors = {
+            icache: '#4fc3f7', warp: '#ab47bc', regfile: '#ff7043',
+            cores: '#76b900', ldst: '#ef5350', l1: '#26c6da', l2: '#78909c'
+        };
+
+        function drawMiniSparkline(id) {
+            const mc = miniCanvases[id];
+            if (!mc) return;
+            const data = layerState[id].history;
+            if (data.length < 2) return;
+            const c = mc.ctx;
+            const dpr = mc.dpr;
+            const w = mc.el.width / dpr;
+            const h = mc.el.height / dpr;
+            c.setTransform(dpr, 0, 0, dpr, 0, 0);
+            c.clearRect(0, 0, w, h);
+
+            // Grid
+            c.strokeStyle = '#ffffff06';
+            c.lineWidth = 0.5;
+            for (let y = 10; y < h; y += 10) { c.beginPath(); c.moveTo(0, y); c.lineTo(w, y); c.stroke(); }
+
+            // Line
+            const color = layerColors[id];
+            c.beginPath();
+            c.strokeStyle = color;
+            c.lineWidth = 1.5;
+            const step = w / LAYER_MAX_HIST;
+            const start = LAYER_MAX_HIST - data.length;
+            data.forEach((val, i) => {
+                const x = (start + i) * step;
+                const y = h - (val * (h - 4)) - 2;
+                if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+            });
+            c.stroke();
+
+            // Fill
+            c.globalAlpha = 0.08;
+            c.lineTo((start + data.length - 1) * step, h);
+            c.lineTo(start * step, h);
+            c.closePath();
+            c.fillStyle = color;
+            c.fill();
+            c.globalAlpha = 1;
+
+            // Dot
+            const last = data[data.length - 1];
+            const dx = w - 2;
+            const dy = h - (last * (h - 4)) - 2;
+            c.beginPath();
+            c.arc(dx, dy, 2, 0, Math.PI * 2);
+            c.fillStyle = color;
+            c.fill();
+        }
+
+        // ===== SM Heatmap =====
+        const smGrid = document.getElementById('sm-grid');
+        const smCells = [];
+        for (let i = 0; i < 192; i++) {
+            const cell = document.createElement('div');
+            cell.className = 'sm-cell';
+            cell.title = `SM ${i}`;
+            smGrid.appendChild(cell);
+            smCells.push(cell);
+        }
+
+        function updateSMGrid() {
+            smCells.forEach(cell => {
+                const load = Math.random();
+                const r = Math.round(33 + load * 200);
+                const g = Math.round(185 * (1 - load * 0.6));
+                const b = Math.round(load < 0.5 ? 0 : (load - 0.5) * 100);
+                cell.style.background = `rgb(${r},${g},${b})`;
+                cell.style.boxShadow = load > 0.8 ? `0 0 6px rgba(${r},${g},${b},0.5)` : 'none';
+            });
+        }
+
+        // ===== Aggregate Stream Canvas =====
+        const canvas = document.getElementById('stream-canvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('stream-overlay');
+        let frameCount = 0;
+        const history = { sm: [], hbm: [], nvlink: [], power: [], temp: [] };
+        const MAX_HISTORY = 300;
+
+        function resizeCanvas() {
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resizeCanvas();
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            // Resize mini canvases too
+            Object.keys(miniCanvases).forEach(id => {
+                const mc = miniCanvases[id];
+                mc.el.width = mc.el.offsetWidth * mc.dpr || 400;
+                mc.el.height = 40 * mc.dpr;
+            });
+        });
+
+        function drawStreams() {
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+            ctx.clearRect(0, 0, w, h);
+            ctx.strokeStyle = '#ffffff08';
+            ctx.lineWidth = 0.5;
+            for (let x = 0; x < w; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+            for (let y = 0; y < h; y += 30) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+            const colors = { sm: '#76b900', hbm: '#58a6ff', nvlink: '#a78bfa', power: '#f85149', temp: '#f0883e' };
+            Object.keys(history).forEach(key => {
+                const data = history[key];
+                if (data.length < 2) return;
+                ctx.beginPath();
+                ctx.strokeStyle = colors[key];
+                ctx.lineWidth = 1.5;
+                ctx.globalAlpha = 0.8;
+                const step = w / MAX_HISTORY;
+                const start = MAX_HISTORY - data.length;
+                data.forEach((val, i) => {
+                    const x = (start + i) * step;
+                    const y = h - (val * h);
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+                ctx.globalAlpha = 0.1;
+                ctx.lineTo((start + data.length - 1) * step, h);
+                ctx.lineTo(start * step, h);
+                ctx.closePath();
+                ctx.fillStyle = colors[key];
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+            Object.keys(history).forEach(key => {
+                const data = history[key];
+                if (data.length < 1) return;
+                const val = data[data.length - 1];
+                ctx.beginPath();
+                ctx.arc(w - 2, h - (val * h), 3, 0, Math.PI * 2);
+                ctx.fillStyle = colors[key];
+                ctx.fill();
+            });
+        }
+
+        // ===== Simulate & Update All Layers =====
+        function simVal(base, range) {
+            return Math.max(0, Math.min(1, base + (Math.random() - 0.5) * range));
+        }
+
+        function updateLayerData() {
+            const ls = layerState;
+
+            // Simulate slight drift around current values
+            ls.icache.util = simVal(ls.icache.hitRate * 0.63, 0.08);
+            ls.icache.misses = Math.max(0, 100 * (1 - ls.icache.hitRate) + (Math.random() - 0.5) * 2);
+
+            ls.warp.util = simVal(ls.warp.occ * 0.98, 0.1);
+            ls.warp.ipc = Math.max(0.5, Math.min(4, 4 * ls.warp.occ * (1 - ls.warp.stall) + (Math.random() - 0.5) * 0.3));
+
+            ls.regfile.util = simVal(ls.regfile.perThread / 255 * 0.95, 0.08);
+            ls.regfile.bankConflict = Math.max(0, 0.05 * (ls.regfile.perThread / 255) + (Math.random() - 0.5) * 0.01);
+
+            ls.cores.util = simVal((ls.cores.int32 + ls.cores.fp32 + ls.cores.tensor) / 3, 0.1);
+            ls.cores.int32 = simVal(ls.cores.int32, 0.06);
+            ls.cores.fp32 = simVal(ls.cores.fp32, 0.06);
+            ls.cores.fp64 = simVal(ls.cores.fp64, 0.08);
+            ls.cores.tensor = simVal(ls.cores.tensor, 0.05);
+
+            ls.ldst.util = simVal(ls.ldst.util, 0.08);
+            ls.ldst.pending = Math.max(0, Math.round(32 * ls.ldst.util + (Math.random() - 0.5) * 8));
+
+            ls.l1.util = simVal(ls.l1.hitRate * 0.82, 0.08);
+            ls.l1.hitRate = simVal(ls.l1.hitRate, 0.03);
+
+            ls.l2.util = simVal((ls.l2.hbmBW + ls.l2.nvlBW) / 2, 0.08);
+            ls.l2.hitRate = simVal(ls.l2.hitRate, 0.04);
+            ls.l2.power = Math.round(1200 * ls.l2.util * 0.95 + (Math.random() - 0.5) * 40);
+
+            // Push to history
+            Object.keys(ls).forEach(k => {
+                ls[k].history.push(ls[k].util);
+                if (ls[k].history.length > LAYER_MAX_HIST) ls[k].history.shift();
+            });
+
+            // Update DOM — layer bars & values
+            const u = (id, pct, val) => {
+                const fill = document.getElementById('lf-' + id);
+                const vEl = document.getElementById('lv-' + id);
+                if (fill) fill.style.width = Math.round(pct * 100) + '%';
+                if (vEl) vEl.textContent = val;
+            };
+            u('icache', ls.icache.util, Math.round(ls.icache.util * 100) + '%');
+            u('warp', ls.warp.util, Math.round(ls.warp.util * 100) + '%');
+            u('regfile', ls.regfile.util, Math.round(ls.regfile.util * 100) + '%');
+            u('cores', ls.cores.util, Math.round(ls.cores.util * 100) + '%');
+            u('ldst', ls.ldst.util, Math.round(ls.ldst.util * 100) + '%');
+            u('l1', ls.l1.util, Math.round(ls.l1.util * 100) + '%');
+            u('l2', ls.l2.util, Math.round(ls.l2.util * 100) + '%');
+
+            // Update detail params
+            const s = (id, txt) => { const el = document.getElementById(id); if (el) el.textContent = txt; };
+            s('lp-icache-hit', (ls.icache.hitRate * 100).toFixed(1) + '%');
+            s('lp-icache-miss', ls.icache.misses.toFixed(1));
+            s('lp-warp-active', ls.warp.active + ' / 64');
+            s('lp-warp-occ', Math.round(ls.warp.occ * 100) + '%');
+            s('lp-warp-stall', (ls.warp.stall * 100).toFixed(1) + '%');
+            s('lp-warp-ipc', ls.warp.ipc.toFixed(1));
+            s('lp-reg-thread', ls.regfile.perThread + ' max');
+            s('lp-reg-util', Math.round(ls.regfile.util * 100) + '%');
+            s('lp-reg-bank', (ls.regfile.bankConflict * 100).toFixed(1) + '%');
+            s('lp-core-fp4', (20 * ls.cores.tensor).toFixed(1));
+            s('lp-core-fp8', (10 * ls.cores.fp32).toFixed(1));
+            s('lp-core-fp32', Math.round(90 * ls.cores.fp32));
+            s('lp-core-int32', Math.round(90 * ls.cores.int32));
+            s('lp-ldst-tp', Math.round(128 * ls.ldst.util) + ' B/clk');
+            s('lp-ldst-pend', ls.ldst.pending);
+            s('lp-l1-size', ls.l1.l1Size + ' KB');
+            s('lp-l1-hit', (ls.l1.hitRate * 100).toFixed(1) + '%');
+            s('lp-l2-hit', (ls.l2.hitRate * 100).toFixed(1) + '%');
+            s('lp-l2-hbm', (ls.l2.hbmBW * 8).toFixed(1) + ' TB/s');
+            s('lp-l2-nvl', (ls.l2.nvlBW * 1.8).toFixed(2) + ' TB/s');
+            s('lp-l2-power', ls.l2.power + 'W');
+
+            // Core unit bars
+            const cb = (id, v) => { const el = document.getElementById(id); if (el) el.style.width = Math.round(v * 100) + '%'; };
+            cb('cu-int32-bar', ls.cores.int32);
+            cb('cu-fp32-bar', ls.cores.fp32);
+            cb('cu-fp64-bar', ls.cores.fp64);
+            cb('cu-tensor-bar', ls.cores.tensor);
+        }
+
+        function updateAggregateData() {
+            const ls = layerState;
+            const sm = ls.cores.util;
+            const hbm = ls.l2.hbmBW;
+            const nvl = ls.l2.nvlBW;
+            const pwr = ls.l2.power / 1200;
+            const tmp = simVal(0.60, 0.1);
+
+            history.sm.push(sm); if (history.sm.length > MAX_HISTORY) history.sm.shift();
+            history.hbm.push(hbm); if (history.hbm.length > MAX_HISTORY) history.hbm.shift();
+            history.nvlink.push(nvl); if (history.nvlink.length > MAX_HISTORY) history.nvlink.shift();
+            history.power.push(pwr); if (history.power.length > MAX_HISTORY) history.power.shift();
+            history.temp.push(tmp); if (history.temp.length > MAX_HISTORY) history.temp.shift();
+
+            const smPct = Math.round(sm * 100);
+            const hbmTB = (hbm * 8).toFixed(2);
+            const nvlTB = (nvl * 1.8).toFixed(2);
+            const pwrW = ls.l2.power;
+            const tmpC = Math.round(tmp * 120);
+
+            document.getElementById('bar-sm').style.width = smPct + '%';
+            document.getElementById('val-sm').textContent = smPct + '%';
+            document.getElementById('bar-hbm').style.width = Math.round(hbm * 100) + '%';
+            document.getElementById('val-hbm').textContent = hbmTB + ' TB/s';
+            document.getElementById('bar-nvlink').style.width = Math.round(nvl * 100) + '%';
+            document.getElementById('val-nvlink').textContent = nvlTB + ' TB/s';
+            document.getElementById('bar-fp4').style.width = Math.min(100, Math.round(ls.cores.tensor * 100)) + '%';
+            document.getElementById('val-fp4').textContent = Math.round(ls.cores.tensor * 100) + '%';
+            document.getElementById('bar-power').style.width = Math.round(pwr * 100) + '%';
+            document.getElementById('val-power').textContent = pwrW + 'W';
+
+            document.getElementById('side-sm').textContent = smPct + '%';
+            document.getElementById('side-hbm').textContent = hbmTB + ' TB/s';
+            document.getElementById('side-nvlink').textContent = nvlTB + ' TB/s';
+            document.getElementById('side-power').textContent = pwrW + 'W';
+            document.getElementById('side-temp').textContent = tmpC + '°C';
+
+            overlay.textContent = `FPS: 60 | SMs: 192 | BW: ${hbmTB} TB/s | Util: ${smPct}% | Power: ${pwrW}W | Temp: ${tmpC}°C`;
+        }
+
+        // ===== Stream Log =====
+        const dataStreamLog = document.getElementById('data-stream-log');
+        let streamTick = 0;
+        function addStreamEntry() {
+            streamTick++;
+            const ls = layerState;
+            const msgs = [
+                `[${streamTick}] I-Cache hit: ${(ls.icache.hitRate*100).toFixed(1)}% → Warp dispatch`,
+                `[${streamTick}] Warp ${ls.warp.active}/64 active, IPC ${ls.warp.ipc.toFixed(1)} → Cores`,
+                `[${streamTick}] Tensor 5G FP4: ${(20*ls.cores.tensor).toFixed(1)} PFLOPS`,
+                `[${streamTick}] LD/ST pending: ${ls.ldst.pending} → L1 hit ${(ls.l1.hitRate*100).toFixed(1)}%`,
+                `[${streamTick}] HBM3e: ${(ls.l2.hbmBW*8).toFixed(1)} TB/s | NVL: ${(ls.l2.nvlBW*1.8).toFixed(2)} TB/s`,
+                `[${streamTick}] Power: ${ls.l2.power}W | RegFile: ${Math.round(ls.regfile.util*100)}%`,
+            ];
+            const entry = document.createElement('div');
+            entry.className = 'stream-entry';
+            entry.textContent = msgs[Math.floor(Math.random() * msgs.length)];
+            dataStreamLog.appendChild(entry);
+            if (dataStreamLog.children.length > 50) dataStreamLog.removeChild(dataStreamLog.firstChild);
+            dataStreamLog.scrollTop = dataStreamLog.scrollHeight;
+        }
+
+        // ===== Animation Loop =====
+        function tick() {
+            frameCount++;
+            if (frameCount % 30 === 0) updateSMGrid();
+            if (frameCount % 20 === 0) {
+                updateLayerData();
+                updateAggregateData();
+                // Draw mini sparklines for expanded layers
+                document.querySelectorAll('.sm-layer.expanded').forEach(layer => {
+                    const id = layer.dataset.layer;
+                    drawMiniSparkline(id);
+                });
+            }
+            if (frameCount % 60 === 0) addStreamEntry();
+            drawStreams();
+            requestAnimationFrame(tick);
+        }
+
+        // Init
+        updateSMGrid();
+        updateLayerData();
+        updateAggregateData();
+        tick();
+
+        // ===== Deploy Buttons =====
+        document.querySelectorAll('[id^="deploy-"]').forEach(btn => {
+            if (btn.tagName === 'BUTTON') {
+                btn.addEventListener('click', () => {
+                    const target = btn.textContent.trim();
+                    const entry = document.createElement('div');
+                    entry.className = 'stream-entry';
+                    entry.textContent = `🚀 Deploy initiated → ${target}`;
+                    dataStreamLog.appendChild(entry);
+                    dataStreamLog.scrollTop = dataStreamLog.scrollHeight;
+                    btn.style.borderColor = 'var(--cursor-success)';
+                    btn.style.color = 'var(--cursor-success)';
+                    setTimeout(() => { btn.style.borderColor = ''; btn.style.color = ''; }, 2000);
+                });
+            }
+        });
+
+        // ===== PWA SERVICE WORKER =====
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').catch(() => {});
+        }
+
+        // ===== QUANTUM PREFIX LIVE SYNC =====
+        (function() {
+            const QP = window.QuantumPrefixes;
+            if (!QP) return;
+            QP.onStateChange(function(source, state) { if (source === 'blackwell' || !state) return; });
+            QP.broadcastState('blackwell', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, role: 'blackwell-gpu' });
+            QP.requestStateSync();
+        })();
+
+        // ===== PUBLIC API =====
+        window.gpuViz = {
+            switchArch: switchArchitecture,
+            get arch() { return currentArch; },
+            get architectures() { return Object.keys(ARCHITECTURES); },
+            get current() { return ARCHITECTURES[currentArch]; },
+        };
+
+        console.log('⚛ uvspeed GPU Architecture Visualizer — initialized');
+        console.log('Architectures: NVIDIA Blackwell, AMD CDNA 4, Intel Xe3, Apple M4, Qualcomm Adreno X1');
+        console.log('Switch: gpuViz.switchArch("amd") or click chips in header');
+        console.log('{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}');
+    })();
+    </script>
+</body>
+</html>

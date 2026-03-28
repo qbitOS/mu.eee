@@ -1,0 +1,525 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uvspeed — archflow | n8n-style Architecture Visualizer</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+    <link rel="icon" type="image/x-icon" href="../icons/favicon.ico">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+    <script src="quantum-prefixes.js"></script>
+    <script src="qbit-dac.js"></script>
+    <script src="qbit-steno.js"></script>
+    <style>
+        :root {
+            --cursor-bg: var(--qp-bg, #0d1117); --cursor-bg-secondary: var(--qp-bg-secondary, #161b22); --cursor-bg-tertiary: var(--qp-bg-tertiary, #21262d);
+            --cursor-border: var(--qp-border, #30363d); --cursor-text: var(--qp-text, #e6edf3); --cursor-text-muted: var(--qp-text-muted, #8b949e);
+            --cursor-accent: var(--qp-accent, #58a6ff); --cursor-success: #3fb950; --cursor-warning: #f0883e;
+            --cursor-error: #f85149; --cursor-purple: #a78bfa; --cursor-cyan: #56d4dd;
+            --n8n-orange: #ff6d5a; --n8n-green: #00c16e; --n8n-blue: #4a9eff;
+            --cursor-space-xs: 4px; --cursor-space-sm: 8px; --cursor-space-md: 16px;
+            --cursor-space-lg: 24px; --cursor-radius: 6px;
+            --cursor-font-mono: 'SF Mono','Fira Code','JetBrains Mono','Cascadia Code',monospace;
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;overflow:hidden;-webkit-text-size-adjust:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--cursor-bg);color:var(--cursor-text);font-size:14px;line-height:1.5}
+        a{color:var(--cursor-accent);text-decoration:none}a:hover{text-decoration:underline}
+
+        .app{display:flex;flex-direction:column;height:100vh}
+
+        /* Header */
+        .hdr{background:var(--cursor-bg-secondary);border-bottom:1px solid var(--cursor-border);padding:var(--cursor-space-sm) var(--cursor-space-lg);display:flex;align-items:center;justify-content:space-between;gap:var(--cursor-space-md);flex-shrink:0;min-height:48px}
+        .hdr-title{display:flex;align-items:center;gap:var(--cursor-space-sm);font-size:1rem;font-weight:600;white-space:nowrap}
+        .hdr-logo{height:24px;width:auto;border-radius:4px;filter:drop-shadow(0 0 4px rgba(139,92,246,.3))}
+        .hdr-badge{display:inline-flex;align-items:center;gap:4px;background:#ff6d5a22;border:1px solid var(--n8n-orange);color:var(--n8n-orange);border-radius:10px;padding:2px 8px;font-size:.625rem;font-weight:600}
+        .hdr-nav{display:flex;align-items:center;gap:6px;font-size:.75rem;flex-wrap:wrap}
+        .hdr-nav a{padding:3px 8px;border-radius:var(--cursor-radius);background:var(--cursor-bg-tertiary);border:1px solid var(--cursor-border);color:var(--cursor-text-muted);transition:all .15s}
+        .hdr-nav a:hover{color:var(--cursor-accent);border-color:var(--cursor-accent);text-decoration:none}
+
+        /* Main layout */
+        .main{flex:1;display:flex;overflow:hidden}
+
+        /* Canvas Area */
+        .canvas-area{flex:1;position:relative;overflow:hidden;background:var(--cursor-bg)}
+        .canvas-grid{position:absolute;inset:0;pointer-events:none;
+            background-image:radial-gradient(circle,var(--cursor-border) .5px,transparent .5px);
+            background-size:24px 24px;opacity:.5}
+        .canvas-scroll{position:absolute;inset:0;overflow:auto;cursor:grab}
+        .canvas-scroll:active{cursor:grabbing}
+        .canvas-inner{min-width:2400px;min-height:1600px;position:relative;padding:60px}
+
+        /* Nodes */
+        .node{position:absolute;background:var(--cursor-bg-secondary);border:2px solid var(--cursor-border);border-radius:10px;min-width:180px;box-shadow:0 4px 16px rgba(0,0,0,.3);cursor:move;user-select:none;transition:box-shadow .15s,border-color .15s}
+        .node:hover{box-shadow:0 6px 24px rgba(0,0,0,.5);border-color:var(--cursor-accent)}
+        .node.selected{border-color:var(--cursor-accent);box-shadow:0 0 0 2px rgba(88,166,255,.25)}
+        .node-hdr{padding:8px 12px;border-bottom:1px solid var(--cursor-border);display:flex;align-items:center;gap:8px;border-radius:8px 8px 0 0}
+        .node-icon{width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.875rem;flex-shrink:0}
+        .node-name{font-size:.8125rem;font-weight:600}
+        .node-sub{font-size:.5625rem;color:var(--cursor-text-muted)}
+        .node-body{padding:8px 12px;font-size:.6875rem}
+        .node-ports{display:flex;flex-direction:column;gap:3px}
+        .node-port{display:flex;align-items:center;gap:6px;padding:2px 0;font-family:var(--cursor-font-mono);font-size:.5625rem;color:var(--cursor-text-muted)}
+        .port-dot{width:8px;height:8px;border-radius:50%;border:2px solid var(--cursor-border);background:var(--cursor-bg);flex-shrink:0;cursor:crosshair}
+        .port-dot.connected{background:var(--cursor-success);border-color:var(--cursor-success)}
+        .port-dot.out{margin-left:auto}
+
+        /* Connections (SVG) */
+        .connections-svg{position:absolute;inset:0;pointer-events:none;z-index:0}
+        .conn-path{fill:none;stroke:var(--cursor-border);stroke-width:2;transition:stroke .15s}
+        .conn-path:hover{stroke:var(--cursor-accent)}
+        .conn-path.active{stroke:var(--cursor-success);stroke-width:2.5;filter:drop-shadow(0 0 4px rgba(63,185,80,.4))}
+
+        /* Mermaid Panel */
+        .mermaid-panel{width:360px;flex-shrink:0;background:var(--cursor-bg-secondary);border-left:1px solid var(--cursor-border);display:flex;flex-direction:column;overflow:hidden}
+        .mp-tabs{display:flex;border-bottom:1px solid var(--cursor-border)}
+        .mp-tab{flex:1;padding:8px 0;text-align:center;background:transparent;border:none;color:var(--cursor-text-muted);cursor:pointer;font-size:.6875rem;font-weight:600;border-bottom:2px solid transparent;transition:all .15s}
+        .mp-tab:hover{color:var(--cursor-text)}
+        .mp-tab.active{color:var(--cursor-accent);border-bottom-color:var(--cursor-accent)}
+        .mp-panel{display:none;flex:1;overflow-y:auto}
+        .mp-panel.active{display:flex;flex-direction:column}
+        .mp-section{padding:var(--cursor-space-sm) var(--cursor-space-md);border-bottom:1px solid var(--cursor-border)}
+        .mp-title{font-size:.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--cursor-text-muted);margin-bottom:6px}
+        .mp-code{background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:8px;font-family:var(--cursor-font-mono);font-size:.6875rem;color:var(--cursor-text);resize:vertical;min-height:120px;width:100%;outline:none}
+        .mp-render{background:var(--cursor-bg);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:12px;min-height:200px;overflow:auto}
+        .mp-render svg{max-width:100%;height:auto}
+        .mp-btn{background:var(--cursor-bg-tertiary);border:1px solid var(--cursor-border);color:var(--cursor-text);padding:6px 12px;border-radius:var(--cursor-radius);font-size:.6875rem;cursor:pointer;transition:all .15s;width:100%;margin-top:6px}
+        .mp-btn:hover{border-color:var(--cursor-accent);color:var(--cursor-accent)}
+        .mp-btn.primary{background:var(--cursor-accent);border-color:var(--cursor-accent);color:#fff}
+
+        /* Preset node palette */
+        .palette{display:grid;grid-template-columns:1fr 1fr;gap:4px}
+        .palette-item{background:var(--cursor-bg-tertiary);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:6px 8px;font-size:.6875rem;cursor:grab;transition:all .15s;text-align:center}
+        .palette-item:hover{border-color:var(--cursor-accent);color:var(--cursor-accent)}
+
+        /* Footer */
+        .ftr{background:var(--cursor-bg-secondary);border-top:1px solid var(--cursor-border);padding:4px var(--cursor-space-lg);display:flex;align-items:center;gap:8px;font-size:.625rem;color:var(--cursor-text-muted);flex-shrink:0}
+        .ftr-mono{font-family:var(--cursor-font-mono)}
+
+        @media(max-width:900px){.mermaid-panel{width:280px}}
+        @media(max-width:600px){.mermaid-panel{display:none}}
+        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--cursor-border);border-radius:3px}
+    </style>
+</head>
+<body>
+<div style="display:flex;height:2px;width:100%;flex-shrink:0"><span style="flex:1;background:#ff3838"></span><span style="flex:1;background:#ff8c38"></span><span style="flex:1;background:#ffe138"></span><span style="flex:1;background:#3fb950"></span><span style="flex:1;background:#38a5ff"></span><span style="flex:1;background:#bc8cff"></span></div>
+<div class="app">
+    <div class="hdr">
+        <div class="hdr-title">
+            <img src="../icons/nyan-banner.png" alt="uvspeed" class="hdr-logo">
+            archflow
+            <span style="color:var(--cursor-text-muted);font-weight:400;font-size:.8rem">— n8n-style architecture visualizer</span>
+            <span class="hdr-badge">Node Flow</span>
+        </div>
+        <div class="hdr-nav">
+            <a href="quantum-notepad.html">Notepad</a>
+            <a href="questcast.html">questcast</a>
+            <a href="blackwell.html" style="color:#76b900">Blackwell</a>
+            <a href="hexcast.html">hexcast</a>
+            <a href="jawta-audio.html">jawta</a>
+            <a href="brothernumsy.html">Game</a>
+        </div>
+    </div>
+
+    <div class="main">
+        <!-- Node Canvas -->
+        <div class="canvas-area">
+            <div class="canvas-grid"></div>
+            <div class="canvas-scroll" id="canvas-scroll">
+                <div class="canvas-inner" id="canvas-inner">
+                    <svg class="connections-svg" id="connections-svg"></svg>
+                    <!-- Nodes injected by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Mermaid + Palette Sidebar -->
+        <div class="mermaid-panel">
+            <div class="mp-tabs">
+                <button class="mp-tab active" data-tab="mp-diagram">Mermaid</button>
+                <button class="mp-tab" data-tab="mp-nodes">Nodes</button>
+                <button class="mp-tab" data-tab="mp-export">Export</button>
+            </div>
+
+            <!-- Mermaid Tab -->
+            <div class="mp-panel active" id="mp-diagram">
+                <div class="mp-section">
+                    <div class="mp-title">Mermaid Source</div>
+                    <textarea class="mp-code" id="mermaid-src">graph TD
+    A[Zig / Ghostty] -->|GPU Terminal| B[Rust / Nushell + uv]
+    B -->|Structured Shell| C[Semantic / GrepAI]
+    C -->|Prefix Engine| D[Visual / Charm + Mermaid]
+    D -->|Render| E[quantum-notepad.html]
+    D -->|Render| F[archflow.html]
+    B -->|uv run| G[Bridge Server :8085]
+    G -->|WebSocket :8086| E
+    G -->|HTTP API| H[Electron Desktop]
+    G -->|API| I[questcast]
+    G -->|API| J[jawta-audio]
+    E -->|hexcast| K[Video Hex Stream]
+    E -->|kbatch| L[Keyboard Analyzer]
+    E -->|game| M[brotherNumsy]
+
+    style A fill:#ff6d5a22,stroke:#ff6d5a
+    style B fill:#f0883e22,stroke:#f0883e
+    style C fill:#58a6ff22,stroke:#58a6ff
+    style D fill:#a78bfa22,stroke:#a78bfa
+    style G fill:#3fb95022,stroke:#3fb950
+    style I fill:#1877f222,stroke:#1877f2</textarea>
+                    <button class="mp-btn primary" id="btn-render">▶ Render Mermaid</button>
+                </div>
+                <div class="mp-section" style="flex:1">
+                    <div class="mp-title">Preview</div>
+                    <div class="mp-render" id="mermaid-render"></div>
+                </div>
+            </div>
+
+            <!-- Nodes Palette Tab -->
+            <div class="mp-panel" id="mp-nodes">
+                <div class="mp-section">
+                    <div class="mp-title">Add Nodes</div>
+                    <div class="palette">
+                        <div class="palette-item" data-type="runtime">🦀 Runtime</div>
+                        <div class="palette-item" data-type="terminal">⚡ Terminal</div>
+                        <div class="palette-item" data-type="server">🌐 Server</div>
+                        <div class="palette-item" data-type="ai">🤖 AI Model</div>
+                        <div class="palette-item" data-type="frontend">📱 Frontend</div>
+                        <div class="palette-item" data-type="database">🗄 Database</div>
+                        <div class="palette-item" data-type="api">🔌 API</div>
+                        <div class="palette-item" data-type="tool">🔧 Tool</div>
+                        <div class="palette-item" data-type="gpu">🟢 GPU</div>
+                        <div class="palette-item" data-type="quest">🥽 Quest</div>
+                        <div class="palette-item" data-type="audio">🎵 Audio</div>
+                        <div class="palette-item" data-type="stream">📡 Stream</div>
+                    </div>
+                </div>
+                <div class="mp-section">
+                    <div class="mp-title">Presets</div>
+                    <button class="mp-btn" id="preset-uvspeed">uvspeed Full Stack</button>
+                    <button class="mp-btn" id="preset-quest">Quest Pipeline</button>
+                    <button class="mp-btn" id="preset-blackwell">Blackwell Deploy</button>
+                    <button class="mp-btn" id="preset-audio">Jawta Audio</button>
+                </div>
+            </div>
+
+            <!-- Export Tab -->
+            <div class="mp-panel" id="mp-export">
+                <div class="mp-section">
+                    <div class="mp-title">Export Options</div>
+                    <button class="mp-btn" id="btn-export-svg">📤 Export SVG</button>
+                    <button class="mp-btn" id="btn-export-png">📸 Export PNG</button>
+                    <button class="mp-btn" id="btn-export-json">💾 Export JSON</button>
+                    <button class="mp-btn" id="btn-export-mermaid">📋 Copy Mermaid</button>
+                </div>
+                <div class="mp-section">
+                    <div class="mp-title">Node Stats</div>
+                    <div style="font-size:.6875rem;color:var(--cursor-text-muted)">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>Nodes</span><span class="ftr-mono" id="stat-nodes">0</span></div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>Connections</span><span class="ftr-mono" id="stat-conns">0</span></div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>Canvas Size</span><span class="ftr-mono">2400×1600</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="ftr">
+        <span>⚛ archflow</span><span style="opacity:.3">|</span>
+        <span class="ftr-mono" id="ftr-nodes">0 nodes</span><span style="opacity:.3">|</span>
+        <span class="ftr-mono" id="ftr-conns">0 connections</span><span style="opacity:.3">|</span>
+        <span class="ftr-mono">{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</span>
+        <span style="flex:1"></span>
+        <a href="quantum-notepad.html" style="font-size:.625rem">Notepad</a>
+        <span style="color:var(--n8n-orange);font-family:var(--cursor-font-mono)">beyondBINARY</span>
+    </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+
+// Mermaid init
+mermaid.initialize({startOnLoad:false,theme:'dark',themeVariables:{
+    primaryColor:'#161b22',primaryTextColor:'#e6edf3',primaryBorderColor:'#30363d',
+    lineColor:'#58a6ff',secondaryColor:'#21262d',tertiaryColor:'#0d1117',
+    fontFamily:'-apple-system,BlinkMacSystemFont,Segoe UI,Helvetica,Arial,sans-serif'
+}});
+
+// Tabs
+document.querySelectorAll('.mp-tab').forEach(tab=>{
+    tab.addEventListener('click',()=>{
+        document.querySelectorAll('.mp-tab').forEach(t=>t.classList.remove('active'));
+        document.querySelectorAll('.mp-panel').forEach(p=>p.classList.remove('active'));
+        tab.classList.add('active');
+        $(tab.dataset.tab).classList.add('active');
+    });
+});
+
+// Render mermaid
+let renderCount=0;
+async function renderMermaid(){
+    const src=$('mermaid-src').value;
+    const target=$('mermaid-render');
+    try{
+        const{svg}=await mermaid.render('mm-'+(renderCount++),src);
+        target.innerHTML=svg;
+    }catch(e){
+        target.innerHTML=`<span style="color:var(--cursor-error);font-size:.75rem">${e.message}</span>`;
+    }
+}
+$('btn-render').addEventListener('click',renderMermaid);
+setTimeout(renderMermaid,500);
+
+// Node system
+const nodesData=[];
+const connections=[];
+let nodeIdCounter=0;
+const inner=$('canvas-inner');
+const svgEl=$('connections-svg');
+
+const nodeTypes={
+    runtime:{icon:'🦀',color:'#f0883e',label:'Runtime'},
+    terminal:{icon:'⚡',color:'#ff6d5a',label:'Terminal'},
+    server:{icon:'🌐',color:'#3fb950',label:'Server'},
+    ai:{icon:'🤖',color:'#a78bfa',label:'AI Model'},
+    frontend:{icon:'📱',color:'#58a6ff',label:'Frontend'},
+    database:{icon:'🗄',color:'#56d4dd',label:'Database'},
+    api:{icon:'🔌',color:'#f0883e',label:'API'},
+    tool:{icon:'🔧',color:'#8b949e',label:'Tool'},
+    gpu:{icon:'🟢',color:'#76b900',label:'GPU'},
+    quest:{icon:'🥽',color:'#1877f2',label:'Quest'},
+    audio:{icon:'🎵',color:'#a78bfa',label:'Audio'},
+    stream:{icon:'📡',color:'#f85149',label:'Stream'}
+};
+
+function createNode(type,x,y,name,ports){
+    const id=nodeIdCounter++;
+    const t=nodeTypes[type]||nodeTypes.tool;
+    const n={id,type,x,y,name:name||t.label,ports:ports||['in','out']};
+    nodesData.push(n);
+    const el=document.createElement('div');
+    el.className='node';el.id='node-'+id;
+    el.style.left=x+'px';el.style.top=y+'px';
+    el.innerHTML=`
+        <div class="node-hdr">
+            <div class="node-icon" style="background:${t.color}22;border:1px solid ${t.color}">${t.icon}</div>
+            <div><div class="node-name">${n.name}</div><div class="node-sub">${type}</div></div>
+        </div>
+        <div class="node-body"><div class="node-ports">
+            ${n.ports.map(p=>`<div class="node-port"><span class="port-dot${p==='out'?' out':''} connected" data-node="${id}" data-port="${p}"></span>${p}</div>`).join('')}
+        </div></div>`;
+    inner.appendChild(el);
+    makeDraggable(el,n);
+    updateStats();
+    return n;
+}
+
+function makeDraggable(el,nodeData){
+    let dragging=false,ox,oy,sx,sy;
+    el.addEventListener('mousedown',e=>{
+        if(e.target.classList.contains('port-dot'))return;
+        dragging=true;
+        const rect=el.getBoundingClientRect();
+        const scrollRect=$('canvas-scroll').getBoundingClientRect();
+        ox=e.clientX-rect.left;oy=e.clientY-rect.top;
+        el.style.zIndex='10';
+        document.querySelectorAll('.node').forEach(n=>n.classList.remove('selected'));
+        el.classList.add('selected');
+    });
+    document.addEventListener('mousemove',e=>{
+        if(!dragging)return;
+        const scrollEl=$('canvas-scroll');
+        const scrollRect=scrollEl.getBoundingClientRect();
+        const nx=e.clientX-scrollRect.left+scrollEl.scrollLeft-ox;
+        const ny=e.clientY-scrollRect.top+scrollEl.scrollTop-oy;
+        nodeData.x=Math.max(0,nx);nodeData.y=Math.max(0,ny);
+        el.style.left=nodeData.x+'px';el.style.top=nodeData.y+'px';
+        drawConnections();
+    });
+    document.addEventListener('mouseup',()=>{if(dragging){dragging=false;el.style.zIndex=''}});
+}
+
+function addConnection(fromId,toId){
+    connections.push({from:fromId,to:toId});
+    drawConnections();
+    updateStats();
+}
+
+function drawConnections(){
+    let svg='';
+    connections.forEach((c,i)=>{
+        const fromEl=document.getElementById('node-'+c.from);
+        const toEl=document.getElementById('node-'+c.to);
+        if(!fromEl||!toEl)return;
+        const fr=fromEl.getBoundingClientRect();
+        const tr=toEl.getBoundingClientRect();
+        const innerRect=inner.getBoundingClientRect();
+        const x1=fr.right-innerRect.left;
+        const y1=fr.top+fr.height/2-innerRect.top;
+        const x2=tr.left-innerRect.left;
+        const y2=tr.top+tr.height/2-innerRect.top;
+        const dx=Math.abs(x2-x1)*.5;
+        svg+=`<path class="conn-path active" d="M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}"/>`;
+    });
+    svgEl.innerHTML=svg;
+}
+
+function updateStats(){
+    $('stat-nodes').textContent=nodesData.length;
+    $('stat-conns').textContent=connections.length;
+    $('ftr-nodes').textContent=nodesData.length+' nodes';
+    $('ftr-conns').textContent=connections.length+' connections';
+}
+
+// Default uvspeed architecture
+function loadPreset(name){
+    nodesData.length=0;connections.length=0;
+    inner.querySelectorAll('.node').forEach(n=>n.remove());
+    svgEl.innerHTML='';
+    if(name==='uvspeed'){
+        const a=createNode('terminal',60,80,'Ghostty (Zig)',['out']);
+        const b=createNode('runtime',320,80,'Nushell + uv (Rust)',['in','out']);
+        const c=createNode('server',600,80,'Bridge Server :8085',['in','out','ws']);
+        const d=createNode('ai',320,260,'GrepAI Semantic',['in','out']);
+        const e=createNode('frontend',600,260,'quantum-notepad',['in','out']);
+        const f=createNode('frontend',880,80,'Electron Desktop',['in']);
+        const g=createNode('tool',880,260,'archflow',['in']);
+        const h=createNode('stream',60,260,'hexcast',['in','out']);
+        const i=createNode('quest',60,440,'questcast',['in','out']);
+        const j=createNode('audio',320,440,'jawta-audio',['in','out']);
+        const k=createNode('frontend',600,440,'brotherNumsy',['in']);
+        const l=createNode('gpu',880,440,'Blackwell Live',['in']);
+        addConnection(a.id,b.id);addConnection(b.id,c.id);addConnection(b.id,d.id);
+        addConnection(d.id,e.id);addConnection(c.id,f.id);addConnection(c.id,e.id);
+        addConnection(e.id,g.id);addConnection(c.id,i.id);addConnection(c.id,j.id);
+        addConnection(e.id,h.id);addConnection(e.id,k.id);addConnection(c.id,l.id);
+    } else if(name==='quest'){
+        const a=createNode('quest',60,80,'Quest Passthrough',['out']);
+        const b=createNode('ai',320,80,'Detectron2',['in','out']);
+        const c=createNode('ai',600,80,'BabyTrack',['in','out']);
+        const d=createNode('ai',320,260,'SAM3',['in','out']);
+        const e=createNode('ai',600,260,'DINOv3',['in','out']);
+        const f=createNode('stream',880,180,'questcast Output',['in']);
+        addConnection(a.id,b.id);addConnection(b.id,c.id);addConnection(a.id,d.id);
+        addConnection(a.id,e.id);addConnection(c.id,f.id);addConnection(d.id,f.id);addConnection(e.id,f.id);
+    } else if(name==='blackwell'){
+        const a=createNode('gpu',60,80,'GB200 NVL72',['out']);
+        const b=createNode('gpu',320,80,'NVLink 5.0',['in','out']);
+        const c=createNode('gpu',600,80,'HBM3e 192GB',['in','out']);
+        const d=createNode('server',320,260,'DGX Spark',['in','out']);
+        const e=createNode('server',600,260,'Supermicro 8×B200',['in','out']);
+        const f=createNode('server',880,260,'Lambda Cluster',['in']);
+        const g=createNode('api',60,260,'uvspeed Bridge',['in','out']);
+        addConnection(a.id,b.id);addConnection(b.id,c.id);addConnection(c.id,d.id);
+        addConnection(c.id,e.id);addConnection(c.id,f.id);addConnection(g.id,d.id);
+    } else if(name==='audio'){
+        const a=createNode('audio',60,80,'Audio Input',['out']);
+        const b=createNode('audio',320,80,'Dolby Atmos Decode',['in','out']);
+        const c=createNode('audio',600,80,'Binaural HRTF',['in','out']);
+        const d=createNode('tool',320,260,'8-Band EQ',['in','out']);
+        const e=createNode('ai',600,260,'Strudel Live Code',['in','out']);
+        const f=createNode('stream',880,180,'jawta Output',['in']);
+        addConnection(a.id,b.id);addConnection(b.id,c.id);addConnection(b.id,d.id);
+        addConnection(d.id,e.id);addConnection(c.id,f.id);addConnection(e.id,f.id);
+    }
+    setTimeout(drawConnections,50);
+}
+
+$('preset-uvspeed').addEventListener('click',()=>loadPreset('uvspeed'));
+$('preset-quest').addEventListener('click',()=>loadPreset('quest'));
+$('preset-blackwell').addEventListener('click',()=>loadPreset('blackwell'));
+$('preset-audio').addEventListener('click',()=>loadPreset('audio'));
+
+// Palette drag-to-add
+document.querySelectorAll('.palette-item').forEach(item=>{
+    item.addEventListener('click',()=>{
+        const type=item.dataset.type;
+        const scroll=$('canvas-scroll');
+        createNode(type,scroll.scrollLeft+200+Math.random()*200,scroll.scrollTop+100+Math.random()*200);
+    });
+});
+
+// Export
+$('btn-export-mermaid').addEventListener('click',()=>{
+    navigator.clipboard.writeText($('mermaid-src').value);
+    $('btn-export-mermaid').textContent='✓ Copied!';
+    setTimeout(()=>$('btn-export-mermaid').textContent='📋 Copy Mermaid',1500);
+});
+$('btn-export-json').addEventListener('click',()=>{
+    const QP = window.QuantumPrefixes;
+    const data={nodes:nodesData,connections,mermaid:$('mermaid-src').value};
+    const wrapped = QP ? QP.wrapJsonExport(data, $('mermaid-src').value, 'archflow') : data;
+    if (QP) wrapped.prefixedMermaid = QP.prefixContent($('mermaid-src').value, 'mermaid');
+    const blob=new Blob([JSON.stringify(wrapped,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='archflow-'+Date.now()+'.json';a.click();
+    if (QP) {
+        const meta = QP.prefixMetadata($('mermaid-src').value, 'mermaid');
+        QP.broadcastState('archflow', { coverage: meta.coverage, totalLines: meta.totalLines, classifiedLines: meta.classifiedLines, prefixCounts: meta.prefixCounts });
+    }
+});
+
+// Load default preset
+loadPreset('uvspeed');
+
+// API
+window.archflow={
+    get nodes(){return[...nodesData]},
+    get connections(){return[...connections]},
+    addNode:(type,x,y,name,ports)=>createNode(type,x||100,y||100,name,ports),
+    connect:(fromId,toId)=>addConnection(fromId,toId),
+    loadPreset,
+    renderMermaid,
+    exportJSON(){return JSON.stringify({nodes:nodesData,connections})}
+};
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function() {
+    const QP = window.QuantumPrefixes;
+    if (!QP) return;
+    QP.onStateChange(function(source, state) {
+        if (source === 'archflow' || !state) return;
+        console.log('[QP Sync] ' + source + ': ' + (state.coverage || 0) + '% quantum coverage');
+    });
+    const mSrc = document.getElementById('mermaid-src');
+    if (mSrc) {
+        const meta = QP.prefixMetadata(mSrc.value || '', 'mermaid');
+        QP.broadcastState('archflow', { coverage: meta.coverage, totalLines: meta.totalLines, classifiedLines: meta.classifiedLines, prefixCounts: meta.prefixCounts });
+    }
+    QP.requestStateSync();
+})();
+
+// ===== TRAINING LOOP HOOK =====
+// Broadcasts ArchFlow context (mermaid, nodes, connections) to HexTerm training pipeline
+(function() {
+    const trainBC = new BroadcastChannel('hexterm-training');
+
+    trainBC.onmessage = (evt) => {
+        const msg = evt.data;
+        if (!msg || msg.type !== 'request-snapshot') return;
+        const mSrc = document.getElementById('mermaid-src');
+        trainBC.postMessage({
+            type: 'context-update',
+            source: 'archflow',
+            data: {
+                mermaid: mSrc ? mSrc.value : '',
+                nodeCount: typeof window.archflow !== 'undefined' && window.archflow.nodes ? window.archflow.nodes().length : 0,
+                timestamp: Date.now(),
+            },
+        });
+    };
+})();
+
+console.log('⚛ archflow — n8n-style architecture visualizer');
+console.log('{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}');
+console.log('API: window.archflow');
+})();
+</script>
+</body>
+</html>

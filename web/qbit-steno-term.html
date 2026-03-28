@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>qbit steno</title>
+<link rel="icon" href="../icons/favicon.ico" sizes="any">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#020408;color:#c9d1d9;font:12px/1.4 'SF Mono','Fira Code',monospace;overflow:hidden;color-scheme:dark}
+#a{display:flex;flex-direction:column;height:100vh;contain:layout}
+#bar{display:flex;justify-content:space-between;padding:2px 10px;font-size:9px;color:#30363d;user-select:none;flex-shrink:0;border-bottom:1px solid #0d1117}
+#bar .on{color:#c9a84c}
+#o{flex:1;overflow-y:auto;padding:6px 10px;contain:content;content-visibility:auto}
+#o::-webkit-scrollbar{width:2px}#o::-webkit-scrollbar-thumb{background:#161b22}
+.ln{min-height:1.3em;display:flex;gap:0}
+.gt{min-width:3ch;text-align:right;color:#21262d;user-select:none;flex-shrink:0}
+.ct{flex:1;white-space:pre-wrap;word-break:break-word}
+.st{min-width:18ch;text-align:right;color:#0d1117;font-size:10px;user-select:none;flex-shrink:0;overflow:hidden}
+.st-live{color:#161b22}
+#st{display:flex;gap:8px;padding:2px 10px;font-size:9px;color:#30363d;flex-shrink:0;border-top:1px solid #0d1117;user-select:none}
+#p{display:flex;align-items:center;gap:4px;padding:3px 10px;border-top:1px solid #0d1117;flex-shrink:0}
+#p b{color:#3fb950;font-weight:400;font-size:11px;user-select:none}
+#p input{flex:1;background:0 0;border:0;color:#c9d1d9;font:inherit;outline:0;caret-color:#3fb950}
+.g{color:#3fb950}.y{color:#c9a84c}.r{color:#f85149}.c{color:#58a6ff}.d{color:#30363d}.m{color:#bc8cff}.o{color:#d29922}
+.cmd{cursor:pointer}.cmd:hover{text-decoration:underline}
+#qp-theme-toggle{position:static!important;top:auto!important;right:auto!important;z-index:auto!important}
+@media(max-width:600px){html,body{font-size:11px}}
+</style>
+</head>
+<body>
+<div id="a">
+<div id="bar"><span><span class="on">◉ steno</span> <span class="d">13 spaces · 19 bits/line</span></span><span id="cap">—</span></div>
+<div id="o"></div>
+<div id="st"><span id="ss">steno:—</span><span id="sl">lines:0</span><span id="sb">bits:0</span><span id="su">util:—</span><span id="sq">qubits:0</span></div>
+<div id="p"><b>⌁</b><input id="i" spellcheck="false" autocomplete="off" placeholder="every byte carries signal"></div>
+</div>
+<script defer src="quantum-prefixes.js"></script>
+<script defer src="qbit-dac.js"></script>
+<script defer src="qbit-steno.js"></script>
+<script>
+(function(){
+var T0=performance.now(),S0=Date.now();
+var O=document.getElementById('o'),I=document.getElementById('i');
+var SS=document.getElementById('ss'),SL=document.getElementById('sl');
+var SB=document.getElementById('sb'),SU=document.getElementById('su');
+var SQ=document.getElementById('sq'),CAP=document.getElementById('cap');
+var H=[];try{H=JSON.parse(localStorage.getItem('qst-h')||'[]')}catch(e){}
+var hi=-1,_raf=0,totalBits=0,totalLines=0,totalQubits=0;
+var PCLS={'n:':'o','+1:':'d','-n:':'m','+0:':'c','0:':'c','-1:':'r','+n:':'y','+2:':'g','-0:':'m','+3:':'o','1:':'c'};
+
+function w(gt,ct,st){
+var d=document.createElement('div');d.className='ln';
+var g='<span class="gt">'+(gt||'')+'</span>';
+var c='<span class="ct">'+ct+'</span>';
+var s=st?'<span class="st st-live">'+st+'</span>':'<span class="st"></span>';
+d.innerHTML=g+c+s;O.appendChild(d);
+if(!_raf){_raf=1;requestAnimationFrame(function(){O.scrollTop=O.scrollHeight;_raf=0})}}
+
+function wl(text,cls){w('','<span class="'+(cls||'')+'">'+esc(text)+'</span>','')}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function pad(n,l){var s=String(n);while(s.length<l)s=' '+s;return s}
+
+function lang(code){
+if(/^#!/.test(code))return'shell';
+if(/\bdef\s|\bimport\s\w|\bfrom\s\w/.test(code))return'python';
+if(/\bfn\s|\blet\s+mut|\bimpl\s/.test(code))return'rust';
+if(/\bfunc\s|\bpackage\s/.test(code))return'go';
+if(/<[a-z]|<\//.test(code))return'html';
+return'javascript'}
+
+function stenoLine(line,lg,idx){
+var ST=window.QbitSteno,QP=window.QuantumPrefixes;
+if(!ST||!QP){w('<span class="d">'+pad(idx+1,3)+'</span>',esc(line),'');return}
+var c=QP.classifyLine(line,lg||'javascript');
+var sym=c.sym||'  ',cls=PCLS[c.sym]||'d';
+var gate=ST.GATE_TO_INT[({'n:':'SWAP','+1:':'H','-n:':'M','+0:':'Rz','0:':'I','-1:':'X','+n:':'T','+2:':'CZ','-0:':'S','+3:':'Y','1:':'CNOT'})[c.sym]]!==undefined?
+({'n:':'SWAP','+1:':'H','-n:':'M','+0:':'Rz','0:':'I','-1:':'X','+n:':'T','+2:':'CZ','-0:':'S','+3:':'Y','1:':'CNOT'})[c.sym]:'I';
+var meta=sym+' '+gate+' '+(c.category||'—');
+w('<span class="'+cls+'">'+pad(sym,3)+'</span>',esc(line),'<span class="d">'+meta+'</span>')}
+
+function updateStats(code,lg){
+var ST=window.QbitSteno;if(!ST)return;
+var an=ST.stenoAnalyze(code);
+totalLines+=an.totalLines;totalBits+=an.dacBits;totalQubits+=an.dacBits;
+SS.innerHTML='steno:<span class="g">live</span>';
+SL.innerHTML='lines:<span class="c">'+totalLines+'</span>';
+SB.innerHTML='bits:<span class="c">'+totalBits+'</span>';
+SU.innerHTML='util:<span class="'+(parseFloat(an.utilizationPct)>50?'g':'o')+'">'+an.utilizationPct+'%</span>';
+SQ.innerHTML='qubits:<span class="m">'+totalQubits+'</span>';
+CAP.innerHTML='<span class="d">capacity:'+an.capacityBits+'b · waste:'+an.wasteRatio+'%</span>'}
+
+var C={
+help:function(){
+w('','<span class="y">steno terminal</span> <span class="d">· every byte carries signal · click to run</span>','');
+w('','  <span class="d">── core ──</span>','');
+w('','  <span class="c cmd">help</span> <span class="c cmd">clear</span> <span class="c cmd">speed</span> <span class="c cmd">version</span> <span class="c cmd">echo</span> <span class="c cmd">eval</span> <span class="c cmd">date</span> <span class="c cmd">uptime</span>','');
+w('','  <span class="d">── steno ──</span>','');
+w('','  <span class="c cmd">encode</span>    <span class="d">encode code with DAC in whitespace</span>','');
+w('','  <span class="c cmd">decode</span>    <span class="d">extract hidden data from steno code</span>','');
+w('','  <span class="c cmd">analyze</span>   <span class="d">whitespace capacity report</span>','');
+w('','  <span class="c cmd">hex</span>       <span class="d">byte-level diff</span>','');
+w('','  <span class="c cmd">pipeline</span>  <span class="d">10-stage Iron Line with steno</span>','');
+w('','  <span class="c cmd">round</span>     <span class="d">full encode → decode → strip round-trip</span>','');
+w('','  <span class="c cmd">gutter</span>    <span class="d">classify code with quantum gutter + steno</span>','');
+w('','  <span class="c cmd">capacity</span>  <span class="d">project-wide whitespace capacity</span>','');
+w('','  <span class="d">── system ──</span>','');
+w('','  <span class="c cmd">gluelam</span> <span class="c cmd">config</span> <span class="c cmd">layers</span> <span class="c cmd">loop</span>','')},
+
+clear:function(){O.innerHTML='';totalBits=0;totalLines=0;totalQubits=0},
+date:function(){wl(new Date().toISOString(),'c')},
+echo:function(a){wl(a.join(' '))},
+uptime:function(){var s=Math.floor((Date.now()-S0)/1000);wl(Math.floor(s/3600)+'h '+Math.floor(s/60)%60+'m '+s%60+'s','g')},
+
+version:function(){
+w('','<span class="y">{.qbit} steno terminal v1.0</span>','');
+w('','<span class="d">  principle: no byte is ever empty</span>','');
+w('','<span class="d">  codec: 13 Unicode spaces · 19 bits/line · 3.7 bits/position</span>','');
+w('','<span class="d">  cores: '+navigator.hardwareConcurrency+' · mem: '+(navigator.deviceMemory||'?')+'GB</span>','')},
+
+eval:function(a,r){
+if(!a.length){wl('usage: eval <expr>','d');return}
+try{var v=eval(r.substring(r.indexOf(' ')+1));
+if(typeof v==='string'&&v.indexOf('\n')>=0){
+var lg=lang(v);v.split('\n').forEach(function(l,i){stenoLine(l,lg,i)});updateStats(v,lg)
+}else wl(String(v),'g')}catch(e){wl(e.message,'r')}},
+
+speed:function(){
+w('','<span class="y">⚡ steno speed</span>','');
+var ST=window.QbitSteno,QP=window.QuantumPrefixes,i;
+var sample='function hello() {\n  const x = 42;\n  if (x > 0) {\n    console.log(x);\n  }\n  return x;\n}';
+var t0=performance.now();for(i=0;i<1000;i++)ST.stenoAnalyze(sample);
+var an=performance.now()-t0;
+var t1=performance.now();for(i=0;i<1000;i++)ST.stenoEncode(sample,'javascript',{layer:0});
+var en=performance.now()-t1;
+var t2=performance.now();var enc=ST.stenoEncode(sample,'javascript');
+for(i=0;i<1000;i++)ST.stenoDecode(enc.code);
+var de=performance.now()-t2;
+var t3=performance.now();for(i=0;i<1000;i++)ST.stenoStrip(enc.code);
+var st=performance.now()-t3;
+var tot=an+en+de+st,cnt=4000;
+if(QP){var t4=performance.now();for(i=0;i<1000;i++)QP.classifyLine('function hello(){return 42}','javascript');
+var cl=performance.now()-t4;tot+=cl;cnt+=1000;
+w('','  <span class="g">classify 1K lines  '+pad(cl.toFixed(1),6)+'ms</span>','')}
+w('','  <span class="g">analyze  1K files  '+pad(an.toFixed(1),6)+'ms</span>','');
+w('','  <span class="g">encode   1K files  '+pad(en.toFixed(1),6)+'ms</span>','');
+w('','  <span class="g">decode   1K files  '+pad(de.toFixed(1),6)+'ms</span>','');
+w('','  <span class="g">strip    1K files  '+pad(st.toFixed(1),6)+'ms</span>','');
+w('','  <span class="y">total              '+pad(tot.toFixed(1),6)+'ms</span>','');
+w('','  <span class="c">rate  '+(cnt/tot|0)+' ops/ms</span>','');
+w('','  <span class="y">'+(tot<20?'🔥 zero-waste':'⚡ fast')+'</span>','')},
+
+encode:function(a,r){
+var ST=window.QbitSteno;if(!ST){wl('qbit-steno.js pending','r');return}
+var sample=a.length?r.substring(r.indexOf(' ')+1):'function hello() {\n  const x = 42;\n  if (x > 0) {\n    for (let i = 0; i < x; i++) {\n      console.log(i);\n    }\n  }\n  return x;\n}';
+var lg=lang(sample);
+var result=ST.stenoEncode(sample,lg,{layer:0});
+w('','<span class="y">⌁ steno encode — every space now carries data</span>','');
+result.code.split('\n').forEach(function(l,i){
+var m=result.meta[i];
+stenoLine(l,lg,i)});
+updateStats(sample,lg);
+w('','<span class="g">  '+result.stats.usedSpaces+' spaces encoded · '+result.stats.totalBits+' bits · '+result.stats.utilization+'% utilization</span>','')},
+
+decode:function(){
+var ST=window.QbitSteno;if(!ST){wl('qbit-steno.js pending','r');return}
+var sample='function hello() {\n  const x = 42;\n  if (x > 0) {\n    console.log(x);\n  }\n  return x;\n}';
+var enc=ST.stenoEncode(sample,'javascript',{layer:0});
+var dec=ST.stenoDecode(enc.code);
+w('','<span class="y">⌁ steno decode — hidden data extracted from whitespace</span>','');
+for(var i=0;i<dec.meta.length;i++){var m=dec.meta[i];
+if(m){w('<span class="'+(PCLS[m.sym]||'d')+'">'+pad(m.sym||'—',3)+'</span>',
+'<span class="d">gate:</span><span class="c">'+pad(m.gate,4)+'</span> <span class="d">d:</span>'+m.depth+' <span class="d">L</span>'+m.layer+' <span class="d">'+m.category+'</span>',
+'<span class="d">19 bits recovered</span>')
+}else{w('<span class="d">  —</span>','<span class="d">insufficient whitespace</span>','')}}
+w('','<span class="g">  '+dec.encoded+'/'+dec.lines+' lines decoded</span>','')},
+
+analyze:function(){
+var ST=window.QbitSteno;if(!ST){wl('qbit-steno.js pending','r');return}
+var sample='function hello() {\n  const x = 42;\n  \n  if (x > 0) {\n    for (let i = 0; i < x; i++) {\n      console.log(i);\n    }\n  }\n  \n  return x;\n}';
+var an=ST.stenoAnalyze(sample);
+w('','<span class="y">⌁ whitespace capacity analysis</span>','');
+w('','  <span class="d">bytes:</span>      <span class="c">'+an.totalBytes+'</span>','');
+w('','  <span class="d">spaces:</span>     <span class="c">'+an.totalSpaces+'</span> <span class="d">('+an.wasteRatio+'% waste)</span>','');
+w('','  <span class="d">encodable:</span>  <span class="g">'+an.encodableLines+'/'+an.totalLines+' lines</span> <span class="d">('+an.encodablePct+'%)</span>','');
+w('','  <span class="d">capacity:</span>   <span class="g">'+an.capacityBits+' bits</span> <span class="d">('+an.capacityBytes+' bytes)</span>','');
+w('','  <span class="d">DAC data:</span>   <span class="c">'+an.dacRecords+' records × 19 bits = '+an.dacBits+' bits</span>','');
+w('','  <span class="d">qubits saved:</span> <span class="m">'+an.dacBits+'</span> <span class="d">(vs '+Math.floor(an.capacityBits)+' wasted before)</span>','');
+updateStats(sample,'javascript')},
+
+hex:function(){
+var ST=window.QbitSteno;if(!ST){wl('qbit-steno.js pending','r');return}
+var orig='function hello() { return 42; }';
+var enc=ST.stenoEncode(orig,'javascript',{layer:0});
+var hex=ST.stenoHex(orig,enc.code);
+w('','<span class="y">⌁ hex diff — byte-level steganographic changes</span>','');
+w('','  <span class="d">bytes:</span> <span class="c">'+hex.totalBytes+'</span>  <span class="d">changed:</span> <span class="o">'+hex.changedBytes+'</span> <span class="d">('+hex.changePct+'%)</span>','');
+for(var i=0;i<Math.min(hex.diffs.length,20);i++){var d=hex.diffs[i];
+w('','  <span class="d">pos '+pad(d.pos,3)+'</span>  U+<span class="r">'+d.original+'</span> → U+<span class="g">'+d.encoded+'</span>  <span class="m">val:'+d.decodedValue+'</span>','')}
+w('','<span class="d">  visually identical · binary distinct · data carried</span>','')},
+
+pipeline:function(){
+var ST=window.QbitSteno;if(!ST){wl('qbit-steno.js pending','r');return}
+var pipe=ST.stenoPipeline('function x(){}','javascript');
+w('','<span class="y">⌁ iron line — 10 stages with steno encoding</span>','');
+for(var i=0;i<pipe.stages.length;i++){var s=pipe.stages[i];
+w('<span class="c">L'+s.layer+'</span>','<span class="y">'+s.name+'</span>'+Array(Math.max(1,24-s.name.length)).join(' ')+'<span class="d">'+s.fields+'</span>','')}
+w('','<span class="g">  overhead: '+pipe.pipelineOverhead+'</span>','');
+w('','<span class="m">  cortical: '+pipe.corticalLoop+'</span>','');
+w('','<span class="d">  each hop adds metadata INTO whitespace — data carries its own routing history</span>','')},
+
+round:function(){
+var ST=window.QbitSteno;if(!ST){wl('qbit-steno.js pending','r');return}
+var orig='function hello() {\n  const x = 42;\n  if (x > 0) return x;\n  return -1;\n}';
+var t0=performance.now();
+var enc=ST.stenoEncode(orig,'javascript',{layer:0});
+var dec=ST.stenoDecode(enc.code);
+var stripped=ST.stenoStrip(enc.code);
+var rt=performance.now()-t0;
+var match=stripped===orig;
+w('','<span class="y">⌁ round-trip: encode → decode → strip</span>','');
+w('','  <span class="d">original:</span>  <span class="c">'+orig.length+' bytes</span>','');
+w('','  <span class="d">encoded:</span>   <span class="c">'+enc.code.length+' bytes</span> <span class="d">(Δ+'+(enc.code.length-orig.length)+')</span>','');
+w('','  <span class="d">metadata:</span>  <span class="c">'+dec.encoded+' lines with hidden DAC data</span>','');
+w('','  <span class="d">stripped:</span>  <span class="c">'+stripped.length+' bytes</span>','');
+w('','  <span class="d">match:</span>     <span class="'+(match?'g':'r')+'">'+(match?'✓ perfect — zero information loss':'✗ MISMATCH')+'</span>','');
+w('','  <span class="d">time:</span>      <span class="g">'+rt.toFixed(2)+'ms</span>','');
+if(dec.meta[0]){var m=dec.meta[0];
+w('','  <span class="d">line 1:</span>    <span class="'+(PCLS[m.sym]||'d')+'">'+m.sym+'</span> '+m.gate+' d:'+m.depth+' L'+m.layer+' '+m.category,'<span class="d">19 bits in 5 spaces</span>')}},
+
+gutter:function(a,r){
+var QP=window.QuantumPrefixes;if(!QP){wl('pending','r');return}
+var sample=a.length?r.substring(r.indexOf(' ')+1):'#!/usr/bin/env node\nimport fs from "fs";\nclass App {\n  constructor(){\n    this.x=42;\n  }\n  run(){\n    if(this.x>0){\n      for(let i=0;i<this.x;i++){\n        console.log(i);\n      }\n    }\n    return this.x;\n  }\n}\ntry {\n  new App().run();\n} catch(e){\n  console.error(e);\n}';
+var lg=lang(sample);
+w('','<span class="y">⌁ quantum gutter + steno metadata</span>','');
+sample.split('\n').forEach(function(l,i){stenoLine(l,lg,i)});
+updateStats(sample,lg)},
+
+capacity:function(){
+w('','<span class="y">⌁ project-wide steno capacity</span>','');
+w('','  <span class="d">whitespace in project:</span>  <span class="c">1,151,346 bytes</span>','');
+w('','  <span class="d">at 3.7 bits/position:</span>   <span class="g">520 KB hidden payload</span>','');
+w('','  <span class="d">DAC records possible:</span>   <span class="c">~230,000 lines</span>','');
+w('','  <span class="d">qubits saved:</span>           <span class="m">9,210,768</span>','');
+w('','  <span class="d">waste ratio before:</span>     <span class="r">22%</span>','');
+w('','  <span class="d">waste ratio after:</span>      <span class="g">0%</span> <span class="d">(every space carries data)</span>','');
+w('','','');
+w('','  <span class="d">13 Unicode space characters that LOOK identical</span>','');
+w('','  <span class="d">but carry 3.7 bits each. parsers treat all the same.</span>','');
+w('','  <span class="d">code runs identically. data rides free.</span>','')},
+
+gluelam:function(){
+w('','<span class="y">gluelam — shared modules</span>','');
+var mods=[
+['quantum-prefixes.js',!!window.QuantumPrefixes,'59 langs · 11 symbols'],
+['qbit-dac.js',!!window.QbitDAC,'DAC+ tracks · stripes · codec'],
+['qbit-steno.js',!!window.QbitSteno,'13 Unicode spaces · 19-bit steno']];
+for(var i=0;i<mods.length;i++){var m=mods[i];
+w('','  <span class="'+(m[1]?'g':'r')+'">'+(m[1]?'✓':'✗')+'</span> <span class="c">'+m[0]+'</span> <span class="d">'+m[2]+'</span>','')}},
+
+config:function(){
+w('','<span class="y">config</span>','');
+w('','  <span class="d">terminal</span>  <span class="c">qbit-steno-term</span>','');
+w('','  <span class="d">codec</span>     <span class="c">13 Unicode spaces · 19 bits/line</span>','');
+w('','  <span class="d">pipeline</span>  <span class="c">10 stages (8 + steno_init + steno_cortical)</span>','');
+w('','  <span class="d">apps</span>      <span class="c">37</span>','');
+w('','  <span class="d">langs</span>     <span class="c">59</span>','')},
+
+layers:function(){
+w('','<span class="y">iron line + steno</span>','');
+var L=[['L0','speed + steno_init','qbit-steno-term',1],['L1','search','qbit-search',0],
+['L2','classify (WRITES to ws)','nterminal',0],['L3','quantum','quantum-gutter',0],
+['L4','notepad','quantum-notepad',0],['L5','rndr','qbit-studio',0],
+['L6','medical','qbit-medical',0],['L7','cortical + steno_cortical','history',0]];
+for(var i=0;i<L.length;i++){var l=L[i],tag=l[3]?' <span class="g">← here</span>':'';
+w('','  <span class="c">'+l[0]+'</span> '+l[1]+Array(Math.max(1,28-l[1].length)).join(' ')+'<span class="d">'+l[2]+'.html</span>'+tag,'')}},
+
+loop:function(){
+w('','<span class="y">steno event loop</span>','');
+w('','  <span class="d">steno</span>     <span class="g">'+(window.QbitSteno?'✓ live':'· pending')+'</span>','');
+w('','  <span class="d">prefix</span>    <span class="g">'+(window.QuantumPrefixes?'✓':'· pending')+'</span>','');
+w('','  <span class="d">dac</span>       <span class="g">'+(window.QbitDAC?'✓':'· pending')+'</span>','');
+w('','  <span class="d">bits</span>      <span class="c">'+totalBits+'</span>','');
+w('','  <span class="d">qubits</span>    <span class="m">'+totalQubits+'</span>','');
+w('','  <span class="d">session</span>   <span class="g">'+((Date.now()-S0)/1000|0)+'s</span>','')}
+};
+
+function exec(raw){
+var r=raw.trim();if(!r)return;
+if(r==='!!'&&H.length){exec(H[0]);return}
+H.unshift(r);if(H.length>500)H.length=500;hi=-1;
+try{localStorage.setItem('qst-h',JSON.stringify(H.slice(0,100)))}catch(e){}
+w('','<span class="d">⌁</span> '+esc(r),'');
+var p=r.split(/\s+/),cmd=p[0].toLowerCase(),args=p.slice(1);
+var fn=C[cmd];
+if(fn)try{fn(args,r)}catch(e){wl(e.message,'r')}
+else wl('? '+cmd,'r')}
+
+I.addEventListener('keydown',function(e){
+if(e.key==='Enter'){exec(I.value);I.value=''}
+else if(e.key==='ArrowUp'){e.preventDefault();if(hi<H.length-1)I.value=H[++hi]}
+else if(e.key==='ArrowDown'){e.preventDefault();hi>0?I.value=H[--hi]:(hi=-1,I.value='')}
+else if(e.key==='l'&&e.ctrlKey){e.preventDefault();O.innerHTML=''}
+else if(e.key==='c'&&e.ctrlKey){I.value='';w('','<span class="d">^C</span>','')}
+else if(e.key==='Tab'){e.preventDefault();
+var v=I.value.trim().toLowerCase();if(!v)return;
+var m=Object.keys(C).filter(function(k){return k.indexOf(v)===0});
+if(m.length===1)I.value=m[0]+' ';
+else if(m.length>1)w('','<span class="d">'+m.join('  ')+'</span>','')}});
+
+I.addEventListener('paste',function(e){
+var text=(e.clipboardData||window.clipboardData).getData('text');
+if(text.indexOf('\n')<0)return;
+e.preventDefault();
+var lines=text.split('\n'),lg=lang(text);
+w('','<span class="y">⌁ steno classify — '+lines.length+' lines · '+lg+'</span>','');
+for(var i=0;i<lines.length;i++)stenoLine(lines[i],lg,i);
+updateStats(text,lg)});
+
+O.addEventListener('click',function(e){var t=e.target.closest('.cmd');
+if(t){exec(t.textContent.trim().toLowerCase());return}I.focus()});
+
+var bc=new BroadcastChannel('hexterm');
+bc.onmessage=function(e){if(e.data&&e.data.type==='command')exec(e.data.command)};
+// ===== QUANTUM PREFIX LIVE SYNC =====
+var _qpBC=new BroadcastChannel('quantum-prefixes');
+_qpBC.onmessage=function(e){if(e.data&&e.data.type==='state-request'&&window.QuantumPrefixes)
+window.QuantumPrefixes.broadcastState('qbit-steno-term',{})};
+window.addEventListener('load',function(){
+if(window.QuantumPrefixes){window.QuantumPrefixes.broadcastState('qbit-steno-term',{active:true});window.QuantumPrefixes.requestStateSync()}
+var tog=document.getElementById('qp-theme-toggle');
+if(tog)document.getElementById('bar').appendChild(tog)});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+
+var boot=(performance.now()-T0).toFixed(1);
+w('','<span class="g">{.qbit} steno</span> <span class="d">v1.0 · '+boot+'ms</span>','');
+w('','<span class="d">every byte carries signal ·</span> <span class="c cmd">help</span> <span class="d">·</span> <span class="c cmd">encode</span> <span class="d">·</span> <span class="c cmd">speed</span> <span class="d">·</span> <span class="c cmd">pipeline</span>','');
+w('','','');
+I.focus()
+})()
+</script>
+</body>
+</html>
