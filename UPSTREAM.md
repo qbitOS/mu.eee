@@ -12,10 +12,17 @@ Canonical **code** lives in [qbitOS/uvspeed](https://github.com/qbitOS/uvspeed).
 
 ## One-shot sync (recommended)
 
-From the **mu.eee** repo root:
+From the **mu.eee** repo root (script auto-detects common uvspeed paths: `~/uvspeed`, `~/dev/projects/uvspeed`, or set **`UVSPEED`**):
 
 ```bash
-UVSPEED="${UVSPEED:-$HOME/dev/projects/uvspeed}" ./scripts/sync-mueee-from-uvspeed.sh
+./scripts/sync-mueee-from-uvspeed.sh
+# or: UVSPEED=/path/to/uvspeed ./scripts/sync-mueee-from-uvspeed.sh
+```
+
+Or from the **uvspeed** repo root (pushes into **mu.eee**; set **`MU_EEE`** if auto-detect fails):
+
+```bash
+./scripts/sync-mueee-to-mu-eee.sh
 ```
 
 ## Shell — licenses only (adjust paths)

@@ -2,11 +2,28 @@
 # Sync mirrored μ'search shell files from uvspeed into this repo (see UPSTREAM.md).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-UVSPEED="${UVSPEED:-$HOME/dev/projects/uvspeed}"
-if [[ ! -f "$UVSPEED/web/mueee.html" ]]; then
-  echo "error: missing $UVSPEED/web/mueee.html — set UVSPEED to your uvspeed clone" >&2
+
+resolve_uvspeed() {
+  local c
+  for c in \
+    "${UVSPEED:-}" \
+    "${HOME}/uvspeed" \
+    "${HOME}/dev/projects/uvspeed" \
+    "/Users/${USER:-}/uvspeed" \
+    "/Users/${USER:-}/dev/projects/uvspeed"; do
+    [[ -z "$c" ]] && continue
+    [[ -f "$c/web/mueee.html" ]] && { echo "$c"; return 0; }
+  done
+  return 1
+}
+
+UVSPEED="$(resolve_uvspeed)" || {
+  echo "error: could not find uvspeed clone with web/mueee.html" >&2
+  echo "  Set UVSPEED=/path/to/uvspeed and re-run." >&2
   exit 1
-fi
+}
+echo "using UVSPEED=$UVSPEED"
+
 mkdir -p "$ROOT/web"
 for f in mueee.html mueee-throughline-spine.js; do
   cp "$UVSPEED/web/$f" "$ROOT/web/$f"
