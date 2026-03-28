@@ -277,3 +277,6 @@ a:hover { text-decoration: underline; }
   .qp-card { box-shadow: none; border: 1px solid #ccc; }
   #qp-theme-toggle { display: none !important; }
 }
+
+/* quantum-prefixes.js default: #qp-theme-toggle is position:fixed;top:8px;right:12px.
+   To dock it in your header/toolbar, add data-qp-theme-host to that element (see quantum-prefixes _initTheme). */

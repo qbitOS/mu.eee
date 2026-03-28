@@ -376,6 +376,42 @@ function drawTimeline(canvas) {
     ctx.textAlign = 'start';
 }
 
+/** Vertical timeline strip (left rail — Search PWA + mueee iframe). */
+function drawTimelineVertical(canvas) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.width / dpr, H = canvas.height / dpr;
+    const minLog = -44, maxLog = 18, range = maxLog - minLog;
+    const isLight = document.documentElement.classList.contains('light');
+    ctx.fillStyle = isLight ? '#f1f5f9' : '#050810';
+    ctx.fillRect(0, 0, W, H);
+    TL_SCALES.forEach(s => {
+        const y1 = ((s.min - minLog) / range) * H;
+        const y2 = ((s.max - minLog) / range) * H;
+        ctx.fillStyle = s.color + '18';
+        ctx.fillRect(0, y1, W, y2 - y1);
+        ctx.strokeStyle = s.color + '40';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(0, y1);
+        ctx.lineTo(W, y1);
+        ctx.stroke();
+        const ly = (y1 + y2) / 2;
+        if (ly > 12 && ly < H - 12) {
+            ctx.save();
+            ctx.translate(Math.max(4, W * 0.45), ly);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillStyle = s.color + (W >= 28 ? 'cc' : '99');
+            ctx.font = 'bold ' + (W >= 28 ? '7' : '6') + 'px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(s.name, 0, 0);
+            ctx.restore();
+        }
+    });
+    ctx.textAlign = 'start';
+}
+
 /* ══════════════════════════════════════════════════════
    DOCUMENT FETCHER
    ══════════════════════════════════════════════════════ */
@@ -1799,6 +1835,7 @@ const HistorySearch = {
     getScales,
     getSourceColor,
     drawTimeline,
+    drawTimelineVertical,
     fetchDocument,
     analyzeContext,
     detectPatterns,

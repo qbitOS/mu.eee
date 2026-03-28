@@ -13,6 +13,7 @@
 html,body{margin:0;min-height:100%;background:var(--qp-bg,#0a0e14);color:var(--qp-text,#e2e8f0);font-family:ui-monospace,SF Mono,monospace;font-size:11px;}
 #app{display:flex;flex-direction:column;min-height:100dvh;}
 #toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--qp-border,#1e293b);background:var(--qp-bg-secondary,#0f1419);position:sticky;top:0;z-index:30;}
+#toolbar #qp-theme-toggle{flex-shrink:0;margin-left:auto;}
 #toolbar h1{margin:0;font-size:12px;font-weight:800;background:linear-gradient(135deg,#c9a84c,#56d4dd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
 #toolbar button,#toolbar a{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--qp-border);background:var(--qp-bg);color:var(--qp-accent,#a78bfa);cursor:pointer;text-decoration:none;}
 #toolbar button:hover{border-color:var(--qp-accent);}
@@ -47,7 +48,7 @@ html,body{margin:0;min-height:100%;background:var(--qp-bg,#0a0e14);color:var(--q
 </head>
 <body>
 <div id="app">
-  <header id="toolbar">
+  <header id="toolbar" data-qp-theme-host>
     <h1>μ flow</h1>
     <span id="meta">Loading manifest…</span>
     <button type="button" id="btn-reload" title="Reload flow-manifest.json">Reload</button>
