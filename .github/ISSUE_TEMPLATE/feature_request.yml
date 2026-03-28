@@ -1,0 +1,23 @@
+name: Feature Request
+description: Propose a change to this landing repo or org documentation
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Behavioral changes** to the games hub belong in **[qbitOS/uvspeed](https://github.com/qbitOS/uvspeed)** first.
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+    validations:
+      required: true
+
+  - type: textarea
+    id: rationale
+    attributes:
+      label: Rationale
+    validations:
+      required: true

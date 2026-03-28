@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: μgrad games hub (upstream issues)
+    url: https://github.com/qbitOS/uvspeed/issues
+    about: Report bugs in the full hub PWA and shared web modules in uvspeed
+  - name: uvspeed README
+    url: https://github.com/qbitOS/uvspeed#readme
+    about: Setup and monorepo documentation

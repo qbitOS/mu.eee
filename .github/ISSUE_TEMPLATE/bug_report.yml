@@ -1,0 +1,29 @@
+name: Bug Report
+description: Error in this repo’s landing, docs, or sync instructions
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        For **app** bugs in `games-ugrad-hub.html` or shared `web/*.js`, use **[qbitOS/uvspeed](https://github.com/qbitOS/uvspeed/issues)** unless this repo’s static assets or docs only.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - index.html / links
+        - COMPLIANCE.qmd / NOTICES
+        - UPSTREAM.md / README
+        - LICENSE / compliance copy
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+    validations:
+      required: true

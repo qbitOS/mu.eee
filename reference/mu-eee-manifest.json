@@ -1,0 +1,20 @@
+{
+  "name": "mu.eee",
+  "displayName": "μ'search shell",
+  "internalHtml": "mueee.html",
+  "upstreamRepo": "https://github.com/qbitOS/uvspeed",
+  "upstreamPaths": {
+    "shellGenerated": "web/mueee.html",
+    "buildScript": "scripts/build_mueee.py",
+    "spine": "web/mueee-throughline-spine.js"
+  },
+  "broadcastChannels": ["mueee-throughline", "iron-line", "hexterm", "quantum-prefixes"],
+  "compliancePeers": [
+    "qbitos-freya",
+    "qbitos-iron-line",
+    "qbitos-gluelam",
+    "qbitos-gameHUB",
+    "qbitos-kbatch"
+  ],
+  "version": "1.0.0"
+}

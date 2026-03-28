@@ -1,0 +1,18 @@
+<!--
+Copyright (c) 2026 qbitOS / ugrad.ai. All rights reserved.
+SPDX-License-Identifier: Apache-2.0
+-->
+
+# qbitos{mu.eee} Compliance Baseline
+
+## Compliance Root
+
+- Canonical policy: https://github.com/qbitOS/compliance
+
+## Runtime Path
+
+`uvspeed web/mueee.html` → Tonnetz spine (`mueee-throughline-spine.js`) → `BroadcastChannel('mueee-throughline')` + iframe `postMessage` → child PWAs (Search, History, …) → Iron Line layers per embedded app.
+
+## Control Envelope
+
+`Single shell / no duplicate app navigators / spine order normative / theme sync only loaded iframes / query-preserving freya-units pattern for Freya bridge`

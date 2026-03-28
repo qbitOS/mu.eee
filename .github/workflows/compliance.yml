@@ -1,0 +1,23 @@
+name: compliance
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  envelope:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Verify compliance envelope
+        run: |
+          set -e
+          for f in COMPLIANCE.qmd LICENSE LICENSE-APACHE LICENSE-MIT README.md SECURITY.md; do
+            test -f "$f" || { echo "missing $f"; exit 1; }
+          done
+          echo "OK: root compliance files present"
+      - name: Validate JSON manifest
+        run: |
+          python3 -c "import json; json.load(open('reference/mu-eee-manifest.json'))"
