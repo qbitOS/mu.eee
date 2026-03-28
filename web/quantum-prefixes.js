@@ -1728,56 +1728,6 @@
 
     function onThemeChange(fn) { _themeListeners.push(fn); }
 
-    var _embedThemeSyncSetup = false;
-
-    /**
-     * mμ'eee shell + μPad lab: parent posts upl-sync-theme; same-origin iframe also gets
-     * StorageEvent when mueee-theme changes. Without this, embedded apps only read localStorage once.
-     */
-    function _setupEmbedThemeSync() {
-        if (_embedThemeSyncSetup || typeof window === 'undefined') return;
-        _embedThemeSyncSetup = true;
-        try {
-            window.addEventListener('message', function (ev) {
-                try {
-                    var d = ev.data;
-                    if (!d || d.type !== 'upl-sync-theme') return;
-                    var t = d.theme;
-                    if (t !== 'light' && t !== 'dark') return;
-                    var trusted = false;
-                    try {
-                        if (ev.source === window.parent) trusted = true;
-                    } catch (e0) {}
-                    if (!trusted) {
-                        try {
-                            if (window.opener && ev.source === window.opener) trusted = true;
-                        } catch (e1) {}
-                    }
-                    if (!trusted) return;
-                    _applyTheme(t, true);
-                    try {
-                        if (window.parent !== window) {
-                            localStorage.setItem('mueee-theme', t);
-                        }
-                    } catch (e2) {}
-                } catch (e) {}
-            });
-            window.addEventListener('storage', function (ev) {
-                try {
-                    if (ev.key !== 'mueee-theme') return;
-                    var nv = ev.newValue;
-                    if (nv !== 'light' && nv !== 'dark') return;
-                    var emb = false;
-                    try {
-                        emb = window.parent !== window;
-                    } catch (e0) {}
-                    if (!emb) return;
-                    _applyTheme(nv, true);
-                } catch (e) {}
-            });
-        } catch (e) {}
-    }
-
     function _initTheme() {
         if (typeof document === 'undefined') return;
         try {
@@ -1792,77 +1742,61 @@
                 if (root.matchMedia && root.matchMedia('(prefers-color-scheme: light)').matches) systemPref = 'light';
             } catch(e) {}
 
-            var embedInIframe = false;
-            try {
-                embedInIframe = typeof window !== 'undefined' && window.parent !== window;
-            } catch (e) {}
+            // If user has a manual override, use it; otherwise follow system
+            var initial = (userOverride === 'yes' && saved) ? saved : systemPref;
 
-            // Iframed apps (e.g. mueee): follow shell — not system pref (avoids light toolbar vs dark chrome)
-            var initial;
-            if (embedInIframe) {
-                try {
-                    var mth = localStorage.getItem('mueee-theme');
-                    if (mth === 'light' || mth === 'dark') initial = mth;
-                    else initial = 'dark';
-                } catch (eIframe) {
-                    initial = 'dark';
-                }
+            // Create side-by-side ☀ ☾ toggle — top-right, no circle
+            _themeToggleEl = document.createElement('div');
+            _themeToggleEl.id = 'qp-theme-toggle';
+            var s = _themeToggleEl.style;
+            s.position = 'fixed'; s.top = '8px'; s.right = '12px'; s.zIndex = '99999';
+            s.display = 'flex'; s.alignItems = 'center'; s.gap = '0';
+            s.borderRadius = '6px'; s.overflow = 'hidden';
+            s.border = '1px solid var(--qp-border, #30363d)';
+            s.background = 'var(--qp-bg-secondary, #161b22)';
+            s.boxShadow = '0 1px 4px var(--qp-shadow, rgba(0,0,0,0.2))';
+            s.fontFamily = 'system-ui, sans-serif'; s.lineHeight = '1';
+            s.userSelect = 'none'; s.webkitUserSelect = 'none';
+
+            // Sun button (light)
+            var sunBtn = document.createElement('button');
+            sunBtn.id = 'qp-theme-sun';
+            sunBtn.textContent = '☀';
+            sunBtn.title = 'Light mode';
+            _styleThemeBtn(sunBtn);
+
+            // Moon button (dark)
+            var moonBtn = document.createElement('button');
+            moonBtn.id = 'qp-theme-moon';
+            moonBtn.textContent = '☾';
+            moonBtn.title = 'Dark mode';
+            _styleThemeBtn(moonBtn);
+
+            sunBtn.addEventListener('click', function() {
+                try { localStorage.setItem('qp-theme-override', 'yes'); } catch(e) {}
+                _applyTheme('light');
+            });
+            moonBtn.addEventListener('click', function() {
+                try { localStorage.setItem('qp-theme-override', 'yes'); } catch(e) {}
+                _applyTheme('dark');
+            });
+
+            _themeToggleEl.appendChild(sunBtn);
+            _themeToggleEl.appendChild(moonBtn);
+            var _host = document.querySelector('[data-qp-theme-host]');
+            if (_host) {
+                s.position = 'static'; s.top = ''; s.right = '';
+                s.zIndex = ''; s.boxShadow = 'none';
+                _host.appendChild(_themeToggleEl);
             } else {
-                initial = (userOverride === 'yes' && saved) ? saved : systemPref;
-            }
-
-            // Embedded (e.g. mueee): parent shell owns theme UI — still apply theme, skip ☀/☾ control
-            if (!embedInIframe) {
-                _themeToggleEl = document.createElement('div');
-                _themeToggleEl.id = 'qp-theme-toggle';
-                var s = _themeToggleEl.style;
-                s.position = 'fixed'; s.top = '8px'; s.right = '12px'; s.zIndex = '99999';
-                s.display = 'flex'; s.alignItems = 'center'; s.gap = '0';
-                s.borderRadius = '6px'; s.overflow = 'hidden';
-                s.border = '1px solid var(--qp-border, #30363d)';
-                s.background = 'var(--qp-bg-secondary, #161b22)';
-                s.boxShadow = '0 1px 4px var(--qp-shadow, rgba(0,0,0,0.2))';
-                s.fontFamily = 'system-ui, sans-serif'; s.lineHeight = '1';
-                s.userSelect = 'none'; s.webkitUserSelect = 'none';
-
-                var sunBtn = document.createElement('button');
-                sunBtn.id = 'qp-theme-sun';
-                sunBtn.textContent = '☀';
-                sunBtn.title = 'Light mode';
-                _styleThemeBtn(sunBtn);
-
-                var moonBtn = document.createElement('button');
-                moonBtn.id = 'qp-theme-moon';
-                moonBtn.textContent = '☾';
-                moonBtn.title = 'Dark mode';
-                _styleThemeBtn(moonBtn);
-
-                sunBtn.addEventListener('click', function() {
-                    try { localStorage.setItem('qp-theme-override', 'yes'); } catch(e) {}
-                    _applyTheme('light');
-                });
-                moonBtn.addEventListener('click', function() {
-                    try { localStorage.setItem('qp-theme-override', 'yes'); } catch(e) {}
-                    _applyTheme('dark');
-                });
-
-                _themeToggleEl.appendChild(sunBtn);
-                _themeToggleEl.appendChild(moonBtn);
-                var _host = document.querySelector('[data-qp-theme-host]');
-                if (_host) {
-                    s.position = 'static'; s.top = ''; s.right = '';
-                    s.zIndex = ''; s.boxShadow = 'none';
-                    _host.appendChild(_themeToggleEl);
-                } else {
-                    document.body.appendChild(_themeToggleEl);
-                }
+                document.body.appendChild(_themeToggleEl);
             }
 
             _ensureThemeChannel();
             _applyTheme(initial);
 
-            // Auto-detect system preference changes — apply unless user has overridden (standalone only)
-            if (root.matchMedia && !embedInIframe) {
+            // Auto-detect system preference changes — apply unless user has overridden
+            if (root.matchMedia) {
                 try {
                     root.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
                         try {
@@ -1878,7 +1812,6 @@
             // Failsafe — never crash the page over theme init
             if (typeof console !== 'undefined') console.warn('QP theme init error:', err);
         }
-        _setupEmbedThemeSync();
     }
 
     function _styleThemeBtn(btn) {

@@ -47,10 +47,6 @@
   --qp-scrollbar:        #30363d;
   --qp-scrollbar-track:  #0d1117;
 
-  /* Logo / title strip — match GridPad (code) .pds-header chrome */
-  --mueee-logo-bar-bg:     rgba(10, 10, 11, 0.92);
-  --mueee-logo-bar-border: rgba(250, 250, 252, 0.09);
-
   /* Legacy compat — map old var names */
   --cursor-bg:            var(--qp-bg);
   --cursor-bg-secondary:  var(--qp-bg-secondary);
@@ -109,15 +105,6 @@
 
   --qp-scrollbar:        #c1c8cd;
   --qp-scrollbar-track:  #f6f8fa;
-
-  --mueee-logo-bar-bg:     rgba(250, 250, 252, 0.94);
-  --mueee-logo-bar-border: rgba(0, 0, 0, 0.06);
-}
-
-/* Search / History use html.light (no data-theme) — same logo strip as GridPad */
-html.light {
-  --mueee-logo-bar-bg:     rgba(250, 250, 252, 0.94);
-  --mueee-logo-bar-border: rgba(0, 0, 0, 0.06);
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -137,17 +124,6 @@ html.light {
   --pfx-variable:  #d4d4d4;
   --pfx-decorator: #dcdcaa;
   --pfx-default:   #808080;
-
-  /* Mueee shell — unified title strip + rainbow (tabs + embedded iframes) */
-  --mueee-title-bar-min-height: 48px;
-  --mueee-title-bar-padding-x: 16px;
-  --mueee-rainbow-height: 3px;
-
-  /* Bottom status strip (History parity — Gridlock, apps using data-theme) */
-  --mueee-status-bar-bg: var(--qp-bg-secondary);
-  --mueee-status-bar-border: var(--qp-border);
-  --mueee-status-bar-text: var(--qp-text-muted);
-  --mueee-status-bar-accent: var(--qp-success);
 }
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -292,35 +268,6 @@ a:hover { text-decoration: underline; }
 .qp-fade-in  { animation: qp-fade-in 0.3s ease-out; }
 .qp-pulse    { animation: qp-pulse 2s ease-in-out infinite; }
 .qp-spin     { animation: qp-spin 1s linear infinite; }
-
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   Mueee shell — title strip + rainbow (embedded iframes)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-.mueee-title-bar {
-  display: flex;
-  align-items: center;
-  align-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  min-height: var(--mueee-title-bar-min-height);
-  box-sizing: border-box;
-}
-
-.mueee-rainbow,
-#mueee-rainbow {
-  display: flex;
-  flex-shrink: 0;
-  width: 100%;
-  height: var(--mueee-rainbow-height);
-  min-height: var(--mueee-rainbow-height);
-  max-height: var(--mueee-rainbow-height);
-  box-sizing: border-box;
-}
-.mueee-rainbow span,
-#mueee-rainbow span {
-  flex: 1;
-  min-height: var(--mueee-rainbow-height);
-}
 
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    Print Styles
