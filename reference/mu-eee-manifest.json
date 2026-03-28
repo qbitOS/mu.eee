@@ -3,15 +3,25 @@
   "displayName": "μ'search shell",
   "internalHtml": "mueee.html",
   "upstreamRepo": "https://github.com/qbitOS/uvspeed",
+  "githubPagesUrl": "https://qbitos.github.io/mu.eee",
+  "liveUrls": [
+    "https://mueee.qbitos.ai",
+    "https://mu.eee.qbitos.ai"
+  ],
   "upstreamPaths": {
     "shellGenerated": "web/mueee.html",
     "buildScript": "scripts/build_mueee.py",
-    "spine": "web/mueee-throughline-spine.js"
+    "spine": "web/mueee-throughline-spine.js",
+    "worker": "cloudflare/mu-eee-subdomain-worker.js",
+    "wranglerConfig": "cloudflare/wrangler-mueee.jsonc"
+  },
+  "workerEnv": {
+    "PAGES_WEB_ORIGIN": "https://qbitos.github.io/mu.eee"
   },
   "mirrorInThisRepo": {
-    "web/mueee.html": "uvspeed web/mueee.html",
-    "web/mueee-throughline-spine.js": "uvspeed web/mueee-throughline-spine.js",
-    "syncScript": "scripts/sync-mueee-from-uvspeed.sh"
+    "web/": "Same-origin bundle: mueee shell + Search pane deps (see UPSTREAM.md)",
+    "syncFromUvspeed": "uvspeed scripts/sync-mueee-to-mu-eee.sh",
+    "syncScriptThisRepo": "scripts/sync-mueee-from-uvspeed.sh"
   },
   "broadcastChannels": ["mueee-throughline", "iron-line", "hexterm", "quantum-prefixes"],
   "compliancePeers": [
@@ -21,5 +31,5 @@
     "qbitos-gameHUB",
     "qbitos-kbatch"
   ],
-  "version": "1.0.0"
+  "version": "1.1.0"
 }

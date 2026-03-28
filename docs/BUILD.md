@@ -10,27 +10,29 @@ From the uvspeed repo:
 uv run python scripts/build_mueee.py
 ```
 
-This overwrites `web/mueee.html` from the template embedded in `scripts/build_mueee.py`.
+This overwrites **`web/mueee.html`** from the template embedded in **`scripts/build_mueee.py`**.
 
 ## 2. Verify spine + scripts
 
-- `web/mueee-throughline-spine.js` — `ORDER`, `LABELS`, `postToAllFrames` (skip unloaded iframes)
-- `web/mueee.html` — iframe `data-src` lazy panes; Search `fetchpriority` where applicable
+- **`web/mueee-throughline-spine.js`** — `ORDER`, `LABELS`, `postToAllFrames` (skip unloaded iframes)
+- **`web/mueee.html`** — iframe `data-src` lazy panes; Search `fetchpriority` where applicable
 
 ## 3. Service worker
 
-Bump `web/sw.js` `CACHE_NAME` when shell or precache list changes.
+Bump **`web/sw.js`** `CACHE_NAME` when shell or precache list changes.
 
 ## 4. Static mirror in **mu.eee** (`web/`)
 
-This repo keeps a **checked-in copy** of:
+This repo keeps a **checked-in copy** of the **same-origin bundle**: shell, spine, theme, **`search.html`**, shared JS, **`web/index.html`** (redirect → mueee). Without **`search.html`** on Pages, the Search **iframe** shows GitHub’s 404 inside the shell.
 
-- `web/mueee.html`
-- `web/mueee-throughline-spine.js`
+After changing uvspeed:
 
-After regenerating in uvspeed, run **`scripts/sync-mueee-from-uvspeed.sh`** (see **UPSTREAM.md**). Do not hand-edit the mirrored `mueee.html` here — edit the uvspeed generator + spine, then sync.
+- **From uvspeed:** **`./scripts/sync-mueee-to-mu-eee.sh`** (recommended), or  
+- **From mu.eee:** **`./scripts/sync-mueee-from-uvspeed.sh`**
 
-Full iframe dependencies (`search.html`, `quantum-prefixes.js`, …) remain in **uvspeed** unless you publish a broader static bundle.
+Do not hand-edit mirrored **`mueee.html`** here — edit the uvspeed generator + spine, then sync.
+
+Optional: **`MU_EEE_FULL_WEB=1`** with **`sync-mueee-to-mu-eee.sh`** rsyncs all of **`uvspeed/web/`** (every pane).
 
 ## 5. Compliance
 
