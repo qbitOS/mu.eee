@@ -2,7 +2,7 @@
 
 **mu.eee** is the **standalone reference + compliance home** for the **μ'search** unified chrome: header prompt, Tonnetz spine footer, and iframe stack that loads Search, History, GridPad, kbatch, throughline, games, globe, uvqbit, Core Race, Gridlock, Notes, and more from the [uvspeed](https://github.com/qbitOS/uvspeed) monorepo.
 
-Internal HTML name: **`mueee.html`**. This repo tracks **org alignment** (same envelope as [qbitos-freya](https://github.com/qbitOS/qbitos-freya), [qbitos-iron-line](https://github.com/qbitOS/qbitos-iron-line), [qbitos-gluelam](https://github.com/qbitOS/qbitos-gluelam), [qbitos-gameHUB](https://github.com/qbitOS/qbitos-gameHUB)) while **canonical source** remains `web/mueee.html` + `scripts/build_mueee.py` + `web/mueee-throughline-spine.js`.
+Internal HTML name: **`mueee.html`**. This repo tracks **org alignment** (same envelope as [qbitos-freya](https://github.com/qbitOS/qbitos-freya), [qbitos-iron-line](https://github.com/qbitOS/qbitos-iron-line), [qbitos-gluelam](https://github.com/qbitOS/qbitos-gluelam), [qbitos-gameHUB](https://github.com/qbitOS/qbitos-gameHUB)). **Canonical build** stays in [uvspeed](https://github.com/qbitOS/uvspeed); this repo **mirrors** `web/mueee.html` + `web/mueee-throughline-spine.js` under **`web/`** for compliance and Pages (sync via **`scripts/sync-mueee-from-uvspeed.sh`**).
 
 ## Upstream
 
@@ -32,8 +32,10 @@ The public **μ'search** shell is intended at **https://mu.eee.qbitos.ai/** via 
 
 | Path | Purpose |
 |------|---------|
+| [web/](web/) | Mirrored **`mueee.html`** + **`mueee-throughline-spine.js`** (sync from uvspeed) |
 | [COMPLIANCE.qmd](COMPLIANCE.qmd) | Runtime path + control envelope (qbitOS baseline) |
-| [docs/BUILD.md](docs/BUILD.md) | Regenerate mueee shell from uvspeed; optional static mirror |
+| [docs/BUILD.md](docs/BUILD.md) | Regenerate mueee shell from uvspeed; static mirror checklist |
+| [scripts/sync-mueee-from-uvspeed.sh](scripts/sync-mueee-from-uvspeed.sh) | Copy shell + spine from uvspeed clone |
 | [docs/DEPLOY-qbitos.md](docs/DEPLOY-qbitos.md) | **mu.eee.qbitos.ai** — Cloudflare Worker + DNS |
 | [reference/mu-eee-manifest.json](reference/mu-eee-manifest.json) | Machine-readable upstream pointers |
 | [.github/workflows](.github/workflows) | Compliance + CI checks |

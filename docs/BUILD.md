@@ -21,9 +21,16 @@ This overwrites `web/mueee.html` from the template embedded in `scripts/build_mu
 
 Bump `web/sw.js` `CACHE_NAME` when shell or precache list changes.
 
-## 4. Optional: static mirror
+## 4. Static mirror in **mu.eee** (`web/`)
 
-If this **mu.eee** repo later holds a **static export** (e.g. CI copies `mueee.html` + assets), document the exact `cp` list in **UPSTREAM.md** — do not duplicate `web/` without a version pin.
+This repo keeps a **checked-in copy** of:
+
+- `web/mueee.html`
+- `web/mueee-throughline-spine.js`
+
+After regenerating in uvspeed, run **`scripts/sync-mueee-from-uvspeed.sh`** (see **UPSTREAM.md**). Do not hand-edit the mirrored `mueee.html` here — edit the uvspeed generator + spine, then sync.
+
+Full iframe dependencies (`search.html`, `quantum-prefixes.js`, …) remain in **uvspeed** unless you publish a broader static bundle.
 
 ## 5. Compliance
 

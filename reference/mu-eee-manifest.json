@@ -8,6 +8,11 @@
     "buildScript": "scripts/build_mueee.py",
     "spine": "web/mueee-throughline-spine.js"
   },
+  "mirrorInThisRepo": {
+    "web/mueee.html": "uvspeed web/mueee.html",
+    "web/mueee-throughline-spine.js": "uvspeed web/mueee-throughline-spine.js",
+    "syncScript": "scripts/sync-mueee-from-uvspeed.sh"
+  },
   "broadcastChannels": ["mueee-throughline", "iron-line", "hexterm", "quantum-prefixes"],
   "compliancePeers": [
     "qbitos-freya",
