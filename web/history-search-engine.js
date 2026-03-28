@@ -5,7 +5,101 @@
 
 (function(root) {
 
-const VERSION = '2.6.0';
+const VERSION = '2.7.0';
+
+/**
+ * Optional same-origin / Worker proxy so connectors work when APIs omit CORS (Safari, localhost).
+ * Set window.__UVSPEED_FETCH_PROXY__ or localStorage "uvspeed-fetch-proxy-url" to your Worker origin + path, e.g.
+ *   https://your-worker.workers.dev/api/fetch-proxy
+ * Deploy: cloudflare/uvspeed-fetch-proxy-worker.js
+ */
+function getFetchProxyBase() {
+    try {
+        var w = (typeof root !== 'undefined' && root.__UVSPEED_FETCH_PROXY__) || '';
+        w = String(w || '').trim();
+        if (w) return w.replace(/\/?$/, '');
+        if (typeof localStorage !== 'undefined') {
+            w = String(localStorage.getItem('uvspeed-fetch-proxy-url') || '').trim();
+            if (w) return w.replace(/\/?$/, '');
+        }
+    } catch (e) {}
+    return '';
+}
+
+function corsFetch(url, init) {
+    init = init || {};
+    var target = String(url);
+    var base = getFetchProxyBase();
+    if (!base || !/^https?:\/\//i.test(target)) {
+        return fetch(target, init);
+    }
+    var proxyUrl = base + '?url=' + encodeURIComponent(target);
+    return fetch(proxyUrl, init);
+}
+
+var INVIDIOUS_INSTANCES = [
+    'https://vid.puffyan.us',
+    'https://invidious.projectsegfau.lt',
+    'https://invidious.flokinet.to',
+    'https://inv.riverside.rocks',
+    'https://invidious.privacyredirect.com'
+];
+
+function mapInvidiousVideos(data, q) {
+    return (Array.isArray(data) ? data : []).slice(0, 5).map(function (v) {
+        var vid = v.videoId || '';
+        return {
+            title: v.title || q,
+            source: 'youtube',
+            snippet:
+                (v.author || '') +
+                ' | ' +
+                (v.lengthSeconds
+                    ? Math.floor(v.lengthSeconds / 60) + ':' + ('0' + (v.lengthSeconds % 60)).slice(-2)
+                    : '') +
+                ' | ' +
+                (v.viewCount ? v.viewCount.toLocaleString() + ' views' : '') +
+                (v.description ? ' \u2014 ' + v.description.substring(0, 100) : ''),
+            url: 'https://www.youtube.com/watch?v=' + vid,
+            videoId: vid,
+            duration: v.lengthSeconds || 0,
+            author: v.author || '',
+            thumbnail: vid ? 'https://i.ytimg.com/vi/' + vid + '/mqdefault.jpg' : ''
+        };
+    });
+}
+
+function searchInvidiousYoutube(q) {
+    var urls = INVIDIOUS_INSTANCES.map(function (base) {
+        return base + '/api/v1/search?q=' + encodeURIComponent(q) + '&type=video&page=1';
+    });
+    function attempt(i) {
+        if (i >= urls.length) return Promise.resolve(null);
+        return corsFetch(urls[i])
+            .then(function (r) {
+                if (!r.ok) throw new Error(String(r.status));
+                return r.json();
+            })
+            .then(function (data) {
+                if (Array.isArray(data) && data.length) return data;
+                return attempt(i + 1);
+            })
+            .catch(function () {
+                return attempt(i + 1);
+            });
+    }
+    return attempt(0).then(function (data) {
+        if (data && data.length) return mapInvidiousVideos(data, q);
+        return [
+            {
+                title: 'YouTube: ' + q,
+                source: 'youtube',
+                snippet: 'No Invidious instance responded — open YouTube or set a CORS fetch proxy (see Search settings).',
+                url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q)
+            }
+        ];
+    });
+}
 
 const SRC_COLORS = {
     local: '#34d399', wikipedia: '#3b82f6', openlibrary: '#f97316',
@@ -15,6 +109,7 @@ const SRC_COLORS = {
     hathitrust: '#84cc16', 'internet-archive': '#f59e0b',
     fred: '#e11d48', worldbank: '#0ea5e9', coingecko: '#10b981',
     wiktionary: '#9333ea', datamuse: '#d946ef', youtube: '#ff0000',
+    duckduckgo: '#de5833',
     'video-transcript': '#f59e0b',
     /** Wikinews — neutral wire-style articles (Wikimedia; CORS-safe in browser) */
     'wire-news': '#0d9488',
@@ -25,18 +120,43 @@ const SRC_COLORS = {
 /* ══════════════════════════════════════════════════════
    CONNECTORS
    ══════════════════════════════════════════════════════ */
+/** Data connectors (expand: push a new object with { name, icon, enabled, search: async (q) => [...] }).
+ *  Current count: 24 — Wikipedia, Wikinews, DuckDuckGo, LOC Newspapers, Open Library, Wayback, Sacred Texts,
+ *  Yale, ARDA, arXiv, PubChem, GenBank, LGBTQ Archives, Meta Research, HathiTrust, Internet Archive,
+ *  FRED, World Bank, CoinGecko, Wiktionary, Datamuse, YouTube, Video Transcripts. */
 const CONNECTORS = [
     {
         name: 'Wikipedia', icon: 'W', enabled: true,
-        search: q => fetch('https://en.wikipedia.org/w/api.php?action=opensearch&search=' + encodeURIComponent(q) + '&limit=6&format=json&origin=*')
+        search: q => corsFetch('https://en.wikipedia.org/w/api.php?action=opensearch&search=' + encodeURIComponent(q) + '&limit=6&format=json&origin=*')
             .then(r => r.json())
-            .then(d => (d[1] || []).map((t, i) => ({ title: t, source: 'wikipedia', url: d[3][i], snippet: d[2][i] })))
+            .then(function (d) {
+                var titles = d[1] || [];
+                var urls = d[3] || [];
+                var snippets = d[2] || [];
+                if (!titles.length) return [];
+                var tparam = titles.map(function (t) { return encodeURIComponent(t); }).join('|');
+                return corsFetch('https://en.wikipedia.org/w/api.php?action=query&titles=' + tparam + '&prop=pageimages&format=json&origin=*&pithumbsize=120')
+                    .then(r => r.json())
+                    .then(function (pi) {
+                        var pages = (pi.query && pi.query.pages) || {};
+                        return titles.map(function (t, i) {
+                            var p = Object.values(pages).find(function (pg) { return pg && pg.title === t; });
+                            var thumb = (p && p.thumbnail && p.thumbnail.source) ? p.thumbnail.source : '';
+                            return { title: t, source: 'wikipedia', url: urls[i], snippet: snippets[i], thumbnail: thumb };
+                        });
+                    })
+                    .catch(function () {
+                        return titles.map(function (t, i) {
+                            return { title: t, source: 'wikipedia', url: urls[i], snippet: snippets[i], thumbnail: '' };
+                        });
+                    });
+            })
             .catch(() => [])
     },
     {
         /** Wire desk: Wikinews (editorial, date-stamped; same-origin-friendly as Wikipedia). */
         name: 'Wikinews', icon: 'WS', enabled: true,
-        search: q => fetch('https://en.wikinews.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(q) + '&srlimit=8&format=json&origin=*')
+        search: q => corsFetch('https://en.wikinews.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(q) + '&srlimit=8&format=json&origin=*')
             .then(r => r.json())
             .then(d => {
                 var hits = (d.query && d.query.search) || [];
@@ -51,9 +171,46 @@ const CONNECTORS = [
             }).catch(function () { return []; })
     },
     {
+        /** Instant answer + related (privacy-friendly; works best with fetch proxy in strict browsers). */
+        name: 'DuckDuckGo', icon: 'DD', enabled: true,
+        search: q =>
+            corsFetch(
+                'https://api.duckduckgo.com/?q=' +
+                    encodeURIComponent(q) +
+                    '&format=json&no_html=1&no_redirect=1&t=uvspeed'
+            )
+                .then(r => r.json())
+                .then(function (d) {
+                    var out = [];
+                    if (d.Abstract && String(d.Abstract).trim()) {
+                        out.push({
+                            title: (d.Heading || q).substring(0, 200),
+                            source: 'duckduckgo',
+                            snippet: String(d.Abstract).substring(0, 280),
+                            url: d.AbstractURL || 'https://duckduckgo.com/?q=' + encodeURIComponent(q),
+                            thumbnail: d.Image || ''
+                        });
+                    }
+                    (d.RelatedTopics || []).slice(0, 10).forEach(function (rt) {
+                        if (rt && typeof rt === 'object' && rt.Text && rt.FirstURL) {
+                            out.push({
+                                title: rt.Text.substring(0, 100),
+                                source: 'duckduckgo',
+                                snippet: rt.Text.substring(0, 240),
+                                url: rt.FirstURL
+                            });
+                        }
+                    });
+                    return out.slice(0, 8);
+                })
+                .catch(function () {
+                    return [];
+                })
+    },
+    {
         /** Historic newspapers — LOC newspaper directory (CORS `*`; pairs with History spine #2). */
         name: 'LOC Newspapers', icon: 'HN', enabled: true,
-        search: q => fetch('https://www.loc.gov/newspapers/?dl=item&fo=json&q=' + encodeURIComponent(q) + '&c=10')
+        search: q => corsFetch('https://www.loc.gov/newspapers/?dl=item&fo=json&q=' + encodeURIComponent(q) + '&c=10')
             .then(r => r.json())
             .then(d => {
                 var items = (d.content && d.content.results) || [];
@@ -61,24 +218,42 @@ const CONNECTORS = [
                     var title = (it.title || 'Newspaper').replace(/<[^>]+>/g, '');
                     var loc = (it.location_city && it.location_city[0] ? it.location_city[0] + ', ' : '') +
                         (it.location_state && it.location_state[0] ? it.location_state[0] : '');
+                    var locTrim = (loc || '').replace(/,\s*$/, '').trim();
+                    var thumb = '';
+                    if (it.image_url) {
+                        thumb = Array.isArray(it.image_url) ? (it.image_url[0] || '') : String(it.image_url);
+                    } else if (it.thumbnail) {
+                        thumb = typeof it.thumbnail === 'string' ? it.thumbnail : (it.thumbnail.url || '');
+                    }
                     return {
                         title: title.substring(0, 220),
                         source: 'history-archive',
-                        snippet: (it.date || '') + (loc ? ' — ' + loc : '') + ' — Library of Congress',
-                        url: it.id || ('https://www.loc.gov/newspapers/?q=' + encodeURIComponent(q))
+                        snippet: (it.date || '') + (locTrim ? ' — ' + locTrim : '') + ' — Library of Congress',
+                        url: it.id || ('https://www.loc.gov/newspapers/?q=' + encodeURIComponent(q)),
+                        date: it.date || '',
+                        location: locTrim,
+                        archive: 'Library of Congress',
+                        thumbnail: thumb
                     };
                 });
             }).catch(function () { return []; })
     },
     {
         name: 'Open Library', icon: 'OL', enabled: true,
-        search: q => fetch('https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=5')
+        search: q => corsFetch('https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=5')
             .then(r => r.json())
-            .then(d => (d.docs || []).slice(0, 5).map(doc => ({
-                title: doc.title, source: 'openlibrary',
-                snippet: (doc.author_name || []).join(', ') + (doc.first_publish_year ? ' (' + doc.first_publish_year + ')' : ''),
-                url: 'https://openlibrary.org' + doc.key
-            }))).catch(() => [])
+            .then(d => (d.docs || []).slice(0, 5).map(doc => {
+                var cover = doc.cover_i ? ('https://covers.openlibrary.org/b/id/' + doc.cover_i + '-M.jpg') : '';
+                return {
+                    title: doc.title,
+                    source: 'openlibrary',
+                    snippet: (doc.author_name || []).join(', ') + (doc.first_publish_year ? ' (' + doc.first_publish_year + ')' : ''),
+                    url: 'https://openlibrary.org' + doc.key,
+                    year: doc.first_publish_year || '',
+                    thumbnail: cover,
+                    olCoverId: doc.cover_i || null
+                };
+            })).catch(() => [])
     },
     {
         /** CDX API has no CORS from browsers — link-out avoids console noise on mueee / PWAs. */
@@ -116,7 +291,7 @@ const CONNECTORS = [
     },
     {
         name: 'arXiv', icon: 'aX', enabled: true,
-        search: q => fetch('https://export.arxiv.org/api/query?search_query=all:' + encodeURIComponent(q) + '&max_results=4')
+        search: q => corsFetch('https://export.arxiv.org/api/query?search_query=all:' + encodeURIComponent(q) + '&max_results=4')
             .then(r => r.text())
             .then(xml => {
                 const entries = [];
@@ -130,7 +305,7 @@ const CONNECTORS = [
     },
     {
         name: 'PubChem', icon: 'PC', enabled: true,
-        search: q => fetch('https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + encodeURIComponent(q) + '/property/MolecularFormula,MolecularWeight/JSON')
+        search: q => corsFetch('https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/' + encodeURIComponent(q) + '/property/MolecularFormula,MolecularWeight/JSON')
             .then(r => r.json())
             .then(d => (d.PropertyTable?.Properties || []).map(p => ({
                 title: q + ' \u2014 ' + p.MolecularFormula + ' (' + p.MolecularWeight + ' g/mol)',
@@ -172,7 +347,7 @@ const CONNECTORS = [
     },
     {
         name: 'Internet Archive', icon: 'IA', enabled: true,
-        search: q => fetch('https://archive.org/advancedsearch.php?q=' + encodeURIComponent(q) + '&fl[]=identifier,title&rows=5&output=json')
+        search: q => corsFetch('https://archive.org/advancedsearch.php?q=' + encodeURIComponent(q) + '&fl[]=identifier,title&rows=5&output=json')
             .then(r => r.json())
             .then(d => (d.response?.docs || []).map(doc => ({
                 title: doc.title, source: 'internet-archive',
@@ -182,18 +357,21 @@ const CONNECTORS = [
     },
     // ── Economic / Monetary connectors ──
     {
-        /** FRED REST API does not allow browser CORS — link to on-site search (same-origin proxy could restore API). */
+        /** FRED web UI (JSON API needs a free fred.stlouisfed.org API key — do not hardcode). */
         name: 'FRED', icon: 'FR', enabled: true,
-        search: q => Promise.resolve([{
-            title: 'FRED — search: ' + q,
-            source: 'fred',
-            snippet: 'St. Louis Fed (API blocked by CORS in browsers).',
-            url: 'https://fred.stlouisfed.org/search?st=' + encodeURIComponent(q)
-        }])
+        search: q =>
+            Promise.resolve([
+                {
+                    title: 'FRED — search: ' + q,
+                    source: 'fred',
+                    snippet: 'St. Louis Fed economic data (browser: open link; API needs key + proxy).',
+                    url: 'https://fred.stlouisfed.org/search?st=' + encodeURIComponent(q)
+                }
+            ])
     },
     {
         name: 'World Bank', icon: 'WB$', enabled: true,
-        search: q => fetch('https://api.worldbank.org/v2/country/all/indicator/NY.GDP.MKTP.CD?format=json&per_page=3&date=2020:2024')
+        search: q => corsFetch('https://api.worldbank.org/v2/country/all/indicator/NY.GDP.MKTP.CD?format=json&per_page=3&date=2020:2024')
             .then(r => r.json())
             .then(d => {
                 var items = (d[1] || []).filter(i => i.value !== null);
@@ -207,7 +385,7 @@ const CONNECTORS = [
     },
     {
         name: 'CoinGecko', icon: 'CG', enabled: true,
-        search: q => fetch('https://api.coingecko.com/api/v3/search?query=' + encodeURIComponent(q))
+        search: q => corsFetch('https://api.coingecko.com/api/v3/search?query=' + encodeURIComponent(q))
             .then(r => r.json())
             .then(d => (d.coins || []).slice(0, 4).map(c => ({
                 title: c.name + ' (' + c.symbol.toUpperCase() + ')',
@@ -219,7 +397,7 @@ const CONNECTORS = [
     // ── Linguistic / Etymology connectors ──
     {
         name: 'Wiktionary', icon: 'Wk', enabled: true,
-        search: q => fetch('https://en.wiktionary.org/api/rest_v1/page/definition/' + encodeURIComponent(q))
+        search: q => corsFetch('https://en.wiktionary.org/api/rest_v1/page/definition/' + encodeURIComponent(q))
             .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
             .then(data => {
                 var results = [];
@@ -242,7 +420,7 @@ const CONNECTORS = [
     },
     {
         name: 'Datamuse', icon: 'Dm', enabled: true,
-        search: q => fetch('https://api.datamuse.com/words?ml=' + encodeURIComponent(q) + '&max=6&md=d')
+        search: q => corsFetch('https://api.datamuse.com/words?ml=' + encodeURIComponent(q) + '&max=6&md=d')
             .then(r => r.json())
             .then(data => data.map(function(d) {
                 var defs = (d.defs || []).map(function(def) { return def.replace(/^\w+\t/, ''); }).join('; ');
@@ -257,23 +435,8 @@ const CONNECTORS = [
     // ── YouTube Search + Transcript ──
     {
         name: 'YouTube', icon: 'YT', enabled: true,
-        search: q => {
-            // YouTube search via Invidious public API (no key needed)
-            return fetch('https://vid.puffyan.us/api/v1/search?q=' + encodeURIComponent(q) + '&type=video&page=1')
-                .then(r => r.json())
-                .then(data => (Array.isArray(data) ? data : []).slice(0, 5).map(function(v) {
-                    return {
-                        title: v.title || q, source: 'youtube',
-                        snippet: (v.author || '') + ' | ' + (v.lengthSeconds ? Math.floor(v.lengthSeconds/60) + ':' + ('0' + (v.lengthSeconds%60)).slice(-2) : '') + ' | ' + (v.viewCount ? v.viewCount.toLocaleString() + ' views' : '') + (v.description ? ' \u2014 ' + v.description.substring(0,100) : ''),
-                        url: 'https://www.youtube.com/watch?v=' + (v.videoId || ''),
-                        videoId: v.videoId || '',
-                        duration: v.lengthSeconds || 0,
-                        author: v.author || '',
-                    };
-                })).catch(() =>
-                    // Fallback: simple YouTube search URL
-                    [{ title: 'YouTube: ' + q, source: 'youtube', snippet: 'Search YouTube videos', url: 'https://www.youtube.com/results?search_query=' + encodeURIComponent(q) }]
-                );
+        search: function (q) {
+            return searchInvidiousYoutube(q);
         }
     },
     {
@@ -298,16 +461,16 @@ const CONNECTORS = [
    TIMELINE SCALES
    ══════════════════════════════════════════════════════ */
 const TL_SCALES = [
-    { name: 'Sub-quantum', min: -44, max: -24, color: '#8b5cf6' },
-    { name: 'Quantum',     min: -24, max: -15, color: '#6366f1' },
-    { name: 'Atomic',      min: -15, max: -9,  color: '#3b82f6' },
-    { name: 'Photonic',    min: -9,  max: -6,  color: '#06b6d4' },
-    { name: 'Signal',      min: -6,  max: -2,  color: '#22d3ee' },
-    { name: 'Digital',     min: -2,  max: 2,   color: '#34d399' },
-    { name: 'Human',       min: 2,   max: 8,   color: '#fbbf24' },
-    { name: 'Historical',  min: 8,   max: 12,  color: '#f97316' },
-    { name: 'Geological',  min: 12,  max: 16,  color: '#ef4444' },
-    { name: 'Cosmic',      min: 16,  max: 18,  color: '#84cc16' },
+    { name: 'Sub-quantum', short: 'Sub-q', min: -44, max: -24, color: '#8b5cf6' },
+    { name: 'Quantum',     short: 'Qu',    min: -24, max: -15, color: '#6366f1' },
+    { name: 'Atomic',      short: 'Atom',  min: -15, max: -9,  color: '#3b82f6' },
+    { name: 'Photonic',    short: 'Photo', min: -9,  max: -6,  color: '#06b6d4' },
+    { name: 'Signal',      short: 'Sig',   min: -6,  max: -2,  color: '#22d3ee' },
+    { name: 'Digital',     short: 'Dig',   min: -2,  max: 2,   color: '#34d399' },
+    { name: 'Human',       short: 'Hum',   min: 2,   max: 8,   color: '#fbbf24' },
+    { name: 'Historical',  short: 'Hist',  min: 8,   max: 12,  color: '#f97316' },
+    { name: 'Geological',  short: 'Geo',   min: 12,  max: 16,  color: '#ef4444' },
+    { name: 'Cosmic',      short: 'Cos',   min: 16,  max: 18,  color: '#84cc16' },
 ];
 
 /* ══════════════════════════════════════════════════════
@@ -382,6 +545,7 @@ function drawTimelineVertical(canvas) {
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     const W = canvas.width / dpr, H = canvas.height / dpr;
+    if (W < 2 || H < 8) return;
     const minLog = -44, maxLog = 18, range = maxLog - minLog;
     const isLight = document.documentElement.classList.contains('light');
     ctx.fillStyle = isLight ? '#f1f5f9' : '#050810';
@@ -398,14 +562,18 @@ function drawTimelineVertical(canvas) {
         ctx.lineTo(W, y1);
         ctx.stroke();
         const ly = (y1 + y2) / 2;
-        if (ly > 12 && ly < H - 12) {
+        const segH = y2 - y1;
+        const label = s.short || s.name;
+        if (ly > 10 && ly < H - 10 && segH > 14) {
             ctx.save();
-            ctx.translate(Math.max(4, W * 0.45), ly);
+            ctx.translate(Math.max(3, W * 0.5), ly);
             ctx.rotate(-Math.PI / 2);
-            ctx.fillStyle = s.color + (W >= 28 ? 'cc' : '99');
-            ctx.font = 'bold ' + (W >= 28 ? '7' : '6') + 'px monospace';
+            ctx.fillStyle = isLight ? (s.color + 'ee') : (s.color + 'ff');
+            var fz = W >= 36 ? 8 : (W >= 28 ? 7 : 6);
+            ctx.font = '600 ' + fz + 'px ui-monospace, "SF Mono", Menlo, monospace';
             ctx.textAlign = 'center';
-            ctx.fillText(s.name, 0, 0);
+            ctx.textBaseline = 'middle';
+            ctx.fillText(label, 0, 0);
             ctx.restore();
         }
     });
@@ -518,7 +686,7 @@ async function fetchWikidataExternalIds(qid) {
             'https://www.wikidata.org/w/api.php?action=wbgetentities&ids=' +
             encodeURIComponent(qid) +
             '&format=json&props=claims&origin=*';
-        var res = await fetch(url);
+        var res = await corsFetch(url);
         var data = await res.json();
         var ent = data.entities && data.entities[qid];
         if (!ent || !ent.claims) return out;
@@ -596,11 +764,11 @@ async function fetchDocument(url, source) {
                 var restData = null;
                 var parseData = null;
                 try {
-                    var restRes = await fetch(restUrl);
+                    var restRes = await corsFetch(restUrl);
                     if (restRes.ok) restData = await restRes.json();
                 } catch (e) { /* optional */ }
                 try {
-                    var parseRes = await fetch(parseUrl);
+                    var parseRes = await corsFetch(parseUrl);
                     parseData = await parseRes.json();
                 } catch (e) { /* optional */ }
 
@@ -661,7 +829,7 @@ async function fetchDocument(url, source) {
         else if (source === 'arxiv' || url.indexOf('arxiv.org') !== -1) {
             var idMatch = url.match(/abs\/(.+?)(?:#|$)/) || url.match(/(\d{4}\.\d{4,5})/);
             if (idMatch) {
-                var res = await fetch('https://export.arxiv.org/api/query?id_list=' + idMatch[1]);
+                var res = await corsFetch('https://export.arxiv.org/api/query?id_list=' + idMatch[1]);
                 var xml = await res.text();
                 var tM = xml.match(/<title>([\s\S]*?)<\/title>/);
                 var sM = xml.match(/<summary>([\s\S]*?)<\/summary>/);
@@ -675,7 +843,7 @@ async function fetchDocument(url, source) {
         else if (source === 'openlibrary' || url.indexOf('openlibrary.org') !== -1) {
             var keyMatch = url.match(/\/works\/(\w+)/);
             if (keyMatch) {
-                var res = await fetch('https://openlibrary.org/works/' + keyMatch[1] + '.json');
+                var res = await corsFetch('https://openlibrary.org/works/' + keyMatch[1] + '.json');
                 var data = await res.json();
                 doc.title = data.title || '';
                 doc.content = typeof data.description === 'string' ? data.description : (data.description ? data.description.value : '');
@@ -686,7 +854,7 @@ async function fetchDocument(url, source) {
         else if (source === 'internet-archive' || url.indexOf('archive.org') !== -1) {
             var idMatch = url.match(/\/details\/(.+?)(?:#|$)/);
             if (idMatch) {
-                var res = await fetch('https://archive.org/metadata/' + idMatch[1]);
+                var res = await corsFetch('https://archive.org/metadata/' + idMatch[1]);
                 var data = await res.json();
                 var m = data.metadata || {};
                 doc.title = m.title || idMatch[1];
@@ -699,7 +867,7 @@ async function fetchDocument(url, source) {
         else if (source === 'fred' || url.indexOf('fred.stlouisfed.org') !== -1) {
             var sMatch = url.match(/\/series\/(\w+)/);
             if (sMatch) {
-                var res = await fetch('https://api.stlouisfed.org/fred/series?series_id=' + sMatch[1] + '&api_key=DEMO_KEY&file_type=json');
+                var res = await corsFetch('https://api.stlouisfed.org/fred/series?series_id=' + sMatch[1] + '&api_key=DEMO_KEY&file_type=json');
                 var data = await res.json();
                 var s = (data.seriess || [])[0] || {};
                 doc.title = s.title || sMatch[1];
@@ -710,7 +878,7 @@ async function fetchDocument(url, source) {
         else if (source === 'history-archive' || (url.indexOf('loc.gov') !== -1 && url.indexOf('/item/') !== -1)) {
             var locMatch = url.match(/loc\.gov\/item\/(\d+)/);
             if (locMatch) {
-                var locRes = await fetch('https://www.loc.gov/item/' + locMatch[1] + '/?fo=json');
+                var locRes = await corsFetch('https://www.loc.gov/item/' + locMatch[1] + '/?fo=json');
                 if (locRes.ok) {
                     var locData = await locRes.json();
                     var locItem = locData.item || {};
@@ -1828,8 +1996,10 @@ function generateContextRecommendations(intel, capsuleMatches, personaCtx) {
    EXPORT
    ══════════════════════════════════════════════════════ */
 const HistorySearch = {
-    VERSION: '2.5.0',
+    VERSION: '2.7.0',
     search,
+    corsFetch,
+    getFetchProxyBase,
     getConnectors,
     setConnectorEnabled,
     getScales,

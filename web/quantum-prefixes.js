@@ -1745,12 +1745,37 @@
             // If user has a manual override, use it; otherwise follow system
             var initial = (userOverride === 'yes' && saved) ? saved : systemPref;
 
+            // μ'search shell (mueee.html): uses #mueee-theme-toggle — never inject fixed ☀☾ bar
+            try {
+                if (typeof document !== 'undefined' && document.getElementById('mueee-shell')) {
+                    _ensureThemeChannel();
+                    _applyTheme(initial);
+                    if (root.matchMedia) {
+                        try {
+                            root.matchMedia('(prefers-color-scheme: light)').addEventListener('change', function(e) {
+                                try {
+                                    var override = localStorage.getItem('qp-theme-override');
+                                    if (override !== 'yes') {
+                                        _applyTheme(e.matches ? 'light' : 'dark');
+                                    }
+                                } catch (ex) {}
+                            });
+                        } catch (e) {}
+                    }
+                    return;
+                }
+            } catch (eShell) {}
             // Iframe / embed chrome: parent shell owns theme UI — skip fixed ☀☾ bar (avoids duplicate + overlap)
             var embedChrome = false;
             try {
                 embedChrome = document.documentElement.classList.contains('qp-embed-chrome') || window.parent !== window;
             } catch (e) {}
-            if (embedChrome) {
+            // search.html (and similar): native #theme-toggle — skip fixed bar so ☀/☾ is not duplicated / mis-colored
+            var nativeThemeToggle = false;
+            try {
+                nativeThemeToggle = !!document.getElementById('theme-toggle');
+            } catch (eNt) {}
+            if (embedChrome || nativeThemeToggle) {
                 _ensureThemeChannel();
                 _applyTheme(initial);
                 if (root.matchMedia) {

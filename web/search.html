@@ -13,9 +13,11 @@
 <link rel="apple-touch-icon" sizes="192x192" href="../icons/icon-192.png">
 <title>Search — Universal Timeline Search + Freya · Kbatch · Hexcast · Hub</title>
 <link rel="stylesheet" href="quantum-theme.css">
+<script src="mueee-mu-context.js"></script>
+<script src="mueee-mistral-bridge.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-:root{--bg:#050810;--bg2:#0a0f1a;--bg3:#101828;--border:#1e2d4a;--text:#e2e8f0;--muted:#64748b;--dim:#475569;--accent:#7c3aed;--cyan:#22d3ee;--green:#34d399;--orange:#f97316;--purple:#a78bfa;--mono:'SF Mono','JetBrains Mono','Fira Code',monospace;--sans:-apple-system,'SF Pro Display',system-ui,sans-serif;}
+:root{--bg:#050810;--bg2:#0a0f1a;--bg3:#101828;--border:#1e2d4a;--text:#e2e8f0;--muted:#64748b;--dim:#475569;--accent:#7c3aed;--cyan:#22d3ee;--green:#34d399;--orange:#f97316;--purple:#a78bfa;--mono:'SF Mono','JetBrains Mono','Fira Code',monospace;--sans:-apple-system,'SF Pro Display',system-ui,sans-serif;--mueee-rainbow-height:5px;--spine-rainbow-seg:5px;--spine-rainbow-w:5px;--spine-timeline-w:11px;}
 html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;-webkit-text-size-adjust:100%;}
 body{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
@@ -36,6 +38,7 @@ html.qp-embed-chrome #header{backdrop-filter:none;-webkit-backdrop-filter:none;b
 #header .spacer{flex:1;}
 #header .nav-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:6px;font-family:var(--mono);font-size:10px;cursor:pointer;text-decoration:none;}
 #header .nav-btn:hover{color:var(--text);border-color:var(--accent);text-decoration:none;}
+#header .header-mode-tabs,.mode-tab{position:relative;z-index:1;}
 
 /* ── Tabs (in header — same light bar as logo) ── */
 #header .header-mode-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-left:4px;}
@@ -64,6 +67,11 @@ html.qp-embed-chrome #search-dock.embed-min-search #search-composer{display:none
   background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;
 }
 .sc-btn-attach:hover{color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.06);}
+.sc-btn-clear{
+  align-self:flex-start;min-width:40px;min-height:44px;padding:0 12px;border-radius:8px;border:1px solid var(--border);
+  background:var(--bg2);color:var(--muted);font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;font-family:var(--sans);
+}
+.sc-btn-clear:hover{color:var(--text);border-color:#475569;background:var(--bg3);}
 .sc-attachments{display:flex;flex-wrap:wrap;gap:6px;min-height:0;margin-bottom:8px;}
 .sc-attachments:empty{display:none;}
 .sc-chip{
@@ -94,13 +102,62 @@ html.qp-embed-chrome #search-dock.embed-min-search #search-composer{display:none
 #timeline{height:44px;border-bottom:1px solid var(--border);background:var(--bg);}
 #tl-canvas{width:100%;height:100%;display:block;}
 
-/* ── Left spine rail: thin vertical ribbon + timeline (connectors = horizontal strip in main) ── */
-.search-panel-body{display:flex;flex:1;min-height:0;flex-direction:row;align-items:stretch;}
-.search-panel-main{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;}
-#spine-rail{display:flex;flex-direction:row;align-items:stretch;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);transition:min-width .22s ease,width .22s ease;min-width:0;}
-.rainbow-vertical{display:flex;flex-direction:column;width:3px;min-width:3px;flex-shrink:0;}
-.rainbow-vertical span{flex:1;min-height:4px;width:100%;}
-#timeline-v-wrap{width:28px;min-width:24px;flex:1;min-height:80px;max-width:36px;position:relative;border-right:1px solid var(--border);}
+/* ── Left spine rail: ribbon + timeline + scroll-spy dots (Framer-style section flow) ── */
+.search-panel-body{display:flex;flex:1;min-height:0;flex-direction:row;align-items:stretch;overflow-x:hidden;}
+.search-panel-main{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;position:relative;z-index:1;background:var(--bg);isolation:isolate;}
+/* Mμ mode: notes pane + optional ambient layer + optional context rail */
+#search-mu-stack.search-mu-stack{flex:1;min-height:0;display:flex;flex-direction:column;position:relative;}
+.mueee-bg-layer{position:absolute;inset:0;z-index:0;pointer-events:none;border-radius:0;opacity:0;transition:opacity .45s ease;will-change:opacity;background:radial-gradient(ellipse 90% 70% at 30% 20%,rgba(124,58,237,.22),transparent 55%),radial-gradient(ellipse 70% 60% at 85% 75%,rgba(6,182,212,.18),transparent 50%),linear-gradient(165deg,rgba(15,23,42,.4),rgba(30,41,59,.25));filter:blur(14px) saturate(1.1);transform:scale(1.04);}
+#search-mu-stack.mu-bg-on .mueee-bg-layer{opacity:.85;}
+.mu-answer-pane{flex:0 0 auto;position:relative;z-index:2;max-height:min(36vh,400px);display:flex;flex-direction:column;margin:0 0 6px;padding:8px 10px 10px;border-radius:10px;border:1px solid rgba(124,58,237,.32);background:rgba(15,23,42,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);box-shadow:0 4px 24px rgba(0,0,0,.18);}
+:root.light .mu-answer-pane{background:rgba(255,255,255,.78);border-color:rgba(124,58,237,.22);box-shadow:0 4px 20px rgba(15,23,42,.06);}
+.mu-answer-pane-head{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;}
+.mu-answer-title{font:700 10px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent);}
+.mu-answer-title .mu-answer-glyph{font-size:11px;letter-spacing:0;}
+.mu-answer-kicker{margin:2px 0 0;font:500 9px/1.3 var(--mono);color:var(--dim);max-width:48ch;}
+.mu-answer-hint{margin:0 0 6px;border-radius:8px;border:1px dashed rgba(100,116,139,.45);background:rgba(6,182,212,.06);}
+.mu-answer-hint > summary{font:600 9px var(--mono);color:var(--muted);cursor:pointer;padding:6px 10px;list-style:none;}
+.mu-answer-hint > summary::-webkit-details-marker{display:none;}
+.mu-answer-hint > summary::before{content:'▸ ';opacity:.7;}
+.mu-answer-hint[open] > summary::before{content:'▾ ';}
+.mu-answer-hint .mu-answer-hint-body{margin:0;padding:0 10px 8px;font:500 10px/1.4 var(--mono);color:var(--muted);}
+.mu-chip-btn{font:600 9px var(--mono);padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--muted);cursor:pointer;}
+.mu-chip-btn:hover{border-color:var(--cyan);color:var(--text);}
+.mu-chip-btn[aria-pressed="true"]{border-color:rgba(6,182,212,.45);color:var(--cyan);}
+.mu-md-stream{flex:1;min-height:2.75rem;max-height:min(30vh,320px);overflow:auto;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);font:500 12px/1.5 var(--mono);color:var(--text);white-space:pre-wrap;word-break:break-word;transition:min-height .2s ease;}
+:root.light .mu-md-stream{background:#fff;}
+.mu-md-stream:empty{min-height:3rem;}
+.mu-md-stream:empty::before{content:'Answers stream here after search (needs Mistral proxy + agent fields if using Mμ).';color:var(--dim);font:500 10px/1.45 var(--mono);font-style:normal;opacity:.88;}
+.mu-md-stream:not(:empty)::before{content:none;display:none;}
+.mu-md-stream.mu-md--error{border-color:rgba(248,81,73,.45);background:rgba(248,81,73,.06);}
+.search-mu-split{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);gap:0;align-items:stretch;position:relative;z-index:1;}
+#search-panel.search-panel--mu .search-mu-split{grid-template-columns:minmax(0,1fr) minmax(200px,280px);gap:10px;}
+@media(max-width:900px){#search-panel.search-panel--mu .search-mu-split{grid-template-columns:1fr;}}
+.search-mu-results-col{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;}
+.mu-side-rail{display:none;flex-direction:column;flex:0 0 auto;min-height:0;max-height:100%;padding:10px 10px;border-radius:12px;border:1px solid rgba(100,116,139,.4);background:rgba(15,23,42,.45);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);}
+#search-panel.search-panel--mu .mu-side-rail{display:flex;}
+:root.light .mu-side-rail{background:rgba(248,250,252,.85);}
+.mu-side-rail-head{font:700 9px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.mu-side-rail-body{font:500 11px/1.45 var(--mono);color:var(--dim);overflow:auto;flex:1;white-space:pre-wrap;word-break:break-word;}
+.mu-focus-stream-btn{margin-top:10px;font:600 10px var(--mono);padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);color:var(--cyan);cursor:pointer;width:100%;}
+.mu-focus-stream-btn:hover{border-color:var(--cyan);}
+/* Rail: thin μ-rainbow (5px) + slim timeline + named scroll-spy + toggle — matches horizontal spine strip weight */
+#spine-rail{display:flex;flex-direction:row;align-items:stretch;flex:0 0 auto;flex-shrink:0;align-self:stretch;width:auto;min-width:52px;max-width:none;background:transparent;border-right:1px solid var(--border);transition:min-width .22s ease,width .22s ease;box-sizing:border-box;}
+.spine-spy-track{display:flex;flex-direction:column;gap:5px;align-items:stretch;padding:8px 4px;flex-shrink:0;flex:1;min-width:0;width:auto;min-width:56px;max-width:88px;max-height:100%;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:thin;}
+.spine-spy-track:empty{display:none;}
+.spine-spy-node{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;padding:6px 6px;border-radius:8px;border:1px solid rgba(100,116,139,.28);background:rgba(15,23,42,.35);cursor:pointer;flex-shrink:0;transition:border-color .15s,background .15s;min-height:0;text-align:left;width:100%;box-sizing:border-box;}
+:root.light .spine-spy-node{background:rgba(248,250,252,.65);border-color:rgba(148,163,184,.35);}
+.spine-spy-node:hover{border-color:var(--muted);background:var(--bg2);}
+.spine-spy-node.active{border-color:var(--cyan);background:rgba(6,182,212,.12);}
+.spine-spy-node:focus-visible{outline:2px solid var(--accent);outline-offset:1px;}
+.spine-spy-num{font:700 9px var(--mono);color:var(--cyan);line-height:1.1;}
+.spine-spy-lbl{font:600 7px/1.15 var(--mono);color:var(--dim);letter-spacing:.04em;max-width:100%;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;text-transform:none;white-space:normal;}
+.spine-spy-node.active .spine-spy-num{color:var(--text);}
+.spine-spy-node.active .spine-spy-lbl{color:var(--muted);}
+.rainbow-vertical{display:flex;flex-direction:column;width:var(--spine-rainbow-w);min-width:var(--spine-rainbow-w);flex-shrink:0;flex-grow:0;align-self:stretch;justify-content:flex-start;padding:0;}
+.rainbow-vertical span{flex:0 0 auto;height:var(--spine-rainbow-seg);min-height:var(--spine-rainbow-seg);width:100%;border-radius:1px;}
+#timeline-v-wrap{flex:0 0 var(--spine-timeline-w);width:var(--spine-timeline-w);min-width:var(--spine-timeline-w);max-width:var(--spine-timeline-w);min-height:120px;position:relative;border-right:1px solid var(--border);background:rgba(15,23,42,.2);}
+:root.light #timeline-v-wrap{background:rgba(241,245,249,.5);}
 #tl-canvas-v{display:block;width:100%;height:100%;}
 /* Horizontal connector strip + idle auto-hide */
 .connectors-row-wrap{flex-shrink:0;position:relative;z-index:2;transition:opacity .2s ease;}
@@ -114,11 +171,14 @@ html.qp-embed-chrome #search-dock.embed-min-search #search-composer{display:none
 .connectors-pin{flex-shrink:0;font-family:var(--mono);font-size:9px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--muted);cursor:pointer;line-height:1;}
 .connectors-pin:hover{color:var(--cyan);border-color:var(--cyan);}
 .connectors-pin[aria-pressed="true"]{color:var(--cyan);border-color:rgba(6,182,212,.35);background:var(--bg);}
-.spine-rail-toggle{flex-shrink:0;width:22px;min-width:22px;align-self:stretch;margin:0;padding:4px 2px;border:none;border-left:1px solid var(--border);background:var(--bg3);color:var(--muted);cursor:pointer;font-size:11px;line-height:1.2;border-radius:0;}
+.spine-rail-toggle{flex-shrink:0;width:18px;min-width:18px;align-self:stretch;margin:0;padding:4px 1px;border:none;border-left:1px solid var(--border);background:var(--bg3);color:var(--muted);cursor:pointer;font-size:10px;line-height:1.2;border-radius:0;}
 .spine-rail-toggle:hover{color:var(--cyan);background:var(--bg);}
-#spine-rail.spine-rail--collapsed{min-width:22px;width:22px;overflow:hidden;}
 #spine-rail.spine-rail--collapsed .rainbow-vertical,
 #spine-rail.spine-rail--collapsed #timeline-v-wrap{display:none!important;}
+/* Collapsed: stack spy + toggle — narrow column, no overflow into main */
+#spine-rail.spine-rail--collapsed{flex-direction:column;align-items:stretch;min-width:28px;width:28px;max-width:28px;overflow:hidden;}
+#spine-rail.spine-rail--collapsed .spine-spy-track{flex:1;min-height:48px;width:100%;max-height:min(55vh,420px);padding:6px 0;}
+#spine-rail.spine-rail--collapsed .spine-rail-toggle{width:100%;min-width:0;border-left:none;border-top:1px solid var(--border);min-height:32px;}
 .cpill{font-family:var(--mono);font-size:10px;padding:5px 9px;border-radius:8px;border:1px solid var(--border);color:var(--muted);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;background:var(--bg);width:auto;box-sizing:border-box;text-align:center;}
 .cpill:hover{color:var(--text);border-color:#334155;}
 .cpill.active{color:var(--cyan);border-color:rgba(6,182,212,.3);}
@@ -129,12 +189,37 @@ html.qp-embed-chrome #search-dock.embed-min-search #search-composer{display:none
 #status-bar .sb-prompt-hint{color:var(--muted);max-width:min(200px,40vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
 /* ── Results (spotlight strip + tinted sections) ── */
-#results{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch;}
-.result-spotlight{display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start;}
-.result-spotlight .result{background:var(--bg2);border:1px solid var(--border);}
-.result-section{border-radius:12px;padding:10px 12px 12px;margin:0;border:1px solid rgba(100,116,139,.35);}
-.result-section-title{font:700 10px var(--mono);text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;opacity:.9;}
-.result-section-inner{display:flex;flex-direction:column;gap:8px;}
+.results-scroll-wrap{display:flex;flex-direction:column;flex:1;min-height:0;min-width:0;position:relative;z-index:1;}
+.results-inner-wrap{position:relative;flex:1;display:flex;flex-direction:column;min-height:0;min-width:0;}
+.result-strata-legend{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;padding:6px 10px;font:600 8px var(--mono);color:var(--muted);border-bottom:1px solid var(--border);background:var(--bg3);flex-shrink:0;min-width:0;-webkit-overflow-scrolling:touch;}
+.result-strata-legend .rs-sep{opacity:.45;padding:0 1px;}
+.result-strata-legend .rs-chip{padding:2px 5px;border-radius:4px;background:var(--bg2);border:1px solid var(--border);color:var(--dim);}
+.result-strata-legend .rs-chip--human{color:var(--accent);border-color:rgba(124,58,237,.35);}
+.result-strata-legend .rs-chip[data-strata="hist"]{color:var(--orange);}
+.result-strata-legend .rs-chip[data-strata="geo"]{color:var(--green);}
+.result-strata-legend .rs-chip[data-strata="cos"]{color:var(--cyan);}
+.result-strata-connectors{display:flex;flex-wrap:wrap;align-items:center;gap:2px 4px;padding:4px 10px 6px;font:600 7px var(--mono);color:var(--muted);border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;min-width:0;}
+.result-strata-connectors .rs-sep{opacity:.4;padding:0 2px;}
+.result-strata-connectors .rs-chip--bucket{padding:2px 5px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);color:var(--dim);}
+.result-strata-connectors .rs-chip--bucket[data-bucket="news"]{color:#22c55e;border-color:rgba(34,197,94,.35);}
+.result-strata-connectors .rs-chip--bucket[data-bucket="wiki"]{color:var(--accent);border-color:rgba(124,58,237,.35);}
+.result-strata-connectors .rs-chip--bucket[data-bucket="history"]{color:var(--orange);border-color:rgba(249,115,22,.35);}
+.result-strata-connectors .rs-chip--bucket[data-bucket="reference"]{color:#38bdf8;border-color:rgba(56,189,248,.35);}
+.result-strata-connectors .rs-chip--bucket[data-bucket="video"]{color:#ef4444;border-color:rgba(239,68,68,.35);}
+.result-strata-connectors .rs-chip--bucket[data-bucket="archives"]{color:#a78bfa;border-color:rgba(167,139,250,.35);}
+.result-strata-connectors .rs-chip--bucket[data-bucket="more"]{color:var(--dim);}
+.results-scroll-progress{position:absolute;right:3px;top:6px;bottom:6px;width:4px;border-radius:4px;background:rgba(100,116,139,.25);z-index:2;pointer-events:none;}
+.results-scroll-progress::after{content:'';position:absolute;left:0;top:0;width:100%;height:calc(var(--results-scroll-p, 0) * 100%);background:linear-gradient(180deg,var(--accent),var(--cyan));border-radius:4px;opacity:.88;transition:height .08s ease-out;}
+#results{flex:1;overflow-y:auto;padding:12px 16px;padding-right:18px;display:flex;flex-direction:column;gap:10px;-webkit-overflow-scrolling:touch;}
+.result-spotlight[data-section="spotlight"]{scroll-margin-top:min(12vh,72px);scroll-margin-bottom:12px;}
+.result-section[data-section]{scroll-margin-top:min(10vh,56px);scroll-margin-bottom:8px;}
+.result-section[data-axis="history"]{border-left:2px solid rgba(234,88,12,.4);}
+.result-section[data-tempo="live"]{border-left:2px solid rgba(34,211,238,.35);}
+.result-spotlight{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;margin-bottom:4px;padding-bottom:8px;border-bottom:1px solid rgba(100,116,139,.2);}
+.result-spotlight .result{background:transparent;border:none;border-bottom:1px solid rgba(100,116,139,.18);border-radius:0;padding:10px 4px;}
+.result-section{border-radius:0;padding:14px 4px 18px;margin:0;border:none;border-bottom:1px solid rgba(100,116,139,.22);background:transparent;}
+.result-section-title{font:700 10px var(--mono);text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;padding-top:2px;opacity:.88;}
+.result-section-inner{display:flex;flex-direction:column;gap:6px;}
 @media(min-width:768px){
   .result-section-inner{flex-direction:row;flex-wrap:wrap;}
   .result-section-inner .result{width:calc(50% - 6px);}
@@ -142,22 +227,45 @@ html.qp-embed-chrome #search-dock.embed-min-search #search-composer{display:none
 @media(min-width:1100px){
   .result-section-inner .result{width:calc(33.33% - 8px);}
 }
-.result-section--wiki{background:rgba(59,130,246,.09);}
-.result-section--news{background:rgba(13,148,136,.1);}
-.result-section--history{background:rgba(234,88,12,.09);}
-.result-section--reference{background:rgba(16,185,129,.08);}
-.result-section--video{background:rgba(239,68,68,.07);}
-.result-section--archives{background:rgba(245,158,11,.09);}
-.result-section--more{background:rgba(100,116,139,.12);}
-.result{display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;text-decoration:none;color:inherit;}
-.result--spot{background:var(--bg2);border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.15);}
-:root.light .result--spot{background:#fff;border-color:#e2e8f0;}
-.result:hover{border-color:#334155;background:var(--bg3);text-decoration:none;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.3);}
-.result:active{transform:scale(.99);}
+.result-section--wiki{background:linear-gradient(90deg,rgba(59,130,246,.06) 0%,transparent 48%);}
+.result-section--news{background:linear-gradient(90deg,rgba(13,148,136,.07) 0%,transparent 48%);}
+.result-section--history{background:linear-gradient(90deg,rgba(234,88,12,.06) 0%,transparent 48%);}
+.result-section--reference{background:linear-gradient(90deg,rgba(16,185,129,.06) 0%,transparent 48%);}
+.result-section--video{background:linear-gradient(90deg,rgba(239,68,68,.05) 0%,transparent 48%);}
+.result-section--archives{background:linear-gradient(90deg,rgba(245,158,11,.06) 0%,transparent 48%);}
+.result-section--more{background:linear-gradient(90deg,rgba(100,116,139,.07) 0%,transparent 48%);}
+.result{display:flex;flex-direction:column;gap:4px;padding:10px 6px;background:transparent;border:none;border-bottom:1px solid rgba(100,116,139,.2);border-radius:0;cursor:pointer;transition:background .12s,border-color .12s;text-decoration:none;color:inherit;}
+.result--spot{background:transparent;border:none;border-bottom:1px solid rgba(100,116,139,.22);box-shadow:none;}
+:root.light .result--spot{background:transparent;border-bottom-color:rgba(148,163,184,.35);}
+.result:hover{border-bottom-color:rgba(148,163,184,.45);background:rgba(15,23,42,.25);text-decoration:none;box-shadow:none;}
+:root.light .result:hover{background:rgba(241,245,249,.65);}
+.result:active{transform:none;opacity:.95;}
 .r-source{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;}
 .r-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
 .r-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.3;}
 .r-snippet{font-size:12px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+.result--rich{padding:0;overflow:hidden;border-bottom:1px solid rgba(100,116,139,.2);}
+.result--rich .r-row{display:flex;flex-direction:row;align-items:stretch;gap:0;min-height:0;}
+.result--rich.result--with-thumb .r-row{min-height:4.25rem;}
+.result--rich .r-thumb-wrap{flex:0 0 88px;width:88px;min-height:88px;max-width:88px;background:rgba(15,23,42,.35);border-right:1px solid rgba(100,116,139,.22);position:relative;}
+:root.light .result--rich .r-thumb-wrap{background:rgba(241,245,249,.9);}
+.result--rich .r-thumb{display:block;width:100%;height:100%;min-height:88px;object-fit:cover;object-position:center;}
+.result--rich .r-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px;padding:10px 12px 12px;}
+.r-main--solo{padding:12px 14px;display:flex;flex-direction:column;gap:5px;}
+.r-meta-line{font:600 9px var(--mono);color:var(--accent);opacity:.95;letter-spacing:.02em;}
+.r-subline{font:500 11px var(--mono);color:var(--dim);line-height:1.35;}
+.r-metrics{display:flex;flex-wrap:wrap;gap:4px 6px;margin-top:2px;}
+.r-chip{font:600 8px var(--mono);padding:2px 7px;border-radius:6px;border:1px solid var(--border);background:var(--bg3);color:var(--muted);}
+.r-chip--depth{background:rgba(100,116,139,.15);border-color:rgba(100,116,139,.35);}
+.r-chip--auth{background:rgba(52,211,153,.12);border-color:rgba(34,197,94,.35);color:#15803d;}
+:root.light .r-chip--auth{color:#047857;}
+.r-chip--breadth{background:rgba(251,191,36,.12);border-color:rgba(245,158,11,.4);color:#c2410c;}
+.r-chip--recency{background:rgba(52,211,153,.1);border-color:rgba(16,185,129,.3);color:#0f766e;}
+.r-chip--engage{background:rgba(100,116,139,.12);border-color:rgba(100,116,139,.3);}
+@media(max-width:520px){
+  .result--rich.result--with-thumb .r-thumb-wrap{flex-basis:72px;width:72px;min-width:72px;max-width:72px;min-height:72px;}
+  .result--rich.result--with-thumb .r-thumb{min-height:72px;}
+}
 
 /* ── Loading ── */
 .shimmer{background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.5s ease infinite;border-radius:6px;height:60px;margin-bottom:8px;}
@@ -168,7 +276,7 @@ html.qp-embed-chrome #search-dock.embed-min-search #search-composer{display:none
 /* ═══════════════════════════════════════════════════
    FREYAUNITS PANEL
    ═══════════════════════════════════════════════════ */
-#freya-panel{display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#freya-panel{display:none;flex-direction:column;flex:1;min-height:0;overflow:hidden;-webkit-overflow-scrolling:touch;}
 #freya-panel.active{display:flex;}
 #kbatch-panel,#hexcast-panel,#hub-panel{display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0;-webkit-overflow-scrolling:touch;}
 #kbatch-panel.active,#hexcast-panel.active,#hub-panel.active{display:flex;}
@@ -193,41 +301,9 @@ html.qp-embed-chrome #search-dock.embed-min-search #search-composer{display:none
 .hub-sp{width:28%;color:var(--dim);}
 .hub-note{font-size:8px;color:var(--dim);margin-top:10px;padding:8px;border-radius:8px;border:1px dashed var(--border);}
 
-/* Category pills */
-#fu-cats{display:flex;padding:8px 16px;gap:4px;overflow-x:auto;scrollbar-width:none;background:var(--bg2);border-bottom:1px solid var(--border);}
-#fu-cats::-webkit-scrollbar{display:none;}
-.fu-cat{font-family:var(--mono);font-size:10px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);color:var(--muted);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;background:var(--bg);}
-.fu-cat:hover{color:var(--text);border-color:#334155;}
-.fu-cat.active{color:#fff;font-weight:600;border-color:transparent;}
-
-/* Converter */
-#fu-converter{padding:16px;background:var(--bg);}
-#fu-conv-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-#fu-conv-row select{flex:1;min-width:80px;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-family:var(--mono);font-size:12px;outline:none;}
-#fu-conv-row select:focus{border-color:var(--accent);}
-#fu-val{width:120px;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-family:var(--mono);font-size:14px;font-weight:700;text-align:right;outline:none;}
-#fu-val:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,.15);}
-#fu-swap{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:14px;transition:all .15s;}
-#fu-swap:hover{color:var(--cyan);border-color:var(--cyan);transform:rotate(180deg);}
-#fu-result{font-family:var(--mono);font-size:24px;font-weight:800;padding:12px 0 4px;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;word-break:break-all;}
-
-/* Quick buttons */
-#fu-quick{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0 8px;}
-.fu-qb{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;transition:all .15s;}
-.fu-qb:hover{border-color:#334155;color:var(--text);background:var(--bg3);}
-
-/* All-units table */
-#fu-table{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px;padding:0 16px 8px;}
-.fu-row{display:flex;justify-content:space-between;padding:4px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--bg2);}
-.fu-row.highlight{background:var(--bg3);color:var(--text);font-weight:600;border:1px solid var(--accent);}
-
-/* Quantum props */
-#fu-quantum{padding:8px 16px;font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
-#fu-quantum b{font-weight:600;}
-
-/* Scale canvas */
-#fu-scale{height:56px;border-bottom:1px solid var(--border);}
-#fu-scale-canvas{width:100%;height:100%;display:block;}
+/* Freya tab embed — full freya.html (same feature set as freya.qbitos.ai / freya-units.html) */
+#freya-frame{flex:1;min-height:0;width:100%;border:0;background:var(--bg);display:block;}
+#freya-frame.embed-frame.freya-embed{min-height:0;}
 
 /* ── Document Viewer Panel ── */
 #doc-viewer{position:fixed;top:0;right:-100%;width:min(480px,90vw);height:100vh;height:100dvh;background:var(--bg);border-left:1px solid var(--border);display:flex;flex-direction:column;transition:right .25s ease,box-shadow .25s ease;z-index:100;box-shadow:none;}
@@ -300,23 +376,26 @@ a.dv-ml-a-ref{color:#a78bfa;}
 .dv-ai{padding:10px;background:var(--bg2);border-radius:8px;font-family:var(--mono);font-size:10px;color:var(--dim);line-height:1.5;margin-top:8px;border:1px solid var(--border);}
 
 /* ── Status (top strip on all modes) ── */
-#status-bar{display:flex;align-items:center;min-height:26px;background:var(--bg2);border-bottom:1px solid var(--border);padding:4px 10px;padding-top:max(4px,env(safe-area-inset-top));gap:12px;font-size:.5625rem;font-family:var(--mono);color:var(--dim);flex-shrink:0;box-sizing:border-box;order:-100;}
+#status-bar{display:flex;align-items:center;flex-wrap:wrap;min-height:26px;background:var(--bg2);border-bottom:1px solid var(--border);padding:4px 10px;padding-top:max(4px,env(safe-area-inset-top));gap:8px 12px;font-size:.5625rem;font-family:var(--mono);color:var(--dim);flex-shrink:0;box-sizing:border-box;order:-100;}
+#status-bar .sb-brand{color:var(--accent);font-weight:700;letter-spacing:.04em;flex-shrink:0;}
+#status-bar .sb-mueee-meta{opacity:.92;min-width:0;word-break:break-word;}
 #status-bar .val{color:var(--green);}
 #status-bar .sep{opacity:.85;}
 #status-bar .spacer{flex:1;}
 
 /* ── Layout ── */
 #app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;}
+/* Keep status + mode tabs above #search-panel (later flex sibling would otherwise paint on top if layers touch). */
+#status-bar,#header{position:relative;z-index:50;}
+#search-panel,#freya-panel,#ai-panel,#kbatch-panel,#hexcast-panel,#hub-panel{position:relative;z-index:1;}
 #header{order:0;}
 #search-panel,#freya-panel,#ai-panel,#kbatch-panel,#hexcast-panel,#hub-panel{order:4;flex:1;min-height:0;}
-#search-dock{order:18;}
+#search-dock{order:18;position:relative;z-index:40;}
 
 /* ── Responsive ── */
 @media(min-width:768px){
     #results{padding:16px 24px;}
     .result-spotlight .result{width:calc(50% - 6px);}
-    #fu-converter{max-width:700px;margin:0 auto;width:100%;}
-    #fu-table{padding:0 24px 8px;}
 }
 @media(min-width:1100px){
     .result-spotlight .result{width:calc(33.33% - 8px);}
@@ -400,6 +479,22 @@ a.dv-ml-a-ref{color:#a78bfa;}
 @media(min-width:768px){.ai-board{padding:16px 24px;}}
 
 /* ── Mobile Responsive (max-width:480px) ── */
+@media(max-width:720px){
+    #header .logo-row{flex-wrap:nowrap;align-items:center;gap:6px;overflow:hidden;}
+    #header .header-mode-tabs{display:flex;flex-wrap:nowrap;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;gap:6px;max-width:100%;scrollbar-width:none;scroll-snap-type:x proximity;padding-bottom:2px;}
+    #header .header-mode-tabs::-webkit-scrollbar{display:none;}
+    .mode-tab{flex-shrink:0;scroll-snap-align:start;white-space:nowrap;}
+    /* 2 + 24 + 20 + 18 ≈ 64px */
+    #spine-rail{min-width:48px;max-width:none;}
+    #timeline-v-wrap{flex:0 0 9px;width:9px;min-width:9px;max-width:9px;}
+    .spine-spy-track{min-width:48px;max-width:72px;padding:6px 2px;gap:4px;}
+    .spine-spy-node{padding:5px 4px;}
+    .spine-spy-lbl{font-size:6px;}
+    .search-panel-main{min-width:0;}
+    .result-strata-legend{font-size:7px;padding:4px 6px;gap:1px 3px;}
+    .result-strata-legend .rs-chip{padding:1px 4px;}
+    .result-strata-connectors{font-size:6px;padding:3px 6px;}
+}
 @media(max-width:480px){
     html,body{font-size:14px;}
     #header{padding:env(safe-area-inset-top,8px) 12px 0;}
@@ -414,24 +509,14 @@ a.dv-ml-a-ref{color:#a78bfa;}
     #prompt-model{min-width:0;flex:1 1 100%;}
     .sc-prompt-row{flex-direction:column;}
     #search-input{width:100%;padding:10px 12px;font-size:13px;min-height:52px;}
-    #search-btn{width:100%;padding:10px 16px;font-size:12px;align-self:stretch;}
+    #prompt-clear,#search-btn{width:100%;padding:10px 16px;font-size:12px;align-self:stretch;}
+    #prompt-clear{font-size:16px;}
     .connectors-row{padding:4px 8px;}
     .cpill{font-size:9px;padding:3px 8px;}
     #results{padding:8px 12px;gap:6px;}
     .result{padding:10px 12px;width:100% !important;}
     .r-title{font-size:13px;}
     .r-snippet{font-size:11px;-webkit-line-clamp:2;}
-    #fu-cats{padding:6px 12px;gap:3px;}
-    .fu-cat{font-size:9px;padding:4px 10px;}
-    #fu-converter{padding:12px;}
-    #fu-conv-row{flex-direction:column;gap:6px;}
-    #fu-conv-row select{width:100%;min-width:auto;}
-    #fu-val{width:100%;font-size:13px;}
-    #fu-result{font-size:20px;}
-    #fu-quick{gap:3px;}
-    .fu-qb{font-size:9px;padding:2px 6px;}
-    #fu-table{grid-template-columns:1fr;padding:0 12px 6px;}
-    #fu-quantum{padding:6px 12px;font-size:10px;}
     #doc-viewer{width:100vw;right:-100vw;}
     .dv-header{padding:8px 12px;}
     .dv-title{font-size:11px;}
@@ -450,19 +535,33 @@ a.dv-ml-a-ref{color:#a78bfa;}
     #status-bar{padding:0 8px;font-size:.5rem;gap:8px;}
 }
 html.qp-embed-chrome #theme-toggle{display:none!important;}
+html.qp-embed-chrome #connectors-wrap{display:none!important;}
 /* quantum-prefixes.js injects #qp-theme-toggle (fixed top-right); Search uses #theme-toggle + mueee upl-sync-theme */
-#qp-theme-toggle{display:none!important;}
+#qp-theme-toggle{display:none!important;visibility:hidden!important;pointer-events:none!important;}
+/* If a stray toggle was created before skip logic, keep it inert */
+#qp-theme-toggle *{pointer-events:none!important;}
+.mu-agent-config{margin-top:8px;padding:8px 10px;border-radius:10px;border:1px solid var(--border);background:var(--bg2);font-size:11px;}
+.mu-req-hint{font-size:10px;color:var(--dim);line-height:1.45;margin:6px 0 0;padding:8px 10px;border-radius:8px;border:1px dashed var(--border);background:rgba(6,182,212,.06);}
+.mu-agent-config summary{cursor:pointer;font-weight:600;color:var(--cyan);user-select:none;}
+.mu-agent-config .mu-field{display:flex;flex-direction:column;gap:4px;margin-top:8px;}
+.mu-agent-config label{color:var(--muted);font-size:10px;}
+.mu-agent-config textarea{width:100%;min-height:3.2em;resize:vertical;font:500 11px var(--mono);padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);}
+html.qp-embed-chrome .mu-agent-config .mu-hint-embed{display:block;color:var(--muted);font-size:10px;margin-top:6px;}
+.mu-agent-config .mu-hint-embed{display:none;}
+.mu-mistral-proxy-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px;}
+.mu-mistral-proxy-row input[type="url"]{flex:1;min-width:12rem;font:500 11px var(--mono);padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--bg);color:var(--text);}
+#mu-mistral-send{font:600 11px var(--mono);padding:6px 12px;border-radius:8px;border:1px solid var(--border);background:var(--accent);color:#fff;cursor:pointer;}
+#mu-mistral-send:disabled{opacity:.55;cursor:not-allowed;}
+#mu-mistral-reply{margin-top:8px;max-height:14rem;overflow:auto;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg3);font:500 11px/1.45 var(--mono);white-space:pre-wrap;word-break:break-word;}
 </style>
 </head>
 <body>
 <div id="app">
     <div id="status-bar" role="status" aria-live="polite">
-        <span>search</span>
-        <span class="sep">|</span>
-        <span>connectors: <span class="val" id="sb-conn">22</span></span>
-        <span>results: <span class="val" id="sb-res">0</span></span>
-        <span>latency: <span class="val" id="sb-lat">&mdash;</span></span>
+        <span class="sb-brand">μ · mueee</span>
+        <span class="sb-mueee-meta">{μ · Mμ'eee · search | connectors: <span class="val" id="sb-conn">24</span> results: <span class="val" id="sb-res">0</span> latency: <span class="val" id="sb-lat">&mdash;</span>}</span>
         <span id="sb-prompt" class="sb-prompt-hint" hidden></span>
+        <span id="sb-place" class="sb-prompt-hint" hidden title="Place context from last opened article"></span>
         <span class="spacer"></span>
         <span id="sb-net">offline</span>
         <span class="sep">|</span>
@@ -491,6 +590,7 @@ html.qp-embed-chrome #theme-toggle{display:none!important;}
             <div id="spine-rail" class="spine-rail">
                 <div class="rainbow mueee-rainbow rainbow-vertical" role="presentation"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
                 <div id="timeline-v-wrap"><canvas id="tl-canvas-v"></canvas></div>
+                <div id="spine-spy-track" class="spine-spy-track" role="navigation" aria-label="Result sections (scroll spy)"></div>
                 <button type="button" id="spine-rail-toggle" class="spine-rail-toggle" aria-expanded="true" title="Collapse ribbon &amp; timeline">&#x25C0;</button>
             </div>
             <div class="search-panel-main">
@@ -500,29 +600,74 @@ html.qp-embed-chrome #theme-toggle{display:none!important;}
                         <button type="button" id="connectors-pin" class="connectors-pin" aria-pressed="false" title="Pin connector strip open (disable auto-hide)">pin</button>
                     </div>
                 </div>
+                <div id="search-mu-stack" class="search-mu-stack">
+                <div class="mueee-bg-layer" id="mueee-bg-layer" aria-hidden="true"></div>
+                <div id="mu-answer-pane" class="mu-answer-pane" hidden>
+                    <div class="mu-answer-pane-head">
+                        <div>
+                            <span class="mu-answer-title"><span class="mu-answer-glyph" title="Mμ — Mistral notes">Mμ</span> notes</span>
+                            <p class="mu-answer-kicker">Synthesis above the results grid — not the white box under the spine; that is this stream.</p>
+                        </div>
+                        <div class="mu-answer-actions">
+                            <button type="button" id="mu-bg-toggle" class="mu-chip-btn" aria-pressed="false" title="Ambient blurred layer behind results (placeholder for hexcast / stream)">Ambient</button>
+                        </div>
+                    </div>
+                    <details class="mu-answer-hint">
+                        <summary>Grounded search + Mistral setup</summary>
+                        <div class="mu-answer-hint-body">Cards below stay as <strong>grounded sources</strong>. This pane streams the Mμ answer. For live Mistral replies, set the proxy URL and agent fields in <strong>Mμ agent</strong> under the prompt. Some connectors (YouTube, arXiv) need CORS-safe endpoints or a proxy in strict browsers.</div>
+                    </details>
+                    <div id="mu-md-stream" class="mu-md-stream" role="region" aria-label="Mμ answer stream"></div>
+                </div>
+                <div class="search-mu-split">
+                <div class="search-mu-results-col">
+                <div class="results-scroll-wrap">
+                <div id="result-strata-legend" class="result-strata-legend" title="Strata: particle → human connector bands → history depth → Geo → cosmic (timeline: past below, live/recent above in-band)">
+                    <span class="rs-chip" data-strata="subq">sub-q</span><span class="rs-sep">→</span>
+                    <span class="rs-chip" data-strata="qu">qu</span><span class="rs-sep">→</span>
+                    <span class="rs-chip" data-strata="atom">atom</span><span class="rs-sep">→</span>
+                    <span class="rs-chip" data-strata="photo">photo</span><span class="rs-sep">→</span>
+                    <span class="rs-chip" data-strata="sig">sig</span><span class="rs-sep">→</span>
+                    <span class="rs-chip" data-strata="dig">dig</span><span class="rs-sep">→</span>
+                    <span class="rs-chip rs-chip--human" data-strata="human">human</span><span class="rs-sep">→</span>
+                    <span class="rs-chip" data-strata="hist">history</span><span class="rs-sep">→</span>
+                    <span class="rs-chip" data-strata="geo">Geo</span><span class="rs-sep">→</span>
+                    <span class="rs-chip" data-strata="cos">cos</span>
+                </div>
+                <div id="result-strata-connectors" class="result-strata-connectors" title="Connector buckets (same bands as result sections): live vs deep time where marked">
+                    <span class="rs-chip rs-chip--bucket" data-bucket="news">Wire / news</span><span class="rs-sep">·</span>
+                    <span class="rs-chip rs-chip--bucket" data-bucket="wiki">Wiki / lex</span><span class="rs-sep">·</span>
+                    <span class="rs-chip rs-chip--bucket" data-bucket="history">LOC / papers</span><span class="rs-sep">·</span>
+                    <span class="rs-chip rs-chip--bucket" data-bucket="reference">Research</span><span class="rs-sep">·</span>
+                    <span class="rs-chip rs-chip--bucket" data-bucket="video">Video</span><span class="rs-sep">·</span>
+                    <span class="rs-chip rs-chip--bucket" data-bucket="archives">Archives</span><span class="rs-sep">·</span>
+                    <span class="rs-chip rs-chip--bucket" data-bucket="more">More</span>
+                </div>
+                <div class="results-inner-wrap">
+                <div id="results-scroll-progress" class="results-scroll-progress" aria-hidden="true"></div>
                 <div id="results">
                     <div class="empty"><div class="big">&#x1F50D;</div>Search across Wikipedia, arXiv, Sacred Texts,<br>PubChem, Wayback Machine, Open Library & more.<br><br><span style="font-family:var(--mono);font-size:10px;color:var(--accent);">Works offline-first. No account needed.</span></div>
+                </div>
+                </div>
+                </div>
+                </div>
+                <aside id="mu-side-rail" class="mu-side-rail" hidden aria-label="Mμ context alongside results">
+                    <div class="mu-side-rail-head">Mμ · context</div>
+                    <div id="mu-side-rail-body" class="mu-side-rail-body"></div>
+                    <button type="button" id="mu-focus-stream" class="mu-focus-stream-btn" title="Open Hexcast tab to watch stream / capture">Watch stream (Hexcast)</button>
+                </aside>
+                </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ═══ FREYAUNITS PANEL ═══ -->
+    <!-- ═══ FREYAUNITS PANEL — full freya.html (calculator, celestial, codex, quantum nav, arenas) ═══ -->
     <div id="freya-panel">
-        <div id="fu-cats"></div>
-        <div id="fu-scale"><canvas id="fu-scale-canvas"></canvas></div>
-        <div id="fu-converter">
-            <div id="fu-conv-row">
-                <input type="number" id="fu-val" value="1" step="any">
-                <select id="fu-from"></select>
-                <button id="fu-swap" title="Swap units">&#x21C4;</button>
-                <select id="fu-to"></select>
-            </div>
-            <div id="fu-result">—</div>
-            <div id="fu-quick"></div>
+        <div class="embed-toolbar">
+            <a href="freya.html" target="_blank" rel="noopener"><strong>Open FreyaUnits</strong></a>
+            <span>Embedded <code>freya.html</code> (same surface as <code>freya-units.html</code> on freya.qbitos.ai): convert, log scale, mathjs calculator + plotter, celestial, codex, quantum nav, μ arenas.</span>
         </div>
-        <div id="fu-quantum"></div>
-        <div id="fu-table"></div>
+        <iframe id="freya-frame" class="embed-frame freya-embed" title="FreyaUnits — galactic converter" src="freya.html?mueee=1"></iframe>
     </div>
 
     <!-- ═══ AI LENS PANEL ═══ -->
@@ -633,13 +778,53 @@ html.qp-embed-chrome #theme-toggle{display:none!important;}
                     <option value="balanced" title="Balanced — default depth">equal</option>
                     <option value="deep" title="Deep — slower, richer snippets">deep</option>
                     <option value="code" title="Code &amp; technical">code</option>
+                    <option value="mistral-mu" title="Mμ — Mistral Agents (mueee shell; instructions + guardrails below)">Mμ</option>
                 </select>
                 <button type="button" class="sc-btn-attach" id="prompt-add-doc" title="Attach plain text or Markdown">+ Add document</button>
                 <input type="file" id="prompt-file-input" multiple accept=".txt,.md,.markdown,text/plain,text/markdown" hidden>
             </div>
+            <details id="mu-agent-config" class="mu-agent-config" hidden>
+                <summary>Mμ agent (Mistral) — instructions &amp; guardrails</summary>
+                <p class="mu-hint-embed">Synced with mueee footer Model · fields persist in this browser for API / bridge calls.</p>
+                <p class="mu-req-hint">Required for live Mμ replies: a <strong>proxy URL</strong> (<code>mu-mistral-proxy-url</code> or <code>localStorage</code> <code>mueee-mistral-chat-url</code>) and a non-empty <strong>instructions</strong> block (override or default from <code>mueee-mu-context.js</code>). Without both, the bridge shows an error string in Mμ notes.</p>
+                <div class="mu-field">
+                    <label for="mu-instructions-override">Instructions override (optional; default = MueeeMu from mueee-mu-context.js)</label>
+                    <textarea id="mu-instructions-override" placeholder="Leave empty to use canonical Mμ instructions"></textarea>
+                </div>
+                <div class="mu-field">
+                    <label for="mu-guardrails">Guardrails</label>
+                    <textarea id="mu-guardrails" placeholder="e.g. no PII, no medical claims"></textarea>
+                </div>
+                <div class="mu-field">
+                    <label for="mu-tone">Tone</label>
+                    <textarea id="mu-tone" placeholder="e.g. warm, concise, first-person as product voice"></textarea>
+                </div>
+                <div class="mu-field">
+                    <label for="mu-knowledge">Knowledge / context notes</label>
+                    <textarea id="mu-knowledge" placeholder="Short notes or pasted corpus pointers for this session"></textarea>
+                </div>
+                <div class="mu-field">
+                    <label for="mu-mistral-proxy-url">Mistral proxy URL (Worker or your backend; no API key in browser)</label>
+                    <input type="url" id="mu-mistral-proxy-url" placeholder="https://&lt;worker&gt;.workers.dev/api/mistral-chat" autocomplete="off">
+                </div>
+                <div class="mu-mistral-proxy-row">
+                    <button type="button" id="mu-mistral-send">Send prompt to Mistral (Mμ)</button>
+                    <span class="mu-hint-embed" style="display:inline;margin:0;">Uses main prompt box above · deploy <code>cloudflare/mueee-mistral-proxy-worker.js</code></span>
+                </div>
+                <pre id="mu-mistral-reply" class="mu-mistral-reply" hidden></pre>
+            </details>
+            <details id="search-fetch-proxy" class="mu-agent-config">
+                <summary>Fetch proxy (CORS) — full connector power</summary>
+                <p class="mu-hint-embed" style="display:block;">Deploy <code>cloudflare/uvspeed-fetch-proxy-worker.js</code>. Paste the Worker URL (must end with <code>/api/fetch-proxy</code>). Fixes arXiv, Invidious/YouTube, and strict-browser <code>fetch</code> — same engine as Google alternatives, without their tracking.</p>
+                <div class="mu-field">
+                    <label for="uvspeed-fetch-proxy-url">Proxy base URL</label>
+                    <input type="url" id="uvspeed-fetch-proxy-url" placeholder="https://your-account.workers.dev/api/fetch-proxy" autocomplete="off">
+                </div>
+            </details>
             <div class="sc-attachments" id="prompt-attachments"></div>
             <div class="sc-prompt-row">
                 <textarea id="search-input" rows="2" placeholder="Ask or paste keywords. Attach .txt/.md for context (~2.5k chars/file); model tunes AI Lens. Enter — search · Shift+Enter — new line." autocomplete="off" autofocus></textarea>
+                <button type="button" id="prompt-clear" class="sc-btn-clear" title="Clear prompt, attachments, and URL query">×</button>
                 <button type="button" id="search-btn">Search</button>
             </div>
         </div>
@@ -682,6 +867,10 @@ html.qp-embed-chrome #theme-toggle{display:none!important;}
 <script>
 'use strict';
 (function(){
+try {
+  var __qptRm = document.getElementById('qp-theme-toggle');
+  if (__qptRm && __qptRm.parentNode) __qptRm.parentNode.removeChild(__qptRm);
+} catch (__eQpt) {}
 const HS = window.HistorySearch;
 if (!HS) { console.error('HistorySearch engine not loaded'); return; }
 
@@ -808,13 +997,257 @@ window.addEventListener('offline', syncSearchStatusBar);
    ══════════════════════════════════════════════════════ */
 let _promptAttachments = [];
 
+/** Last opened place article (e.g. Wikipedia City, State) — expands vague “what to do today” queries. */
+let _sessionPlaceFocus = null;
+/** Set when expandPlaceActivityQuery rewrites the line (for status hint). */
+let _lastPlaceQueryExpansion = null;
+
+function normalizeWikiTitle(t) {
+    return (t || '').replace(/\s*[-–]\s*Wikipedia.*$/i, '').replace(/\s+/g, ' ').trim();
+}
+
+function looksLikePlaceFocus(doc, item) {
+    if (!doc && !item) return false;
+    var url = (item && item.url) || (doc && doc.url) || '';
+    var src = (item && item.source) || '';
+    var isWiki = /wikipedia\.org/i.test(url) || src === 'wikipedia';
+    if (!isWiki) return false;
+    if (doc && doc.coordinates) return true;
+    var title = normalizeWikiTitle((doc && doc.title) || (item && item.title) || '');
+    if (title.indexOf(',') !== -1) return true;
+    return false;
+}
+
+function queryAlreadyNamesPlace(q, label) {
+    if (!q || !label) return false;
+    var qlow = q.toLowerCase();
+    var llow = label.toLowerCase().replace(/\s+/g, ' ');
+    if (qlow.indexOf(llow) !== -1) return true;
+    var parts = llow.split(/\s*,\s*/).map(function (s) { return s.trim(); }).filter(Boolean);
+    if (parts.length >= 2) {
+        var a = parts[0].split(/\s+/)[0];
+        var b = parts[1].split(/\s+/)[0];
+        if (a.length > 2 && qlow.indexOf(a) !== -1 && b.length > 1 && qlow.indexOf(b) !== -1) return true;
+    }
+    return false;
+}
+
+function isVagueActivityQuery(q) {
+    var low = (q || '').toLowerCase().trim();
+    if (!low || low.length > 160) return false;
+    return /(what\s+is\s+there\s+to\s+do|what\s+to\s+do|what\s+can\s+i\s+do|what\s+should\s+i\s+do|what\'?s\s+there\s+to\s+do|things\s+to\s+do|what\s+to\s+do\s+today|events?\s*today|what\'?s\s+on(?!line)|what\'?s\s+happening|activities?\s+today|concerts?\s*(today|tonight)?|fun\s+things|where\s+to\s+go|going\s+on(\s+today)?|stuff\s+to\s+do|to\s+do\s+today|explore\s+today|shows?\s+tonight)/i.test(low);
+}
+
+function expandPlaceActivityQuery(q) {
+    _lastPlaceQueryExpansion = null;
+    if (!_sessionPlaceFocus || !_sessionPlaceFocus.label) return q;
+    if (!isVagueActivityQuery(q)) return q;
+    if (queryAlreadyNamesPlace(q, _sessionPlaceFocus.label)) return q;
+    var place = _sessionPlaceFocus.label;
+    var out = q;
+    if (/\bconcert/i.test(q)) out = place + ' concerts';
+    else if (/\btoday\b|\btonight\b|\bthis\s+weekend\b|\bnow\b/i.test(q)) out = place + ' events today';
+    else if (/events?\s*$/i.test(q.trim())) out = place + ' ' + q.trim();
+    else out = place + ' things to do today';
+    if (out !== q) _lastPlaceQueryExpansion = { from: q, to: out };
+    return out;
+}
+
+function syncSessionPlaceHint() {
+    var el = $('sb-place');
+    if (!el) return;
+    if (_sessionPlaceFocus && _sessionPlaceFocus.label) {
+        var ctx = 'ctx: ' + (_sessionPlaceFocus.label.length > 32 ? _sessionPlaceFocus.label.slice(0, 30) + '…' : _sessionPlaceFocus.label);
+        if (_lastPlaceQueryExpansion && _lastPlaceQueryExpansion.to) {
+            ctx += ' → ' + (_lastPlaceQueryExpansion.to.length > 42 ? _lastPlaceQueryExpansion.to.slice(0, 40) + '…' : _lastPlaceQueryExpansion.to);
+        }
+        el.textContent = ctx;
+        el.hidden = false;
+    } else {
+        el.hidden = true;
+        el.textContent = '';
+    }
+}
+
 function getPromptModelValue() {
     var sel = $('prompt-model');
     return sel && sel.value ? sel.value : 'auto';
 }
 
+function getSearchWeightGoal() {
+    var g = $('ai-goal');
+    if (g && g.value) return g.value;
+    try {
+        var s = localStorage.getItem('search-weight-goal');
+        if (s) return s;
+    } catch (e) {}
+    return 'research';
+}
+
+function safeHttpUrl(u) {
+    if (!u || typeof u !== 'string') return '';
+    try {
+        var x = new URL(u, typeof location !== 'undefined' ? location.href : 'https://example.com');
+        if (x.protocol !== 'http:' && x.protocol !== 'https:') return '';
+        return x.href;
+    } catch (e) {
+        return '';
+    }
+}
+
+function buildWeightedResultMap(results) {
+    var wm = new WeakMap();
+    if (!results || !results.length || !HS.weightResults) return wm;
+    var goal = getSearchWeightGoal();
+    var pm = getPromptModelValue();
+    try {
+        HS.weightResults(results, { goal: goal, promptModel: pm }).forEach(function (w) {
+            wm.set(w.result, w);
+        });
+    } catch (e) {}
+    return wm;
+}
+
+function formatResultSubline(item) {
+    var parts = [];
+    if (item.date) parts.push(item.date);
+    if (item.location) parts.push(item.location);
+    if (item.archive) parts.push(item.archive);
+    if (item.year) parts.push(String(item.year));
+    return parts.length ? parts.join(' — ') : '';
+}
+
+var MU_AGENT_STORAGE_KEY = 'search-mu-agent-config';
+
+function readMuAgentFieldsFromDom() {
+    return {
+        instructionsOverride: ($('mu-instructions-override') && $('mu-instructions-override').value) || '',
+        guardrails: ($('mu-guardrails') && $('mu-guardrails').value) || '',
+        tone: ($('mu-tone') && $('mu-tone').value) || '',
+        knowledge: ($('mu-knowledge') && $('mu-knowledge').value) || ''
+    };
+}
+
+function loadMuAgentConfigToDom() {
+    try {
+        var raw = localStorage.getItem(MU_AGENT_STORAGE_KEY);
+        if (!raw) return;
+        var o = JSON.parse(raw);
+        var i = $('mu-instructions-override');
+        var g = $('mu-guardrails');
+        var t = $('mu-tone');
+        var k = $('mu-knowledge');
+        if (i && o.instructionsOverride) i.value = o.instructionsOverride;
+        if (g && o.guardrails) g.value = o.guardrails;
+        if (t && o.tone) t.value = o.tone;
+        if (k && o.knowledge) k.value = o.knowledge;
+    } catch (e) {}
+}
+
+function saveMuAgentConfigFromDom() {
+    try {
+        localStorage.setItem(MU_AGENT_STORAGE_KEY, JSON.stringify(readMuAgentFieldsFromDom()));
+    } catch (e) {}
+}
+
+function syncMuAgentPanelVisibility() {
+    var det = $('mu-agent-config');
+    if (!det) return;
+    var on = getPromptModelValue() === 'mistral-mu';
+    det.hidden = !on;
+    if (on) loadMuAgentConfigToDom();
+}
+
+function syncMuSearchUi() {
+    var mu = getPromptModelValue() === 'mistral-mu';
+    var panel = $('search-panel');
+    var pane = $('mu-answer-pane');
+    var rail = $('mu-side-rail');
+    if (panel) panel.classList.toggle('search-panel--mu', mu);
+    if (pane) pane.hidden = !mu;
+    if (rail) rail.hidden = !mu;
+    var stack = $('search-mu-stack');
+    var btn = $('mu-bg-toggle');
+    if (stack) {
+        if (!mu) {
+            stack.classList.remove('mu-bg-on');
+        } else {
+            try {
+                if (localStorage.getItem('search-mu-ambient-bg') === '1') stack.classList.add('mu-bg-on');
+                else stack.classList.remove('mu-bg-on');
+            } catch (e) {}
+        }
+    }
+    if (btn && mu) {
+        try {
+            btn.setAttribute('aria-pressed', localStorage.getItem('search-mu-ambient-bg') === '1' ? 'true' : 'false');
+        } catch (e2) {}
+    }
+}
+
+function buildSourceIndexForMu(results, max) {
+    max = max || 20;
+    if (!results || !results.length) return '(no results yet)';
+    return results.slice(0, max).map(function (r, i) {
+        return (i + 1) + '. ' + (r.source || '') + ' — ' + (r.title || '').slice(0, 72);
+    }).join('\n');
+}
+function buildGroundingSnippet(results, max) {
+    max = max || 20;
+    if (!results || !results.length) return '(no results yet)';
+    return results.slice(0, max).map(function (r, i) {
+        var sn = (r.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 160);
+        return '[' + (i + 1) + '] ' + (r.source || '') + ' — ' + (r.title || '') + (sn ? ' — ' + sn : '');
+    }).join('\n');
+}
+function runMuGroundedAnswer(query, results) {
+    var md = $('mu-md-stream');
+    var side = $('mu-side-rail-body');
+    var urlIn = $('mu-mistral-proxy-url');
+    if (!window.MueeeMistralBridge) {
+        if (md) md.textContent = '[mueee-mistral-bridge.js not loaded]';
+        return;
+    }
+    var baseQ = buildAugmentedQuery(query);
+    var srcIdx = buildSourceIndexForMu(results, 16);
+    if (side) side.textContent = 'Sources:\n' + srcIdx + '\n\n… synthesizing with Mistral …';
+    if (md) {
+        md.textContent = 'Mμ synthesizing (grounded on ' + (results && results.length ? results.length : 0) + ' hits)…\n';
+        md.classList.remove('mu-md--error');
+    }
+    var userText = baseQ + '\n\n--- Retrieved results (cite by [n]) ---\n' + buildGroundingSnippet(results) + '\n\nAnswer in Markdown. Summarize, cite [n], then short Next steps.';
+    var urlOpt = urlIn ? urlIn.value.trim() : '';
+    window.MueeeMistralBridge.chatMistralMu({ userText: userText, url: urlOpt }).then(function (r) {
+        var text = r.ok ? r.text : ('Error: ' + (r.error || '') + (r.status ? ' (' + r.status + ')' : ''));
+        if (md) {
+            md.textContent = text;
+            md.classList.toggle('mu-md--error', !r.ok || /^Error:/i.test(text));
+        }
+        if (side) side.textContent = 'Sources:\n' + srcIdx + '\n\n--- Mμ ---\n\n' + text;
+    });
+}
+
+/** Merge MueeeMu + optional fields for Mistral / Workers (call when model is mistral-mu). */
+function getSearchMuAgentPayloadForApi() {
+    var base = (window.MueeeMu && window.MueeeMu.toBridgePayload && window.MueeeMu.toBridgePayload()) || {};
+    var extra = readMuAgentFieldsFromDom();
+    var instr = (extra.instructionsOverride || '').trim();
+    var mergedInstructions = instr || base.instructions || '';
+    return {
+        modelKey: 'mistral-mu',
+        instructions: mergedInstructions,
+        guardrails: (extra.guardrails || '').trim(),
+        tone: (extra.tone || '').trim(),
+        knowledge: (extra.knowledge || '').trim(),
+        groundingOrder: base.groundingOrder || [],
+        version: base.version || '1'
+    };
+}
+
+window.getSearchMuAgentPayloadForApi = getSearchMuAgentPayloadForApi;
+
 function buildAugmentedQuery(userText) {
-    var q = (userText || '').trim();
+    var q = expandPlaceActivityQuery((userText || '').trim());
     var ctx = '';
     _promptAttachments.forEach(function (att) {
         var t = (att.text || '').replace(/\s+/g, ' ').trim();
@@ -868,6 +1301,23 @@ function renderAttachmentChips() {
     });
 }
 
+/** Clear bottom prompt: textarea, attachments, and ?q= in URL (refresh stays clean). */
+function clearSearchComposer(opts) {
+    opts = opts || {};
+    var si = $('search-input');
+    if (si) si.value = '';
+    _promptAttachments = [];
+    renderAttachmentChips();
+    refreshStPrompt();
+    if (!opts.skipUrl) {
+        try {
+            var url = new URL(window.location.href);
+            url.searchParams.delete('q');
+            history.replaceState(null, '', url.pathname + url.search + url.hash);
+        } catch (e) {}
+    }
+}
+
 function handlePromptFiles(fileList) {
     var files = Array.from(fileList || []);
     if (!files.length) return;
@@ -894,6 +1344,8 @@ function initPromptComposer() {
         addBtn.addEventListener('click', function () { fi.click(); });
         fi.addEventListener('change', function () { handlePromptFiles(this.files); });
     }
+    var clr = $('prompt-clear');
+    if (clr) clr.addEventListener('click', function () { clearSearchComposer(); });
     var pm = $('prompt-model');
     if (pm) {
         try {
@@ -907,8 +1359,19 @@ function initPromptComposer() {
         pm.addEventListener('change', function () {
             try { localStorage.setItem('search-prompt-model', this.value); } catch (e2) {}
             refreshStPrompt();
+            syncMuAgentPanelVisibility();
+            try { syncMuSearchUi(); } catch (eMu) {}
+            try { applySearchModeUi(); } catch (eA) {}
         });
     }
+    loadMuAgentConfigToDom();
+    ['mu-instructions-override', 'mu-guardrails', 'mu-tone', 'mu-knowledge'].forEach(function (id) {
+        var el = $(id);
+        if (el) el.addEventListener('change', saveMuAgentConfigFromDom);
+        if (el) el.addEventListener('blur', saveMuAgentConfigFromDom);
+    });
+    syncMuAgentPanelVisibility();
+    syncMuSearchUi();
     refreshStPrompt();
 }
 
@@ -920,7 +1383,8 @@ let activeMode = 'search';
 function applySearchModeUi() {
     var m = activeMode;
     var embed = document.documentElement.classList.contains('qp-embed-chrome');
-    var showComposer = (m === 'ai' || m === 'freya' || (m === 'search' && !embed));
+    var modelMu = typeof getPromptModelValue === 'function' && getPromptModelValue() === 'mistral-mu';
+    var showComposer = (m === 'ai' || m === 'freya' || (m === 'search' && !embed) || (m === 'search' && embed && modelMu));
     var sc = $('search-composer');
     var dock = $('search-dock');
     if (sc) sc.style.display = showComposer ? '' : 'none';
@@ -979,7 +1443,10 @@ document.querySelectorAll('.mode-tab').forEach(tab => {
                             ? 'Switch to Search for queries — or use full page link above.'
                             : 'Ask or paste keywords. Attach .txt/.md for context (~2.5k chars/file); model tunes AI Lens. Enter — search · Shift+Enter — new line.')));
         }
-        if (activeMode === 'freya') { resizeFuScale(); fuConvert(); }
+        if (activeMode === 'freya') {
+            var ff = $('freya-frame');
+            if (ff && ff.contentWindow) try { ff.contentWindow.dispatchEvent(new Event('resize')); } catch (e) {}
+        }
     });
 });
 
@@ -1008,19 +1475,22 @@ function initSpineRailToggle() {
         rail.classList.toggle('spine-rail--collapsed', collapsed);
         btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
         btn.innerHTML = collapsed ? '&#x25B6;' : '&#x25C0;';
-        btn.title = collapsed ? 'Expand ribbon & timeline' : 'Collapse ribbon & timeline';
+        btn.title = collapsed ? 'Expand ribbon, timeline & spy' : 'Collapse ribbon & timeline';
         try { localStorage.setItem('search-spine-rail-collapsed', collapsed ? '1' : '0'); } catch (e) {}
         requestAnimationFrame(function () { initTimeline(); });
     }
-    var saved = false;
-    try { saved = localStorage.getItem('search-spine-rail-collapsed') === '1'; } catch (e) {}
-    if (saved) apply(true);
+    var saved = null;
+    try { saved = localStorage.getItem('search-spine-rail-collapsed'); } catch (e) {}
+    if (saved === '1') apply(true);
+    else if (saved === '0') apply(false);
+    else if (typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 720px)').matches) apply(true);
     btn.addEventListener('click', function () {
         apply(!rail.classList.contains('spine-rail--collapsed'));
     });
 }
 
 function initConnectorsRowIdle() {
+    if (document.documentElement.classList.contains('qp-embed-chrome')) return;
     var wrap = $('connectors-wrap');
     var panel = $('search-panel');
     var pinBtn = $('connectors-pin');
@@ -1063,6 +1533,105 @@ function initConnectorsRowIdle() {
     scheduleIdle();
 }
 
+function teardownSpineScrollSpy() {
+    if (window._spineSpyObs) {
+        try { window._spineSpyObs.disconnect(); } catch (e) {}
+        window._spineSpyObs = null;
+    }
+    var tr = $('spine-spy-track');
+    if (tr) tr.innerHTML = '';
+}
+function spineSpyShortLabel(sectionKey, fullTitle) {
+    var M = {
+        spotlight: 'Top picks',
+        news: 'Wire & news',
+        wiki: 'Wiki & lex',
+        history: 'History / LOC',
+        reference: 'Research',
+        video: 'Video',
+        archives: 'Archives',
+        more: 'More'
+    };
+    if (M[sectionKey]) return M[sectionKey];
+    var t = (fullTitle || '').trim();
+    if (!t) return 'Section';
+    var short = t.split(/\s*[—–-]\s*/)[0].trim();
+    if (short.length > 28) short = short.slice(0, 26) + '…';
+    return short;
+}
+function setupSpineScrollSpy() {
+    var track = $('spine-spy-track');
+    var results = $('results');
+    teardownSpineScrollSpy();
+    if (!track || !results) return;
+    var targets = [];
+    var spot = results.querySelector('.result-spotlight');
+    if (spot && spot.children.length) {
+        targets.push({ el: spot, label: 'Top picks', key: 'spotlight' });
+    }
+    results.querySelectorAll('section.result-section[data-section]').forEach(function (sec) {
+        var title = sec.querySelector('.result-section-title');
+        var key = sec.getAttribute('data-section') || '';
+        targets.push({
+            el: sec,
+            label: title ? title.textContent.trim() : 'Section',
+            key: key
+        });
+    });
+    if (!targets.length) return;
+    var nodes = [];
+    targets.forEach(function (t, i) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'spine-spy-node';
+        b.dataset.sectionKey = t.key || '';
+        b.dataset.sectionIndex = String(i + 1);
+        var num = document.createElement('span');
+        num.className = 'spine-spy-num';
+        num.textContent = String(i + 1);
+        var lbl = document.createElement('span');
+        lbl.className = 'spine-spy-lbl';
+        lbl.textContent = spineSpyShortLabel(t.key, t.label);
+        lbl.setAttribute('aria-hidden', 'true');
+        b.appendChild(num);
+        b.appendChild(lbl);
+        var full = (i + 1) + '. ' + (t.label || 'Section');
+        b.title = full;
+        b.setAttribute('aria-label', 'Scroll to ' + full);
+        b.addEventListener('click', function () {
+            t.el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+        track.appendChild(b);
+        nodes.push(b);
+    });
+    var obs = new IntersectionObserver(
+        function (entries) {
+            var bestIdx = -1;
+            var bestRatio = 0;
+            entries.forEach(function (en) {
+                if (!en.isIntersecting) return;
+                var idx = targets.findIndex(function (x) {
+                    return x.el === en.target;
+                });
+                if (idx < 0) return;
+                if (en.intersectionRatio > bestRatio) {
+                    bestRatio = en.intersectionRatio;
+                    bestIdx = idx;
+                }
+            });
+            if (bestIdx < 0) return;
+            nodes.forEach(function (d, j) {
+                d.classList.toggle('active', j === bestIdx);
+            });
+        },
+        { root: results, rootMargin: '-12% 0px -48% 0px', threshold: [0, 0.08, 0.15, 0.25, 0.5, 1] }
+    );
+    targets.forEach(function (t) {
+        obs.observe(t.el);
+    });
+    window._spineSpyObs = obs;
+}
+
 function initTimeline(){
     const cv = $('tl-canvas-v');
     if (!cv || !HS.drawTimelineVertical) return;
@@ -1079,10 +1648,21 @@ function initTimeline(){
         HS.drawTimelineVertical(cv);
     }
     resize();
+    requestAnimationFrame(function () { resize(); });
+    setTimeout(resize, 50);
     window.addEventListener('resize', resize);
 }
 
 /* ── Connector Pills ── */
+function syncMueeeShellConnectors() {
+    try {
+        if (window.parent === window) return;
+        var list = HS.getConnectors().map(function (c) {
+            return { name: c.name, icon: c.icon, enabled: !!c.enabled };
+        });
+        window.parent.postMessage({ type: 'mueee-connectors-sync', connectors: list }, '*');
+    } catch (e) {}
+}
 function buildPills(){
     const w = $('connectors'); w.innerHTML = '';
     HS.getConnectors().forEach((c, i) => {
@@ -1095,12 +1675,14 @@ function buildPills(){
             var sbc = $('sb-conn');
             if (sbc) sbc.textContent = HS.getConnectors().filter(x => x.enabled).length;
             syncSearchStatusBar();
+            syncMueeeShellConnectors();
         });
         w.appendChild(p);
     });
     var sbc0 = $('sb-conn');
     if (sbc0) sbc0.textContent = HS.getConnectors().filter(function (x) { return x.enabled; }).length;
     syncSearchStatusBar();
+    syncMueeeShellConnectors();
 }
 
 /* ── μ'search shell (mueee) — spine block emitter ── */
@@ -1116,9 +1698,23 @@ function emitMueeeSpineBlock(kind, payload) {
     } catch (e) {}
 }
 
+/** Push conversion into embedded freya.html iframe (see freya.html message handler). */
+function postToFreyaFrame(msg) {
+    var fr = $('freya-frame');
+    if (!fr) return;
+    function send() {
+        try {
+            if (fr.contentWindow) fr.contentWindow.postMessage(msg, '*');
+        } catch (e) {}
+    }
+    if (fr.contentDocument && fr.contentDocument.readyState === 'complete') send();
+    else fr.addEventListener('load', send, { once: true });
+}
+
 /* ── Search ── */
 async function doSearch(rawQuery){
     var query = buildAugmentedQuery(typeof rawQuery === 'string' ? rawQuery : '');
+    syncSessionPlaceHint();
     if(!query.trim()) return;
     refreshStPrompt();
 
@@ -1130,26 +1726,40 @@ async function doSearch(rawQuery){
         const toSym = convMatch[3];
         const fuResult = fuQuickConvert(val, fromSym, toSym);
         if (fuResult !== null) {
-            // Switch to FreyaUnits and show result
             document.querySelector('.mode-tab[data-mode="freya"]').click();
-            $('fu-val').value = val;
-            // Find and set the right category + units
-            const fromUnit = FU_UNITS.find(u => u.sym.toLowerCase() === fromSym.toLowerCase() || u.name.toLowerCase() === fromSym.toLowerCase());
-            if (fromUnit) {
-                fuSetCat(fromUnit.cat);
-                const units = fuUnitsForCat(fromUnit.cat);
-                const fi = units.indexOf(fromUnit);
-                const toUnit = units.find(u => u.sym.toLowerCase() === toSym.toLowerCase() || u.name.toLowerCase() === toSym.toLowerCase());
-                if (fi >= 0) $('fu-from').value = fi;
-                if (toUnit) $('fu-to').value = units.indexOf(toUnit);
-                fuConvert();
+            const fromUnit = FU_UNITS.find(u => u.sym.toLowerCase() === fromSym.toLowerCase() || u.name.toLowerCase().includes(fromSym.toLowerCase()));
+            const toUnit = FU_UNITS.find(u => u.sym.toLowerCase() === toSym.toLowerCase() || u.name.toLowerCase().includes(toSym.toLowerCase()));
+            if (fromUnit && toUnit) {
+                postToFreyaFrame({
+                    type: 'freya-from-search',
+                    cat: fromUnit.cat,
+                    val: val,
+                    fromSym: fromUnit.sym,
+                    toSym: toUnit.sym
+                });
             }
+            clearSearchComposer();
             return;
         }
     }
 
     // Normal search
     if (activeMode !== 'search') document.querySelector('.mode-tab[data-mode="search"]').click();
+
+    var modelMu = getPromptModelValue() === 'mistral-mu';
+    syncMuSearchUi();
+    if (modelMu) {
+        var md0 = $('mu-md-stream');
+        var side0 = $('mu-side-rail-body');
+        if (md0) md0.textContent = 'Searching connectors…\n';
+        if (side0) side0.textContent = 'Gathering sources for Mμ…';
+        var st = $('search-mu-stack');
+        if (st) {
+            try {
+                if (localStorage.getItem('search-mu-ambient-bg') === '1') st.classList.add('mu-bg-on');
+            } catch (eMuBg) {}
+        }
+    }
 
     const res = $('results');
     res.innerHTML = '<div class="shimmer"></div><div class="shimmer"></div><div class="shimmer"></div>';
@@ -1169,6 +1779,10 @@ async function doSearch(rawQuery){
             renderResults(p.results);
             if ($('sb-res')) $('sb-res').textContent = p.results.length;
             syncSearchStatusBar();
+            if (modelMu && p && p.results && p.results.length) {
+                var sideP = $('mu-side-rail-body');
+                if (sideP) sideP.textContent = 'Sources (streaming):\n' + buildSourceIndexForMu(p.results, 14);
+            }
         }
     });
 
@@ -1176,10 +1790,9 @@ async function doSearch(rawQuery){
     if ($('sb-lat')) $('sb-lat').textContent = result.latencyMs + 'ms';
     syncSearchStatusBar();
     renderResults(result.results);
-
-    const url = new URL(window.location);
-    url.searchParams.set('q', query);
-    history.replaceState(null, '', url);
+    if (modelMu) {
+        runMuGroundedAnswer(query, result.results);
+    }
 
     emitMueeeSpineBlock('search-query', {
         query: query,
@@ -1187,18 +1800,105 @@ async function doSearch(rawQuery){
         latencyMs: result.latencyMs,
         connectorsUsed: result.connectorsUsed
     });
+    clearSearchComposer();
 }
 
 let _lastResults = [];
-function renderResultCard(item, idx, extraClass) {
+function renderResultCard(item, idx, extraClass, weightedMap) {
     const a = document.createElement('a');
-    a.className = 'result' + (extraClass ? ' ' + extraClass : '');
     a.href = item.url || '#';
     a.rel = 'noopener';
     a.dataset.ridx = String(idx);
-    const col = HS.getSourceColor(item.source);
-    a.innerHTML = `<div class="r-source"><span class="r-dot" style="background:${col};"></span>${esc(item.source)}</div><div class="r-title">${esc(item.title)}</div>${item.snippet ? '<div class="r-snippet">'+esc(item.snippet)+'</div>' : ''}`;
-    a.addEventListener('click', e => {
+    const w = weightedMap && weightedMap.get(item);
+    const scores = w ? w.scores : null;
+    const rank = w ? w.rank : (idx + 1);
+    const totalScore = scores ? scores.total : null;
+
+    const main = document.createElement('div');
+    main.className = 'r-main';
+
+    const meta = document.createElement('div');
+    meta.className = 'r-meta-line';
+    meta.textContent = '#' + rank + ' | ' + (item.source || '') + (totalScore != null ? ' | score: ' + totalScore : '');
+
+    const h = document.createElement('div');
+    h.className = 'r-title';
+    h.textContent = item.title || '';
+
+    main.appendChild(meta);
+    main.appendChild(h);
+
+    var sub = formatResultSubline(item);
+    if (sub) {
+        const sl = document.createElement('div');
+        sl.className = 'r-subline';
+        sl.textContent = sub;
+        main.appendChild(sl);
+    }
+
+    if (scores) {
+        const met = document.createElement('div');
+        met.className = 'r-metrics';
+        const chips = [
+            { k: 'depth', cls: 'r-chip--depth', v: scores.depth, lab: 'depth' },
+            { k: 'auth', cls: 'r-chip--auth', v: scores.authority, lab: 'auth' },
+            { k: 'breadth', cls: 'r-chip--breadth', v: scores.breadth, lab: 'breadth' },
+            { k: 'recency', cls: 'r-chip--recency', v: scores.recency, lab: 'recency' },
+            { k: 'engage', cls: 'r-chip--engage', v: scores.engagement, lab: 'engage' }
+        ];
+        chips.forEach(function (c) {
+            var sp = document.createElement('span');
+            sp.className = 'r-chip ' + c.cls;
+            sp.title = 'Weighted ' + c.lab + ' (AI Lens goal: ' + getSearchWeightGoal() + ')';
+            sp.textContent = c.lab + ': ' + c.v;
+            met.appendChild(sp);
+        });
+        main.appendChild(met);
+    }
+
+    if (item.snippet) {
+        var skipSnip = false;
+        if (item.source === 'history-archive' && item.date && sub && (item.snippet + '').indexOf(item.date) === 0) {
+            skipSnip = true;
+        }
+        if (!skipSnip) {
+            const sn = document.createElement('div');
+            sn.className = 'r-snippet';
+            sn.textContent = item.snippet;
+            main.appendChild(sn);
+        }
+    }
+
+    const thumbU = safeHttpUrl(item.thumbnail);
+    if (thumbU) {
+        a.className = 'result result--rich result--with-thumb' + (extraClass ? ' ' + extraClass : '');
+        const row = document.createElement('div');
+        row.className = 'r-row';
+        const tw = document.createElement('div');
+        tw.className = 'r-thumb-wrap';
+        const img = document.createElement('img');
+        img.className = 'r-thumb';
+        img.src = thumbU;
+        img.alt = '';
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.addEventListener('error', function () {
+            tw.remove();
+            a.classList.remove('result--with-thumb', 'result--rich');
+            main.className = 'r-main r-main--solo';
+            a.replaceChildren(main);
+        }, { once: true });
+        tw.appendChild(img);
+        row.appendChild(tw);
+        row.appendChild(main);
+        a.appendChild(row);
+    } else {
+        a.className = 'result' + (extraClass ? ' ' + extraClass : '');
+        main.className = 'r-main r-main--solo';
+        a.appendChild(main);
+    }
+
+    a.addEventListener('click', function (e) {
         e.preventDefault();
         openDocViewer(item, idx);
     });
@@ -1209,7 +1909,7 @@ function pickSpotlightIndices(results, maxN) {
     const n = results.length;
     const used = new Array(n).fill(false);
     const out = [];
-    const prefer = ['wikipedia','wire-news','history-archive','youtube','arxiv','meta-research','openlibrary','wayback','internet-archive','wiktionary'];
+    const prefer = ['duckduckgo','wikipedia','wire-news','history-archive','youtube','arxiv','meta-research','openlibrary','wayback','internet-archive','wiktionary'];
     prefer.forEach(ps => {
         for (let i = 0; i < n && out.length < maxN; i++) {
             if (used[i]) continue;
@@ -1229,7 +1929,7 @@ function pickSpotlightIndices(results, maxN) {
 }
 function bucketForSource(src) {
     const s = (src || '').toLowerCase();
-    if (s === 'wikipedia' || s === 'wiktionary') return 'wiki';
+    if (s === 'wikipedia' || s === 'wiktionary' || s === 'duckduckgo') return 'wiki';
     if (s === 'wire-news') return 'news';
     if (s === 'history-archive') return 'history';
     if (s === 'youtube' || s === 'video-transcript' || s.indexOf('youtube') >= 0) return 'video';
@@ -1237,18 +1937,51 @@ function bucketForSource(src) {
     if (['wayback','openlibrary','internet-archive','sacred-texts','yale','arda','lgbtq-archives'].indexOf(s) >= 0) return 'archives';
     return 'more';
 }
+/** Catalog: human = connector bands; history = deep time; Geo/cos = future surface hooks */
+var RESULT_SECTION_CATALOG = [
+    { key: 'news', title: 'Wire & news desk (Wikinews) — live / fast', cls: 'result-section--news', axis: 'human', strata: 'sig', tempo: 'live' },
+    { key: 'wiki', title: 'Wikipedia & lexicon', cls: 'result-section--wiki', axis: 'human', strata: 'atom' },
+    { key: 'history', title: 'History & newspapers (LOC) — deep time', cls: 'result-section--history', axis: 'history', strata: 'hist', tempo: 'past' },
+    { key: 'reference', title: 'Research & data (arXiv, PubChem, GenBank, …)', cls: 'result-section--reference', axis: 'human', strata: 'qu' },
+    { key: 'video', title: 'YouTube & video — live / stream', cls: 'result-section--video', axis: 'human', strata: 'photo', tempo: 'live' },
+    { key: 'archives', title: 'Archives & libraries (Wayback, IA, Open Library, …)', cls: 'result-section--archives', axis: 'history', strata: 'hist', tempo: 'past' },
+    { key: 'more', title: 'More connectors (FRED, CoinGecko, …)', cls: 'result-section--more', axis: 'human', strata: 'dig' }
+];
+function updateResultsScrollProgress() {
+    var el = $('results');
+    var bar = $('results-scroll-progress');
+    if (!el || !bar) return;
+    var max = el.scrollHeight - el.clientHeight;
+    var p = max <= 0 ? 0 : el.scrollTop / max;
+    bar.style.setProperty('--results-scroll-p', String(p));
+}
+function initResultsScrollProgress() {
+    var el = $('results');
+    if (!el || el.dataset.scrollProgressBound === '1') return;
+    el.dataset.scrollProgressBound = '1';
+    function upd() {
+        updateResultsScrollProgress();
+    }
+    el.addEventListener('scroll', upd, { passive: true });
+    window.addEventListener('resize', upd);
+    upd();
+}
 function renderResults(results){
     _lastResults = results;
     const el = $('results');
     el.innerHTML = '';
     if(!results.length){ el.innerHTML = '<div class="empty">No results found.</div>'; return; }
+    const weightedMap = buildWeightedResultMap(results);
     const spotIdx = pickSpotlightIndices(results, 10);
     const spotSet = new Set(spotIdx);
     const spotWrap = document.createElement('div');
     spotWrap.className = 'result-spotlight';
-    spotWrap.setAttribute('aria-label', 'Top picks');
+    spotWrap.setAttribute('aria-label', 'Top picks — signal band');
+    spotWrap.setAttribute('data-section', 'spotlight');
+    spotWrap.setAttribute('data-axis', 'signal');
+    spotWrap.setAttribute('data-strata', 'sig');
     spotIdx.forEach(i => {
-        spotWrap.appendChild(renderResultCard(results[i], i, 'result--spot'));
+        spotWrap.appendChild(renderResultCard(results[i], i, 'result--spot', weightedMap));
     });
     el.appendChild(spotWrap);
     const buckets = { wiki: [], news: [], history: [], reference: [], video: [], archives: [], more: [] };
@@ -1257,21 +1990,15 @@ function renderResults(results){
         const b = bucketForSource(item.source);
         (buckets[b] || buckets.more).push({ item: item, idx: idx });
     });
-    const sectionMeta = [
-        { key: 'wiki', title: 'Wikipedia & lexicon', cls: 'result-section--wiki' },
-        { key: 'news', title: 'Wire & news desk (Wikinews)', cls: 'result-section--news' },
-        { key: 'history', title: 'History & newspapers (LOC)', cls: 'result-section--history' },
-        { key: 'reference', title: 'Research & data', cls: 'result-section--reference' },
-        { key: 'video', title: 'YouTube & video', cls: 'result-section--video' },
-        { key: 'archives', title: 'Archives & libraries', cls: 'result-section--archives' },
-        { key: 'more', title: 'More connectors', cls: 'result-section--more' }
-    ];
-    sectionMeta.forEach(sec => {
+    RESULT_SECTION_CATALOG.forEach(sec => {
         const rows = buckets[sec.key];
         if (!rows || !rows.length) return;
         const section = document.createElement('section');
         section.className = 'result-section ' + sec.cls;
         section.setAttribute('data-section', sec.key);
+        section.setAttribute('data-axis', sec.axis || 'human');
+        section.setAttribute('data-strata', sec.strata || 'human');
+        if (sec.tempo) section.setAttribute('data-tempo', sec.tempo);
         const h = document.createElement('h3');
         h.className = 'result-section-title';
         h.textContent = sec.title;
@@ -1279,11 +2006,12 @@ function renderResults(results){
         const inner = document.createElement('div');
         inner.className = 'result-section-inner';
         rows.forEach(({ item, idx }) => {
-            inner.appendChild(renderResultCard(item, idx, ''));
+            inner.appendChild(renderResultCard(item, idx, '', weightedMap));
         });
         section.appendChild(inner);
         el.appendChild(section);
     });
+    updateResultsScrollProgress();
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1312,6 +2040,16 @@ function openDocViewer(item, idx) {
         $('dv-title').textContent = _dvDoc.title;
         _dvAnalysis = HS.analyzeContext(_dvDoc);
         _dvDoc._analysis = _dvAnalysis;
+        if (looksLikePlaceFocus(_dvDoc, item)) {
+            _sessionPlaceFocus = {
+                label: normalizeWikiTitle(_dvDoc.title || item.title),
+                source: item.source || '',
+                url: item.url || ''
+            };
+        } else {
+            _sessionPlaceFocus = null;
+        }
+        syncSessionPlaceHint();
         var seedQ = ($('search-input') && $('search-input').value.trim()) || '';
         try {
             var uq = new URLSearchParams(window.location.search).get('q');
@@ -1583,19 +2321,8 @@ function renderDvTab() {
 }
 
 /* ══════════════════════════════════════════════════════
-   FREYAUNITS — Full converter engine
+   FREYAUNITS — unit table for search-bar conversion (matches freya.html UNITS)
    ══════════════════════════════════════════════════════ */
-const FU_CATEGORIES = {
-    length:      {name:'Length',      icon:'\uD83D\uDCCF', color:'#a78bfa'},
-    mass:        {name:'Mass',        icon:'\u2696',       color:'#f97316'},
-    temperature: {name:'Temperature', icon:'\uD83C\uDF21', color:'#fb7185'},
-    speed:       {name:'Speed',       icon:'\uD83D\uDE80', color:'#22d3ee'},
-    energy:      {name:'Energy',      icon:'\u26A1',       color:'#fbbf24'},
-    pressure:    {name:'Pressure',    icon:'\uD83D\uDD35', color:'#3b82f6'},
-    time:        {name:'Time',        icon:'\u23F1',       color:'#34d399'},
-    data:        {name:'Data',        icon:'\uD83D\uDCBE', color:'#8b5cf6'},
-};
-
 const FU_UNITS = [
     // Length
     {sym:'\u2113p',name:'Planck Length',factor:1.616255e-35,cat:'length'},
@@ -1680,241 +2407,6 @@ const FU_UNITS = [
     {sym:'PB',name:'Petabyte',factor:8e15,cat:'data'},
 ];
 
-let fuCat = 'length';
-function fuUnitsForCat(cat){ return FU_UNITS.filter(u=>u.cat===cat); }
-
-function fuFmt(val){
-    if(val===0) return '0';
-    const a=Math.abs(val);
-    if(a>=1e12||a<1e-4) return val.toExponential(6);
-    if(a>=1e6) return val.toLocaleString(undefined,{maximumFractionDigits:4});
-    if(a>=1) return val.toLocaleString(undefined,{maximumFractionDigits:8});
-    return val.toFixed(10).replace(/0+$/,'').replace(/\.$/,'');
-}
-
-/* Build category pills */
-function fuBuildCats(){
-    const w = $('fu-cats'); w.innerHTML = '';
-    Object.entries(FU_CATEGORIES).forEach(([key,cat])=>{
-        const p = document.createElement('span');
-        p.className = 'fu-cat' + (key===fuCat?' active':'');
-        p.textContent = cat.icon + ' ' + cat.name;
-        if(key===fuCat) p.style.background = cat.color + '30';
-        if(key===fuCat) p.style.borderColor = cat.color;
-        p.addEventListener('click', () => fuSetCat(key));
-        w.appendChild(p);
-    });
-}
-
-function fuSetCat(cat){
-    fuCat = cat;
-    fuBuildCats();
-    fuPopulateSelects();
-}
-
-function fuPopulateSelects(){
-    const units = fuUnitsForCat(fuCat);
-    const from = $('fu-from'), to = $('fu-to');
-    from.innerHTML = ''; to.innerHTML = '';
-    units.forEach((u,i)=>{
-        from.add(new Option(u.sym + ' \u2014 ' + u.name, i));
-        to.add(new Option(u.sym + ' \u2014 ' + u.name, i));
-    });
-    if(units.length > 1) to.value = 1;
-    fuBuildQuick();
-    fuConvert();
-}
-
-function fuBuildQuick(){
-    const w = $('fu-quick'); w.innerHTML = '';
-    const units = fuUnitsForCat(fuCat);
-    const catColor = FU_CATEGORIES[fuCat].color;
-    units.forEach((u,i) => {
-        const b = document.createElement('span');
-        b.className = 'fu-qb'; b.textContent = u.sym; b.title = u.name;
-        b.style.color = catColor;
-        b.addEventListener('click', () => { $('fu-to').value = i; fuConvert(); });
-        w.appendChild(b);
-    });
-}
-
-function fuConvert(){
-    const units = fuUnitsForCat(fuCat);
-    const val = parseFloat($('fu-val').value) || 0;
-    const fromU = units[$('fu-from').value];
-    const toU = units[$('fu-to').value];
-    if(!fromU || !toU) return;
-
-    let result;
-    if(fuCat === 'temperature'){
-        const k = val * fromU.factor + (fromU.offset||0);
-        result = (k - (toU.offset||0)) / toU.factor;
-    } else {
-        result = (val * fromU.factor) / toU.factor;
-    }
-    $('fu-result').textContent = fuFmt(result) + ' ' + toU.sym;
-
-    // All-units table
-    const tbl = $('fu-table'); tbl.innerHTML = '';
-    units.forEach(u => {
-        let v;
-        if(fuCat === 'temperature'){
-            const k = val * fromU.factor + (fromU.offset||0);
-            v = (k - (u.offset||0)) / u.factor;
-        } else {
-            v = (val * fromU.factor) / u.factor;
-        }
-        const isActive = u.sym === toU.sym;
-        const div = document.createElement('div');
-        div.className = 'fu-row' + (isActive ? ' highlight' : '');
-        div.innerHTML = `<span style="color:${FU_CATEGORIES[fuCat].color};">${isActive ? '\u25B6 ' : ''}${u.sym}</span><span>${fuFmt(v)}</span>`;
-        tbl.appendChild(div);
-    });
-
-    // Quantum properties
-    const qDiv = $('fu-quantum');
-    if(fuCat === 'length'){
-        const meters = val * fromU.factor;
-        if(meters > 0){
-            const C = 299792458, H = 6.62607015e-34;
-            const freq = C / meters;
-            const energy = H * freq;
-            const eV = energy / 1.602176634e-19;
-            const momentum = H / meters;
-            const lightTime = meters / C;
-            qDiv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
-                <div><b style="color:var(--orange);">Frequency:</b> ${freq.toExponential(4)} Hz</div>
-                <div><b style="color:var(--orange);">Energy:</b> ${energy.toExponential(4)} J (${eV.toExponential(4)} eV)</div>
-                <div><b style="color:var(--cyan);">Wavelength:</b> ${meters.toExponential(4)} m</div>
-                <div><b style="color:var(--cyan);">Period:</b> ${(1/freq).toExponential(4)} s</div>
-                <div><b style="color:var(--purple);">Momentum (h/\u03BB):</b> ${momentum.toExponential(4)} kg\u00B7m/s</div>
-                <div><b style="color:var(--purple);">Light travel:</b> ${lightTime.toExponential(4)} s</div>
-            </div>`;
-        } else { qDiv.innerHTML = '<span style="color:var(--dim);">Enter a positive value for quantum properties.</span>'; }
-    } else if(fuCat === 'time'){
-        const seconds = val * fromU.factor;
-        if(seconds > 0){
-            const C = 299792458, H = 6.62607015e-34;
-            const freq = 1 / seconds;
-            const energy = H * freq;
-            const lightDist = seconds * C;
-            qDiv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
-                <div><b style="color:var(--orange);">Frequency:</b> ${freq.toExponential(4)} Hz</div>
-                <div><b style="color:var(--orange);">Energy (E=hf):</b> ${energy.toExponential(4)} J</div>
-                <div><b style="color:var(--cyan);">Light distance:</b> ${lightDist.toExponential(4)} m</div>
-                <div><b style="color:var(--cyan);">Planck units:</b> ${(seconds / 5.391e-44).toExponential(4)} t\u209A</div>
-            </div>`;
-        } else { qDiv.innerHTML = '<span style="color:var(--dim);">Enter a positive value.</span>'; }
-    } else if(fuCat === 'energy'){
-        const joules = val * fromU.factor;
-        if(joules > 0){
-            const C = 299792458, H = 6.62607015e-34;
-            const freq = joules / H;
-            const wavelength = C / freq;
-            const mass = joules / (C * C);
-            const kelvin = joules / 1.380649e-23;
-            qDiv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
-                <div><b style="color:var(--orange);">Frequency (E/h):</b> ${freq.toExponential(4)} Hz</div>
-                <div><b style="color:var(--cyan);">Wavelength:</b> ${wavelength.toExponential(4)} m</div>
-                <div><b style="color:var(--purple);">Mass (E/c\u00B2):</b> ${mass.toExponential(4)} kg</div>
-                <div><b style="color:var(--green);">Temperature (E/k):</b> ${kelvin.toExponential(4)} K</div>
-            </div>`;
-        } else { qDiv.innerHTML = '<span style="color:var(--dim);">Enter a positive value.</span>'; }
-    } else if(fuCat === 'speed'){
-        const ms = val * fromU.factor;
-        const C = 299792458;
-        const beta = ms / C;
-        const gamma = beta < 1 ? 1 / Math.sqrt(1 - beta * beta) : Infinity;
-        qDiv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
-            <div><b style="color:var(--orange);">\u03B2 (v/c):</b> ${beta < 1e-4 ? beta.toExponential(4) : beta.toFixed(8)}</div>
-            <div><b style="color:var(--cyan);">Lorentz \u03B3:</b> ${gamma === Infinity ? '\u221E' : gamma < 100 ? gamma.toFixed(6) : gamma.toExponential(4)}</div>
-            <div><b style="color:var(--purple);">Time dilation:</b> ${gamma === Infinity ? '\u221E' : gamma < 100 ? gamma.toFixed(6) + '\u00D7' : gamma.toExponential(4) + '\u00D7'}</div>
-            <div><b style="color:var(--green);">Length contraction:</b> ${gamma === Infinity ? '0' : (1/gamma).toFixed(8) + '\u00D7'}</div>
-        </div>`;
-    } else if(fuCat === 'mass'){
-        const kg = val * fromU.factor;
-        if(kg > 0){
-            const C = 299792458;
-            const energy = kg * C * C;
-            const schwarzschild = 2 * 6.674e-11 * kg / (C * C);
-            qDiv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
-                <div><b style="color:var(--orange);">Rest energy (mc\u00B2):</b> ${energy.toExponential(4)} J</div>
-                <div><b style="color:var(--cyan);">Schwarzschild r:</b> ${schwarzschild.toExponential(4)} m</div>
-                <div><b style="color:var(--purple);">Compton \u03BB:</b> ${(6.626e-34/(kg*C)).toExponential(4)} m</div>
-                <div><b style="color:var(--green);">Planck masses:</b> ${(kg/2.176e-8).toExponential(4)} m\u209A</div>
-            </div>`;
-        } else { qDiv.innerHTML = '<span style="color:var(--dim);">Enter a positive value.</span>'; }
-    } else {
-        qDiv.innerHTML = '<span style="color:var(--dim);">Quantum properties: select Length, Time, Energy, Speed, or Mass.</span>';
-    }
-
-    fuDrawScale();
-}
-
-/* Scale canvas */
-function fuDrawScale(){
-    if(fuCat !== 'length') { $('fu-scale').style.display = 'none'; return; }
-    $('fu-scale').style.display = '';
-    const cv = $('fu-scale-canvas');
-    if(!cv.parentElement.offsetWidth) return;
-    cv.width = cv.parentElement.offsetWidth; cv.height = cv.parentElement.offsetHeight;
-    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
-    const minLog = -35, maxLog = 17, range = maxLog - minLog;
-    ctx.fillStyle = '#050810'; ctx.fillRect(0, 0, W, H);
-
-    // Scale bands
-    const bands = [
-        {name:'Planck',min:-35,max:-15,color:'#8b5cf6'},
-        {name:'Atomic',min:-15,max:-9,color:'#6366f1'},
-        {name:'Nano',min:-9,max:-6,color:'#3b82f6'},
-        {name:'Micro',min:-6,max:-3,color:'#06b6d4'},
-        {name:'Human',min:-3,max:3,color:'#34d399'},
-        {name:'Geo',min:3,max:7,color:'#fbbf24'},
-        {name:'Stellar',min:7,max:12,color:'#f97316'},
-        {name:'Cosmic',min:12,max:17,color:'#ef4444'},
-    ];
-
-    bands.forEach(b => {
-        const x1 = ((b.min - minLog) / range) * W;
-        const x2 = ((b.max - minLog) / range) * W;
-        ctx.fillStyle = b.color + '15'; ctx.fillRect(x1, 0, x2 - x1, H);
-        ctx.strokeStyle = b.color + '40'; ctx.lineWidth = 0.5;
-        ctx.beginPath(); ctx.moveTo(x1, 0); ctx.lineTo(x1, H); ctx.stroke();
-        const lx = (x1 + x2) / 2;
-        if(lx > 10 && lx < W - 10){
-            ctx.fillStyle = b.color + 'cc'; ctx.font = 'bold 8px monospace';
-            ctx.textAlign = 'center'; ctx.fillText(b.name, lx, H / 2 - 4);
-        }
-    });
-
-    // Current value marker
-    const units = fuUnitsForCat('length');
-    const val = parseFloat($('fu-val').value) || 0;
-    const fromU = units[$('fu-from').value];
-    if(fromU && val > 0){
-        const meters = val * fromU.factor;
-        const log = Math.log10(meters);
-        const x = ((log - minLog) / range) * W;
-        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, H / 2 + 8, 4, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#ffffffcc'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
-        ctx.fillText(meters.toExponential(2) + ' m', x, H - 4);
-    }
-
-    // Unit markers
-    units.forEach(u => {
-        const log = Math.log10(u.factor);
-        const x = ((log - minLog) / range) * W;
-        ctx.fillStyle = '#ffffff30'; ctx.beginPath(); ctx.arc(x, H / 2 + 8, 2, 0, Math.PI * 2); ctx.fill();
-    });
-    ctx.textAlign = 'start';
-}
-
-function resizeFuScale(){
-    setTimeout(fuDrawScale, 50);
-}
-window.addEventListener('resize', resizeFuScale);
-
-/* Quick convert from search bar */
 function fuQuickConvert(val, fromSym, toSym){
     const fromU = FU_UNITS.find(u => u.sym.toLowerCase() === fromSym.toLowerCase() || u.name.toLowerCase().includes(fromSym.toLowerCase()));
     const toU = FU_UNITS.find(u => u.sym.toLowerCase() === toSym.toLowerCase() || u.name.toLowerCase().includes(toSym.toLowerCase()));
@@ -1925,18 +2417,6 @@ function fuQuickConvert(val, fromSym, toSym){
     }
     return (val * fromU.factor) / toU.factor;
 }
-
-/* Swap button */
-$('fu-swap').addEventListener('click', () => {
-    const f = $('fu-from').value, t = $('fu-to').value;
-    $('fu-from').value = t; $('fu-to').value = f;
-    fuConvert();
-});
-
-/* Events */
-$('fu-val').addEventListener('input', fuConvert);
-$('fu-from').addEventListener('change', fuConvert);
-$('fu-to').addEventListener('change', fuConvert);
 
 /* ══════════════════════════════════════════════════════
    EVENTS
@@ -1949,6 +2429,92 @@ $('search-input').addEventListener('keydown', function (e) {
     doSearch($('search-input').value);
 });
 initPromptComposer();
+function initMuMistralControls() {
+    var btn = $('mu-mistral-send');
+    var out = $('mu-mistral-reply');
+    var urlIn = $('mu-mistral-proxy-url');
+    if (!btn || !out) return;
+    try {
+        if (urlIn && !urlIn.value) {
+            var w = typeof window.__MUEEE_MISTRAL_CHAT_URL__ === 'string' ? window.__MUEEE_MISTRAL_CHAT_URL__.trim() : '';
+            urlIn.value = w || localStorage.getItem('mueee-mistral-chat-url') || '';
+        }
+    } catch (e) {}
+    function saveUrl() {
+        if (!urlIn) return;
+        try {
+            localStorage.setItem('mueee-mistral-chat-url', (urlIn.value || '').trim());
+        } catch (e2) {}
+    }
+    if (urlIn) {
+        urlIn.addEventListener('change', saveUrl);
+        urlIn.addEventListener('blur', saveUrl);
+    }
+    btn.addEventListener('click', function () {
+        if (!window.MueeeMistralBridge) {
+            out.hidden = false;
+            out.textContent = 'mueee-mistral-bridge.js not loaded';
+            return;
+        }
+        var q = ($('search-input') && $('search-input').value) || '';
+        out.hidden = false;
+        out.textContent = '\u2026';
+        btn.disabled = true;
+        var urlOpt = urlIn ? urlIn.value.trim() : '';
+        window.MueeeMistralBridge.chatMistralMu({ userText: q, url: urlOpt }).then(function (r) {
+            btn.disabled = false;
+            out.textContent = r.ok
+                ? r.text
+                : 'Error: ' + (r.error || '') + (r.status ? ' (' + r.status + ')' : '');
+        });
+    });
+}
+initMuMistralControls();
+(function initFetchProxySettings() {
+    var inp = $('uvspeed-fetch-proxy-url');
+    if (!inp) return;
+    function apply(v) {
+        v = (v || '').trim();
+        try { window.__UVSPEED_FETCH_PROXY__ = v; } catch (e) {}
+        try { localStorage.setItem('uvspeed-fetch-proxy-url', v); } catch (e2) {}
+    }
+    try {
+        var saved = localStorage.getItem('uvspeed-fetch-proxy-url');
+        if (saved) {
+            inp.value = saved;
+            apply(saved);
+        }
+    } catch (e0) {}
+    inp.addEventListener('change', function () { apply(inp.value); });
+    inp.addEventListener('blur', function () { apply(inp.value); });
+})();
+(function initMuAmbientControls() {
+    var stack = $('search-mu-stack');
+    var btn = $('mu-bg-toggle');
+    var fs = $('mu-focus-stream');
+    if (btn && stack) {
+        btn.addEventListener('click', function () {
+            stack.classList.toggle('mu-bg-on');
+            var on = stack.classList.contains('mu-bg-on');
+            btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+            try { localStorage.setItem('search-mu-ambient-bg', on ? '1' : '0'); } catch (e1) {}
+        });
+        try {
+            if (localStorage.getItem('search-mu-ambient-bg') === '1') {
+                stack.classList.add('mu-bg-on');
+                btn.setAttribute('aria-pressed', 'true');
+            }
+        } catch (e2) {}
+    }
+    if (fs) {
+        fs.addEventListener('click', function () {
+            var t = document.querySelector('.mode-tab[data-mode="hexcast"]');
+            if (t) t.click();
+        });
+    }
+})();
+try { applySearchModeUi(); } catch (eApply) {}
+try { syncMuSearchUi(); } catch (eMu) {}
 
 /* ══════════════════════════════════════════════════════
    INIT
@@ -1956,10 +2522,9 @@ initPromptComposer();
 initSpineRailToggle();
 initConnectorsRowIdle();
 initTimeline();
+initResultsScrollProgress();
 buildPills();
 syncSearchStatusBar();
-fuBuildCats();
-fuPopulateSelects();
 
 // Auto-search or auto-convert from ?q= / ?model= (Iron Line staff handoff from other apps)
 const params = new URLSearchParams(window.location.search);
@@ -1975,7 +2540,12 @@ if (modelParam && $('prompt-model')) {
     refreshStPrompt();
 }
 if(mode === 'freya') document.querySelector('.mode-tab[data-mode="freya"]').click();
-if(q){ $('search-input').value = q; doSearch(q); }
+if (q && q.trim()) {
+    $('search-input').value = q.trim();
+    doSearch(q.trim());
+} else {
+    clearSearchComposer({ skipUrl: true });
+}
 
 // P0b.5: Listen for kbatch transcript DCA pushes
 if (typeof BroadcastChannel !== 'undefined') {
@@ -2011,6 +2581,24 @@ function toggleSearchTheme() {
 window.toggleSearchTheme = toggleSearchTheme;
 window.addEventListener('message', function (ev) {
     if (!ev.data) return;
+    if (ev.data.type === 'mueee-shell-connector-toggle' && ev.source === window.parent) {
+        var ix = ev.data.idx;
+        if (typeof ix !== 'number') return;
+        var conn = HS.getConnectors()[ix];
+        if (!conn) return;
+        HS.setConnectorEnabled(ix, !conn.enabled);
+        buildPills();
+        return;
+    }
+    if (ev.data.type === 'mueee-sync-connectors-pin' && ev.source === window.parent) {
+        var wrap = $('connectors-wrap');
+        var pinBtn = $('connectors-pin');
+        var on = !!ev.data.pinned;
+        try { localStorage.setItem('search-connectors-pinned', on ? '1' : '0'); } catch (e) {}
+        if (wrap) wrap.classList.toggle('connectors-wrap--pinned', on);
+        if (pinBtn) pinBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+        return;
+    }
     if (ev.data.type === 'upl-sync-theme') {
         if (ev.source !== window.parent) return;
         applySearchTheme(ev.data.theme === 'light');
@@ -2033,7 +2621,21 @@ window.addEventListener('message', function (ev) {
             }
             try { localStorage.setItem('search-prompt-model', ev.data.value); } catch (e) {}
             refreshStPrompt();
+            try { syncMuAgentPanelVisibility(); } catch (eMu) {}
+            try { applySearchModeUi(); } catch (eA) {}
         }
+        return;
+    }
+    if (ev.data.type === 'mueee-open-mu-config' && ev.source === window.parent) {
+        var tabAi = document.querySelector('.mode-tab[data-mode="ai"]');
+        if (tabAi) tabAi.click();
+        var det = $('mu-agent-config');
+        if (det) {
+            det.hidden = false;
+            try { det.open = true; } catch (eO) { det.setAttribute('open', 'open'); }
+            try { det.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (eS) {}
+        }
+        return;
     }
 });
 if (localStorage.getItem('search-theme') === 'light') applySearchTheme(true);
@@ -2529,6 +3131,9 @@ function downloadTypingJSON() {
 var _origRenderResults = renderResults;
 renderResults = function(results) {
     _origRenderResults(results);
+    try { updateResultsScrollProgress(); } catch (eSc) {}
+    if (!results || !results.length) teardownSpineScrollSpy();
+    else setupSpineScrollSpy();
     // Attach hover/dwell tracking to result elements
     var resultEls = $('results').querySelectorAll('.result');
     resultEls.forEach(function(el, idx) {
@@ -2565,8 +3170,20 @@ if (_origOpenDVForAI) {
     };
 }
 
-// Goal change triggers refresh
-if ($('ai-goal')) $('ai-goal').addEventListener('change', aiRefresh);
+// Goal change triggers refresh + persists weighting for search cards
+if ($('ai-goal')) $('ai-goal').addEventListener('change', function () {
+    try { localStorage.setItem('search-weight-goal', this.value); } catch (e) {}
+    aiRefresh();
+});
+try {
+    var sg = localStorage.getItem('search-weight-goal');
+    var agoal = $('ai-goal');
+    if (sg && agoal) {
+        for (var gi = 0; gi < agoal.options.length; gi++) {
+            if (agoal.options[gi].value === sg) { agoal.selectedIndex = gi; break; }
+        }
+    }
+} catch (eG) {}
 if ($('ai-cols')) $('ai-cols').addEventListener('change', function() { if (_aiCurrentView === 'board') renderAiBoard(); });
 
 // ═══════════════════════════════════════════════════════════

@@ -78,6 +78,8 @@ const OFFLINE_URLS = [
     'isomorphic-export-facet.js',
     'spine-hub-catalog.js',
     'mueee-throughline-spine.js',
+    'mueee-mu-context.js',
+    'mueee-mistral-bridge.js',
     'qbit-steno-term.html',
     'qbit-steno-pad.html',
     'micrograd-steno.html',

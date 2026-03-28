@@ -21,7 +21,7 @@
     ['Dashboard / ops', 'github-dashboard.html, blackwell.html, qa.html, progress.html', 'GitHub API token optional; JSON export', 'Rate limits; network'],
     ['Audio / media', 'jawta-audio.html, numsy.html, brothernumsy.html', 'Web Audio; whisper path to kbatch bridge', 'Decode latency; mic permission'],
     ['Medical / DICOM', 'qbit-medical.html', 'cornerstone; large arrays', 'Memory for volumes'],
-    ['Launcher / hub shell', 'launcher.html, index.html, mueee.html', 'iframes; postMessage theme sync', 'Many iframes = RAM; cold start'],
+    ['Launcher / hub shell', 'index.html → mueee.html (landing); launcher.html; full app iframes + postMessage theme sync', 'Mμ spine; Freya/Kbatch/HexCast panes ?mueee=1', 'Many iframes = RAM; cold start'],
     ['Sponsor / misc', 'sponsor.html, feed.html, grid.html, glyph.html, digital_alphabet.html', 'static + BC optional', 'Mostly static'],
     ['Iron / dispatch', 'iron-dispatch.html, iron-dispatch-v2-snapshot.html, astral-fast-toolbench.html', 'pipeline messages', 'Experimental'],
     ['qbit search / raw family', 'qbit-search.html, qbit-raw-v1/2/3.html, qbit-uv-shell.html', 'Iron Line; quantum bridge', 'Parity with uterm commands'],

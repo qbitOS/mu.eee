@@ -41,6 +41,8 @@ html[data-theme="dark"] #mueee-prompt-bar{background:linear-gradient(180deg,#0e1
 .mueee-spine-dock.mueee-spine-collapsed{max-height:14px;overflow:hidden;opacity:.92;}
 .mueee-spine-dock.mueee-spine-collapsed #mueee-throughline-wrap{padding:2px 10px;min-height:0;}
 .mueee-spine-dock.mueee-spine-collapsed .mueee-tl-label,.mueee-spine-dock.mueee-spine-collapsed #mueee-throughline-bar,.mueee-spine-dock.mueee-spine-collapsed .mueee-tl-loop{opacity:0;pointer-events:none;max-height:0;overflow:hidden;margin:0;padding:0;border:none;}
+.mueee-spine-dock.mueee-spine-collapsed .mueee-spine-expandable{opacity:0;pointer-events:none;max-height:0;overflow:hidden;margin:0;padding:0;border:none;}
+.mueee-spine-dock.mueee-spine-collapsed .mueee-spine-toggle{opacity:1;pointer-events:auto;max-height:none;}
 .mueee-spine-dock.mueee-spine-collapsed::after{content:'Spine — hover or tap to expand';display:block;font:500 9px monospace;color:var(--qp-text-muted);text-align:center;padding:2px;letter-spacing:.04em;}
 html[data-theme="light"] .mueee-spine-dock.mueee-spine-collapsed::after{color:#94a3b8;}
 .mueee-topbar-main{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:1 1 0;min-width:0;box-sizing:border-box;}
@@ -78,9 +80,29 @@ html[data-theme="light"] #mueee-spine-hint{color:#64748b;}
 .mueee-frame-wrap{flex:1;min-height:0;position:relative;}
 .mueee-frame-wrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:var(--qp-bg);display:none;}
 .mueee-frame-wrap iframe.on{display:block;}
-#mueee-throughline-wrap{display:flex;align-items:center;gap:10px;padding:10px 14px;flex-shrink:0;flex-wrap:wrap;border-bottom:1px solid var(--qp-border);background:var(--qp-bg-tertiary);box-shadow:0 2px 12px rgba(0,0,0,.12);}
+#mueee-throughline-wrap{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:0;flex-shrink:0;border-bottom:1px solid var(--qp-border);background:var(--qp-bg-tertiary);box-shadow:0 2px 12px rgba(0,0,0,.12);}
 html[data-theme="light"] #mueee-throughline-wrap{background:linear-gradient(180deg,#fafafa 0%,#eceef2 100%);border-bottom:1px solid rgba(15,23,42,.1);box-shadow:0 4px 20px rgba(15,23,42,.06);}
 html[data-theme="dark"] #mueee-throughline-wrap{background:linear-gradient(180deg,#161d28 0%,#0f141c 100%);border-bottom:1px solid rgba(255,255,255,.08);}
+.mueee-spine-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;width:100%;box-sizing:border-box;}
+.mueee-spine-toggle{flex-shrink:0;width:30px;height:30px;padding:0;border-radius:8px;border:1px solid var(--qp-border);background:var(--qp-bg);color:var(--qp-text);cursor:pointer;font-size:12px;line-height:1;display:inline-flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;}
+.mueee-spine-toggle:hover{border-color:var(--qp-accent);background:var(--qp-bg-hover);}
+html[data-theme="light"] .mueee-spine-toggle{background:rgba(255,255,255,.85);border-color:#d8d4f0;}
+.mueee-spine-expandable{display:flex;flex-direction:column;width:100%;flex-shrink:0;}
+#mueee-throughline-wrap.mueee-spine-nav-collapsed .mueee-spine-expandable{display:none!important;}
+#mueee-spine-rainbow{display:flex;width:100%;flex-shrink:0;height:var(--mueee-spine-rainbow-height,5px);min-height:var(--mueee-spine-rainbow-height,5px);border-top:1px solid var(--qp-border);}
+#mueee-spine-rainbow span{flex:1;min-height:var(--mueee-spine-rainbow-height,5px);transition:background-color .2s ease;}
+.mueee-connectors-row-wrap{flex-shrink:0;width:100%;}
+.mueee-shell-connectors-row.connectors-row{display:flex;flex-direction:row;align-items:center;gap:8px;padding:6px 12px;border-top:0;border-bottom:0;background:var(--qp-bg-secondary);max-height:min(120px,22vh);}
+html[data-theme="light"] .mueee-shell-connectors-row.connectors-row{background:#f1f5f9;}
+#mueee-shell-connectors{display:flex;flex:1;min-width:0;overflow-x:auto;gap:6px;flex-wrap:nowrap;scrollbar-width:thin;padding:0;}
+#mueee-shell-connectors::-webkit-scrollbar{height:4px;}
+.mueee-shell-connectors-row .cpill{font-family:ui-monospace,monospace;font-size:10px;padding:5px 9px;border-radius:8px;border:1px solid var(--qp-border);color:var(--qp-text-muted);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;background:var(--qp-bg);box-sizing:border-box;text-align:center;}
+.mueee-shell-connectors-row .cpill:hover{color:var(--qp-text);border-color:var(--qp-accent);} 
+.mueee-shell-connectors-row .cpill.active{color:var(--qp-accent);border-color:rgba(201,168,76,.45);}
+html[data-theme="light"] .mueee-shell-connectors-row .cpill{background:#fff;border-color:#d8d4f0;color:#64748b;}
+html[data-theme="light"] .mueee-shell-connectors-row .cpill.active{color:#0891b2;border-color:rgba(6,182,212,.35);}
+.mueee-shell-connectors-row .connectors-pin{flex-shrink:0;font-family:ui-monospace,monospace;font-size:9px;padding:4px 8px;border-radius:6px;border:1px solid var(--qp-border);background:var(--qp-bg-tertiary);color:var(--qp-text-muted);cursor:pointer;line-height:1;}
+.mueee-shell-connectors-row .connectors-pin:hover{color:var(--qp-accent);border-color:var(--qp-accent);}
 .mueee-tl-label{font:600 9px monospace;color:var(--qp-text-muted);letter-spacing:.12em;text-transform:uppercase;flex-shrink:0;}
 html[data-theme="light"] .mueee-tl-label{color:#64748b;}
 #mueee-throughline-bar{display:flex;flex-wrap:wrap;align-items:center;gap:4px;flex:1;min-width:0;}
@@ -92,6 +114,16 @@ html[data-theme="light"] .mueee-tl-step.on{color:#6d28d9;border-color:rgba(167,1
 .mueee-tl-loop{margin-left:6px;font:600 10px monospace;padding:4px 10px;border-radius:8px;border:1px dashed var(--qp-border);background:transparent;color:var(--qp-accent);cursor:pointer;}
 html[data-theme="light"] .mueee-tl-loop{border-color:#c4b5fd;color:#6d28d9;}
 .mueee-tl-loop:hover{border-color:var(--qp-accent);}
+@media (max-width:720px){
+#mueee-throughline-bar{overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;max-width:100%;gap:3px;padding-bottom:4px;scrollbar-width:thin;touch-action:pan-x;}
+#mueee-throughline-bar::-webkit-scrollbar{height:3px;}
+.mueee-tl-step{flex-shrink:0;font-size:9px;padding:4px 8px;}
+.mueee-tl-conn{flex-shrink:0;}
+.mueee-spine-head{flex-wrap:nowrap;align-items:center;}
+.mueee-spine-head .mueee-tl-label{flex-shrink:0;}
+#mueee-shell{min-height:100dvh;}
+}
+#qp-theme-toggle{display:none!important;visibility:hidden!important;pointer-events:none!important;}
 </style>
 <script src="quantum-prefixes.js"></script>
 </head>
@@ -99,16 +131,29 @@ html[data-theme="light"] .mueee-tl-loop{border-color:#c4b5fd;color:#6d28d9;}
 <div id="mueee-shell">
   <div id="mueee-spine-dock" class="mueee-spine-dock">
     <nav id="mueee-throughline-wrap" class="mueee-throughline-wrap" aria-label="Tonnetz throughline spine">
-      <span class="mueee-tl-label">Spine</span>
-      <div id="mueee-throughline-bar" class="mueee-throughline-bar"></div>
+      <div class="mueee-spine-head">
+        <button type="button" id="mueee-spine-toggle" class="mueee-spine-toggle" aria-expanded="true" aria-controls="mueee-spine-expandable" title="Collapse or expand rainbow + connectors">&#x25B4;</button>
+        <span class="mueee-tl-label">Spine</span>
+        <div id="mueee-throughline-bar" class="mueee-throughline-bar"></div>
+      </div>
+      <div id="mueee-spine-expandable" class="mueee-spine-expandable">
+        <div id="mueee-spine-rainbow" class="mueee-spine-rainbow" aria-hidden="true"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+        <div id="mueee-connectors-row-wrap" class="mueee-connectors-row-wrap">
+          <div class="mueee-shell-connectors-row connectors-row" id="mueee-shell-connectors-row">
+            <aside id="mueee-shell-connectors" aria-label="Data connectors (mirrored from Search)"></aside>
+            <button type="button" id="mueee-connectors-pin" class="connectors-pin" aria-pressed="false" title="Pin connector strip">pin</button>
+          </div>
+        </div>
+      </div>
     </nav>
   </div>
   <div class="mueee-frame-wrap" aria-live="polite">
     <iframe id="mueee-frame-search" class="on" title="Search" data-src="search.html" fetchpriority="high"></iframe>
     <iframe id="mueee-frame-history" title="History" loading="lazy" data-src="history.html"></iframe>
     <iframe id="mueee-frame-pad" title="GridPad" loading="lazy" data-src="pad-datatable.html"></iframe>
-    <iframe id="mueee-frame-kbatch" title="Kbatch" loading="lazy" data-src="kbatch.html"></iframe>
-    <iframe id="mueee-frame-hexcast" title="Hexcast" loading="lazy" data-src="hexcast.html"></iframe>
+    <iframe id="mueee-frame-freya" title="FreyaUnits — galactic converter" loading="lazy" data-src="freya.html?mueee=1"></iframe>
+    <iframe id="mueee-frame-kbatch" title="Kbatch" loading="lazy" data-src="kbatch.html?mueee=1"></iframe>
+    <iframe id="mueee-frame-hexcast" title="Hexcast" loading="lazy" data-src="hexcast.html?mueee=1"></iframe>
     <iframe id="mueee-frame-jawta" title="Jawta — spatial audio &amp; music bridge" loading="lazy" data-src="jawta-audio.html"></iframe>
     <iframe id="mueee-frame-research" title="Research Lab — lyrics, credits, markdown export" loading="lazy" data-src="research-lab.html"></iframe>
     <iframe id="mueee-frame-throughline" title="Throughline Lab" loading="lazy" data-src="throughline-lab.html"></iframe>
@@ -143,6 +188,7 @@ html[data-theme="light"] .mueee-tl-loop{border-color:#c4b5fd;color:#6d28d9;}
             <option value="balanced" title="Balanced — default depth">equal</option>
             <option value="deep" title="Deep — slower, richer snippets">deep</option>
             <option value="code" title="Code &amp; technical">code</option>
+            <option value="mistral-mu" title="Mμ — Mistral Agents (mueee); instructions + guardrails in Search">Mμ</option>
           </select>
         </div>
         <span id="mueee-spine-hint" title="Avoid nested iframe reload cost while editing">Spine: ⌘/Ctrl+click = new tab</span>
@@ -158,6 +204,12 @@ html[data-theme="light"] .mueee-tl-loop{border-color:#c4b5fd;color:#6d28d9;}
 })();
 </script>
 <script>
+(function(){
+  var b = window.__MUEEE_PANE_BASE__ || '';
+  document.write('<script src="' + (b ? b + 'mueee-mu-context.js' : 'mueee-mu-context.js') + '"><\/script>');
+})();
+</script>
+<script>
 (function () {
   'use strict';
   var themeBtn = document.getElementById('mueee-theme-toggle');
@@ -167,6 +219,7 @@ html[data-theme="light"] .mueee-tl-loop{border-color:#c4b5fd;color:#6d28d9;}
     search: document.getElementById('mueee-frame-search'),
     history: document.getElementById('mueee-frame-history'),
     pad: document.getElementById('mueee-frame-pad'),
+    freya: document.getElementById('mueee-frame-freya'),
     kbatch: document.getElementById('mueee-frame-kbatch'),
     hexcast: document.getElementById('mueee-frame-hexcast'),
     jawta: document.getElementById('mueee-frame-jawta'),
@@ -181,10 +234,12 @@ html[data-theme="light"] .mueee-tl-loop{border-color:#c4b5fd;color:#6d28d9;}
     notes: document.getElementById('mueee-frame-notes')
   };
   var rainbowEl = document.getElementById('mueee-rainbow');
+  var spineRainbowEl = document.getElementById('mueee-spine-rainbow');
   var RAINBOW_BY_PANE = {
     search: ['#7c3aed', '#06b6d4', '#a78bfa', '#22d3ee', '#8b5cf6', '#34d399'],
     history: ['#7c3aed', '#06b6d4', '#a78bfa', '#22d3ee', '#8b5cf6', '#34d399'],
     pad: ['#a78bfa', '#22d3ee', '#34d399', '#7c3aed', '#475569', '#94a3b8'],
+    freya: ['#7c3aed', '#06b6d4', '#a78bfa', '#fbbf24', '#34d399', '#8b5cf6'],
     kbatch: ['#c9a84c', '#56d4dd', '#58a6ff', '#a78bfa', '#34d399', '#64748b'],
     hexcast: ['#f0883e', '#58a6ff', '#a78bfa', '#34d399', '#e040fb', '#22d3ee'],
     jawta: ['#22c55e', '#14b8a6', '#a78bfa', '#f472b6', '#34d399', '#64748b'],
@@ -202,6 +257,7 @@ html[data-theme="light"] .mueee-tl-loop{border-color:#c4b5fd;color:#6d28d9;}
     search: "μ'search",
     history: "μ'history",
     pad: "μ'gridpad",
+    freya: "μ'freya",
     kbatch: "μ'kbatch",
     hexcast: "μ'hexcast",
     jawta: "μ'jawta",
@@ -219,8 +275,9 @@ html[data-theme="light"] .mueee-tl-loop{border-color:#c4b5fd;color:#6d28d9;}
     search: 'search.html',
     history: 'history.html',
     pad: 'pad-datatable.html',
-    kbatch: 'kbatch.html',
-    hexcast: 'hexcast.html',
+    freya: 'freya.html?mueee=1',
+    kbatch: 'kbatch.html?mueee=1',
+    hexcast: 'hexcast.html?mueee=1',
     jawta: 'jawta-audio.html',
     research: 'research-lab.html',
     throughline: 'throughline-lab.html',
@@ -262,12 +319,16 @@ html[data-theme="light"] .mueee-tl-loop{border-color:#c4b5fd;color:#6d28d9;}
     if (paneTitleEl) paneTitleEl.textContent = mu;
   }
   function setMueeeRainbow(pane) {
-    if (!rainbowEl) return;
     var colors = RAINBOW_BY_PANE[pane] || RAINBOW_BY_PANE.search;
-    var spans = rainbowEl.querySelectorAll('span');
-    for (var i = 0; i < spans.length; i++) {
-      spans[i].style.backgroundColor = colors[i] || colors[colors.length - 1];
+    function paint(el) {
+      if (!el) return;
+      var spans = el.querySelectorAll('span');
+      for (var i = 0; i < spans.length; i++) {
+        spans[i].style.backgroundColor = colors[i] || colors[colors.length - 1];
+      }
     }
+    paint(rainbowEl);
+    paint(spineRainbowEl);
   }
   function ensurePaneLoaded(pane) {
     var el = frames[pane];
@@ -416,6 +477,106 @@ html[data-theme="light"] .mueee-tl-loop{border-color:#c4b5fd;color:#6d28d9;}
       }
     });
   }
+  (function initMueeeSpineToggle() {
+    var spineWrap = document.getElementById('mueee-throughline-wrap');
+    var spineToggle = document.getElementById('mueee-spine-toggle');
+    var expandKey = 'mueee-spine-expand-expanded';
+    if (!spineToggle || !spineWrap) return;
+    try {
+      if (localStorage.getItem(expandKey) === '0') spineWrap.classList.add('mueee-spine-nav-collapsed');
+    } catch (e0) {}
+    function syncToggleUi() {
+      var collapsed = spineWrap.classList.contains('mueee-spine-nav-collapsed');
+      spineToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+      spineToggle.textContent = collapsed ? '\u25BE' : '\u25B4';
+      spineToggle.title = collapsed ? 'Expand rainbow + connectors' : 'Collapse rainbow + connectors';
+    }
+    syncToggleUi();
+    function mueeeWakeSpineDockIdle() {
+      var dock = document.getElementById('mueee-spine-dock');
+      if (!dock) return;
+      dock.classList.remove('mueee-spine-collapsed');
+      try {
+        clearTimeout(window.__mueeeSpineIdleT);
+        window.__mueeeSpineIdleT = setTimeout(function () {
+          if (dock && !dock.matches(':hover')) dock.classList.add('mueee-spine-collapsed');
+        }, 8000);
+      } catch (eT) {}
+    }
+    spineToggle.addEventListener('click', function (e) {
+      e.stopPropagation();
+      var dock = document.getElementById('mueee-spine-dock');
+      var idleCollapsed = dock && dock.classList.contains('mueee-spine-collapsed');
+      mueeeWakeSpineDockIdle();
+      /* After auto idle-collapse, first click only expands the dock (stopPropagation hid dock click). Further clicks toggle rainbow + connectors. */
+      if (!idleCollapsed) {
+        spineWrap.classList.toggle('mueee-spine-nav-collapsed');
+      }
+      syncToggleUi();
+      try {
+        localStorage.setItem(expandKey, spineWrap.classList.contains('mueee-spine-nav-collapsed') ? '0' : '1');
+      } catch (e1) {}
+    });
+  })();
+  function renderMueeeShellConnectors(list) {
+    var host = document.getElementById('mueee-shell-connectors');
+    if (!host) return;
+    host.innerHTML = '';
+    if (!list || !list.length) return;
+    list.forEach(function (c, i) {
+      var p = document.createElement('span');
+      p.className = 'cpill' + (c.enabled ? ' active' : '');
+      p.textContent = c.icon || '?';
+      p.title = c.name || '';
+      p.dataset.idx = String(i);
+      p.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        var frs = frames.search;
+        if (frs && frs.contentWindow) {
+          try {
+            frs.contentWindow.postMessage({ type: 'mueee-shell-connector-toggle', idx: i }, '*');
+          } catch (e2) {}
+        }
+      });
+      host.appendChild(p);
+    });
+  }
+  window.addEventListener('message', function (ev) {
+    if (!ev.data || ev.data.type !== 'mueee-connectors-sync') return;
+    try {
+      if (!frames.search || ev.source !== frames.search.contentWindow) return;
+    } catch (e3) {
+      return;
+    }
+    renderMueeeShellConnectors(ev.data.connectors || []);
+  });
+  (function initMueeeShellConnectorPin() {
+    var mueeeConnPin = document.getElementById('mueee-connectors-pin');
+    if (!mueeeConnPin) return;
+    function pinned() {
+      try {
+        return localStorage.getItem('search-connectors-pinned') === '1';
+      } catch (e) {
+        return false;
+      }
+    }
+    try {
+      mueeeConnPin.setAttribute('aria-pressed', pinned() ? 'true' : 'false');
+    } catch (e4) {}
+    mueeeConnPin.addEventListener('click', function () {
+      var next = !pinned();
+      try {
+        localStorage.setItem('search-connectors-pinned', next ? '1' : '0');
+      } catch (e5) {}
+      mueeeConnPin.setAttribute('aria-pressed', next ? 'true' : 'false');
+      var frs = frames.search;
+      if (frs && frs.contentWindow) {
+        try {
+          frs.contentWindow.postMessage({ type: 'mueee-sync-connectors-pin', pinned: next }, '*');
+        } catch (e6) {}
+      }
+    });
+  })();
   (function bindSpineNewTab() {
     var wrap = document.getElementById('mueee-throughline-wrap');
     if (!wrap) return;
