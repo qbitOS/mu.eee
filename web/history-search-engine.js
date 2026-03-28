@@ -5,7 +5,7 @@
 
 (function(root) {
 
-const VERSION = '2.5.0';
+const VERSION = '2.6.0';
 
 const SRC_COLORS = {
     local: '#34d399', wikipedia: '#3b82f6', openlibrary: '#f97316',
@@ -16,6 +16,10 @@ const SRC_COLORS = {
     fred: '#e11d48', worldbank: '#0ea5e9', coingecko: '#10b981',
     wiktionary: '#9333ea', datamuse: '#d946ef', youtube: '#ff0000',
     'video-transcript': '#f59e0b',
+    /** Wikinews — neutral wire-style articles (Wikimedia; CORS-safe in browser) */
+    'wire-news': '#0d9488',
+    /** Library of Congress newspaper directory (History spine #2) */
+    'history-archive': '#ea580c',
 };
 
 /* ══════════════════════════════════════════════════════
@@ -28,6 +32,43 @@ const CONNECTORS = [
             .then(r => r.json())
             .then(d => (d[1] || []).map((t, i) => ({ title: t, source: 'wikipedia', url: d[3][i], snippet: d[2][i] })))
             .catch(() => [])
+    },
+    {
+        /** Wire desk: Wikinews (editorial, date-stamped; same-origin-friendly as Wikipedia). */
+        name: 'Wikinews', icon: 'WS', enabled: true,
+        search: q => fetch('https://en.wikinews.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(q) + '&srlimit=8&format=json&origin=*')
+            .then(r => r.json())
+            .then(d => {
+                var hits = (d.query && d.query.search) || [];
+                return hits.map(function (h) {
+                    return {
+                        title: h.title,
+                        source: 'wire-news',
+                        snippet: (h.snippet || '').replace(/<[^>]+>/g, ''),
+                        url: 'https://en.wikinews.org/wiki/' + encodeURIComponent(String(h.title).replace(/ /g, '_'))
+                    };
+                });
+            }).catch(function () { return []; })
+    },
+    {
+        /** Historic newspapers — LOC newspaper directory (CORS `*`; pairs with History spine #2). */
+        name: 'LOC Newspapers', icon: 'HN', enabled: true,
+        search: q => fetch('https://www.loc.gov/newspapers/?dl=item&fo=json&q=' + encodeURIComponent(q) + '&c=10')
+            .then(r => r.json())
+            .then(d => {
+                var items = (d.content && d.content.results) || [];
+                return items.map(function (it) {
+                    var title = (it.title || 'Newspaper').replace(/<[^>]+>/g, '');
+                    var loc = (it.location_city && it.location_city[0] ? it.location_city[0] + ', ' : '') +
+                        (it.location_state && it.location_state[0] ? it.location_state[0] : '');
+                    return {
+                        title: title.substring(0, 220),
+                        source: 'history-archive',
+                        snippet: (it.date || '') + (loc ? ' — ' + loc : '') + ' — Library of Congress',
+                        url: it.id || ('https://www.loc.gov/newspapers/?q=' + encodeURIComponent(q))
+                    };
+                });
+            }).catch(function () { return []; })
     },
     {
         name: 'Open Library', icon: 'OL', enabled: true,
@@ -498,13 +539,14 @@ async function fetchDocument(url, source) {
     source = source || '';
     var doc = { title: '', content: '', source: source, url: url, wordCount: 0, language: 'en', fetchedAt: Date.now() };
     try {
-        // Wikipedia: REST summary (thumbnail, extract, metadata) + parse API for full plain text
-        if (source === 'wikipedia' || url.indexOf('wikipedia.org') !== -1) {
+        // Wikipedia / Wikinews: REST summary + parse API for full plain text
+        if (source === 'wikipedia' || source === 'wire-news' || url.indexOf('wikipedia.org') !== -1 || url.indexOf('wikinews.org') !== -1) {
             var titleMatch = url.match(/\/wiki\/(.+?)(?:#|$)/);
             if (titleMatch) {
-                var wikiHostMatch = url.match(/https?:\/\/([a-z]{2,3})\.wikipedia\.org/i);
+                var wikiHostMatch = url.match(/https?:\/\/([a-z]{2,3})\.(wikipedia|wikinews)\.org/i);
                 var wikiLang = wikiHostMatch ? wikiHostMatch[1].toLowerCase() : 'en';
-                var wikiOrigin = 'https://' + wikiLang + '.wikipedia.org';
+                var wikiKind = wikiHostMatch ? wikiHostMatch[2].toLowerCase() : (source === 'wire-news' ? 'wikinews' : 'wikipedia');
+                var wikiOrigin = 'https://' + wikiLang + '.' + wikiKind + '.org';
                 var rawSlug = titleMatch[1];
                 var decodedTitle = decodeURIComponent(rawSlug.replace(/\+/g, ' ')).replace(/_/g, ' ');
                 var summaryPath = encodeURIComponent(decodedTitle.replace(/ /g, '_'));
@@ -626,6 +668,25 @@ async function fetchDocument(url, source) {
                 var s = (data.seriess || [])[0] || {};
                 doc.title = s.title || sMatch[1];
                 doc.content = (s.notes || '') + '\n\nFrequency: ' + (s.frequency || '') + '\nUnits: ' + (s.units || '') + '\nSeasonal adjustment: ' + (s.seasonal_adjustment || '');
+            }
+        }
+        // Library of Congress item (newspaper directory / history-archive)
+        else if (source === 'history-archive' || (url.indexOf('loc.gov') !== -1 && url.indexOf('/item/') !== -1)) {
+            var locMatch = url.match(/loc\.gov\/item\/(\d+)/);
+            if (locMatch) {
+                var locRes = await fetch('https://www.loc.gov/item/' + locMatch[1] + '/?fo=json');
+                if (locRes.ok) {
+                    var locData = await locRes.json();
+                    var locItem = locData.item || {};
+                    doc.title = typeof locItem.title === 'string' ? locItem.title : (doc.title || '');
+                    if (Array.isArray(locItem.description)) doc.content = locItem.description.join('\n\n');
+                    else doc.content = locItem.description || '';
+                    if (!doc.content && Array.isArray(locItem.created_published)) doc.content = locItem.created_published.join('\n');
+                    if (locItem.dates_of_publication) doc.date = locItem.dates_of_publication;
+                }
+            }
+            if (!doc.content || String(doc.content).length < 20) {
+                doc.content = 'Library of Congress newspaper record. Open the link for holdings and digitized issues.';
             }
         }
         // Generic: try to fetch and extract text
@@ -941,7 +1002,7 @@ function weightResults(results, opts) {
 
         // Authority: source reputation + tone
         var authorityScore = 0;
-        var trustedSources = ['wikipedia', 'arxiv', 'pubchem', 'genbank', 'hathitrust'];
+        var trustedSources = ['wikipedia', 'wire-news', 'history-archive', 'arxiv', 'pubchem', 'genbank', 'hathitrust'];
         if (r.source && trustedSources.indexOf(r.source.toLowerCase()) >= 0) authorityScore += 0.6;
         if (analysis.tone && (analysis.tone.academic > 0.3 || analysis.tone.educational > 0.3)) authorityScore += 0.3;
         authorityScore = Math.min(1, authorityScore);
