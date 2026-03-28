@@ -1,0 +1,2608 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script>try{if(window.parent!==window)document.documentElement.classList.add('qp-embed-chrome');}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="theme-color" content="#050810">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+<link rel="apple-touch-icon" sizes="192x192" href="../icons/icon-192.png">
+<title>Search — Universal Timeline Search + Freya · Kbatch · Hexcast · Hub</title>
+<link rel="stylesheet" href="quantum-theme.css">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{--bg:#050810;--bg2:#0a0f1a;--bg3:#101828;--border:#1e2d4a;--text:#e2e8f0;--muted:#64748b;--dim:#475569;--accent:#7c3aed;--cyan:#22d3ee;--green:#34d399;--orange:#f97316;--purple:#a78bfa;--mono:'SF Mono','JetBrains Mono','Fira Code',monospace;--sans:-apple-system,'SF Pro Display',system-ui,sans-serif;}
+html,body{width:100%;height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow-x:hidden;-webkit-text-size-adjust:100%;}
+body{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:var(--bg);}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
+
+/* ── Rainbow (mueee shell parity) ── */
+.rainbow,.rainbow.mueee-rainbow{display:flex;width:100%;flex-shrink:0;height:var(--mueee-rainbow-height);min-height:var(--mueee-rainbow-height);max-height:var(--mueee-rainbow-height);box-sizing:border-box;}
+.rainbow span{flex:1;min-height:var(--mueee-rainbow-height);}
+.r1{background:#7c3aed;}.r2{background:#06b6d4;}.r3{background:#a78bfa;}.r4{background:#22d3ee;}.r5{background:#8b5cf6;}.r6{background:#34d399;}
+
+/* ── Header ── */
+#header{padding:env(safe-area-inset-top,12px) var(--mueee-title-bar-padding-x) 0;background:var(--mueee-logo-bar-bg);border-bottom:1px solid var(--mueee-logo-bar-border);backdrop-filter:saturate(140%) blur(12px);-webkit-backdrop-filter:saturate(140%) blur(12px);}
+#header .logo-row{display:flex;align-items:center;gap:8px;padding:0;flex-wrap:wrap;min-height:var(--mueee-title-bar-min-height);box-sizing:border-box;}
+#header .logo{font-family:var(--mono);font-size:16px;font-weight:800;background:linear-gradient(135deg,#7c3aed,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+#header .ver{font-family:var(--mono);font-size:9px;color:var(--dim);}
+#header .spacer{flex:1;}
+#header .nav-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:6px;font-family:var(--mono);font-size:10px;cursor:pointer;text-decoration:none;}
+#header .nav-btn:hover{color:var(--text);border-color:var(--accent);text-decoration:none;}
+
+/* ── Tabs ── */
+#mode-tabs{display:flex;flex-wrap:wrap;padding:6px 16px 0;gap:4px;background:var(--bg2);}
+.mode-tab{font-family:var(--mono);font-size:11px;padding:6px 16px;border-radius:6px 6px 0 0;border:1px solid var(--border);border-bottom:none;color:var(--muted);cursor:pointer;background:var(--bg);transition:all .15s;}
+.mode-tab:hover{color:var(--text);}
+.mode-tab.active{color:var(--cyan);border-color:var(--cyan);background:var(--bg);font-weight:600;}
+
+/* ── Search composer (prompt layout: model + attachments + prompt + run) ── */
+#search-composer{
+  padding:10px 16px 12px;background:var(--bg2);border-bottom:1px solid rgba(30,45,74,.35);
+  width:100%;max-width:100%;box-sizing:border-box;
+}
+.sc-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:8px;width:100%;}
+.sc-lbl{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
+#prompt-model{
+  min-width:min(200px,46vw);background:var(--bg);border:1px solid var(--border);color:var(--text);
+  padding:6px 10px;border-radius:8px;font-family:var(--mono);font-size:12px;outline:none;cursor:pointer;
+}
+#prompt-model:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(124,58,237,0.12);}
+.sc-btn-attach{
+  font-family:var(--mono);font-size:11px;padding:6px 12px;border-radius:8px;border:1px dashed var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;
+}
+.sc-btn-attach:hover{color:var(--cyan);border-color:var(--cyan);background:rgba(6,182,212,.06);}
+.sc-attachments{display:flex;flex-wrap:wrap;gap:6px;min-height:0;margin-bottom:8px;}
+.sc-attachments:empty{display:none;}
+.sc-chip{
+  display:inline-flex;align-items:center;gap:6px;padding:4px 8px 4px 10px;border-radius:999px;border:1px solid var(--border);
+  background:var(--bg3);font-family:var(--mono);font-size:10px;color:var(--text);max-width:100%;
+}
+.sc-chip .sc-chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:min(200px,40vw);}
+.sc-chip-remove{
+  flex-shrink:0;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;line-height:1;padding:0 2px;border-radius:4px;
+}
+.sc-chip-remove:hover{color:#f85149;}
+.sc-prompt-row{display:flex;gap:8px;align-items:stretch;width:100%;min-width:0;}
+#search-input{
+  flex:1 1 0;min-width:0;min-height:44px;max-height:180px;resize:vertical;
+  background:var(--bg);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:8px;
+  font-family:var(--mono);font-size:14px;line-height:1.45;outline:none;-webkit-appearance:none;
+}
+#search-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,0.15);}
+#search-input::placeholder{color:var(--dim);}
+#search-btn{
+  align-self:flex-start;background:linear-gradient(135deg,#7c3aed,#06b6d4);color:var(--bg);border:none;
+  padding:10px 18px;border-radius:8px;font-family:var(--mono);font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0;transition:all .15s;
+}
+#search-btn:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(124,58,237,.3);}
+#search-btn:active{transform:scale(.97);}
+
+/* ── Timeline ── */
+#timeline{height:44px;border-bottom:1px solid var(--border);background:var(--bg);}
+#tl-canvas{width:100%;height:100%;display:block;}
+
+/* ── Connectors ── */
+#connectors{display:flex;padding:6px 16px;gap:4px;overflow-x:auto;scrollbar-width:none;background:var(--bg2);border-bottom:1px solid rgba(30,45,74,.5);}
+#connectors::-webkit-scrollbar{display:none;}
+.cpill{font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);color:var(--muted);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;background:var(--bg);}
+.cpill:hover{color:var(--text);border-color:#334155;}
+.cpill.active{color:var(--cyan);border-color:rgba(6,182,212,.3);}
+.cpill.loading{color:#fbbf24;border-color:rgba(251,191,36,.3);animation:pulse .8s ease infinite alternate;}
+.cpill .cnt{font-weight:700;color:var(--green);margin-left:3px;}
+@keyframes pulse{from{opacity:.7}to{opacity:1}}
+
+/* ── Stats ── */
+#stats{display:flex;flex-wrap:wrap;padding:6px 16px;gap:8px 16px;font-family:var(--mono);font-size:10px;color:var(--dim);background:var(--bg2);border-bottom:1px solid var(--border);align-items:center;}
+#stats .v{color:var(--green);}
+#stats .st-prompt-hint{color:var(--muted);max-width:100%;}
+
+/* ── Results ── */
+#results{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch;}
+.result{display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;text-decoration:none;color:inherit;}
+.result:hover{border-color:#334155;background:var(--bg3);text-decoration:none;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.3);}
+.result:active{transform:scale(.99);}
+.r-source{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;}
+.r-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.r-title{font-size:14px;font-weight:600;color:var(--text);line-height:1.3;}
+.r-snippet{font-size:12px;color:var(--muted);line-height:1.4;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* ── Loading ── */
+.shimmer{background:linear-gradient(90deg,var(--bg2) 25%,var(--bg3) 50%,var(--bg2) 75%);background-size:200% 100%;animation:shimmer 1.5s ease infinite;border-radius:6px;height:60px;margin-bottom:8px;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.empty{text-align:center;padding:40px 20px;color:var(--dim);font-size:13px;}
+.empty .big{font-size:48px;margin-bottom:12px;}
+
+/* ═══════════════════════════════════════════════════
+   FREYAUNITS PANEL
+   ═══════════════════════════════════════════════════ */
+#freya-panel{display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#freya-panel.active{display:flex;}
+#kbatch-panel,#hexcast-panel,#hub-panel{display:none;flex-direction:column;flex:1;overflow:hidden;min-height:0;-webkit-overflow-scrolling:touch;}
+#kbatch-panel.active,#hexcast-panel.active,#hub-panel.active{display:flex;}
+#search-panel{display:none;flex-direction:column;flex:1;}
+#search-panel.active{display:flex;flex:1;}
+.embed-toolbar{font-family:var(--mono);font-size:10px;padding:8px 14px;background:var(--bg2);border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;color:var(--muted);flex-shrink:0;}
+.embed-toolbar a{color:var(--cyan);font-weight:600;}
+.embed-toolbar code{font-size:9px;color:var(--dim);}
+.embed-frame{flex:1;width:100%;min-height:min(65vh,520px);border:none;background:var(--bg);}
+.home-native-panel{flex:1;overflow:auto;padding:12px 16px 20px;min-height:min(40vh,360px);}
+.home-native-copy{font-size:12px;color:var(--muted);line-height:1.55;margin:0 0 12px;max-width:72ch;}
+.home-native-panel .spine-hub-table{font-size:9px;}
+.hub-scroll{flex:1;overflow:auto;padding:10px 12px 20px;}
+.hub-intro{font-family:var(--mono);font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:12px;padding:0 4px;}
+.hub-table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:9px;table-layout:fixed;}
+.hub-table th,.hub-table td{border:1px solid var(--border);padding:5px 6px;vertical-align:top;text-align:left;word-break:break-word;}
+.hub-table th{background:var(--bg3);color:var(--cyan);font-weight:600;}
+.hub-table tr:nth-child(even) td{background:rgba(16,24,40,.35);}
+.hub-cat{width:14%;}
+.hub-pages{width:26%;}
+.hub-io{width:32%;}
+.hub-sp{width:28%;color:var(--dim);}
+.hub-note{font-size:8px;color:var(--dim);margin-top:10px;padding:8px;border-radius:8px;border:1px dashed var(--border);}
+
+/* Category pills */
+#fu-cats{display:flex;padding:8px 16px;gap:4px;overflow-x:auto;scrollbar-width:none;background:var(--bg2);border-bottom:1px solid var(--border);}
+#fu-cats::-webkit-scrollbar{display:none;}
+.fu-cat{font-family:var(--mono);font-size:10px;padding:5px 12px;border-radius:6px;border:1px solid var(--border);color:var(--muted);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;background:var(--bg);}
+.fu-cat:hover{color:var(--text);border-color:#334155;}
+.fu-cat.active{color:#fff;font-weight:600;border-color:transparent;}
+
+/* Converter */
+#fu-converter{padding:16px;background:var(--bg);}
+#fu-conv-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+#fu-conv-row select{flex:1;min-width:80px;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:8px;border-radius:6px;font-family:var(--mono);font-size:12px;outline:none;}
+#fu-conv-row select:focus{border-color:var(--accent);}
+#fu-val{width:120px;background:var(--bg2);border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;font-family:var(--mono);font-size:14px;font-weight:700;text-align:right;outline:none;}
+#fu-val:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,.15);}
+#fu-swap{background:none;border:1px solid var(--border);color:var(--muted);padding:6px 10px;border-radius:6px;cursor:pointer;font-size:14px;transition:all .15s;}
+#fu-swap:hover{color:var(--cyan);border-color:var(--cyan);transform:rotate(180deg);}
+#fu-result{font-family:var(--mono);font-size:24px;font-weight:800;padding:12px 0 4px;background:linear-gradient(135deg,var(--accent),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent;word-break:break-all;}
+
+/* Quick buttons */
+#fu-quick{display:flex;flex-wrap:wrap;gap:4px;padding:4px 0 8px;}
+.fu-qb{font-family:var(--mono);font-size:10px;padding:3px 8px;border-radius:4px;border:1px solid var(--border);background:var(--bg2);cursor:pointer;transition:all .15s;}
+.fu-qb:hover{border-color:#334155;color:var(--text);background:var(--bg3);}
+
+/* All-units table */
+#fu-table{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px;padding:0 16px 8px;}
+.fu-row{display:flex;justify-content:space-between;padding:4px 8px;border-radius:4px;font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--bg2);}
+.fu-row.highlight{background:var(--bg3);color:var(--text);font-weight:600;border:1px solid var(--accent);}
+
+/* Quantum props */
+#fu-quantum{padding:8px 16px;font-family:var(--mono);font-size:11px;color:var(--muted);background:var(--bg2);border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+#fu-quantum b{font-weight:600;}
+
+/* Scale canvas */
+#fu-scale{height:56px;border-bottom:1px solid var(--border);}
+#fu-scale-canvas{width:100%;height:100%;display:block;}
+
+/* ── Document Viewer Panel ── */
+#doc-viewer{position:fixed;top:0;right:-100%;width:min(480px,90vw);height:100vh;height:100dvh;background:var(--bg);border-left:1px solid var(--border);display:flex;flex-direction:column;transition:right .25s ease,box-shadow .25s ease;z-index:100;box-shadow:none;}
+#doc-viewer.open{right:0;box-shadow:-4px 0 24px rgba(0,0,0,.5);}
+#doc-viewer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;display:none;}
+#doc-viewer-overlay.open{display:block;}
+.dv-header{display:flex;align-items:center;gap:8px;padding:10px 14px;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.dv-close{background:none;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.dv-close:hover{color:var(--text);border-color:#475569;}
+.dv-title{flex:1;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dv-source{font-family:var(--mono);font-size:9px;padding:2px 8px;border-radius:4px;color:var(--muted);border:1px solid var(--border);}
+.dv-tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;}
+.dv-tab{flex:1;padding:7px 4px;text-align:center;font-family:var(--mono);font-size:10px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;}
+.dv-tab:hover{color:var(--text);}
+.dv-tab.active{color:var(--cyan);border-color:var(--cyan);}
+.dv-body{flex:1;overflow-y:auto;padding:14px;font-size:13px;line-height:1.6;-webkit-overflow-scrolling:touch;}
+.dv-section{margin-bottom:16px;}
+.dv-section-title{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.dv-wiki-hero{display:flex;gap:12px;margin-bottom:14px;align-items:flex-start;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;flex-wrap:wrap;}
+.dv-wiki-thumb{max-width:100%;width:min(260px,100%);height:auto;border-radius:6px;object-fit:contain;border:1px solid var(--border);background:var(--bg);}
+.dv-wiki-meta{flex:1;min-width:140px;font-size:11px;line-height:1.5;color:var(--muted);}
+.dv-wiki-meta strong{color:var(--text);font-size:12px;display:block;margin-bottom:6px;font-weight:600;}
+.dv-wiki-grid{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-family:var(--mono);font-size:10px;margin-top:6px;}
+.dv-wiki-extract{font-size:12px;line-height:1.65;color:var(--text);padding:10px;background:var(--bg2);border-radius:6px;border-left:3px solid var(--cyan);}
+.dv-wiki-infobox{border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg2);font-size:11px;}
+.dv-wiki-ib-row{display:grid;grid-template-columns:minmax(90px,34%) 1fr;gap:8px 10px;padding:8px 10px;border-bottom:1px solid var(--border);align-items:start;}
+.dv-wiki-ib-row:last-child{border-bottom:none;}
+.dv-wiki-ib-k{font-family:var(--mono);font-size:10px;color:var(--muted);font-weight:600;}
+.dv-wiki-ib-v{color:var(--text);line-height:1.45;word-break:break-word;}
+.dv-spine-legend{font-family:var(--mono);font-size:9px;color:var(--muted);padding:6px 10px;margin-bottom:8px;background:var(--bg2);border:1px dashed var(--border);border-radius:6px;line-height:1.4;}
+.dv-cluster-strip{font-family:var(--mono);font-size:10px;margin-bottom:12px;padding:10px 12px;border-radius:8px;border:1px solid rgba(124,58,237,.35);background:linear-gradient(135deg,rgba(124,58,237,.08),rgba(6,182,212,.06));}
+.dv-cluster-hd{font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;font-size:9px;margin:0 0 6px;}
+.dv-cluster-seed{margin:0 0 8px;color:var(--muted);line-height:1.45;}
+.dv-cluster-seed strong{color:var(--text);}
+.dv-cluster-list{margin:0;padding-left:18px;color:var(--text);line-height:1.5;}
+.dv-cluster-list li{margin:2px 0;}
+.dv-cluster-q{color:var(--cyan);}
+.dv-cluster-spine{font-size:9px;color:var(--muted);}
+.dv-cluster-empty{margin:6px 0;color:var(--dim);font-size:10px;}
+.dv-cluster-model{margin:8px 0 0;font-size:9px;color:var(--muted);}
+.dv-cluster-actions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;align-items:center;}
+.dv-cluster-clear,.dv-cluster-export,.dv-cluster-copy{font-size:9px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--muted);cursor:pointer;}
+.dv-cluster-clear:hover,.dv-cluster-export:hover,.dv-cluster-copy:hover{border-color:var(--accent);color:var(--text);}
+.dv-spine-hit{display:inline;padding:1px 3px;margin:0 1px;border-radius:3px;cursor:pointer;background:linear-gradient(105deg,rgba(6,182,212,.2),rgba(124,58,237,.16));border-bottom:1px dotted rgba(6,182,212,.65);transition:background .12s,border-color .12s;}
+.dv-spine-hit:hover{background:linear-gradient(105deg,rgba(6,182,212,.32),rgba(124,58,237,.22));border-bottom-style:solid;}
+.dv-spine-hit[data-spine="history"]{background:linear-gradient(105deg,rgba(59,130,246,.22),rgba(14,165,233,.12));}
+.dv-spine-hit[data-spine="research"]{background:linear-gradient(105deg,rgba(52,211,153,.18),rgba(16,185,129,.1));}
+.dv-spine-hit[data-spine="kbatch"]{background:linear-gradient(105deg,rgba(251,191,36,.2),rgba(245,158,11,.12));}
+.dv-spine-hit[data-spine="throughline"]{background:linear-gradient(105deg,rgba(167,139,250,.22),rgba(139,92,246,.12));}
+.dv-spine-hit[data-spine="brothernumsy"]{background:linear-gradient(105deg,rgba(224,64,251,.2),rgba(167,139,250,.14));}
+.dv-spine-hit[data-spine="globe"],.dv-spine-hit[data-spine="uvqbit"]{background:linear-gradient(105deg,rgba(6,182,212,.22),rgba(99,102,241,.15));}
+.dv-wiki-extract .dv-spine-hit,.dv-wiki-ib-v .dv-spine-hit{white-space:normal;}
+.dv-media-note{font-size:10px;color:var(--muted);line-height:1.45;margin:0 0 8px;}
+.dv-media-subtitle{font-size:9px;color:var(--accent);margin:10px 0 6px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.4px;}
+.dv-media-grid{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
+a.dv-ml-a{font-family:var(--mono);font-size:10px;padding:5px 9px;border-radius:6px;border:1px solid var(--border);color:var(--cyan);text-decoration:none;background:var(--bg2);transition:border-color .12s,background .12s;}
+a.dv-ml-a:hover{border-color:var(--cyan);background:var(--bg3);}
+a.dv-ml-a-ref{color:#a78bfa;}
+.dv-tone-bar{display:flex;height:6px;border-radius:3px;overflow:hidden;margin:4px 0 8px;}
+.dv-tone-seg{transition:width .3s;}
+.dv-metric{display:flex;justify-content:space-between;padding:3px 0;font-family:var(--mono);font-size:11px;color:var(--muted);}
+.dv-metric .val{color:var(--text);font-weight:600;}
+.dv-ref{font-family:var(--mono);font-size:11px;padding:4px 8px;border-left:2px solid var(--border);color:var(--muted);margin:4px 0;cursor:pointer;transition:all .15s;}
+.dv-ref:hover{border-color:var(--cyan);color:var(--text);}
+.dv-heartbeat{display:flex;align-items:center;gap:10px;padding:10px;background:var(--bg2);border-radius:8px;margin:8px 0;}
+.dv-hb-bar{flex:1;height:8px;border-radius:4px;overflow:hidden;display:flex;}
+.dv-hb-humanity{background:linear-gradient(90deg,#3b82f6,#8b5cf6);transition:width .3s;}
+.dv-hb-profit{background:linear-gradient(90deg,#f97316,#ef4444);transition:width .3s;}
+.dv-hb-label{font-family:var(--mono);font-size:10px;font-weight:700;min-width:40px;text-align:right;}
+.dv-ai{padding:10px;background:var(--bg2);border-radius:8px;font-family:var(--mono);font-size:10px;color:var(--dim);line-height:1.5;margin-top:8px;border:1px solid var(--border);}
+
+/* ── Footer ── */
+#status-bar{display:flex;align-items:center;min-height:22px;background:var(--bg2);border-top:1px solid var(--border);padding:0 10px;padding-bottom:max(0px,env(safe-area-inset-bottom));gap:12px;font-size:.5625rem;font-family:var(--mono);color:var(--dim);flex-shrink:0;box-sizing:border-box;}
+#status-bar .val{color:var(--green);}
+#status-bar .sep{opacity:.85;}
+#status-bar .spacer{flex:1;}
+
+/* ── Layout ── */
+#app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;}
+
+/* ── Responsive ── */
+@media(min-width:768px){
+    #results{padding:16px 24px;flex-direction:row;flex-wrap:wrap;gap:12px;align-content:flex-start;}
+    .result{width:calc(50% - 6px);}
+    #fu-converter{max-width:700px;margin:0 auto;width:100%;}
+    #fu-table{padding:0 24px 8px;}
+}
+@media(min-width:1100px){
+    .result{width:calc(33.33% - 8px);}
+}
+
+/* ===== LIGHT THEME ===== */
+:root.light{
+    --bg:#f8fafc;--bg2:#f1f5f9;--bg3:#e2e8f0;--border:#cbd5e1;--text:#0f172a;--muted:#475569;--dim:#64748b;
+    --accent:#7c3aed;--cyan:#0891b2;--green:#059669;--orange:#ea580c;--purple:#7c3aed;
+}
+:root.light html,:root.light body{background:var(--bg);}
+:root.light .result{background:var(--bg2);}
+:root.light #doc-viewer{background:var(--bg);}
+:root.light ::-webkit-scrollbar-track{background:var(--bg2);}
+:root.light ::-webkit-scrollbar-thumb{background:var(--border);}
+
+/* ===== SECTION NAVIGATOR (inside doc viewer) ===== */
+.dv-snav{position:absolute;top:0;left:0;width:24px;height:100%;display:flex;flex-direction:column;align-items:center;padding:6px 0;gap:2px;background:var(--bg2);border-right:1px solid var(--border);overflow-y:auto;z-index:5;}
+.dv-snav.hidden{display:none;}
+.dv-sn-dot{width:6px;height:6px;border-radius:50%;border:1.5px solid var(--border);background:transparent;cursor:pointer;transition:all .15s;flex-shrink:0;position:relative;}
+.dv-sn-dot:hover{border-color:var(--cyan);transform:scale(1.5);}
+.dv-sn-dot.active{background:var(--cyan);border-color:var(--cyan);box-shadow:0 0 4px rgba(6,182,212,.4);}
+.dv-sn-dot.processing{animation:dv-sn-pulse 1s ease infinite;}
+.dv-sn-bar{width:1.5px;height:8px;background:var(--border);border-radius:1px;flex-shrink:0;opacity:.4;}
+.dv-sn-bar.active{background:var(--cyan);opacity:.8;}
+.dv-sn-tooltip{position:absolute;left:18px;top:50%;transform:translateY(-50%);white-space:nowrap;background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:2px 6px;border-radius:3px;font-family:var(--mono);font-size:8px;pointer-events:none;opacity:0;transition:opacity .15s;z-index:10;}
+.dv-sn-dot:hover .dv-sn-tooltip{opacity:1;}
+.dv-sn-progress{width:3px;background:var(--bg3);border-radius:2px;flex-shrink:0;overflow:hidden;margin:2px 0;height:30px;}
+.dv-sn-progress-fill{width:100%;background:linear-gradient(180deg,var(--cyan),var(--accent));border-radius:2px;transition:height .3s;}
+@keyframes dv-sn-pulse{0%,100%{box-shadow:0 0 0 0 rgba(6,182,212,.4);}50%{box-shadow:0 0 4px 2px rgba(6,182,212,.3);}}
+
+/* ===== AI LENS PANEL ===== */
+#ai-panel{display:none;flex-direction:column;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;}
+#ai-panel.active{display:flex;}
+.ai-toolbar{display:flex;gap:6px;padding:8px 16px;background:var(--bg2);border-bottom:1px solid var(--border);flex-wrap:wrap;align-items:center;}
+.ai-toolbar select,.ai-toolbar button{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:6px;font-family:var(--mono);font-size:10px;cursor:pointer;}
+.ai-toolbar button:hover{border-color:var(--accent);}
+.ai-toolbar .ai-lbl{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.ai-view-tabs{display:flex;gap:4px;padding:6px 16px;background:var(--bg2);border-bottom:1px solid var(--border);}
+.ai-vtab{font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:5px;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .15s;background:var(--bg);}
+.ai-vtab:hover{color:var(--text);border-color:#334155;}
+.ai-vtab.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+/* Board (Pinterest masonry) */
+.ai-board{display:flex;gap:10px;padding:12px 16px;flex:1;overflow-y:auto;align-items:flex-start;}
+.ai-board-col{display:flex;flex-direction:column;gap:8px;flex:1;min-width:0;}
+.ai-card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:10px;transition:all .15s;cursor:pointer;overflow:hidden;}
+.ai-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,.3);}
+.ai-card .ac-rank{font-family:var(--mono);font-size:8px;color:var(--accent);margin-bottom:4px;}
+.ai-card .ac-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;line-height:1.3;}
+.ai-card .ac-snippet{font-size:10px;color:var(--muted);line-height:1.3;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:6px;}
+.ai-card .ac-scores{display:flex;gap:4px;flex-wrap:wrap;}
+.ai-card .ac-score{font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:3px;background:var(--bg3);color:var(--dim);}
+.ai-card .ac-score.high{color:var(--green);background:rgba(52,211,153,.1);}
+.ai-card .ac-score.med{color:var(--orange);background:rgba(249,115,22,.1);}
+.ai-card .ac-score.low{color:var(--muted);background:var(--bg3);}
+/* Heatmap view */
+.ai-heatmap-wrap{padding:12px 16px;flex:1;overflow-y:auto;}
+.ai-heatmap-info{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;}
+/* Weights table */
+.ai-weights{padding:12px 16px;flex:1;overflow-y:auto;}
+.ai-weights table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;}
+.ai-weights th{text-align:left;padding:4px 6px;color:var(--muted);border-bottom:1px solid var(--border);font-size:9px;}
+.ai-weights td{padding:4px 6px;border-bottom:1px solid var(--border);color:var(--text);}
+.ai-weights tr:hover{background:var(--bg3);}
+.ai-bar{height:6px;border-radius:3px;background:var(--bg3);overflow:hidden;min-width:40px;}
+.ai-bar-fill{height:100%;border-radius:3px;transition:width .3s;}
+/* Export panel */
+.ai-export{padding:12px 16px;flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;}
+.ai-export-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;cursor:pointer;transition:all .15s;}
+.ai-export-card:hover{border-color:var(--accent);background:var(--bg3);}
+.ai-export-card h4{font-size:12px;color:var(--text);margin-bottom:4px;}
+.ai-export-card p{font-size:10px;color:var(--muted);line-height:1.3;}
+/* Suggestions */
+.ai-suggestion{display:flex;gap:8px;align-items:flex-start;padding:8px 10px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;}
+.ai-suggestion .sug-icon{font-size:14px;flex-shrink:0;margin-top:2px;}
+.ai-suggestion .sug-text{font-size:11px;color:var(--text);line-height:1.3;}
+.ai-suggestion .sug-priority{font-family:var(--mono);font-size:8px;padding:1px 5px;border-radius:3px;flex-shrink:0;}
+.sug-high{background:rgba(248,81,73,.15);color:#f85149;}.sug-medium{background:rgba(240,136,62,.15);color:#f0883e;}.sug-low{background:rgba(100,148,187,.15);color:#64748b;}
+:root.light .ai-card{background:var(--bg2);}
+:root.light .ai-weights tr:hover{background:var(--bg3);}
+@media(min-width:768px){.ai-board{padding:16px 24px;}}
+
+/* ── Mobile Responsive (max-width:480px) ── */
+@media(max-width:480px){
+    html,body{font-size:14px;}
+    #header{padding:env(safe-area-inset-top,8px) 12px 0;}
+    #header .logo-row{padding:0;gap:6px;min-height:var(--mueee-title-bar-min-height);}
+    #header .logo{font-size:14px;}
+    #header .ver{font-size:8px;}
+    #header .nav-btn{padding:3px 8px;font-size:9px;}
+    #mode-tabs{padding:4px 12px 0;gap:3px;}
+    .mode-tab{font-size:10px;padding:5px 12px;}
+    #search-composer{padding:8px 12px 10px;}
+    .sc-toolbar{gap:6px;}
+    #prompt-model{min-width:0;flex:1 1 100%;}
+    .sc-prompt-row{flex-direction:column;}
+    #search-input{width:100%;padding:10px 12px;font-size:13px;min-height:52px;}
+    #search-btn{width:100%;padding:10px 16px;font-size:12px;align-self:stretch;}
+    #connectors{padding:4px 12px;gap:3px;}
+    .cpill{font-size:9px;padding:3px 8px;}
+    #stats{padding:4px 12px;gap:12px;font-size:9px;flex-wrap:wrap;}
+    #results{padding:8px 12px;gap:6px;}
+    .result{padding:10px 12px;width:100% !important;}
+    .r-title{font-size:13px;}
+    .r-snippet{font-size:11px;-webkit-line-clamp:2;}
+    #fu-cats{padding:6px 12px;gap:3px;}
+    .fu-cat{font-size:9px;padding:4px 10px;}
+    #fu-converter{padding:12px;}
+    #fu-conv-row{flex-direction:column;gap:6px;}
+    #fu-conv-row select{width:100%;min-width:auto;}
+    #fu-val{width:100%;font-size:13px;}
+    #fu-result{font-size:20px;}
+    #fu-quick{gap:3px;}
+    .fu-qb{font-size:9px;padding:2px 6px;}
+    #fu-table{grid-template-columns:1fr;padding:0 12px 6px;}
+    #fu-quantum{padding:6px 12px;font-size:10px;}
+    #doc-viewer{width:100vw;right:-100vw;}
+    .dv-header{padding:8px 12px;}
+    .dv-title{font-size:11px;}
+    .dv-source{font-size:8px;padding:1px 6px;}
+    .dv-tabs{flex-wrap:wrap;}
+    .dv-tab{font-size:9px;padding:6px 3px;}
+    .dv-body{padding:12px;font-size:12px;}
+    .ai-toolbar{padding:6px 12px;gap:4px;}
+    .ai-toolbar select,.ai-toolbar button{font-size:9px;padding:3px 6px;}
+    .ai-view-tabs{padding:4px 12px;gap:3px;flex-wrap:wrap;}
+    .ai-vtab{font-size:9px;padding:3px 8px;}
+    .ai-board{padding:8px 12px;gap:8px;}
+    .ai-card{padding:8px;}
+    .ac-title{font-size:11px;}
+    .ac-snippet{font-size:9px;}
+    #status-bar{padding:0 8px;font-size:.5rem;gap:8px;}
+}
+html.qp-embed-chrome #theme-toggle{display:none!important;}
+</style>
+</head>
+<body>
+<div id="app">
+    <div id="header">
+        <div class="logo-row mueee-title-bar">
+            <span class="logo">SEARCH</span>
+            <span class="ver" title="v2.6 · Kbatch + Hexcast tabs · Hub catalog">v2.6</span>
+            <span class="spacer"></span>
+            <button class="nav-btn" id="theme-toggle" onclick="toggleSearchTheme()" style="background:none;border:1px solid var(--border);cursor:pointer;font-size:12px;" title="Toggle light/dark">&#x263E;</button>
+        </div>
+    </div>
+    <div id="mode-tabs">
+        <span class="mode-tab active" data-mode="search">&#x1F50D; Search</span>
+        <span class="mode-tab" data-mode="ai">&#x1F9E0; AI Lens</span>
+        <span class="mode-tab" data-mode="freya">&#x1F4CF; FreyaUnits</span>
+        <span class="mode-tab" data-mode="kbatch">&#x2328; Kbatch</span>
+        <span class="mode-tab" data-mode="hexcast">&#x1F3A5; Hexcast</span>
+        <span class="mode-tab" data-mode="hub">&#x1F5C2; Hub</span>
+    </div>
+    <div id="search-composer" aria-label="Search prompt">
+        <div class="sc-toolbar">
+            <label class="sc-lbl" for="prompt-model">Model</label>
+            <select id="prompt-model" aria-label="Model or search depth">
+                <option value="auto">Auto — match connectors to query</option>
+                <option value="fast">Fast — minimal context</option>
+                <option value="balanced">Balanced — default depth</option>
+                <option value="deep">Deep — slower, richer snippets</option>
+                <option value="code">Code &amp; technical</option>
+            </select>
+            <button type="button" class="sc-btn-attach" id="prompt-add-doc" title="Attach plain text or Markdown">+ Add document</button>
+            <input type="file" id="prompt-file-input" multiple accept=".txt,.md,.markdown,text/plain,text/markdown" hidden>
+        </div>
+        <div class="sc-attachments" id="prompt-attachments"></div>
+        <div class="sc-prompt-row">
+            <textarea id="search-input" rows="2" placeholder="Ask or paste keywords. Attach .txt/.md for context (~2.5k chars/file); model tunes AI Lens. Enter — search · Shift+Enter — new line." autocomplete="off" autofocus></textarea>
+            <button type="button" id="search-btn">Search</button>
+        </div>
+    </div>
+    <div class="rainbow mueee-rainbow" role="presentation"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+
+    <!-- ═══ SEARCH PANEL ═══ -->
+    <div id="search-panel" class="active">
+        <div id="timeline"><canvas id="tl-canvas"></canvas></div>
+        <div id="connectors"></div>
+        <div id="stats">
+            <span>connectors: <span class="v" id="st-conn">14</span></span>
+            <span>results: <span class="v" id="st-res">0</span></span>
+            <span>latency: <span class="v" id="st-lat">&mdash;</span></span>
+            <span class="st-prompt-hint" id="st-prompt" hidden></span>
+        </div>
+        <div id="results">
+            <div class="empty"><div class="big">&#x1F50D;</div>Search across Wikipedia, arXiv, Sacred Texts,<br>PubChem, Wayback Machine, Open Library & more.<br><br><span style="font-family:var(--mono);font-size:10px;color:var(--accent);">Works offline-first. No account needed.</span></div>
+        </div>
+    </div>
+
+    <!-- ═══ FREYAUNITS PANEL ═══ -->
+    <div id="freya-panel">
+        <div id="fu-cats"></div>
+        <div id="fu-scale"><canvas id="fu-scale-canvas"></canvas></div>
+        <div id="fu-converter">
+            <div id="fu-conv-row">
+                <input type="number" id="fu-val" value="1" step="any">
+                <select id="fu-from"></select>
+                <button id="fu-swap" title="Swap units">&#x21C4;</button>
+                <select id="fu-to"></select>
+            </div>
+            <div id="fu-result">—</div>
+            <div id="fu-quick"></div>
+        </div>
+        <div id="fu-quantum"></div>
+        <div id="fu-table"></div>
+    </div>
+
+    <!-- ═══ AI LENS PANEL ═══ -->
+    <div id="ai-panel">
+        <div class="ai-toolbar">
+            <span class="ai-lbl">Goal:</span>
+            <select id="ai-goal">
+                <option value="research">Research</option>
+                <option value="app-building">App Building</option>
+                <option value="learning">Learning</option>
+                <option value="promo">Promo / Marketing</option>
+            </select>
+            <span class="ai-lbl">Columns:</span>
+            <select id="ai-cols">
+                <option value="2">2</option>
+                <option value="3" selected>3</option>
+                <option value="4">4</option>
+            </select>
+            <span style="flex:1;"></span>
+            <button onclick="aiRefresh()">&#x1F504; Refresh</button>
+            <button onclick="aiClearHeat()">&#x1F525; Clear Heatmap</button>
+        </div>
+        <div class="ai-view-tabs">
+            <span class="ai-vtab active" data-aiv="board" onclick="setAiView('board',this)">&#x1F4CC; Board</span>
+            <span class="ai-vtab" data-aiv="weights" onclick="setAiView('weights',this)">&#x2696; Weights</span>
+            <span class="ai-vtab" data-aiv="heatmap" onclick="setAiView('heatmap',this)">&#x1F525; Heatmap</span>
+            <span class="ai-vtab" data-aiv="export" onclick="setAiView('export',this)">&#x1F4E4; Export</span>
+            <span class="ai-vtab" data-aiv="suggest" onclick="setAiView('suggest',this)">&#x1F4A1; Suggest</span>
+            <span class="ai-vtab" data-aiv="typing" onclick="setAiView('typing',this)">&#x2328; Typing</span>
+            <span class="ai-vtab" data-aiv="context" onclick="setAiView('context',this)">&#x1F9E0; Context</span>
+            <span class="ai-vtab" data-aiv="transcript" onclick="setAiView('transcript',this)">&#x1F3AC; Transcript</span>
+        </div>
+        <!-- Board View -->
+        <div class="ai-board" id="ai-board"></div>
+        <!-- Weights View -->
+        <div class="ai-weights" id="ai-weights" style="display:none;"></div>
+        <!-- Heatmap View -->
+        <div class="ai-heatmap-wrap" id="ai-heatmap" style="display:none;">
+            <div class="ai-heatmap-info" id="ai-heat-info">Click results to build engagement heatmap</div>
+            <canvas id="ai-heat-canvas" style="width:100%;border-radius:8px;border:1px solid var(--border);"></canvas>
+            <div style="margin-top:8px;">
+                <canvas id="ai-vision-canvas" style="width:100%;border-radius:8px;border:1px solid var(--border);"></canvas>
+                <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px;">Vision Zone Analysis — page structure importance mapping</div>
+            </div>
+        </div>
+        <!-- Export View -->
+        <div class="ai-export" id="ai-export" style="display:none;"></div>
+        <!-- Suggestions View -->
+        <div class="ai-export" id="ai-suggest" style="display:none;"></div>
+        <!-- Typing Patterns View -->
+        <div class="ai-export" id="ai-typing" style="display:none;"></div>
+        <!-- Cross-Linguistic Context View -->
+        <div class="ai-export" id="ai-context" style="display:none;"></div>
+        <!-- YouTube Transcript Analyzer View -->
+        <div class="ai-export" id="ai-transcript" style="display:none;"></div>
+    </div>
+
+    <!-- ═══ KBATCH PANEL (canonical home = kbatch.html — not iframe) ═══ -->
+    <div id="kbatch-panel">
+        <div class="embed-toolbar">
+            <a href="kbatch.html?tab=spine"><strong>Open Kbatch</strong> — Spine &amp; I/O tab</a>
+            <span>Same I/O map is built into <code>kbatch.html</code> as final home · <code>BroadcastChannel('hexterm')</code> · capsules JSON</span>
+        </div>
+        <div class="home-native-panel">
+            <p class="home-native-copy">The keyboard lab and full spine table live on <strong>kbatch.html</strong> (tab <em>Spine &amp; I/O</em>) — not embedded here.</p>
+            <div id="search-kbatch-spine-preview"></div>
+        </div>
+    </div>
+
+    <!-- ═══ HEXCAST PANEL (canonical home = hexcast.html — not iframe) ═══ -->
+    <div id="hexcast-panel">
+        <div class="embed-toolbar">
+            <a href="hexcast.html#spine-hub"><strong>Open Hexcast</strong> — Spine section</a>
+            <span>Full map scrolls on <code>hexcast.html</code> · <code>hexcast-stream</code> · camera/screen</span>
+        </div>
+        <div class="home-native-panel">
+            <p class="home-native-copy">Video hex broadcast + spine table: <strong>hexcast.html</strong> (section <em>Spine &amp; I/O map</em>).</p>
+            <div id="search-hexcast-spine-preview"></div>
+        </div>
+    </div>
+
+    <!-- ═══ HUB — app catalog (I/O + speed) ═══ -->
+    <div id="hub-panel">
+        <div class="hub-scroll">
+            <p class="hub-intro"><strong>Hub</strong> — where each surface gets data in/out and what usually blocks speed. Grouped; <code>*.html</code> in <code>web/</code> (~115 files). Spool spec: <code>plans/gridlock-throughline-spine.plan.md</code>.</p>
+            <table class="hub-table" id="hub-catalog-table">
+                <thead>
+                    <tr>
+                        <th class="hub-cat">Group</th>
+                        <th class="hub-pages">Pages</th>
+                        <th class="hub-io">Data in / out</th>
+                        <th class="hub-sp">Speed / blocker</th>
+                    </tr>
+                </thead>
+                <tbody id="hub-catalog-body"></tbody>
+            </table>
+            <p class="hub-note" id="hub-catalog-note">Rows generated once at load. “Broken” = missing unified export packet, no BC wire, or CORS/network — not always a bug. T5 classify ~3ns/line local; connector fetch ~200–800ms RTT.</p>
+        </div>
+    </div>
+
+    <!-- ═══ DOCUMENT VIEWER ═══ -->
+    <div id="doc-viewer-overlay"></div>
+    <div id="doc-viewer">
+        <div class="dv-header">
+            <button class="dv-close" id="dv-close">&times;</button>
+            <div class="dv-title" id="dv-title">Document</div>
+            <span class="dv-source" id="dv-source"></span>
+        </div>
+        <!-- Section Navigator (vertical, inside doc viewer) -->
+        <div class="dv-snav hidden" id="dv-snav">
+            <div class="dv-sn-progress" title="Processing"><div class="dv-sn-progress-fill" id="dv-snav-progress" style="height:0%;"></div></div>
+            <div id="dv-snav-dots"></div>
+        </div>
+        <div class="dv-tabs">
+            <div class="dv-tab active" data-dv="content">Content</div>
+            <div class="dv-tab" data-dv="analysis">Analysis</div>
+            <div class="dv-tab" data-dv="refs">References</div>
+            <div class="dv-tab" data-dv="patterns">Patterns</div>
+        </div>
+        <div class="dv-body" id="dv-body" style="margin-left:0;transition:margin-left .2s;">
+            <div style="text-align:center;padding:40px;color:var(--dim);">Click a search result to view document analysis.</div>
+        </div>
+    </div>
+
+    <div id="status-bar" role="status" aria-live="polite">
+        <span>search</span>
+        <span class="sep">|</span>
+        <span>connectors: <span class="val" id="sb-conn">14</span></span>
+        <span>results: <span class="val" id="sb-res">0</span></span>
+        <span>latency: <span class="val" id="sb-lat">&mdash;</span></span>
+        <span class="spacer"></span>
+        <span id="sb-net">offline</span>
+        <span class="sep">|</span>
+        <span>v2.6</span>
+    </div>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script src="isomorphic-export-facet.js"></script>
+<script src="history-search-engine.js"></script>
+<script src="spine-hub-catalog.js"></script>
+<script src="search-spine-concepts.js"></script>
+<script src="search-drill-cluster.js"></script>
+<script>
+'use strict';
+(function(){
+const HS = window.HistorySearch;
+if (!HS) { console.error('HistorySearch engine not loaded'); return; }
+
+const $ = id => document.getElementById(id);
+const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function spineHighlightHtml(plain) {
+    if (!plain) return '';
+    if (window.SearchSpineConcepts && typeof SearchSpineConcepts.highlight === 'function') {
+        return SearchSpineConcepts.highlight(plain, esc);
+    }
+    return esc(plain);
+}
+
+function renderWikiMediaExternalBlock(d) {
+    if (!d || !d.mediaRefs) return '';
+    var mr = d.mediaRefs;
+    var yt = d.youtubeLinksFromArticle || [];
+    var h = '';
+    h += '<div class="dv-section"><div class="dv-section-title">External media &amp; discovery</div>';
+    h +=
+        '<p class="dv-media-note">Links combine Wikipedia <strong>external links</strong> + <strong>Wikidata</strong> (IMDb / TMDB when present). Trailer rows search major providers; image rows help locate publicity stills and CC media for indexing.</p>';
+    h += '<div class="dv-media-subtitle">Authority &amp; databases</div><div class="dv-media-grid">';
+    if (mr.imdbTitle) h += '<a class="dv-ml-a" href="' + esc(mr.imdbTitle) + '" target="_blank" rel="noopener">IMDb title</a>';
+    if (mr.imdbVideos) h += '<a class="dv-ml-a" href="' + esc(mr.imdbVideos) + '" target="_blank" rel="noopener">IMDb video gallery</a>';
+    if (mr.imdbSoundtrack) h += '<a class="dv-ml-a" href="' + esc(mr.imdbSoundtrack) + '" target="_blank" rel="noopener">IMDb soundtrack</a>';
+    if (mr.tmdbMovie) h += '<a class="dv-ml-a" href="' + esc(mr.tmdbMovie) + '" target="_blank" rel="noopener">TMDB</a>';
+    if (mr.tmdbVideos) h += '<a class="dv-ml-a" href="' + esc(mr.tmdbVideos) + '" target="_blank" rel="noopener">TMDB videos</a>';
+    h += '<a class="dv-ml-a" href="' + esc(mr.rottenSearch) + '" target="_blank" rel="noopener">Rotten Tomatoes search</a>';
+    h += '<a class="dv-ml-a" href="' + esc(mr.metacriticSearch) + '" target="_blank" rel="noopener">Metacritic search</a>';
+    h += '</div>';
+    h += '<div class="dv-media-subtitle">Trailers (YouTube / franchise)</div><div class="dv-media-grid">';
+    h += '<a class="dv-ml-a" href="' + esc(mr.youtubeTrailerSearch) + '" target="_blank" rel="noopener">YouTube · official trailer</a>';
+    h += '<a class="dv-ml-a" href="' + esc(mr.youtubeFranchiseSearch) + '" target="_blank" rel="noopener">YouTube · franchise HD</a>';
+    for (var yi = 0; yi < yt.length; yi++) {
+        h +=
+            '<a class="dv-ml-a" href="' +
+            esc(yt[yi]) +
+            '" target="_blank" rel="noopener">Article YouTube ' +
+            (yi + 1) +
+            '</a>';
+    }
+    h += '</div>';
+    h += '<div class="dv-media-subtitle">Image pools — publicity &amp; training discovery</div><div class="dv-media-grid">';
+    h += '<a class="dv-ml-a" href="' + esc(mr.gettyCreative) + '" target="_blank" rel="noopener">Getty · creative search</a>';
+    h += '<a class="dv-ml-a" href="' + esc(mr.gettyNews) + '" target="_blank" rel="noopener">Getty · editorial</a>';
+    h += '<a class="dv-ml-a" href="' + esc(mr.commonsSearch) + '" target="_blank" rel="noopener">Wikimedia Commons</a>';
+    h += '<a class="dv-ml-a" href="' + esc(mr.commonsCategorySearch) + '" target="_blank" rel="noopener">Commons · category search</a>';
+    h += '</div>';
+    h += '<div class="dv-media-subtitle">Computer vision &amp; media ethics (research links)</div>';
+    h +=
+        '<p class="dv-media-note">Curated open-source tools, film-tech references, and encyclopedia articles. For research and tooling: respect consent, platform terms, and applicable law when working with faces or likeness in media.</p>';
+    h += '<div class="dv-media-grid">';
+    var ml = [
+        ['ofxFaceTracker · Kyle McDonald', 'https://github.com/kylemcdonald/ofxFaceTracker'],
+        ['FaceOSC', 'https://github.com/kylemcdonald/faceosc'],
+        ['OpenFace (AU landmarks)', 'https://github.com/TadasBaltrusaitis/OpenFace'],
+        ['GitHub topic · face-tracking', 'https://github.com/topics/face-tracking'],
+        ['GitHub search · face reenactment', 'https://github.com/search?q=face+reenactment&type=repositories'],
+        ['Film · A Scanner Darkly (rotoscope)', 'https://en.wikipedia.org/wiki/A_Scanner_Darkly_(film)'],
+        ['Ethics · Deepfake overview', 'https://en.wikipedia.org/wiki/Deepfake'],
+        ['GitHub search · Daito + face', 'https://github.com/search?q=daito+face&type=repositories']
+    ];
+    for (var mi = 0; mi < ml.length; mi++) {
+        h +=
+            '<a class="dv-ml-a dv-ml-a-ref" href="' +
+            esc(ml[mi][1]) +
+            '" target="_blank" rel="noopener">' +
+            esc(ml[mi][0]) +
+            '</a>';
+    }
+    h += '</div></div>';
+    return h;
+}
+
+function renderDrillClusterStrip() {
+    if (!window.SearchDrillCluster) return '';
+    var c = SearchDrillCluster.getCurrent();
+    if (!c) return '';
+    var h = '<div class="dv-cluster-strip" role="region" aria-label="Interest cluster">';
+    h += '<div class="dv-cluster-hd">Interest cluster → μgrad / transformer context</div>';
+    h += '<p class="dv-cluster-seed">Seed query: <strong>' + esc(c.seedQuery || '—') + '</strong> · Anchor: ' + esc((c.docAnchor && c.docAnchor.title) || '—') + '</p>';
+    if (c.pivots && c.pivots.length) {
+        h += '<ul class="dv-cluster-list">';
+        var start = Math.max(0, c.pivots.length - 8);
+        for (var i = c.pivots.length - 1; i >= start; i--) {
+            var p = c.pivots[i];
+            h += '<li><span class="dv-cluster-q">' + esc(p.q) + '</span>';
+            if (p.spine) h += ' <span class="dv-cluster-spine">→ ' + esc(p.spine) + '</span>';
+            h += '</li>';
+        }
+        h += '</ul>';
+    } else {
+        h += '<p class="dv-cluster-empty">Click highlighted spine terms to append pivots; the result grid updates while this panel stays open.</p>';
+    }
+    var m = c.model || {};
+    h +=
+        '<p class="dv-cluster-model">Tensor hook: <code>' +
+        esc(m.embeddingSchema || 'none') +
+        '</code>' +
+        (m.tensorSliceRef ? ' · slice <code>' + esc(String(m.tensorSliceRef)) + '</code>' : '') +
+        (m.ugradCheckpointRef ? ' · checkpoint <code>' + esc(String(m.ugradCheckpointRef)) + '</code>' : '') +
+        ' — prompt pack v' +
+        esc(String(m.promptPackVersion || '1')) +
+        '.</p>';
+    h +=
+        '<div class="dv-cluster-actions">' +
+        '<button type="button" class="dv-cluster-export" id="dv-cluster-export">Download prompt pack</button>' +
+        '<button type="button" class="dv-cluster-copy" id="dv-cluster-copy">Copy prompt text</button>' +
+        '<button type="button" class="dv-cluster-clear" id="dv-cluster-clear">Clear cluster</button>' +
+        '</div></div>';
+    return h;
+}
+
+function syncSearchStatusBar() {
+  [['st-conn','sb-conn'],['st-res','sb-res'],['st-lat','sb-lat']].forEach(function (pair) {
+    var a = $(pair[0]), b = $(pair[1]);
+    if (a && b) b.textContent = a.textContent;
+  });
+  var net = $('sb-net');
+  if (net) net.textContent = navigator.onLine ? 'online' : 'offline';
+}
+window.addEventListener('online', syncSearchStatusBar);
+window.addEventListener('offline', syncSearchStatusBar);
+
+/* ══════════════════════════════════════════════════════
+   PROMPT COMPOSER — attachments + model (Search UI)
+   ══════════════════════════════════════════════════════ */
+let _promptAttachments = [];
+
+function getPromptModelValue() {
+    var sel = $('prompt-model');
+    return sel && sel.value ? sel.value : 'auto';
+}
+
+function buildAugmentedQuery(userText) {
+    var q = (userText || '').trim();
+    var ctx = '';
+    _promptAttachments.forEach(function (att) {
+        var t = (att.text || '').replace(/\s+/g, ' ').trim();
+        if (t) ctx += '\n\n--- ' + (att.name || 'document') + ' ---\n' + t.slice(0, 2500);
+    });
+    if (ctx) q = (q ? q + '\n' : '') + ctx.trim();
+    if (q.length > 9000) q = q.slice(0, 9000);
+    return q;
+}
+
+function refreshStPrompt() {
+    var el = $('st-prompt');
+    if (!el) return;
+    var sel = $('prompt-model');
+    var mv = '';
+    if (sel && sel.value !== 'auto' && sel.options[sel.selectedIndex]) {
+        mv = (sel.options[sel.selectedIndex].textContent || '').split('\u2014')[0].trim();
+    }
+    var n = _promptAttachments.length;
+    var bits = [];
+    if (mv) bits.push(mv);
+    if (n) bits.push(n + ' attachment' + (n === 1 ? '' : 's'));
+    el.textContent = bits.join(' · ');
+    el.hidden = !bits.length;
+}
+
+function renderAttachmentChips() {
+    var wrap = $('prompt-attachments');
+    if (!wrap) return;
+    wrap.innerHTML = '';
+    _promptAttachments.forEach(function (att, i) {
+        var chip = document.createElement('span');
+        chip.className = 'sc-chip';
+        var name = document.createElement('span');
+        name.className = 'sc-chip-name';
+        name.textContent = att.name || 'file';
+        if (name.textContent.length > 48) name.textContent = name.textContent.slice(0, 45) + '…';
+        var rm = document.createElement('button');
+        rm.type = 'button';
+        rm.className = 'sc-chip-remove';
+        rm.setAttribute('aria-label', 'Remove ' + (att.name || 'file'));
+        rm.innerHTML = '&times;';
+        rm.addEventListener('click', function () {
+            _promptAttachments.splice(i, 1);
+            renderAttachmentChips();
+            refreshStPrompt();
+        });
+        chip.appendChild(name);
+        chip.appendChild(rm);
+        wrap.appendChild(chip);
+    });
+}
+
+function handlePromptFiles(fileList) {
+    var files = Array.from(fileList || []);
+    if (!files.length) return;
+    Promise.all(files.map(function (file) {
+        return new Promise(function (resolve) {
+            var r = new FileReader();
+            r.onload = function () { resolve({ name: file.name, text: String(r.result || '') }); };
+            r.onerror = function () { resolve({ name: file.name, text: '' }); };
+            r.readAsText(file);
+        });
+    })).then(function (arr) {
+        arr.forEach(function (a) { _promptAttachments.push(a); });
+        renderAttachmentChips();
+        refreshStPrompt();
+        var fi = $('prompt-file-input');
+        if (fi) fi.value = '';
+    });
+}
+
+function initPromptComposer() {
+    var addBtn = $('prompt-add-doc');
+    var fi = $('prompt-file-input');
+    if (addBtn && fi) {
+        addBtn.addEventListener('click', function () { fi.click(); });
+        fi.addEventListener('change', function () { handlePromptFiles(this.files); });
+    }
+    var pm = $('prompt-model');
+    if (pm) {
+        try {
+            var saved = localStorage.getItem('search-prompt-model');
+            if (saved) {
+                for (var oi = 0; oi < pm.options.length; oi++) {
+                    if (pm.options[oi].value === saved) { pm.selectedIndex = oi; break; }
+                }
+            }
+        } catch (e) {}
+        pm.addEventListener('change', function () {
+            try { localStorage.setItem('search-prompt-model', this.value); } catch (e2) {}
+            refreshStPrompt();
+        });
+    }
+    refreshStPrompt();
+}
+
+/* ══════════════════════════════════════════════════════
+   MODE TABS (Search / AI / Freya / Kbatch / Hexcast / Hub)
+   ══════════════════════════════════════════════════════ */
+let activeMode = 'search';
+
+function applySearchModeUi() {
+    var m = activeMode;
+    var showComposer = (m === 'search' || m === 'ai' || m === 'freya');
+    var sc = $('search-composer');
+    var rb = document.querySelector('#app > .rainbow.mueee-rainbow');
+    if (sc) sc.style.display = showComposer ? '' : 'none';
+    if (rb) rb.style.display = showComposer ? '' : 'none';
+}
+
+function initHubCatalog() {
+    if (!window.SpineHubCatalog) return;
+    var tb = $('hub-catalog-body');
+    if (tb && !tb.dataset.done) {
+        tb.dataset.done = '1';
+        SpineHubCatalog.render(tb);
+    }
+    var kb = $('search-kbatch-spine-preview');
+    if (kb && !kb.dataset.done) {
+        kb.dataset.done = '1';
+        SpineHubCatalog.render(kb, { groupsOnly: ['Kbatch lane'], tableClass: 'hub-table' });
+    }
+    var hx = $('search-hexcast-spine-preview');
+    if (hx && !hx.dataset.done) {
+        hx.dataset.done = '1';
+        SpineHubCatalog.render(hx, { groupsOnly: ['Hexcast / video'], tableClass: 'hub-table' });
+    }
+}
+
+document.querySelectorAll('.mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        activeMode = tab.dataset.mode;
+        document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t === tab));
+        $('search-panel').classList.toggle('active', activeMode === 'search');
+        $('freya-panel').classList.toggle('active', activeMode === 'freya');
+        $('ai-panel').classList.toggle('active', activeMode === 'ai');
+        $('kbatch-panel').classList.toggle('active', activeMode === 'kbatch');
+        $('hexcast-panel').classList.toggle('active', activeMode === 'hexcast');
+        $('hub-panel').classList.toggle('active', activeMode === 'hub');
+        applySearchModeUi();
+        try { localStorage.setItem('search-active-mode', activeMode); } catch (e) {}
+        if (activeMode === 'hub') initHubCatalog();
+        // Show/hide search-specific elements
+        $('timeline').style.display = activeMode === 'search' ? '' : 'none';
+        if (activeMode === 'ai') aiRefresh();
+        $('connectors').style.display = activeMode === 'search' ? '' : 'none';
+        $('stats').style.display = activeMode === 'search' ? '' : 'none';
+        var si = $('search-input');
+        if (si) {
+            si.placeholder = activeMode === 'freya'
+                ? 'Convert: "5 km to miles" or search… (Enter to run)'
+                : (activeMode === 'ai'
+                    ? 'Optional: refine terms for AI Lens…'
+                    : (activeMode === 'hub'
+                        ? 'Use Search tab to query connectors…'
+                        : (activeMode === 'kbatch' || activeMode === 'hexcast'
+                            ? 'Switch to Search for queries — or use full page link above.'
+                            : 'Ask or paste keywords. Attach .txt/.md for context (~2.5k chars/file); model tunes AI Lens. Enter — search · Shift+Enter — new line.')));
+        }
+        if (activeMode === 'freya') { resizeFuScale(); fuConvert(); }
+    });
+});
+
+try {
+    var qpMode = new URLSearchParams(location.search).get('mode');
+    if (qpMode && document.querySelector('.mode-tab[data-mode="' + qpMode + '"]')) {
+        document.querySelector('.mode-tab[data-mode="' + qpMode + '"]').click();
+    } else {
+        var savedMode = localStorage.getItem('search-active-mode');
+        if (savedMode && document.querySelector('.mode-tab[data-mode="' + savedMode + '"]')) {
+            document.querySelector('.mode-tab[data-mode="' + savedMode + '"]').click();
+        }
+    }
+} catch (e) {}
+initHubCatalog();
+applySearchModeUi();
+
+/* ══════════════════════════════════════════════════════
+   SEARCH — Timeline
+   ══════════════════════════════════════════════════════ */
+function initTimeline(){
+    const cv = $('tl-canvas'); if(!cv) return;
+    function resize(){
+        const dpr = window.devicePixelRatio || 1;
+        const p = cv.parentElement;
+        cv.width = p.offsetWidth * dpr; cv.height = p.offsetHeight * dpr;
+        cv.style.width = p.offsetWidth + 'px'; cv.style.height = p.offsetHeight + 'px';
+        const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        HS.drawTimeline(cv);
+    }
+    resize(); window.addEventListener('resize', resize);
+}
+
+/* ── Connector Pills ── */
+function buildPills(){
+    const w = $('connectors'); w.innerHTML = '';
+    HS.getConnectors().forEach((c, i) => {
+        const p = document.createElement('span');
+        p.className = 'cpill' + (c.enabled ? ' active' : '');
+        p.textContent = c.icon; p.title = c.name; p.dataset.idx = i;
+        p.addEventListener('click', () => {
+            HS.setConnectorEnabled(i, !c.enabled); c.enabled = !c.enabled;
+            p.classList.toggle('active');
+            $('st-conn').textContent = HS.getConnectors().filter(x => x.enabled).length;
+            syncSearchStatusBar();
+        });
+        w.appendChild(p);
+    });
+    syncSearchStatusBar();
+}
+
+/* ── μ'search shell (mueee) — spine block emitter ── */
+function emitMueeeSpineBlock(kind, payload) {
+    try {
+        if (window.parent === window) return;
+        window.parent.postMessage({
+            type: 'mueee-spine-block',
+            pane: 'search',
+            block: { kind: kind || 'search-query', payload: payload || {} },
+            href: location.href
+        }, '*');
+    } catch (e) {}
+}
+
+/* ── Search ── */
+async function doSearch(rawQuery){
+    var query = buildAugmentedQuery(typeof rawQuery === 'string' ? rawQuery : '');
+    if(!query.trim()) return;
+    refreshStPrompt();
+
+    // Check for unit conversion pattern first
+    const convMatch = query.match(/^([\d.eE+\-]+)\s*(\S+)\s+(?:to|in|=)\s+(\S+)$/i);
+    if (convMatch) {
+        const val = parseFloat(convMatch[1]);
+        const fromSym = convMatch[2];
+        const toSym = convMatch[3];
+        const fuResult = fuQuickConvert(val, fromSym, toSym);
+        if (fuResult !== null) {
+            // Switch to FreyaUnits and show result
+            document.querySelector('.mode-tab[data-mode="freya"]').click();
+            $('fu-val').value = val;
+            // Find and set the right category + units
+            const fromUnit = FU_UNITS.find(u => u.sym.toLowerCase() === fromSym.toLowerCase() || u.name.toLowerCase() === fromSym.toLowerCase());
+            if (fromUnit) {
+                fuSetCat(fromUnit.cat);
+                const units = fuUnitsForCat(fromUnit.cat);
+                const fi = units.indexOf(fromUnit);
+                const toUnit = units.find(u => u.sym.toLowerCase() === toSym.toLowerCase() || u.name.toLowerCase() === toSym.toLowerCase());
+                if (fi >= 0) $('fu-from').value = fi;
+                if (toUnit) $('fu-to').value = units.indexOf(toUnit);
+                fuConvert();
+            }
+            return;
+        }
+    }
+
+    // Normal search
+    if (activeMode !== 'search') document.querySelector('.mode-tab[data-mode="search"]').click();
+
+    const res = $('results');
+    res.innerHTML = '<div class="shimmer"></div><div class="shimmer"></div><div class="shimmer"></div>';
+    $('st-res').textContent = '...';
+    $('st-lat').textContent = '...';
+    syncSearchStatusBar();
+
+    document.querySelectorAll('.cpill').forEach(p => {
+        const c = HS.getConnectors()[+p.dataset.idx];
+        if(c && c.enabled) p.classList.add('loading');
+    });
+
+    const result = await HS.search(query, {
+        onProgress: p => {
+            const pill = document.querySelector(`.cpill[data-idx="${HS.CONNECTORS.indexOf(HS.CONNECTORS.find(c=>c.name===p.connector))}"]`);
+            if(pill){ pill.classList.remove('loading'); if(p.latestBatch.length) pill.innerHTML = HS.CONNECTORS.find(c=>c.name===p.connector).icon + '<span class="cnt">' + p.latestBatch.length + '</span>'; }
+            renderResults(p.results);
+            $('st-res').textContent = p.results.length;
+            syncSearchStatusBar();
+        }
+    });
+
+    $('st-res').textContent = result.totalResults;
+    $('st-lat').textContent = result.latencyMs + 'ms';
+    syncSearchStatusBar();
+    renderResults(result.results);
+
+    const url = new URL(window.location);
+    url.searchParams.set('q', query);
+    history.replaceState(null, '', url);
+
+    emitMueeeSpineBlock('search-query', {
+        query: query,
+        totalResults: result.totalResults,
+        latencyMs: result.latencyMs,
+        connectorsUsed: result.connectorsUsed
+    });
+}
+
+let _lastResults = [];
+function renderResults(results){
+    _lastResults = results;
+    const el = $('results');
+    el.innerHTML = '';
+    if(!results.length){ el.innerHTML = '<div class="empty">No results found.</div>'; return; }
+    results.forEach((item, idx) => {
+        const a = document.createElement('a');
+        a.className = 'result'; a.href = item.url || '#'; a.rel = 'noopener';
+        a.dataset.ridx = idx;
+        const col = HS.getSourceColor(item.source);
+        a.innerHTML = `<div class="r-source"><span class="r-dot" style="background:${col};"></span>${esc(item.source)}</div><div class="r-title">${esc(item.title)}</div>${item.snippet ? '<div class="r-snippet">'+esc(item.snippet)+'</div>' : ''}`;
+        a.addEventListener('click', e => {
+            e.preventDefault();
+            openDocViewer(item, idx);
+        });
+        el.appendChild(a);
+    });
+}
+
+/* ══════════════════════════════════════════════════════
+   DOCUMENT VIEWER
+   ══════════════════════════════════════════════════════ */
+let _dvDoc = null;
+let _dvAnalysis = null;
+let _dvTab = 'content';
+const TONE_COLORS = { academic:'#3b82f6', marketing:'#f97316', educational:'#34d399', narrative:'#a78bfa', legal:'#fbbf24', crisis:'#ef4444' };
+
+function openDocViewer(item, idx) {
+    $('doc-viewer').classList.add('open');
+    $('doc-viewer-overlay').classList.add('open');
+    $('dv-title').textContent = item.title || 'Loading...';
+    $('dv-source').textContent = item.source || '';
+    $('dv-source').style.color = HS.getSourceColor(item.source);
+    _dvTab = 'content';
+    document.querySelectorAll('.dv-tab').forEach(t => t.classList.toggle('active', t.dataset.dv === 'content'));
+    $('dv-body').innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim);">Fetching document...</div>';
+    _dvDoc = null; _dvAnalysis = null;
+
+    HS.fetchDocument(item.url, item.source).then(doc => {
+        _dvDoc = doc;
+        _dvDoc.title = _dvDoc.title || item.title;
+        _dvDoc.snippet = item.snippet;
+        $('dv-title').textContent = _dvDoc.title;
+        _dvAnalysis = HS.analyzeContext(_dvDoc);
+        _dvDoc._analysis = _dvAnalysis;
+        var seedQ = ($('search-input') && $('search-input').value.trim()) || '';
+        try {
+            var uq = new URLSearchParams(window.location.search).get('q');
+            if (!seedQ && uq) seedQ = uq;
+        } catch (eU) {}
+        if (window.SearchDrillCluster) SearchDrillCluster.attachViewer(seedQ, _dvDoc);
+        renderDvTab();
+    }).catch(() => {
+        $('dv-body').innerHTML = '<div style="text-align:center;padding:40px;color:#f85149;">Failed to fetch document. <a href="' + esc(item.url) + '" target="_blank" style="color:var(--cyan);">Open in new tab</a></div>';
+    });
+}
+
+function closeDocViewer() {
+    $('doc-viewer').classList.remove('open');
+    $('doc-viewer-overlay').classList.remove('open');
+}
+
+function searchSpineDrill(q, spine) {
+    var si = $('search-input');
+    var prev = (si && si.value) ? si.value.trim() : '';
+    if (window.SearchDrillCluster) {
+        SearchDrillCluster.appendPivot({ q: q, spine: spine || '', seedQuery: prev || q });
+    }
+    if (si) si.value = q;
+    doSearch(q);
+}
+window.searchSpineDrill = searchSpineDrill;
+
+$('dv-close').addEventListener('click', closeDocViewer);
+$('doc-viewer-overlay').addEventListener('click', closeDocViewer);
+$('doc-viewer').addEventListener('click', function (e) {
+    if (e.target.id === 'dv-cluster-clear') {
+        e.preventDefault();
+        if (window.SearchDrillCluster) SearchDrillCluster.clear();
+        if (_dvDoc) renderDvTab();
+        return;
+    }
+    if (e.target.id === 'dv-cluster-export') {
+        e.preventDefault();
+        if (window.SearchDrillCluster && SearchDrillCluster.downloadPromptPack) {
+            SearchDrillCluster.downloadPromptPack('search-drill-prompt-pack.json');
+        }
+        return;
+    }
+    if (e.target.id === 'dv-cluster-copy') {
+        e.preventDefault();
+        var pack = window.SearchDrillCluster && SearchDrillCluster.buildPromptPack
+            ? SearchDrillCluster.buildPromptPack()
+            : null;
+        var txt = pack && pack.suggestedUserPrompt ? pack.suggestedUserPrompt : '';
+        if (txt && navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(txt).catch(function () {});
+        }
+        return;
+    }
+    var hit = e.target.closest('.dv-spine-hit');
+    if (!hit) return;
+    var db = $('dv-body');
+    if (!db || !db.contains(hit)) return;
+    if (e.metaKey || e.ctrlKey) {
+        e.preventDefault();
+        var spine = hit.getAttribute('data-spine');
+        var pages = (window.SearchSpineConcepts && SearchSpineConcepts.SPINE_PAGES) || {};
+        var p = pages[spine];
+        if (p) window.open(p, '_blank', 'noopener');
+        return;
+    }
+    e.preventDefault();
+    var q = hit.getAttribute('data-q') || (hit.textContent || '').trim();
+    var spine = hit.getAttribute('data-spine') || '';
+    if (q) searchSpineDrill(q, spine);
+});
+document.querySelectorAll('.dv-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        _dvTab = tab.dataset.dv;
+        document.querySelectorAll('.dv-tab').forEach(t => t.classList.toggle('active', t === tab));
+        renderDvTab();
+    });
+});
+
+function renderDvTab() {
+    if (!_dvDoc) return;
+    const body = $('dv-body');
+    const a = _dvAnalysis || {};
+    var clusterStrip = renderDrillClusterStrip();
+
+    if (_dvTab === 'content') {
+        const content = _dvDoc.content || 'No content available.';
+        const isWiki = _dvDoc.source === 'wikipedia' || (_dvDoc.url && _dvDoc.url.indexOf('wikipedia.org') !== -1);
+        const preview = isWiki ? content : (content.length > 3000 ? content.substring(0, 3000) + '...' : content);
+
+        var wikiHero = '';
+        if (isWiki && (_dvDoc.thumbnail || _dvDoc.description || _dvDoc.extract || _dvDoc.pageid != null)) {
+            wikiHero += '<div class="dv-wiki-hero">';
+            if (_dvDoc.thumbnail) {
+                var tw = (_dvDoc.thumbnailWidth && _dvDoc.thumbnailHeight) ? (' width="' + esc(String(_dvDoc.thumbnailWidth)) + '" height="' + esc(String(_dvDoc.thumbnailHeight)) + '"') : '';
+                wikiHero += '<img class="dv-wiki-thumb" src="' + esc(_dvDoc.thumbnail) + '" alt=""' + tw + ' loading="lazy" referrerpolicy="no-referrer" />';
+            }
+            wikiHero += '<div class="dv-wiki-meta">';
+            if (_dvDoc.description) wikiHero += '<strong>' + esc(_dvDoc.description) + '</strong>';
+            wikiHero += '<div class="dv-wiki-grid">';
+            if (_dvDoc.pageid != null) {
+                wikiHero += '<span>Page ID</span><span style="color:var(--text);">' + esc(String(_dvDoc.pageid)) + '</span>';
+            }
+            if (_dvDoc.lang) {
+                wikiHero += '<span>Language</span><span style="color:var(--text);">' + esc(_dvDoc.lang) + '</span>';
+            }
+            if (_dvDoc.wikiType) {
+                wikiHero += '<span>Page type</span><span style="color:var(--text);">' + esc(_dvDoc.wikiType) + '</span>';
+            }
+            var coord = _dvDoc.coordinates;
+            if (coord && Array.isArray(coord) && coord.length) coord = coord[0];
+            if (coord && coord.lat != null && coord.lon != null) {
+                wikiHero += '<span>Coordinates</span><span style="color:var(--text);">' + esc(Number(coord.lat).toFixed(4) + ', ' + Number(coord.lon).toFixed(4)) + '</span>';
+            }
+            if (_dvDoc.wikibase) {
+                wikiHero += '<span>Wikidata</span><span><a href="https://www.wikidata.org/wiki/' + esc(_dvDoc.wikibase) + '" target="_blank" rel="noopener" style="color:var(--cyan);">' + esc(_dvDoc.wikibase) + '</a></span>';
+            }
+            if (_dvDoc.originalimage) {
+                wikiHero += '<span>Full image</span><span><a href="' + esc(_dvDoc.originalimage) + '" target="_blank" rel="noopener" style="color:var(--cyan);word-break:break-all;">Open full size</a>';
+                if (_dvDoc.originalimageWidth) wikiHero += ' <span style="color:var(--dim);">(' + esc(String(_dvDoc.originalimageWidth)) + '×' + esc(String(_dvDoc.originalimageHeight || '')) + ')</span>';
+                wikiHero += '</span>';
+            }
+            if (_dvDoc.wikiTimestamp) {
+                wikiHero += '<span>Page snapshot</span><span style="color:var(--text);">' + esc(_dvDoc.wikiTimestamp) + '</span>';
+            }
+            if (_dvDoc.wikiRevision) {
+                wikiHero += '<span>Revision</span><span style="color:var(--text);">' + esc(_dvDoc.wikiRevision) + '</span>';
+            }
+            if (_dvDoc.descriptionSource) {
+                wikiHero += '<span>Description</span><span style="color:var(--text);">' + esc(_dvDoc.descriptionSource) + '</span>';
+            }
+            if (_dvDoc.wikiEditUrl) {
+                wikiHero += '<span>Edit</span><span><a href="' + esc(_dvDoc.wikiEditUrl) + '" target="_blank" rel="noopener" style="color:var(--cyan);">Open editor</a></span>';
+            }
+            if (_dvDoc.wikiHistoryUrl) {
+                wikiHero += '<span>History</span><span><a href="' + esc(_dvDoc.wikiHistoryUrl) + '" target="_blank" rel="noopener" style="color:var(--cyan);">Revisions</a></span>';
+            }
+            if (_dvDoc.wikiTalkUrl) {
+                wikiHero += '<span>Talk</span><span><a href="' + esc(_dvDoc.wikiTalkUrl) + '" target="_blank" rel="noopener" style="color:var(--cyan);">Discussion</a></span>';
+            }
+            wikiHero += '</div></div></div>';
+        }
+
+        var spineLegend = '';
+        if (window.SearchSpineConcepts && typeof SearchSpineConcepts.highlight === 'function') {
+            spineLegend =
+                '<div class="dv-spine-legend" role="note">Tonnetz highlights — <strong>click</strong>: follow-up search + <strong>interest cluster</strong> pivot (grid updates; panel stays open). <strong>⌘/Ctrl-click</strong>: open spine app.</div>';
+        }
+
+        var infoboxBlock = '';
+        if (isWiki && _dvDoc.infobox && _dvDoc.infobox.length) {
+            infoboxBlock = '<div class="dv-section"><div class="dv-section-title">Infobox</div><div class="dv-wiki-infobox">';
+            for (var ib = 0; ib < _dvDoc.infobox.length; ib++) {
+                var row = _dvDoc.infobox[ib];
+                infoboxBlock += '<div class="dv-wiki-ib-row"><span class="dv-wiki-ib-k">' + esc(row.key) + '</span><span class="dv-wiki-ib-v">' + spineHighlightHtml(row.value) + '</span></div>';
+            }
+            infoboxBlock += '</div></div>';
+        }
+
+        var leadBlock = '';
+        if (isWiki && _dvDoc.extract) {
+            leadBlock = '<div class="dv-section"><div class="dv-section-title">Lead summary</div><div class="dv-wiki-extract">' + spineHighlightHtml(_dvDoc.extract) + '</div></div>';
+        }
+
+        body.innerHTML = wikiHero + clusterStrip + spineLegend + infoboxBlock + (isWiki ? renderWikiMediaExternalBlock(_dvDoc) : '') + leadBlock +
+            '<div class="dv-section">' +
+            '<div class="dv-section-title">Content (' + (_dvDoc.wordCount || 0) + ' words)</div>' +
+            '<div class="dv-content-plain" style="font-size:12px;line-height:1.7;color:var(--text);white-space:pre-wrap;word-break:break-word;">' + spineHighlightHtml(preview) + '</div>' +
+            '</div>' +
+            (_dvDoc.authors ? '<div class="dv-section"><div class="dv-section-title">Authors</div><div style="font-size:11px;color:var(--muted);">' + _dvDoc.authors.map(esc).join(', ') + '</div></div>' : '') +
+            (_dvDoc.categories ? '<div class="dv-section"><div class="dv-section-title">Categories</div><div style="font-size:11px;color:var(--muted);">' + _dvDoc.categories.map(c => '<span style="display:inline-block;padding:2px 6px;margin:2px;border-radius:4px;border:1px solid var(--border);font-family:var(--mono);font-size:10px;">' + esc(c) + '</span>').join('') + '</div></div>' : '') +
+            (_dvDoc.subjects ? '<div class="dv-section"><div class="dv-section-title">Subjects</div><div style="font-size:11px;color:var(--muted);">' + _dvDoc.subjects.map(s => '<span style="display:inline-block;padding:2px 6px;margin:2px;border-radius:4px;border:1px solid var(--border);font-family:var(--mono);font-size:10px;">' + esc(s) + '</span>').join('') + '</div></div>' : '') +
+            '<div style="text-align:center;margin-top:12px;"><a href="' + esc(_dvDoc.url) + '" target="_blank" rel="noopener" style="font-family:var(--mono);font-size:10px;color:var(--cyan);">Open original &rarr;</a></div>';
+    }
+
+    else if (_dvTab === 'analysis') {
+        if (!a.tone) { body.innerHTML = clusterStrip + '<div style="padding:40px;text-align:center;color:var(--dim);">No analysis available.</div>'; return; }
+        var toneBar = '<div class="dv-tone-bar">';
+        for (var t in TONE_COLORS) {
+            if (a.tone[t] > 0) toneBar += '<div class="dv-tone-seg" style="width:' + a.tone[t] + '%;background:' + TONE_COLORS[t] + ';" title="' + t + ': ' + a.tone[t] + '%"></div>';
+        }
+        toneBar += '</div>';
+        var toneLegend = Object.keys(TONE_COLORS).map(t => '<span style="font-family:var(--mono);font-size:10px;color:' + TONE_COLORS[t] + ';">' + t + ' ' + (a.tone[t] || 0) + '%</span>').join(' &middot; ');
+
+        body.innerHTML = clusterStrip +
+            '<div class="dv-section">' +
+            '<div class="dv-section-title">Writing Tone</div>' + toneBar +
+            '<div style="margin-bottom:6px;">' + toneLegend + '</div>' +
+            '<div class="dv-metric"><span>Dominant tone</span><span class="val" style="color:' + (TONE_COLORS[a.tone.dominant] || 'var(--text)') + ';">' + (a.tone.dominant || 'neutral') + '</span></div>' +
+            '</div>' +
+
+            '<div class="dv-section"><div class="dv-section-title">Heartbeat: Humanity vs Profit</div>' +
+            '<div class="dv-heartbeat">' +
+            '<span style="font-family:var(--mono);font-size:9px;color:#8b5cf6;">humanity</span>' +
+            '<div class="dv-hb-bar"><div class="dv-hb-humanity" style="width:' + Math.round((a.heartbeat || 0.5) * 100) + '%;"></div><div class="dv-hb-profit" style="width:' + Math.round((1 - (a.heartbeat || 0.5)) * 100) + '%;"></div></div>' +
+            '<span class="dv-hb-label" style="color:' + ((a.heartbeat || 0.5) >= 0.5 ? '#8b5cf6' : '#f97316') + ';">' + Math.round((a.heartbeat || 0.5) * 100) + '%</span>' +
+            '</div></div>' +
+
+            '<div class="dv-section"><div class="dv-section-title">Vocabulary</div>' +
+            '<div class="dv-metric"><span>Total words</span><span class="val">' + (a.vocabulary ? a.vocabulary.totalWords : 0) + '</span></div>' +
+            '<div class="dv-metric"><span>Unique words</span><span class="val">' + (a.vocabulary ? a.vocabulary.uniqueWords : 0) + '</span></div>' +
+            '<div class="dv-metric"><span>Type-token ratio</span><span class="val">' + (a.vocabulary ? (a.vocabulary.typeTokenRatio * 100).toFixed(1) + '%' : '—') + '</span></div>' +
+            '<div class="dv-metric"><span>Avg word length</span><span class="val">' + (a.vocabulary ? a.vocabulary.avgWordLength : '—') + '</span></div>' +
+            '<div class="dv-metric"><span>Hapax ratio</span><span class="val">' + (a.vocabulary ? (a.vocabulary.hapaxRatio * 100).toFixed(1) + '%' : '—') + '</span></div>' +
+            '</div>' +
+
+            '<div class="dv-section"><div class="dv-section-title">Metrics</div>' +
+            '<div class="dv-metric"><span>Readability (Flesch)</span><span class="val">' + (a.readabilityScore || 0) + '/100</span></div>' +
+            '<div class="dv-metric"><span>Sentiment</span><span class="val" style="color:' + (a.sentiment > 0 ? 'var(--green)' : a.sentiment < 0 ? '#f85149' : 'var(--muted)') + ';">' + (a.sentiment > 0 ? '+' : '') + a.sentiment + '</span></div>' +
+            '<div class="dv-metric"><span>Monetary signals</span><span class="val">' + (a.monetarySignals ? a.monetarySignals.length : 0) + '</span></div>' +
+            '</div>' +
+
+            '<div class="dv-ai">' + esc(a.aiPerspective || '') + '</div>';
+    }
+
+    else if (_dvTab === 'refs') {
+        if (!a.subReferences) { body.innerHTML = clusterStrip + '<div style="padding:40px;text-align:center;color:var(--dim);">No references extracted.</div>'; return; }
+        var html = '';
+        for (var key in a.subReferences) {
+            var refs = a.subReferences[key];
+            if (refs.length === 0) continue;
+            html += '<div class="dv-section"><div class="dv-section-title">' + esc(key) + ' (' + refs.length + ')</div>';
+            refs.forEach(function(r) {
+                if (key === 'urls') {
+                    html += '<div class="dv-ref"><a href="' + esc(r) + '" target="_blank" style="color:var(--cyan);font-size:11px;word-break:break-all;">' + esc(r) + '</a></div>';
+                } else if (key === 'quotes') {
+                    html += '<div class="dv-ref" style="font-style:italic;">&ldquo;' + esc(r) + '&rdquo;</div>';
+                } else {
+                    html += '<div class="dv-ref">' + esc(r) + '</div>';
+                }
+            });
+            html += '</div>';
+        }
+        if (a.monetarySignals && a.monetarySignals.length > 0) {
+            html += '<div class="dv-section"><div class="dv-section-title">Monetary Signals (' + a.monetarySignals.length + ')</div>';
+            a.monetarySignals.forEach(function(m) { html += '<div class="dv-ref" style="border-color:#f97316;">' + esc(m) + '</div>'; });
+            html += '</div>';
+        }
+        body.innerHTML = clusterStrip + (html || '<div style="padding:40px;text-align:center;color:var(--dim);">No references found in document.</div>');
+    }
+
+    else if (_dvTab === 'patterns') {
+        // Cross-result pattern analysis using all fetched docs
+        var docs = _lastResults.filter(function(r) { return r._fetchedDoc; }).map(function(r) { return r._fetchedDoc; });
+        if (_dvDoc._analysis) { if (!docs.find(function(d) { return d.url === _dvDoc.url; })) docs.push(_dvDoc); }
+        var patterns = HS.detectPatterns(_lastResults, docs);
+
+        body.innerHTML = clusterStrip + '<div class="dv-section"><div class="dv-section-title">Cross-Result Patterns (' + patterns.documentsAnalyzed + ' docs analyzed)</div>' +
+            '<div class="dv-metric"><span>Economic density</span><span class="val">' + patterns.economicDensity + ' signals/1k words</span></div>' +
+            '<div class="dv-metric"><span>Attention ratio</span><span class="val" style="color:#f97316;">' + patterns.attentionRatio + '% attention</span></div>' +
+            '<div class="dv-metric"><span>Heartbeat ratio</span><span class="val" style="color:#8b5cf6;">' + patterns.heartbeatRatio + '% humanity</span></div>' +
+            '</div>' +
+            (patterns.shockwaves.length > 0 ? '<div class="dv-section"><div class="dv-section-title" style="color:#ef4444;">Shockwaves Detected (' + patterns.shockwaves.length + ')</div>' +
+                patterns.shockwaves.map(function(sw) { return '<div class="dv-ref" style="border-color:#ef4444;"><strong>' + esc(sw.title) + '</strong> — crisis ' + sw.crisisScore + '%, ' + sw.monetaryTerms + ' monetary terms, sentiment ' + sw.sentiment + '</div>'; }).join('') +
+            '</div>' : '') +
+            '<div class="dv-section"><div class="dv-section-title">Prediction</div>' +
+            '<div style="font-family:var(--mono);font-size:11px;padding:10px;background:var(--bg2);border-radius:6px;border:1px solid var(--border);color:var(--muted);line-height:1.5;">' + esc(patterns.prediction) + '</div>' +
+            '</div>' +
+            '<div class="dv-section"><div class="dv-section-title">Tone Clusters</div>' +
+            Object.keys(patterns.clusters).map(function(c) {
+                var items = patterns.clusters[c];
+                if (items.length === 0) return '';
+                return '<div style="margin-bottom:4px;"><span style="font-family:var(--mono);font-size:10px;color:' + (TONE_COLORS[c] || 'var(--muted)') + ';font-weight:700;">' + c + '</span> (' + items.length + '): ' +
+                    items.map(function(i) { return '<span style="font-family:var(--mono);font-size:10px;">' + esc(i.title || '').substring(0, 40) + '</span>'; }).join(', ') + '</div>';
+            }).join('') +
+            '</div>';
+    }
+}
+
+/* ══════════════════════════════════════════════════════
+   FREYAUNITS — Full converter engine
+   ══════════════════════════════════════════════════════ */
+const FU_CATEGORIES = {
+    length:      {name:'Length',      icon:'\uD83D\uDCCF', color:'#a78bfa'},
+    mass:        {name:'Mass',        icon:'\u2696',       color:'#f97316'},
+    temperature: {name:'Temperature', icon:'\uD83C\uDF21', color:'#fb7185'},
+    speed:       {name:'Speed',       icon:'\uD83D\uDE80', color:'#22d3ee'},
+    energy:      {name:'Energy',      icon:'\u26A1',       color:'#fbbf24'},
+    pressure:    {name:'Pressure',    icon:'\uD83D\uDD35', color:'#3b82f6'},
+    time:        {name:'Time',        icon:'\u23F1',       color:'#34d399'},
+    data:        {name:'Data',        icon:'\uD83D\uDCBE', color:'#8b5cf6'},
+};
+
+const FU_UNITS = [
+    // Length
+    {sym:'\u2113p',name:'Planck Length',factor:1.616255e-35,cat:'length'},
+    {sym:'fm',name:'Femtometer',factor:1e-15,cat:'length'},
+    {sym:'pm',name:'Picometer',factor:1e-12,cat:'length'},
+    {sym:'\u00C5',name:'Angstrom',factor:1e-10,cat:'length'},
+    {sym:'nm',name:'Nanometer',factor:1e-9,cat:'length'},
+    {sym:'\u00B5m',name:'Micrometer',factor:1e-6,cat:'length'},
+    {sym:'mm',name:'Millimeter',factor:1e-3,cat:'length'},
+    {sym:'cm',name:'Centimeter',factor:1e-2,cat:'length'},
+    {sym:'in',name:'Inch',factor:0.0254,cat:'length'},
+    {sym:'ft',name:'Foot',factor:0.3048,cat:'length'},
+    {sym:'yd',name:'Yard',factor:0.9144,cat:'length'},
+    {sym:'m',name:'Meter',factor:1,cat:'length'},
+    {sym:'km',name:'Kilometer',factor:1e3,cat:'length'},
+    {sym:'mi',name:'Mile',factor:1609.34,cat:'length'},
+    {sym:'NM',name:'Nautical Mile',factor:1852,cat:'length'},
+    {sym:'AU',name:'Astronomical Unit',factor:1.496e11,cat:'length'},
+    {sym:'ly',name:'Light Year',factor:9.461e15,cat:'length'},
+    {sym:'pc',name:'Parsec',factor:3.086e16,cat:'length'},
+    // Mass
+    {sym:'me',name:'Electron Mass',factor:9.109e-31,cat:'mass'},
+    {sym:'u',name:'Atomic Mass Unit',factor:1.661e-27,cat:'mass'},
+    {sym:'\u00B5g',name:'Microgram',factor:1e-9,cat:'mass'},
+    {sym:'mg',name:'Milligram',factor:1e-6,cat:'mass'},
+    {sym:'g',name:'Gram',factor:1e-3,cat:'mass'},
+    {sym:'oz',name:'Ounce',factor:0.0283495,cat:'mass'},
+    {sym:'lb',name:'Pound',factor:0.453592,cat:'mass'},
+    {sym:'kg',name:'Kilogram',factor:1,cat:'mass'},
+    {sym:'st',name:'Stone',factor:6.35029,cat:'mass'},
+    {sym:'t',name:'Metric Ton',factor:1000,cat:'mass'},
+    {sym:'M\u2609',name:'Solar Mass',factor:1.989e30,cat:'mass'},
+    // Temperature (special)
+    {sym:'K',name:'Kelvin',factor:1,cat:'temperature',offset:0},
+    {sym:'\u00B0C',name:'Celsius',factor:1,cat:'temperature',offset:273.15},
+    {sym:'\u00B0F',name:'Fahrenheit',factor:5/9,cat:'temperature',offset:255.372},
+    {sym:'\u00B0R',name:'Rankine',factor:5/9,cat:'temperature',offset:0},
+    // Speed
+    {sym:'mm/s',name:'mm/sec',factor:0.001,cat:'speed'},
+    {sym:'m/s',name:'Meters/sec',factor:1,cat:'speed'},
+    {sym:'km/h',name:'km/hour',factor:1/3.6,cat:'speed'},
+    {sym:'mph',name:'Miles/hour',factor:0.44704,cat:'speed'},
+    {sym:'kn',name:'Knots',factor:0.514444,cat:'speed'},
+    {sym:'Ma',name:'Mach',factor:343,cat:'speed'},
+    {sym:'c',name:'Speed of Light',factor:299792458,cat:'speed'},
+    // Energy
+    {sym:'eV',name:'Electron Volt',factor:1.602e-19,cat:'energy'},
+    {sym:'J',name:'Joule',factor:1,cat:'energy'},
+    {sym:'cal',name:'Calorie',factor:4.184,cat:'energy'},
+    {sym:'kcal',name:'Kilocalorie',factor:4184,cat:'energy'},
+    {sym:'kWh',name:'Kilowatt-hour',factor:3.6e6,cat:'energy'},
+    {sym:'BTU',name:'BTU',factor:1055.06,cat:'energy'},
+    {sym:'MeV',name:'Mega eV',factor:1.602e-13,cat:'energy'},
+    {sym:'GeV',name:'Giga eV',factor:1.602e-10,cat:'energy'},
+    // Pressure
+    {sym:'Pa',name:'Pascal',factor:1,cat:'pressure'},
+    {sym:'hPa',name:'Hectopascal',factor:100,cat:'pressure'},
+    {sym:'kPa',name:'Kilopascal',factor:1000,cat:'pressure'},
+    {sym:'bar',name:'Bar',factor:1e5,cat:'pressure'},
+    {sym:'atm',name:'Atmosphere',factor:101325,cat:'pressure'},
+    {sym:'psi',name:'PSI',factor:6894.76,cat:'pressure'},
+    {sym:'mmHg',name:'mmHg (Torr)',factor:133.322,cat:'pressure'},
+    // Time
+    {sym:'ns',name:'Nanosecond',factor:1e-9,cat:'time'},
+    {sym:'\u00B5s',name:'Microsecond',factor:1e-6,cat:'time'},
+    {sym:'ms',name:'Millisecond',factor:1e-3,cat:'time'},
+    {sym:'s',name:'Second',factor:1,cat:'time'},
+    {sym:'min',name:'Minute',factor:60,cat:'time'},
+    {sym:'hr',name:'Hour',factor:3600,cat:'time'},
+    {sym:'d',name:'Day',factor:86400,cat:'time'},
+    {sym:'wk',name:'Week',factor:604800,cat:'time'},
+    {sym:'yr',name:'Year',factor:3.156e7,cat:'time'},
+    {sym:'My',name:'Megayear',factor:3.156e13,cat:'time'},
+    {sym:'Gy',name:'Gigayear',factor:3.156e16,cat:'time'},
+    // Data
+    {sym:'b',name:'Bit',factor:1,cat:'data'},
+    {sym:'B',name:'Byte',factor:8,cat:'data'},
+    {sym:'KB',name:'Kilobyte',factor:8e3,cat:'data'},
+    {sym:'MB',name:'Megabyte',factor:8e6,cat:'data'},
+    {sym:'GB',name:'Gigabyte',factor:8e9,cat:'data'},
+    {sym:'TB',name:'Terabyte',factor:8e12,cat:'data'},
+    {sym:'PB',name:'Petabyte',factor:8e15,cat:'data'},
+];
+
+let fuCat = 'length';
+function fuUnitsForCat(cat){ return FU_UNITS.filter(u=>u.cat===cat); }
+
+function fuFmt(val){
+    if(val===0) return '0';
+    const a=Math.abs(val);
+    if(a>=1e12||a<1e-4) return val.toExponential(6);
+    if(a>=1e6) return val.toLocaleString(undefined,{maximumFractionDigits:4});
+    if(a>=1) return val.toLocaleString(undefined,{maximumFractionDigits:8});
+    return val.toFixed(10).replace(/0+$/,'').replace(/\.$/,'');
+}
+
+/* Build category pills */
+function fuBuildCats(){
+    const w = $('fu-cats'); w.innerHTML = '';
+    Object.entries(FU_CATEGORIES).forEach(([key,cat])=>{
+        const p = document.createElement('span');
+        p.className = 'fu-cat' + (key===fuCat?' active':'');
+        p.textContent = cat.icon + ' ' + cat.name;
+        if(key===fuCat) p.style.background = cat.color + '30';
+        if(key===fuCat) p.style.borderColor = cat.color;
+        p.addEventListener('click', () => fuSetCat(key));
+        w.appendChild(p);
+    });
+}
+
+function fuSetCat(cat){
+    fuCat = cat;
+    fuBuildCats();
+    fuPopulateSelects();
+}
+
+function fuPopulateSelects(){
+    const units = fuUnitsForCat(fuCat);
+    const from = $('fu-from'), to = $('fu-to');
+    from.innerHTML = ''; to.innerHTML = '';
+    units.forEach((u,i)=>{
+        from.add(new Option(u.sym + ' \u2014 ' + u.name, i));
+        to.add(new Option(u.sym + ' \u2014 ' + u.name, i));
+    });
+    if(units.length > 1) to.value = 1;
+    fuBuildQuick();
+    fuConvert();
+}
+
+function fuBuildQuick(){
+    const w = $('fu-quick'); w.innerHTML = '';
+    const units = fuUnitsForCat(fuCat);
+    const catColor = FU_CATEGORIES[fuCat].color;
+    units.forEach((u,i) => {
+        const b = document.createElement('span');
+        b.className = 'fu-qb'; b.textContent = u.sym; b.title = u.name;
+        b.style.color = catColor;
+        b.addEventListener('click', () => { $('fu-to').value = i; fuConvert(); });
+        w.appendChild(b);
+    });
+}
+
+function fuConvert(){
+    const units = fuUnitsForCat(fuCat);
+    const val = parseFloat($('fu-val').value) || 0;
+    const fromU = units[$('fu-from').value];
+    const toU = units[$('fu-to').value];
+    if(!fromU || !toU) return;
+
+    let result;
+    if(fuCat === 'temperature'){
+        const k = val * fromU.factor + (fromU.offset||0);
+        result = (k - (toU.offset||0)) / toU.factor;
+    } else {
+        result = (val * fromU.factor) / toU.factor;
+    }
+    $('fu-result').textContent = fuFmt(result) + ' ' + toU.sym;
+
+    // All-units table
+    const tbl = $('fu-table'); tbl.innerHTML = '';
+    units.forEach(u => {
+        let v;
+        if(fuCat === 'temperature'){
+            const k = val * fromU.factor + (fromU.offset||0);
+            v = (k - (u.offset||0)) / u.factor;
+        } else {
+            v = (val * fromU.factor) / u.factor;
+        }
+        const isActive = u.sym === toU.sym;
+        const div = document.createElement('div');
+        div.className = 'fu-row' + (isActive ? ' highlight' : '');
+        div.innerHTML = `<span style="color:${FU_CATEGORIES[fuCat].color};">${isActive ? '\u25B6 ' : ''}${u.sym}</span><span>${fuFmt(v)}</span>`;
+        tbl.appendChild(div);
+    });
+
+    // Quantum properties
+    const qDiv = $('fu-quantum');
+    if(fuCat === 'length'){
+        const meters = val * fromU.factor;
+        if(meters > 0){
+            const C = 299792458, H = 6.62607015e-34;
+            const freq = C / meters;
+            const energy = H * freq;
+            const eV = energy / 1.602176634e-19;
+            const momentum = H / meters;
+            const lightTime = meters / C;
+            qDiv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
+                <div><b style="color:var(--orange);">Frequency:</b> ${freq.toExponential(4)} Hz</div>
+                <div><b style="color:var(--orange);">Energy:</b> ${energy.toExponential(4)} J (${eV.toExponential(4)} eV)</div>
+                <div><b style="color:var(--cyan);">Wavelength:</b> ${meters.toExponential(4)} m</div>
+                <div><b style="color:var(--cyan);">Period:</b> ${(1/freq).toExponential(4)} s</div>
+                <div><b style="color:var(--purple);">Momentum (h/\u03BB):</b> ${momentum.toExponential(4)} kg\u00B7m/s</div>
+                <div><b style="color:var(--purple);">Light travel:</b> ${lightTime.toExponential(4)} s</div>
+            </div>`;
+        } else { qDiv.innerHTML = '<span style="color:var(--dim);">Enter a positive value for quantum properties.</span>'; }
+    } else if(fuCat === 'time'){
+        const seconds = val * fromU.factor;
+        if(seconds > 0){
+            const C = 299792458, H = 6.62607015e-34;
+            const freq = 1 / seconds;
+            const energy = H * freq;
+            const lightDist = seconds * C;
+            qDiv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
+                <div><b style="color:var(--orange);">Frequency:</b> ${freq.toExponential(4)} Hz</div>
+                <div><b style="color:var(--orange);">Energy (E=hf):</b> ${energy.toExponential(4)} J</div>
+                <div><b style="color:var(--cyan);">Light distance:</b> ${lightDist.toExponential(4)} m</div>
+                <div><b style="color:var(--cyan);">Planck units:</b> ${(seconds / 5.391e-44).toExponential(4)} t\u209A</div>
+            </div>`;
+        } else { qDiv.innerHTML = '<span style="color:var(--dim);">Enter a positive value.</span>'; }
+    } else if(fuCat === 'energy'){
+        const joules = val * fromU.factor;
+        if(joules > 0){
+            const C = 299792458, H = 6.62607015e-34;
+            const freq = joules / H;
+            const wavelength = C / freq;
+            const mass = joules / (C * C);
+            const kelvin = joules / 1.380649e-23;
+            qDiv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
+                <div><b style="color:var(--orange);">Frequency (E/h):</b> ${freq.toExponential(4)} Hz</div>
+                <div><b style="color:var(--cyan);">Wavelength:</b> ${wavelength.toExponential(4)} m</div>
+                <div><b style="color:var(--purple);">Mass (E/c\u00B2):</b> ${mass.toExponential(4)} kg</div>
+                <div><b style="color:var(--green);">Temperature (E/k):</b> ${kelvin.toExponential(4)} K</div>
+            </div>`;
+        } else { qDiv.innerHTML = '<span style="color:var(--dim);">Enter a positive value.</span>'; }
+    } else if(fuCat === 'speed'){
+        const ms = val * fromU.factor;
+        const C = 299792458;
+        const beta = ms / C;
+        const gamma = beta < 1 ? 1 / Math.sqrt(1 - beta * beta) : Infinity;
+        qDiv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
+            <div><b style="color:var(--orange);">\u03B2 (v/c):</b> ${beta < 1e-4 ? beta.toExponential(4) : beta.toFixed(8)}</div>
+            <div><b style="color:var(--cyan);">Lorentz \u03B3:</b> ${gamma === Infinity ? '\u221E' : gamma < 100 ? gamma.toFixed(6) : gamma.toExponential(4)}</div>
+            <div><b style="color:var(--purple);">Time dilation:</b> ${gamma === Infinity ? '\u221E' : gamma < 100 ? gamma.toFixed(6) + '\u00D7' : gamma.toExponential(4) + '\u00D7'}</div>
+            <div><b style="color:var(--green);">Length contraction:</b> ${gamma === Infinity ? '0' : (1/gamma).toFixed(8) + '\u00D7'}</div>
+        </div>`;
+    } else if(fuCat === 'mass'){
+        const kg = val * fromU.factor;
+        if(kg > 0){
+            const C = 299792458;
+            const energy = kg * C * C;
+            const schwarzschild = 2 * 6.674e-11 * kg / (C * C);
+            qDiv.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;">
+                <div><b style="color:var(--orange);">Rest energy (mc\u00B2):</b> ${energy.toExponential(4)} J</div>
+                <div><b style="color:var(--cyan);">Schwarzschild r:</b> ${schwarzschild.toExponential(4)} m</div>
+                <div><b style="color:var(--purple);">Compton \u03BB:</b> ${(6.626e-34/(kg*C)).toExponential(4)} m</div>
+                <div><b style="color:var(--green);">Planck masses:</b> ${(kg/2.176e-8).toExponential(4)} m\u209A</div>
+            </div>`;
+        } else { qDiv.innerHTML = '<span style="color:var(--dim);">Enter a positive value.</span>'; }
+    } else {
+        qDiv.innerHTML = '<span style="color:var(--dim);">Quantum properties: select Length, Time, Energy, Speed, or Mass.</span>';
+    }
+
+    fuDrawScale();
+}
+
+/* Scale canvas */
+function fuDrawScale(){
+    if(fuCat !== 'length') { $('fu-scale').style.display = 'none'; return; }
+    $('fu-scale').style.display = '';
+    const cv = $('fu-scale-canvas');
+    if(!cv.parentElement.offsetWidth) return;
+    cv.width = cv.parentElement.offsetWidth; cv.height = cv.parentElement.offsetHeight;
+    const ctx = cv.getContext('2d'), W = cv.width, H = cv.height;
+    const minLog = -35, maxLog = 17, range = maxLog - minLog;
+    ctx.fillStyle = '#050810'; ctx.fillRect(0, 0, W, H);
+
+    // Scale bands
+    const bands = [
+        {name:'Planck',min:-35,max:-15,color:'#8b5cf6'},
+        {name:'Atomic',min:-15,max:-9,color:'#6366f1'},
+        {name:'Nano',min:-9,max:-6,color:'#3b82f6'},
+        {name:'Micro',min:-6,max:-3,color:'#06b6d4'},
+        {name:'Human',min:-3,max:3,color:'#34d399'},
+        {name:'Geo',min:3,max:7,color:'#fbbf24'},
+        {name:'Stellar',min:7,max:12,color:'#f97316'},
+        {name:'Cosmic',min:12,max:17,color:'#ef4444'},
+    ];
+
+    bands.forEach(b => {
+        const x1 = ((b.min - minLog) / range) * W;
+        const x2 = ((b.max - minLog) / range) * W;
+        ctx.fillStyle = b.color + '15'; ctx.fillRect(x1, 0, x2 - x1, H);
+        ctx.strokeStyle = b.color + '40'; ctx.lineWidth = 0.5;
+        ctx.beginPath(); ctx.moveTo(x1, 0); ctx.lineTo(x1, H); ctx.stroke();
+        const lx = (x1 + x2) / 2;
+        if(lx > 10 && lx < W - 10){
+            ctx.fillStyle = b.color + 'cc'; ctx.font = 'bold 8px monospace';
+            ctx.textAlign = 'center'; ctx.fillText(b.name, lx, H / 2 - 4);
+        }
+    });
+
+    // Current value marker
+    const units = fuUnitsForCat('length');
+    const val = parseFloat($('fu-val').value) || 0;
+    const fromU = units[$('fu-from').value];
+    if(fromU && val > 0){
+        const meters = val * fromU.factor;
+        const log = Math.log10(meters);
+        const x = ((log - minLog) / range) * W;
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(x, H / 2 + 8, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#ffffffcc'; ctx.font = 'bold 9px monospace'; ctx.textAlign = 'center';
+        ctx.fillText(meters.toExponential(2) + ' m', x, H - 4);
+    }
+
+    // Unit markers
+    units.forEach(u => {
+        const log = Math.log10(u.factor);
+        const x = ((log - minLog) / range) * W;
+        ctx.fillStyle = '#ffffff30'; ctx.beginPath(); ctx.arc(x, H / 2 + 8, 2, 0, Math.PI * 2); ctx.fill();
+    });
+    ctx.textAlign = 'start';
+}
+
+function resizeFuScale(){
+    setTimeout(fuDrawScale, 50);
+}
+window.addEventListener('resize', resizeFuScale);
+
+/* Quick convert from search bar */
+function fuQuickConvert(val, fromSym, toSym){
+    const fromU = FU_UNITS.find(u => u.sym.toLowerCase() === fromSym.toLowerCase() || u.name.toLowerCase().includes(fromSym.toLowerCase()));
+    const toU = FU_UNITS.find(u => u.sym.toLowerCase() === toSym.toLowerCase() || u.name.toLowerCase().includes(toSym.toLowerCase()));
+    if(!fromU || !toU || fromU.cat !== toU.cat) return null;
+    if(fromU.cat === 'temperature'){
+        const k = val * fromU.factor + (fromU.offset||0);
+        return (k - (toU.offset||0)) / toU.factor;
+    }
+    return (val * fromU.factor) / toU.factor;
+}
+
+/* Swap button */
+$('fu-swap').addEventListener('click', () => {
+    const f = $('fu-from').value, t = $('fu-to').value;
+    $('fu-from').value = t; $('fu-to').value = f;
+    fuConvert();
+});
+
+/* Events */
+$('fu-val').addEventListener('input', fuConvert);
+$('fu-from').addEventListener('change', fuConvert);
+$('fu-to').addEventListener('change', fuConvert);
+
+/* ══════════════════════════════════════════════════════
+   EVENTS
+   ══════════════════════════════════════════════════════ */
+$('search-btn').addEventListener('click', () => doSearch($('search-input').value));
+$('search-input').addEventListener('keydown', function (e) {
+    if (e.key !== 'Enter') return;
+    if (e.shiftKey) return;
+    e.preventDefault();
+    doSearch($('search-input').value);
+});
+initPromptComposer();
+
+/* ══════════════════════════════════════════════════════
+   INIT
+   ══════════════════════════════════════════════════════ */
+initTimeline();
+buildPills();
+syncSearchStatusBar();
+fuBuildCats();
+fuPopulateSelects();
+
+// Auto-search or auto-convert from ?q= / ?model= (Iron Line staff handoff from other apps)
+const params = new URLSearchParams(window.location.search);
+const q = params.get('q');
+const mode = params.get('mode');
+const modelParam = params.get('model');
+if (modelParam && $('prompt-model')) {
+    const pm = $('prompt-model');
+    for (let oi = 0; oi < pm.options.length; oi++) {
+        if (pm.options[oi].value === modelParam) { pm.selectedIndex = oi; break; }
+    }
+    try { localStorage.setItem('search-prompt-model', modelParam); } catch (e) {}
+    refreshStPrompt();
+}
+if(mode === 'freya') document.querySelector('.mode-tab[data-mode="freya"]').click();
+if(q){ $('search-input').value = q; doSearch(q); }
+
+// P0b.5: Listen for kbatch transcript DCA pushes
+if (typeof BroadcastChannel !== 'undefined') {
+    try {
+        var _searchTransBC = new BroadcastChannel('kbatch-transcript');
+        _searchTransBC.onmessage = function(e) {
+            if (e.data && e.data.type === 'transcript-dca' && e.data.segments) {
+                var stored = JSON.parse(localStorage.getItem('transcript-dca-index') || '[]');
+                stored = stored.concat(e.data.segments);
+                localStorage.setItem('transcript-dca-index', JSON.stringify(stored));
+                var stConn = $('st-conn');
+                if (stConn) stConn.textContent = HS.getConnectors().filter(function(x){return x.enabled;}).length;
+                buildPills();
+                syncSearchStatusBar();
+            }
+        };
+    } catch(e) {}
+}
+
+// ══════════════════ THEME TOGGLE ══════════════════
+function applySearchTheme(isLight) {
+    const root = document.documentElement;
+    root.classList.toggle('light', isLight);
+    document.querySelector('meta[name="theme-color"]').content = isLight ? '#f8fafc' : '#050810';
+    const btn = $('theme-toggle');
+    if (btn) btn.textContent = isLight ? '\u2600' : '\u263E';
+    initTimeline(); // Repaint
+    localStorage.setItem('search-theme', isLight ? 'light' : 'dark');
+}
+function toggleSearchTheme() {
+    applySearchTheme(!document.documentElement.classList.contains('light'));
+}
+window.toggleSearchTheme = toggleSearchTheme;
+window.addEventListener('message', function (ev) {
+    if (!ev.data) return;
+    if (ev.data.type === 'upl-sync-theme') {
+        if (ev.source !== window.parent) return;
+        applySearchTheme(ev.data.theme === 'light');
+        return;
+    }
+    if (ev.data.type === 'mueee-prompt' && ev.source === window.parent) {
+        var q = ev.data.query;
+        if (typeof q === 'string' && q.trim()) {
+            var si = $('search-input');
+            if (si) si.value = q;
+            doSearch(q.trim());
+        }
+    }
+});
+if (localStorage.getItem('search-theme') === 'light') applySearchTheme(true);
+
+// ══════════════════ SECTION NAVIGATOR (DOC VIEWER) ══════════════════
+(function initDvSectionNav() {
+    var nav = $('dv-snav');
+    var dotsEl = $('dv-snav-dots');
+    var progressFill = $('dv-snav-progress');
+    var dvBody = $('dv-body');
+    if (!nav || !dotsEl || !dvBody) return;
+
+    var sections = [];
+    var activeIdx = -1;
+
+    function buildSections(doc, analysis) {
+        sections = [];
+        if (!doc || !doc.content) { hideNav(); return; }
+        var lines = doc.content.split('\n');
+        var totalWords = lines.join(' ').split(/\s+/).length;
+        var perSection = Math.max(80, Math.ceil(totalWords / 10));
+        var wc = 0, start = 0;
+        for (var i = 0; i < lines.length; i++) {
+            wc += lines[i].split(/\s+/).filter(Boolean).length;
+            if (wc >= perSection || i === lines.length - 1) {
+                var txt = lines.slice(start, i + 1).join(' ').trim();
+                var first = txt.split(/\s+/).slice(0, 5).join(' ');
+                var tc = analysis && analysis.tone ? (TONE_COLORS[analysis.tone.dominant] || 'var(--cyan)') : 'var(--cyan)';
+                sections.push({ label: first, scrollTarget: start / Math.max(lines.length, 1), color: tc });
+                wc = 0; start = i + 1;
+            }
+        }
+        renderNav();
+    }
+
+    function renderNav() {
+        dotsEl.innerHTML = '';
+        if (sections.length < 2) { hideNav(); return; }
+        showNav();
+        sections.forEach(function(s, i) {
+            if (i > 0) {
+                var bar = document.createElement('div');
+                bar.className = 'dv-sn-bar' + (i <= activeIdx ? ' active' : '');
+                dotsEl.appendChild(bar);
+            }
+            var dot = document.createElement('div');
+            dot.className = 'dv-sn-dot' + (i === activeIdx ? ' active' : '');
+            dot.style.borderColor = s.color;
+            if (i === activeIdx) dot.style.background = s.color;
+            var tip = document.createElement('div');
+            tip.className = 'dv-sn-tooltip';
+            tip.textContent = (i + 1) + '. ' + s.label;
+            dot.appendChild(tip);
+            dot.addEventListener('click', function() {
+                setActive(i);
+                dvBody.scrollTop = s.scrollTarget * dvBody.scrollHeight;
+            });
+            dotsEl.appendChild(dot);
+        });
+    }
+
+    function setActive(idx) {
+        activeIdx = idx;
+        dotsEl.querySelectorAll('.dv-sn-dot').forEach(function(d, i) {
+            d.classList.toggle('active', i === idx);
+            d.style.background = i === idx ? sections[i].color : 'transparent';
+        });
+        dotsEl.querySelectorAll('.dv-sn-bar').forEach(function(b, i) {
+            b.classList.toggle('active', i < idx);
+        });
+    }
+
+    function showNav() { nav.classList.remove('hidden'); dvBody.style.marginLeft = '24px'; }
+    function hideNav() { nav.classList.add('hidden'); dvBody.style.marginLeft = '0'; sections = []; }
+
+    function setProgress(pct) { if (progressFill) progressFill.style.height = pct + '%'; }
+
+    // Track scroll
+    dvBody.addEventListener('scroll', function() {
+        if (sections.length === 0) return;
+        var ratio = dvBody.scrollTop / Math.max(dvBody.scrollHeight - dvBody.clientHeight, 1);
+        var idx = Math.min(Math.floor(ratio * sections.length), sections.length - 1);
+        if (idx !== activeIdx) setActive(idx);
+    });
+
+    window._dvSectionNav = { build: buildSections, setProgress: setProgress, hide: hideNav };
+})();
+
+// Hook section nav into doc viewer open
+var _origOpenDV = window.openDocViewer;
+if (_origOpenDV) {
+    window.openDocViewer = function(item, idx) {
+        if (window._dvSectionNav) { window._dvSectionNav.hide(); window._dvSectionNav.setProgress(0); }
+        $('doc-viewer').classList.add('open');
+        $('doc-viewer-overlay').classList.add('open');
+        $('dv-title').textContent = item.title || 'Loading...';
+        $('dv-source').textContent = item.source || '';
+        $('dv-source').style.color = HS.getSourceColor(item.source);
+        _dvTab = 'content';
+        document.querySelectorAll('.dv-tab').forEach(function(t) { t.classList.toggle('active', t.dataset.dv === 'content'); });
+        $('dv-body').innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim);">Fetching document...</div>';
+        _dvDoc = null; _dvAnalysis = null;
+
+        HS.fetchDocument(item.url, item.source).then(function(doc) {
+            _dvDoc = doc;
+            _dvDoc.title = _dvDoc.title || item.title;
+            _dvDoc.snippet = item.snippet;
+            $('dv-title').textContent = _dvDoc.title;
+            _dvAnalysis = HS.analyzeContext(_dvDoc);
+            _dvDoc._analysis = _dvAnalysis;
+            renderDvTab();
+            if (window._dvSectionNav) {
+                window._dvSectionNav.build(_dvDoc, _dvAnalysis);
+                window._dvSectionNav.setProgress(100);
+            }
+        }).catch(function() {
+            $('dv-body').innerHTML = '<div style="text-align:center;padding:40px;color:#f85149;">Failed to fetch. <a href="' + esc(item.url) + '" target="_blank" style="color:var(--cyan);">Open in new tab</a></div>';
+        });
+    };
+}
+
+// ═══════════════════════════════════════════════════════════
+// AI LENS — board view, metric weights, heatmap, export
+// ═══════════════════════════════════════════════════════════
+var _aiWeighted = [];
+var _aiAnalyses = {};
+var _aiCurrentView = 'board';
+var _aiLastStructure = null;
+
+function setAiView(view, btn) {
+    _aiCurrentView = view;
+    document.querySelectorAll('.ai-vtab').forEach(function(t) { t.classList.toggle('active', t.dataset.aiv === view); });
+    ['ai-board', 'ai-weights', 'ai-heatmap', 'ai-export', 'ai-suggest', 'ai-typing', 'ai-context', 'ai-transcript'].forEach(function(id) {
+        var el = $(id); if (el) el.style.display = 'none';
+    });
+    var target = $('ai-' + view);
+    if (target) target.style.display = '';
+    if (view === 'board') renderAiBoard();
+    if (view === 'weights') renderAiWeights();
+    if (view === 'heatmap') renderAiHeatmap();
+    if (view === 'export') renderAiExport();
+    if (view === 'suggest') renderAiSuggest();
+    if (view === 'typing') renderAiTyping();
+    if (view === 'context') renderAiContext();
+    if (view === 'transcript') renderAiTranscript();
+}
+window.setAiView = setAiView;
+
+function aiRefresh() {
+    var goal = $('ai-goal') ? $('ai-goal').value : 'research';
+    var pm = getPromptModelValue();
+    _aiWeighted = HS.weightResults(_lastResults, { analyses: _aiAnalyses, goal: goal, promptModel: pm });
+    if (_aiCurrentView === 'board') renderAiBoard();
+    else if (_aiCurrentView === 'weights') renderAiWeights();
+    else if (_aiCurrentView === 'heatmap') renderAiHeatmap();
+    else if (_aiCurrentView === 'export') renderAiExport();
+    else if (_aiCurrentView === 'suggest') renderAiSuggest();
+    else if (_aiCurrentView === 'typing') renderAiTyping();
+    else if (_aiCurrentView === 'context') renderAiContext();
+}
+window.aiRefresh = aiRefresh;
+
+function aiClearHeat() { HS.clearHeatmap(); renderAiHeatmap(); }
+window.aiClearHeat = aiClearHeat;
+
+function renderAiBoard() {
+    var el = $('ai-board'); if (!el) return;
+    var cols = parseInt(($('ai-cols') || {}).value || '3');
+    if (_aiWeighted.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim);font-size:13px;width:100%;"><div style="font-size:36px;margin-bottom:12px;">&#x1F4CC;</div>Run a search first, then switch to AI Lens<br>to see results organized as a weighted board.</div>';
+        return;
+    }
+    var layout = HS.generateContent('board-layout', _lastResults, _aiAnalyses, { columns: cols });
+    el.innerHTML = '';
+    layout.columns.forEach(function(col) {
+        var colEl = document.createElement('div');
+        colEl.className = 'ai-board-col';
+        col.items.forEach(function(item) {
+            var w = item.weighted;
+            var card = document.createElement('div');
+            card.className = 'ai-card';
+            var scoreClass = function(v) { return v >= 0.5 ? 'high' : v >= 0.25 ? 'med' : 'low'; };
+            card.innerHTML =
+                '<div class="ac-rank">#' + w.rank + ' | ' + (w.result.source || '?') + ' | score: ' + w.scores.total + '</div>' +
+                '<div class="ac-title">' + esc(w.result.title || 'Untitled') + '</div>' +
+                '<div class="ac-snippet">' + esc(w.result.snippet || '') + '</div>' +
+                '<div class="ac-scores">' +
+                    '<span class="ac-score ' + scoreClass(w.scores.depth) + '">depth:' + w.scores.depth + '</span>' +
+                    '<span class="ac-score ' + scoreClass(w.scores.authority) + '">auth:' + w.scores.authority + '</span>' +
+                    '<span class="ac-score ' + scoreClass(w.scores.breadth) + '">breadth:' + w.scores.breadth + '</span>' +
+                    '<span class="ac-score ' + scoreClass(w.scores.recency) + '">recency:' + w.scores.recency + '</span>' +
+                    '<span class="ac-score ' + scoreClass(w.scores.engagement) + '">engage:' + w.scores.engagement + '</span>' +
+                '</div>';
+            card.onclick = function() {
+                HS.trackInteraction(w.id, 'click');
+                if (typeof openDocViewer === 'function') openDocViewer(w.result, parseInt(w.id));
+            };
+            card.onmouseenter = function() { HS.trackInteraction(w.id, 'hover'); };
+            colEl.appendChild(card);
+        });
+        el.appendChild(colEl);
+    });
+}
+
+function renderAiWeights() {
+    var el = $('ai-weights'); if (!el) return;
+    if (_aiWeighted.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim);">No results to weight.</div>';
+        return;
+    }
+    var goal = $('ai-goal') ? $('ai-goal').value : 'research';
+    var html = '<div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-bottom:8px;">Goal: ' + goal + ' | ' + _aiWeighted.length + ' results weighted</div>';
+    html += '<table><thead><tr><th>#</th><th>Source</th><th>Title</th><th>Total</th><th>Depth</th><th>Auth</th><th>Breadth</th><th>Recency</th><th>Engage</th></tr></thead><tbody>';
+    _aiWeighted.forEach(function(w) {
+        var bar = function(v, c) { return '<div class="ai-bar"><div class="ai-bar-fill" style="width:' + (v * 100) + '%;background:' + c + ';"></div></div>'; };
+        html += '<tr>' +
+            '<td>' + w.rank + '</td>' +
+            '<td style="color:' + HS.getSourceColor(w.result.source) + ';">' + (w.result.source || '?') + '</td>' +
+            '<td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(w.result.title || '') + '</td>' +
+            '<td style="font-weight:700;color:var(--cyan);">' + w.scores.total + '</td>' +
+            '<td>' + bar(w.scores.depth, '#7c3aed') + '</td>' +
+            '<td>' + bar(w.scores.authority, '#22d3ee') + '</td>' +
+            '<td>' + bar(w.scores.breadth, '#34d399') + '</td>' +
+            '<td>' + bar(w.scores.recency, '#f97316') + '</td>' +
+            '<td>' + bar(w.scores.engagement, '#fb7185') + '</td>' +
+            '</tr>';
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+}
+
+function renderAiHeatmap() {
+    var wrap = $('ai-heatmap'); if (!wrap) return;
+    var heatData = HS.getHeatmapData();
+    var entries = Object.keys(heatData);
+    var info = $('ai-heat-info');
+    if (info) info.textContent = entries.length + ' items tracked | clicks: ' + entries.reduce(function(s, k) { return s + heatData[k].clicks; }, 0) + ' | total dwell: ' + Math.round(entries.reduce(function(s, k) { return s + heatData[k].dwellMs; }, 0) / 1000) + 's';
+
+    // Draw engagement heatmap
+    var heatCv = $('ai-heat-canvas');
+    if (heatCv) {
+        var w = heatCv.parentElement.clientWidth || 300;
+        var h = Math.max(120, entries.length * 20 + 40);
+        var dpr = devicePixelRatio || 1;
+        heatCv.width = w * dpr; heatCv.height = h * dpr;
+        heatCv.style.width = w + 'px'; heatCv.style.height = h + 'px';
+        var ctx = heatCv.getContext('2d');
+        ctx.scale(dpr, dpr);
+        var isLight = document.documentElement.classList.contains('light');
+        ctx.fillStyle = isLight ? '#f0f2f5' : '#0a0f1a'; ctx.fillRect(0, 0, w, h);
+
+        if (entries.length === 0) {
+            ctx.fillStyle = isLight ? '#656d76' : '#64748b'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+            ctx.fillText('Interact with results to build heatmap data', w / 2, h / 2);
+        } else {
+            ctx.font = '9px monospace'; ctx.textAlign = 'left';
+            var maxClicks = Math.max.apply(null, entries.map(function(k) { return heatData[k].clicks; }));
+            entries.sort(function(a, b) { return heatData[b].clicks - heatData[a].clicks; });
+            entries.forEach(function(key, idx) {
+                var d = heatData[key];
+                var y = 20 + idx * 20;
+                var barW = maxClicks ? (d.clicks / maxClicks) * (w * 0.5) : 0;
+                // Bar
+                var grad = ctx.createLinearGradient(100, y, 100 + barW, y);
+                grad.addColorStop(0, '#7c3aed'); grad.addColorStop(1, '#22d3ee');
+                ctx.fillStyle = grad; ctx.fillRect(100, y - 5, barW, 10); ctx.fillStyle = isLight ? '#1f2328' : '#e2e8f0';
+                // Label
+                var result = _lastResults[parseInt(key)] || {};
+                ctx.fillText((result.title || 'Item ' + key).substring(0, 15), 4, y + 3);
+                ctx.fillStyle = isLight ? '#656d76' : '#64748b';
+                ctx.fillText(d.clicks + ' clicks', 100 + barW + 6, y + 3);
+            });
+        }
+    }
+
+    // Draw vision zone analysis
+    var visCv = $('ai-vision-canvas');
+    if (visCv && _aiLastStructure) {
+        var zones = HS.computeVisionZones(_aiLastStructure);
+        HS.drawHeatmap(visCv, zones, { height: 180 });
+    } else if (visCv) {
+        HS.drawHeatmap(visCv, [], { height: 120 });
+    }
+}
+
+function renderAiExport() {
+    var el = $('ai-export'); if (!el) return;
+    if (_lastResults.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim);">Search first to generate exports.</div>';
+        return;
+    }
+    var goal = $('ai-goal') ? $('ai-goal').value : 'research';
+    el.innerHTML = '';
+    var exports = [
+        { type: 'research-paper', icon: '&#x1F4DD;', title: 'Research Paper', desc: 'Generate a structured markdown research paper from top-weighted results with source analysis and key themes.' },
+        { type: 'pwa-spec', icon: '&#x1F4F1;', title: 'PWA App Spec', desc: 'Create a JSON specification for an app-maker tool, including suggested features, content sections, and source URLs.' },
+        { type: 'json-data', icon: '&#x1F4CA;', title: 'Weighted Data (JSON)', desc: 'Export all results with AI scores, heatmap data, and analyses as a JSON file for external tools.' },
+    ];
+    exports.forEach(function(exp) {
+        var card = document.createElement('div');
+        card.className = 'ai-export-card';
+        card.innerHTML = '<h4>' + exp.icon + ' ' + exp.title + '</h4><p>' + exp.desc + '</p>';
+        card.onclick = function() {
+            var content, filename, mime;
+            if (exp.type === 'research-paper') {
+                content = HS.generateContent('research-paper', _lastResults, _aiAnalyses, { title: 'Search: ' + ($('search-input') || {}).value, goal: goal });
+                filename = 'uvspeed-research-' + Date.now() + '.md'; mime = 'text/markdown';
+            } else if (exp.type === 'pwa-spec') {
+                content = HS.generateContent('pwa-spec', _lastResults, _aiAnalyses, { goal: goal, appName: ($('search-input') || {}).value || 'Generated App' });
+                filename = 'uvspeed-pwa-spec-' + Date.now() + '.json'; mime = 'application/json';
+            } else {
+                var payload = {
+                    results: _aiWeighted,
+                    heatmap: HS.getHeatmapData(),
+                    goal: goal,
+                    query: ($('search-input') || {}).value,
+                    generated: new Date().toISOString(),
+                    engine: 'uvspeed-history-search-v' + HS.VERSION
+                };
+                var plain = _lastResults.map(function (r) {
+                    return (r.title || '') + '\n' + (r.snippet || r.url || '');
+                }).join('\n\n');
+                if (window.IsomorphicExportFacet && typeof window.IsomorphicExportFacet.attach === 'function') {
+                    payload = window.IsomorphicExportFacet.attach(payload, plain, 'search', { bench: {} });
+                }
+                var QP = window.QuantumPrefixes;
+                if (QP && _lastResults.length) {
+                    payload.snippetFacets = [];
+                    _lastResults.slice(0, 10).forEach(function (r, i) {
+                        var t = (r.title || '') + '\n' + (r.snippet || r.url || '');
+                        var lang = QP.detectLanguage ? QP.detectLanguage(t) : 'markdown';
+                        var m = QP.prefixMetadata(t, lang);
+                        payload.snippetFacets.push({
+                            index: i,
+                            language: m.language,
+                            classifiedLines: m.classifiedLines,
+                            totalLines: m.totalLines
+                        });
+                    });
+                }
+                content = JSON.stringify(payload, null, 2);
+                filename = 'uvspeed-ai-data-' + Date.now() + '.json'; mime = 'application/json';
+            }
+            var blob = new Blob([content], { type: mime });
+            var a = document.createElement('a');
+            a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+            URL.revokeObjectURL(a.href);
+            card.style.borderColor = 'var(--green)';
+            setTimeout(function() { card.style.borderColor = ''; }, 800);
+        };
+        el.appendChild(card);
+    });
+}
+
+function renderAiSuggest() {
+    var el = $('ai-suggest'); if (!el) return;
+    if (_lastResults.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim);">Search first to get AI suggestions.</div>';
+        return;
+    }
+    var suggestions = HS.generateContent('suggestions', _lastResults, _aiAnalyses, { goal: ($('ai-goal') || {}).value || 'research' });
+    el.innerHTML = '';
+    if (!suggestions || !suggestions.length) {
+        el.innerHTML = '<div style="text-align:center;padding:20px;color:var(--dim);">No suggestions at this time.</div>';
+        return;
+    }
+    suggestions.forEach(function(s) {
+        var sug = document.createElement('div');
+        sug.className = 'ai-suggestion';
+        var icons = { research: '&#x1F4DA;', authority: '&#x1F3DB;', breadth: '&#x1F30D;', engagement: '&#x1F4C8;', export: '&#x1F4E4;', layout: '&#x1F4CC;', analysis: '&#x1F9EA;' };
+        sug.innerHTML =
+            '<span class="sug-icon">' + (icons[s.type] || '&#x1F4A1;') + '</span>' +
+            '<span class="sug-text">' + s.text + '</span>' +
+            (s.priority ? '<span class="sug-priority sug-' + s.priority + '">' + s.priority + '</span>' : '');
+        if (s.action) {
+            sug.style.cursor = 'pointer';
+            sug.onclick = function() {
+                if (s.action === 'board-view') setAiView('board');
+                else if (s.action === 'heatmap') setAiView('heatmap');
+                else if (s.action === 'research-paper' || s.action === 'pwa-spec') setAiView('export');
+            };
+        }
+        el.appendChild(sug);
+    });
+}
+
+function renderAiTyping() {
+    var el = $('ai-typing'); if (!el) return;
+    var data = HS.getKbatchData ? HS.getKbatchData() : { sessions: [], aggregates: null };
+    if (!data.sessions || data.sessions.length === 0) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--dim);font-size:13px;">' +
+            '<div style="font-size:36px;margin-bottom:12px;">&#x2328;</div>' +
+            '<b>No typing data yet</b><br><br>' +
+            'Open <a href="kbatch.html" style="color:var(--accent);">KBatch</a> and complete some training drills,<br>' +
+            'then click "Push to Search" to send data here.<br><br>' +
+            '<span style="font-size:10px;color:var(--muted);">Data arrives via BroadcastChannel in real-time.</span>' +
+            '</div>';
+        return;
+    }
+    var analysis = HS.analyzeKeyboardPatterns ? HS.analyzeKeyboardPatterns(data.sessions) : null;
+    if (!analysis) { el.innerHTML = '<div style="padding:20px;color:var(--dim);">Analysis unavailable.</div>'; return; }
+    var html = '';
+    // Profile card
+    html += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;">';
+    html += '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:8px;">Typing Profile</div>';
+    html += '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;font-family:var(--mono);font-size:11px;">';
+    var profileItems = [
+        ['WPM', analysis.avgWpm, analysis.avgWpm > 60 ? '#3fb950' : analysis.avgWpm > 30 ? '#d4a017' : '#f85149'],
+        ['Accuracy', analysis.avgAccuracy + '%', analysis.avgAccuracy > 90 ? '#3fb950' : '#d4a017'],
+        ['Style', analysis.typingStyle, '#a78bfa'],
+        ['Tempo', analysis.musicalTempo, '#f472b6'],
+        ['Dance', analysis.danceStyle, '#fb923c'],
+        ['Sessions', analysis.totalSessions, '#58a6ff'],
+    ];
+    profileItems.forEach(function(p) {
+        html += '<div style="text-align:center;"><div style="font-size:9px;color:var(--muted);">' + p[0] + '</div><div style="font-size:14px;font-weight:700;color:' + p[2] + ';">' + p[1] + '</div></div>';
+    });
+    html += '</div></div>';
+    // Rhythm patterns
+    if (analysis.topRhythmPatterns && analysis.topRhythmPatterns.length > 0) {
+        html += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;">';
+        html += '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;">Rhythm Patterns <span style="font-size:9px;color:var(--muted);">F=fast M=med S=slow P=pause</span></div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:6px;">';
+        analysis.topRhythmPatterns.forEach(function(p) {
+            html += '<span style="padding:3px 8px;background:var(--bg3);border-radius:4px;font-family:var(--mono);font-size:11px;color:#c084fc;letter-spacing:1px;">' + p[0] + '<span style="color:var(--muted);margin-left:4px;">x' + p[1] + '</span></span>';
+        });
+        html += '</div></div>';
+    }
+    // Drill distribution
+    html += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;">';
+    html += '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;">Drill History</div>';
+    Object.entries(analysis.drillDistribution).forEach(function(e) {
+        var pct = Math.round((e[1] / analysis.totalSessions) * 100);
+        html += '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">';
+        html += '<span style="font-size:11px;color:var(--text);min-width:80px;">' + e[0] + '</span>';
+        html += '<div style="flex:1;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;">';
+        html += '<div style="height:100%;width:' + pct + '%;background:var(--accent);border-radius:3px;"></div></div>';
+        html += '<span style="font-family:var(--mono);font-size:10px;color:var(--muted);">' + e[1] + '</span>';
+        html += '</div>';
+    });
+    html += '</div>';
+    // Biometric data (from Cisponju engine)
+    var bio = data.biometrics || (analysis.biometrics ? analysis.biometrics : null);
+    if (bio || analysis.biometrics) {
+        var b = bio || analysis.biometrics;
+        html += '<div style="background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:14px;">';
+        html += '<div style="font-size:12px;font-weight:700;color:var(--text);margin-bottom:8px;">Biometrics <span style="font-size:9px;color:var(--muted);">Cisponju engine</span></div>';
+        html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;font-family:var(--mono);font-size:11px;">';
+        var bioItems = [];
+        if (b.totalDistMM !== undefined) bioItems.push(['Travel', b.totalDistMM + 'mm', '#58a6ff']);
+        else if (b.avgTravelMM !== undefined) bioItems.push(['Avg Travel', b.avgTravelMM + 'mm', '#58a6ff']);
+        if (b.homeRowPct !== undefined) bioItems.push(['Home Row', b.homeRowPct + '%', b.homeRowPct > 60 ? '#3fb950' : '#d4a017']);
+        else if (b.avgHomeRowPct !== undefined) bioItems.push(['Avg Home Row', b.avgHomeRowPct + '%', b.avgHomeRowPct > 60 ? '#3fb950' : '#d4a017']);
+        if (b.rsiRisk !== undefined) bioItems.push(['RSI Risk', b.rsiRisk + '%', b.rsiRisk < 30 ? '#3fb950' : b.rsiRisk < 60 ? '#d4a017' : '#f85149']);
+        else if (b.avgRsiRisk !== undefined) bioItems.push(['Avg RSI', b.avgRsiRisk + '%', b.avgRsiRisk < 30 ? '#3fb950' : '#d4a017']);
+        if (b.calories !== undefined) bioItems.push(['Calories', (typeof b.calories === 'number' ? b.calories.toFixed(6) : b.calories), '#f472b6']);
+        else if (b.totalCalories !== undefined) bioItems.push(['Total Cal', b.totalCalories.toFixed(6), '#f472b6']);
+        if (b.muscleExertion !== undefined) bioItems.push(['Energy', b.muscleExertion.toFixed(2) + '\u00B5J', '#a78bfa']);
+        if (b.wpm !== undefined) bioItems.push(['WPM', b.wpm, b.wpm > 60 ? '#3fb950' : '#d4a017']);
+        bioItems.forEach(function(p) {
+            html += '<div style="text-align:center;"><div style="font-size:9px;color:var(--muted);">' + p[0] + '</div><div style="font-size:13px;font-weight:700;color:' + p[2] + ';">' + p[1] + '</div></div>';
+        });
+        html += '</div>';
+        if (b.flowPath) {
+            html += '<div style="margin-top:6px;font-size:10px;color:var(--muted);">Flow: <span style="color:#a78bfa;letter-spacing:1px;font-size:12px;">' + (typeof b.flowPath === 'string' ? b.flowPath.slice(-40) : '') + '</span></div>';
+        }
+        html += '</div>';
+    }
+    // Export report button
+    html += '<div style="display:flex;gap:8px;">';
+    html += '<button class="ai-export-card" style="flex:1;border:none;cursor:pointer;" onclick="downloadTypingReport()">&#x1F4CB; Download Pattern Report (.md)</button>';
+    html += '<button class="ai-export-card" style="flex:1;border:none;cursor:pointer;" onclick="downloadTypingJSON()">&#x1F4BE; Download Raw JSON</button>';
+    html += '</div>';
+    el.innerHTML = html;
+}
+function downloadTypingReport() {
+    var data = HS.getKbatchData ? HS.getKbatchData() : {};
+    var md = HS.generatePatternReport ? HS.generatePatternReport(data.sessions || []) : '# No data';
+    var blob = new Blob([md], { type: 'text/markdown' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url; a.download = 'typing-patterns-' + Date.now() + '.md'; a.click();
+    URL.revokeObjectURL(url);
+}
+function downloadTypingJSON() {
+    var data = HS.getKbatchData ? HS.getKbatchData() : {};
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a'); a.href = url; a.download = 'kbatch-data-' + Date.now() + '.json'; a.click();
+    URL.revokeObjectURL(url);
+}
+
+// Hook interaction tracking into existing result clicks
+var _origRenderResults = renderResults;
+renderResults = function(results) {
+    _origRenderResults(results);
+    // Attach hover/dwell tracking to result elements
+    var resultEls = $('results').querySelectorAll('.result');
+    resultEls.forEach(function(el, idx) {
+        var dwellStart = 0;
+        el.addEventListener('mouseenter', function() {
+            HS.trackInteraction(String(idx), 'hover');
+            dwellStart = Date.now();
+        });
+        el.addEventListener('mouseleave', function() {
+            if (dwellStart) HS.trackInteraction(String(idx), 'dwell', Date.now() - dwellStart);
+            dwellStart = 0;
+        });
+        el.addEventListener('click', function() {
+            HS.trackInteraction(String(idx), 'click');
+        });
+    });
+    // Refresh AI panel if visible
+    if (activeMode === 'ai') setTimeout(aiRefresh, 100);
+};
+
+// Hook into doc viewer to capture page structure for vision analysis
+var _origOpenDVForAI = window.openDocViewer;
+if (_origOpenDVForAI) {
+    window.openDocViewer = function(item, idx) {
+        _origOpenDVForAI(item, idx);
+        // After doc loads, analyze page structure
+        HS.fetchDocument(item.url, item.source).then(function(doc) {
+            if (doc && doc.html) {
+                _aiLastStructure = HS.analyzePageStructure(doc.html);
+                var analysis = HS.analyzeContext(doc);
+                _aiAnalyses[String(idx)] = analysis;
+            }
+        }).catch(function() {});
+    };
+}
+
+// Goal change triggers refresh
+if ($('ai-goal')) $('ai-goal').addEventListener('change', aiRefresh);
+if ($('ai-cols')) $('ai-cols').addEventListener('change', function() { if (_aiCurrentView === 'board') renderAiBoard(); });
+
+// ═══════════════════════════════════════════════════════════
+// CROSS-LINGUISTIC CONTEXT INTELLIGENCE (v2.3)
+// ═══════════════════════════════════════════════════════════
+function renderAiContext() {
+    var el = $('ai-context'); if (!el) return;
+    // Gather text from search results
+    var allText = '';
+    if (_lastResults && _lastResults.length > 0) {
+        _lastResults.forEach(function(r) { allText += (r.title || '') + ' ' + (r.snippet || '') + ' '; });
+    }
+    // Also include query
+    var query = $('q') ? $('q').value : '';
+    allText = query + ' ' + allText;
+    if (allText.trim().length < 10) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:#484f58;font-size:.75rem;">Search for something to analyze cross-linguistic context</div>';
+        return;
+    }
+    var profile = HS.buildContextProfile ? HS.buildContextProfile(allText) : null;
+    var intel = HS.analyzeTextIntelligence ? HS.analyzeTextIntelligence(allText) : null;
+    if (!intel) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:#484f58;font-size:.75rem;">Text intelligence engine not available</div>';
+        return;
+    }
+    var html = '<div style="padding:12px;font-family:\'SF Mono\',monospace;font-size:.6875rem;">';
+    // Header
+    html += '<div style="font-weight:700;color:#58a6ff;margin-bottom:8px;font-size:.8125rem;">\uD83E\uDDE0 Context Intelligence</div>';
+    // AI Recommendations
+    if (profile && profile.recommendations && profile.recommendations.length > 0) {
+        html += '<div style="background:#1c2129;border:1px solid #30363d;border-radius:6px;padding:8px;margin-bottom:8px;">';
+        html += '<div style="font-weight:700;color:#3fb950;margin-bottom:4px;">\uD83E\uDD16 AI Recommendations</div>';
+        profile.recommendations.forEach(function(r) {
+            var icon = r.type === 'caution' ? '\u26A0' : r.type === 'verify' ? '\uD83D\uDD0D' : r.type === 'priority' ? '\u26A1' : r.type === 'domain' ? '\uD83C\uDFAF' : r.type === 'tone' ? '\uD83D\uDCAC' : r.type === 'adapt' ? '\uD83C\uDFAD' : '\u2139';
+            html += '<div style="color:#8b949e;padding:2px 0;">' + icon + ' ' + r.msg + '</div>';
+        });
+        html += '</div>';
+    }
+    // Register detection
+    html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;">';
+    html += '<div style="padding:6px 8px;background:#161b22;border:1px solid #21262d;border-radius:6px;"><div style="font-size:.5625rem;color:#484f58;">Registers</div><div style="color:#e6edf3;font-weight:700;">';
+    if (intel.registers.length > 0) {
+        intel.registers.forEach(function(r) { html += '<span style="color:' + ({'formal':'#3b82f6','academic':'#a78bfa','casual':'#34d399','medical':'#ef4444','legal':'#fbbf24','tech':'#06b6d4','news':'#f43f5e','survival':'#16a34a'}[r.type] || '#8b949e') + ';">' + r.type + '</span> '; });
+    } else { html += '<span style="color:#484f58;">generic</span>'; }
+    html += '</div></div>';
+    html += '<div style="padding:6px 8px;background:#161b22;border:1px solid #21262d;border-radius:6px;"><div style="font-size:.5625rem;color:#484f58;">Age Register</div><div style="color:#f472b6;font-weight:700;">' + intel.ageRegister + '</div></div>';
+    html += '<div style="padding:6px 8px;background:#161b22;border:1px solid #21262d;border-radius:6px;"><div style="font-size:.5625rem;color:#484f58;">Regional</div><div style="color:#fb923c;font-weight:700;">' + intel.regionalVariant + '</div></div>';
+    html += '<div style="padding:6px 8px;background:#161b22;border:1px solid #21262d;border-radius:6px;"><div style="font-size:.5625rem;color:#484f58;">Sentiment</div><div style="color:' + (intel.sentimentLean === 'positive' ? '#3fb950' : intel.sentimentLean === 'negative' ? '#f85149' : '#8b949e') + ';font-weight:700;">' + intel.sentimentLean + '</div></div>';
+    html += '<div style="padding:6px 8px;background:#161b22;border:1px solid #21262d;border-radius:6px;"><div style="font-size:.5625rem;color:#484f58;">Complexity</div><div style="font-weight:700;">' + intel.complexity + '/100 <span style="color:#484f58;">(' + intel.readingLevel + ')</span></div></div>';
+    html += '<div style="padding:6px 8px;background:#161b22;border:1px solid #21262d;border-radius:6px;"><div style="font-size:.5625rem;color:#484f58;">Intent Signals</div><div style="color:#a78bfa;font-weight:700;">' + (intel.intentSignals.length > 0 ? intel.intentSignals.join(', ') : 'none') + '</div></div>';
+    html += '</div>';
+    // Phrase patterns
+    if (intel.phrasePatterns.length > 0) {
+        html += '<div style="margin-bottom:8px;"><div style="font-weight:700;color:#e6edf3;margin-bottom:4px;">Top Phrase Patterns</div>';
+        html += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+        intel.phrasePatterns.slice(0, 8).forEach(function(p) {
+            html += '<span style="padding:2px 8px;background:#161b22;border:1px solid #30363d;border-radius:4px;color:#8b949e;">"' + p.phrase + '" \u00D7' + p.count + '</span>';
+        });
+        html += '</div></div>';
+    }
+    // Capsule cross-references
+    if (profile && profile.capsuleMatches && profile.capsuleMatches.length > 0) {
+        html += '<div style="margin-bottom:8px;"><div style="font-weight:700;color:#e6edf3;margin-bottom:4px;">Knowledge Base Matches</div>';
+        html += '<div style="display:flex;flex-direction:column;gap:4px;">';
+        profile.capsuleMatches.forEach(function(m) {
+            var pct = Math.round(m.coverage * 100);
+            html += '<div style="display:flex;align-items:center;gap:8px;padding:4px 8px;background:#161b22;border:1px solid #21262d;border-radius:4px;">';
+            html += '<span style="font-weight:700;color:#58a6ff;min-width:120px;">' + m.name + '</span>';
+            html += '<span style="color:#484f58;font-size:.5rem;">' + m.cat + '</span>';
+            html += '<span style="flex:1;background:#21262d;height:6px;border-radius:3px;overflow:hidden;"><span style="display:block;height:100%;width:' + pct + '%;background:#3fb950;border-radius:3px;"></span></span>';
+            html += '<span style="color:#3fb950;font-size:.5625rem;">' + m.matchCount + ' hits (' + pct + '%)</span>';
+            html += '</div>';
+        });
+        html += '</div></div>';
+    }
+    // Persona Context
+    if (profile && profile.personaContext && window.PersonaContext) {
+        html += window.PersonaContext.renderContextCard(profile.personaContext);
+    }
+    // Cache Intelligence
+    if (profile && profile.cacheInsights) {
+        var ci = profile.cacheInsights;
+        html += '<div style="margin-bottom:8px;padding:8px;background:#1c2129;border:1px solid #30363d;border-radius:6px;">';
+        html += '<div style="font-weight:700;color:#c084fc;margin-bottom:4px;">\uD83E\uDDE0 Cache Intelligence</div>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;">';
+        html += '<div style="padding:4px;background:#161b22;border-radius:4px;"><div style="font-size:.5rem;color:#484f58;">Known</div><b style="color:#3fb950;">' + ci.knownPct + '%</b> <span style="font-size:.5rem;color:#484f58;">(' + ci.knownWords + '/' + ci.totalWords + ')</span></div>';
+        html += '<div style="padding:4px;background:#161b22;border-radius:4px;"><div style="font-size:.5rem;color:#484f58;">Avg Relevance</div><b style="color:#58a6ff;">' + ci.avgRelevance + '</b></div>';
+        html += '<div style="padding:4px;background:#161b22;border-radius:4px;"><div style="font-size:.5rem;color:#484f58;">Avg Difficulty</div><b style="color:#fb923c;">' + ci.avgDifficulty + '</b></div>';
+        html += '</div>';
+        if (ci.quantumGateDistribution && Object.keys(ci.quantumGateDistribution).length > 0) {
+            html += '<div style="margin-top:4px;font-size:.5625rem;color:#8b949e;">Quantum Gates: ';
+            Object.entries(ci.quantumGateDistribution).forEach(function(e) { html += '<span style="color:#a78bfa;">' + e[0] + '</span>:' + e[1] + ' '; });
+            html += '</div>';
+        }
+        html += '<div style="font-size:.5rem;color:#484f58;margin-top:2px;">Cache: ' + ci.cacheSize + ' words trained</div>';
+        html += '</div>';
+    }
+    // Export
+    html += '<div style="display:flex;gap:6px;margin-top:8px;">';
+    html += '<button class="qp-btn qp-btn-secondary" style="font-size:.5625rem;" onclick="downloadContextProfile()">Download Profile</button>';
+    if (typeof window !== 'undefined' && window.CacheIntel) {
+        html += '<button class="qp-btn qp-btn-secondary" style="font-size:.5625rem;" onclick="downloadCacheML()">Export ML Training Data</button>';
+    }
+    html += '</div>';
+    html += '</div>';
+    el.innerHTML = html;
+}
+
+// ── Transcript Analyzer Tab ──
+var _transcriptCache = {};
+function renderAiTranscript() {
+    var el = $('ai-transcript'); if (!el) return;
+    // Find YouTube results from last search
+    var ytResults = (_lastResults || []).filter(function(r) { return r.source === 'youtube' && r.videoId; });
+    var html = '<div style="padding:8px;">';
+    html += '<div style="font-weight:700;color:#ff0000;margin-bottom:8px;font-size:.75rem;">\uD83C\uDFAC YouTube Transcript Analyzer</div>';
+    html += '<div style="font-size:.625rem;color:#8b949e;margin-bottom:8px;">Fetch transcripts → run Universal Encoder (flow, rhythm, music, cadence, concept atoms) on every line</div>';
+    // Manual URL input
+    html += '<div style="display:flex;gap:6px;margin-bottom:8px;"><input type="text" id="yt-url-input" placeholder="YouTube URL or video ID..." style="flex:1;padding:6px 8px;background:#161b22;border:1px solid #30363d;border-radius:4px;color:#e6edf3;font-size:.6875rem;"><button class="qp-btn" style="font-size:.625rem;background:rgba(255,0,0,0.15);border-color:rgba(255,0,0,0.3);color:#ff6b6b;" onclick="runTranscriptAnalysis()">Analyze</button></div>';
+    // YouTube results from search
+    if (ytResults.length > 0) {
+        html += '<div style="font-size:.5625rem;color:#484f58;margin-bottom:4px;">From search results:</div>';
+        ytResults.forEach(function(r) {
+            html += '<div style="display:flex;gap:6px;align-items:center;padding:4px;background:#161b22;border:1px solid #21262d;border-radius:4px;margin-bottom:4px;cursor:pointer;" onclick="runTranscriptAnalysis(\'' + (r.videoId || '').replace(/'/g, '') + '\')">';
+            html += '<span style="color:#ff0000;font-weight:700;font-size:.75rem;">▶</span>';
+            html += '<span style="flex:1;font-size:.5625rem;color:#e6edf3;">' + (r.title || '').substring(0, 60) + '</span>';
+            html += '<span style="font-size:.5rem;color:#484f58;">' + (r.snippet || '').substring(0, 40) + '</span>';
+            html += '</div>';
+        });
+    }
+    // Cached analysis results
+    html += '<div id="yt-analysis-output" style="margin-top:8px;"></div>';
+    html += '</div>';
+    el.innerHTML = html;
+    // Re-render cached analysis if exists
+    var lastKey = Object.keys(_transcriptCache).pop();
+    if (lastKey) renderTranscriptResults(_transcriptCache[lastKey]);
+}
+
+async function runTranscriptAnalysis(videoId) {
+    var url = videoId || ($('yt-url-input') ? $('yt-url-input').value.trim() : '');
+    if (!url) return;
+    var outEl = $('yt-analysis-output');
+    if (outEl) outEl.innerHTML = '<div style="color:#58a6ff;font-size:.625rem;">Fetching transcript...</div>';
+    try {
+        var result = await HS.analyzeYouTubeVideo(url);
+        _transcriptCache[url] = result;
+        renderTranscriptResults(result);
+    } catch(e) {
+        if (outEl) outEl.innerHTML = '<div style="color:#f85149;font-size:.625rem;">Error: ' + e.message + '</div>';
+    }
+}
+window.runTranscriptAnalysis = runTranscriptAnalysis;
+
+function renderTranscriptResults(result) {
+    var outEl = $('yt-analysis-output');
+    if (!outEl || !result) return;
+    if (result.error) {
+        outEl.innerHTML = '<div style="color:#f85149;font-size:.625rem;">Error: ' + result.error + '</div>';
+        return;
+    }
+    var html = '';
+    // Summary stats
+    html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;">';
+    html += '<div style="padding:6px;background:#161b22;border-radius:4px;border:1px solid #21262d;"><div style="font-size:.5rem;color:#484f58;">Lines</div><b style="color:#e6edf3;">' + result.lineCount + '</b></div>';
+    html += '<div style="padding:6px;background:#161b22;border-radius:4px;border:1px solid #21262d;"><div style="font-size:.5rem;color:#484f58;">Words</div><b style="color:#58a6ff;">' + result.totalWords + '</b></div>';
+    html += '<div style="padding:6px;background:#161b22;border-radius:4px;border:1px solid #21262d;"><div style="font-size:.5rem;color:#484f58;">Avg BPM</div><b style="color:#3fb950;">' + result.avgBpm + '</b></div>';
+    html += '<div style="padding:6px;background:#161b22;border-radius:4px;border:1px solid #21262d;"><div style="font-size:.5rem;color:#484f58;">Compression</div><b style="color:#c084fc;">' + result.avgCompression + 'x</b></div>';
+    html += '</div>';
+    // Concept atoms
+    if (result.topConceptAtoms && result.topConceptAtoms.length > 0) {
+        html += '<div style="margin-bottom:8px;"><div style="font-size:.5625rem;color:#a78bfa;font-weight:700;margin-bottom:4px;">Top Concept Atoms</div>';
+        html += '<div style="display:flex;gap:3px;flex-wrap:wrap;">';
+        result.topConceptAtoms.forEach(function(a) {
+            html += '<span style="padding:2px 6px;background:#161b22;border:1px solid #30363d;border-radius:3px;font-size:.75rem;" title="' + a[1] + ' occurrences">' + a[0] + '<span style="font-size:.4375rem;color:#484f58;margin-left:2px;">' + a[1] + '</span></span>';
+        });
+        html += '</div></div>';
+    }
+    // Cadence distribution
+    if (result.cadenceDistribution) {
+        html += '<div style="margin-bottom:8px;"><div style="font-size:.5625rem;color:#fbbf24;font-weight:700;margin-bottom:4px;">Cadence \u00b7 Flow \u00b7 Frequency</div>';
+        html += '<div style="display:flex;gap:8px;font-size:.5625rem;">';
+        html += '<span style="color:#8b949e;">Cadence: ' + Object.entries(result.cadenceDistribution).map(function(e) { return e[0] + ':' + e[1]; }).join(', ') + '</span>';
+        if (result.conceptFlowDistribution) html += '<span style="color:#8b949e;">Flow: ' + Object.entries(result.conceptFlowDistribution).map(function(e) { return e[0] + ':' + e[1]; }).join(', ') + '</span>';
+        if (result.chantLines > 0) html += '<span style="color:#fb923c;">Chant lines: ' + result.chantLines + '</span>';
+        html += '</div></div>';
+    }
+    // Line-by-line with flow/rhythm/concept (scrollable, first 30)
+    if (result.lines && result.lines.length > 0) {
+        html += '<div style="font-size:.5625rem;color:#58a6ff;font-weight:700;margin-bottom:4px;">Line Analysis (flow \u00b7 rhythm \u00b7 concepts)</div>';
+        html += '<div style="max-height:200px;overflow-y:auto;background:#0d1117;border:1px solid #21262d;border-radius:4px;padding:4px;">';
+        result.lines.slice(0, 30).forEach(function(l) {
+            html += '<div style="padding:3px 4px;border-bottom:1px solid #161b22;font-size:.5rem;">';
+            html += '<div style="color:#e6edf3;margin-bottom:2px;">' + (l.text || '').substring(0, 80) + '</div>';
+            html += '<div style="display:flex;gap:8px;color:#484f58;">';
+            if (l.flowArrows) html += '<span>\u2B05 ' + l.flowArrows.substring(0, 20) + '</span>';
+            if (l.beats) html += '<span>\uD83E\uDD41 ' + l.beats.substring(0, 15) + '</span>';
+            if (l.conceptSymbols) html += '<span style="color:#a78bfa;">' + l.conceptSymbols.substring(0, 15) + '</span>';
+            if (l.cadence) html += '<span style="color:#fbbf24;">' + l.cadence + '</span>';
+            if (l.bpm) html += '<span>' + l.bpm + 'bpm</span>';
+            html += '</div></div>';
+        });
+        if (result.lines.length > 30) html += '<div style="text-align:center;color:#484f58;font-size:.5rem;padding:4px;">...and ' + (result.lines.length - 30) + ' more lines</div>';
+        html += '</div>';
+    }
+    // Export button
+    html += '<div style="margin-top:8px;"><button class="qp-btn qp-btn-secondary" style="font-size:.5625rem;" onclick="exportTranscriptAnalysis()">Export Full Analysis (JSON)</button></div>';
+    outEl.innerHTML = html;
+}
+
+function exportTranscriptAnalysis() {
+    var lastKey = Object.keys(_transcriptCache).pop();
+    if (!lastKey) return;
+    var data = _transcriptCache[lastKey];
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'transcript-analysis-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+}
+window.exportTranscriptAnalysis = exportTranscriptAnalysis;
+
+function downloadCacheML() {
+    if (!window.CacheIntel) return;
+    var data = window.CacheIntel.exportTrainingData();
+    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'cache-intel-training-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+}
+
+function downloadContextProfile() {
+    var query = $('q') ? $('q').value : '';
+    var allText = query;
+    if (_lastResults) _lastResults.forEach(function(r) { allText += ' ' + (r.title || '') + ' ' + (r.snippet || ''); });
+    var profile = HS.buildContextProfile ? HS.buildContextProfile(allText) : null;
+    if (!profile) return;
+    var blob = new Blob([JSON.stringify(profile, null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'context-profile-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+}
+
+// ── PWA ──
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(()=>{});
+window.addEventListener('search-drill-cluster', function () {
+    if (_dvDoc) renderDvTab();
+});
+// ===== QUANTUM PREFIX LIVE SYNC =====
+const QP = window.QuantumPrefixes;
+if(QP){
+    QP.onStateChange(function(src,state){if(src==='search'||!state)return;});
+    QP.broadcastState('search',{coverage:0,totalLines:0,classifiedLines:0,prefixCounts:{},role:'search'});
+    QP.requestStateSync();
+}
+})();
+</script>
+</body>
+</html>

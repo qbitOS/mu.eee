@@ -11,14 +11,15 @@
 <script>
 (function(){
   var b = '';
-  var h = location.hostname;
-  var p = location.pathname;
-  if (
-    (h === 'qbitos.github.io' && p.indexOf('/mu.eee/') !== -1) ||
-    h === 'mueee.qbitos.ai' ||
-    h === 'mu.eee.qbitos.ai'
-  )
-    b = 'https://qbitos.github.io/uvspeed/web/';
+  try {
+    var q = new URLSearchParams(location.search);
+    var pb = q.get('paneBase');
+    if (pb === 'uvspeed') {
+      b = 'https://qbitos.github.io/uvspeed/web/';
+    } else if (pb && /^https?:\/\//i.test(pb)) {
+      b = pb.replace(/\/?$/, '/');
+    }
+  } catch (e) {}
   window.__MUEEE_PANE_BASE__ = b;
   if (b) {
     var l = document.getElementById('mueee-quantum-theme-css');
