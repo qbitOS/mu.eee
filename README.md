@@ -15,12 +15,26 @@ Internal HTML name: **`mueee.html`**. This repo tracks **org alignment** (same e
 
 See **[UPSTREAM.md](UPSTREAM.md)** and **[docs/BUILD.md](docs/BUILD.md)** for sync and build.
 
+## Live: mu.eee.qbitos.ai (Cloudflare)
+
+The public **μ'search** shell is intended at **https://mu.eee.qbitos.ai/** via a **Cloudflare Worker** that serves **`mueee.html`** and proxies static assets from the uvspeed **`web/`** tree on GitHub Pages.
+
+| Step | Action |
+|------|--------|
+| Worker source | [uvspeed `cloudflare/mu-eee-subdomain-worker.js`](https://github.com/qbitOS/uvspeed/blob/main/cloudflare/mu-eee-subdomain-worker.js) |
+| Env | `PAGES_WEB_ORIGIN` = `https://qbitos.github.io/uvspeed/web` (or your Pages `web` base) |
+| Route | `mu.eee.qbitos.ai/*` |
+| DNS | CNAME **`mu.eee`** on zone **`qbitos.ai`** → Pages / org policy |
+
+**Operator checklist:** **[docs/DEPLOY-qbitos.md](docs/DEPLOY-qbitos.md)** · **Upstream mirror:** [uvspeed `docs/deployment/mu-eee-qbitos-subdomain.md`](https://github.com/qbitOS/uvspeed/blob/main/docs/deployment/mu-eee-qbitos-subdomain.md)
+
 ## Contents (this repo)
 
 | Path | Purpose |
 |------|---------|
 | [COMPLIANCE.qmd](COMPLIANCE.qmd) | Runtime path + control envelope (qbitOS baseline) |
 | [docs/BUILD.md](docs/BUILD.md) | Regenerate mueee shell from uvspeed; optional static mirror |
+| [docs/DEPLOY-qbitos.md](docs/DEPLOY-qbitos.md) | **mu.eee.qbitos.ai** — Cloudflare Worker + DNS |
 | [reference/mu-eee-manifest.json](reference/mu-eee-manifest.json) | Machine-readable upstream pointers |
 | [.github/workflows](.github/workflows) | Compliance + CI checks |
 
