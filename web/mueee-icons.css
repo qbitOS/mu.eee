@@ -1,0 +1,5 @@
+/* mueee-icons.css — shell chrome (Send in overflow menu, theme) uses vendored Heroicons */
+#mueee-prompt-go.mueee-prompt-menu-item{display:flex;align-items:center;justify-content:flex-start;gap:10px;width:100%;}
+#mueee-prompt-go .mueee-go-ico{width:16px;height:16px;flex-shrink:0;opacity:.92;object-fit:contain;}
+#mueee-theme-toggle{display:inline-flex;align-items:center;justify-content:center;}
+#mueee-theme-toggle img{width:18px;height:18px;object-fit:contain;}

@@ -392,6 +392,12 @@ html.mue-chat .mueee-pane-tools-links .mue-chat-pane-quick-btn--hub{border-left:
 html.mue-chat .mue-chat-footer-drawer-actions{display:flex;flex-direction:column;gap:4px;border-top:none;padding:6px 10px 10px;margin:0;background:var(--qp-bg-secondary);border-bottom:none;}
 html.mue-chat .mue-chat-footer-drawer-actions button{font:600 8px ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:var(--qp-text-muted);padding:4px 8px;border-radius:4px;border:1px solid var(--qp-border);background:var(--qp-bg-tertiary);cursor:pointer;text-align:center;width:100%;box-sizing:border-box;transition:border-color .15s,color .15s,background .15s;}
 html.mue-chat .mue-chat-footer-drawer-actions button:hover{border-color:var(--mue-chat-accent);color:var(--qp-text);background:var(--qp-bg-hover);}
+html.mue-chat .mue-chat-github-resources{border-top:1px solid var(--qp-border);padding:8px 10px 6px;margin:0;background:var(--qp-bg-tertiary);}
+html.mue-chat .mue-chat-github-resources-lbl{font:600 8px ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;color:var(--qp-text-muted);display:block;margin:0 0 6px;line-height:1.35;}
+html.mue-chat .mue-chat-github-resources-links{display:flex;flex-direction:column;gap:3px;align-items:flex-start;}
+html.mue-chat .mue-chat-github-resources a{font:500 11px var(--mue-chat-font-ui);color:#58a6ff;text-decoration:none;border-bottom:1px solid transparent;}
+html.mue-chat .mue-chat-github-resources a:hover{opacity:.92;border-bottom-color:var(--mue-chat-accent);}
+html.mue-chat .mue-chat-github-resources-note{font:500 9px var(--mue-chat-font-ui);color:var(--qp-text-muted);margin:8px 0 0;line-height:1.4;}
 html.mue-chat #mueee-spine-hint{font-size:8px;line-height:1.2;text-align:center;opacity:.88;max-width:11rem;margin:0;}
 html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important;margin:0;padding:0;}
 @media(max-width:720px){
@@ -2023,6 +2029,37 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
         links.appendChild(b);
       });
       inner.appendChild(links);
+      var ghRes = document.createElement('div');
+      ghRes.className = 'mue-chat-github-resources';
+      var ghLbl = document.createElement('span');
+      ghLbl.className = 'mue-chat-github-resources-lbl';
+      ghLbl.textContent = 'GitHub — ecosystem & privacy';
+      var ghLinks = document.createElement('div');
+      ghLinks.className = 'mue-chat-github-resources-links';
+      function ghLink(href, text) {
+        var a = document.createElement('a');
+        a.href = href;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        a.textContent = text;
+        return a;
+      }
+      [
+        ['https://github.com/customer-stories', 'Customer stories'],
+        ['https://the-github-podcast.simplecast.com', 'The GitHub Podcast'],
+        ['https://docs.github.com/en', 'GitHub Docs'],
+        ['https://github.blog/news-insights/product-news/whats-coming-to-our-github-actions-2026-security-roadmap/', 'Actions 2026 security roadmap (supply chain)'],
+        ['https://github.blog/news-insights/company-news/updates-to-github-copilot-interaction-data-usage-policy/', 'Copilot: interaction data & training (policy update)']
+      ].forEach(function (pair) {
+        ghLinks.appendChild(ghLink(pair[0], pair[1]));
+      });
+      var ghNote = document.createElement('p');
+      ghNote.className = 'mue-chat-github-resources-note';
+      ghNote.textContent = 'Copilot Free/Pro/Pro+: from Apr 24, 2026 interaction data may be used for model training unless you opt out in GitHub Settings → Copilot → Privacy. Business/Enterprise are not affected.';
+      ghRes.appendChild(ghLbl);
+      ghRes.appendChild(ghLinks);
+      ghRes.appendChild(ghNote);
+      inner.appendChild(ghRes);
       var actions = document.createElement('div');
       actions.className = 'mue-chat-footer-drawer-actions';
       var btnSpineDrawer = document.createElement('button');
