@@ -5,7 +5,7 @@
 
 (function(root) {
 
-const VERSION = '2.7.0';
+const VERSION = '2.10.3';
 
 /**
  * Optional same-origin / Worker proxy so connectors work when APIs omit CORS (Safari, localhost).
@@ -115,15 +115,109 @@ const SRC_COLORS = {
     'wire-news': '#0d9488',
     /** Library of Congress newspaper directory (History spine #2) */
     'history-archive': '#ea580c',
+    'loc-periodicals': '#c2410c',
+    'loc-photos': '#9a3412',
+    /** YC / Hacker News (Algolia public API) */
+    hn: '#f97316',
+    /** Substack discover (link-out) */
+    substack: '#ff6719',
+    /** YC / HN portal rows (same lane as Substack connector) */
+    'yc-portal': '#ea580c',
+    crunchbase: '#0284c7',
+    sequoia: '#047857',
+    /** AP / Reuters / AFP portal rows (subscription APIs are server-side only) */
+    'press-wire': '#64748b',
+    /** World wires + live CC / TTY-adjacent surfaces (link-out; no wholesale API in browser) */
+    'wire-live-tx': '#ea580c',
+    /** NOAA / NCEI — climate & historical weather portals */
+    'noaa-climate': '#0ea5e9',
+    /** USGS — earthquakes + water + science */
+    'usgs-earth': '#78716c',
+    /** USDA / moon / seasons / solar — agrarian & Earth cycles */
+    'earth-cycles': '#84cc16',
+    /** Better Business Bureau */
+    bbb: '#f59e0b',
+    /** IANA / ICANN / DNS root & RDAP */
+    'iana-icann': '#6366f1',
 };
+
+/** Compact book record for corpus / L2 ingest (search hit — no full work fetch). */
+function buildBookIngestPreviewFromOlSearchDoc(doc, coverUrl) {
+    var key = doc.key || '';
+    var wkey = key.replace(/^\/works\//, '') || '';
+    var ia = doc.ia || [];
+    return {
+        schema: 'uvspeed.book.ingest.v1',
+        title: doc.title || '',
+        subtitle: doc.subtitle || '',
+        authors: doc.author_name || [],
+        year: doc.first_publish_year || null,
+        subjects: (doc.subject || []).slice(0, 16),
+        openLibraryUrl: key ? ('https://openlibrary.org' + key) : '',
+        openLibraryKey: wkey,
+        coverUrl: coverUrl || '',
+        preview: (doc.first_sentence && String(doc.first_sentence).trim()) || '',
+        internetArchiveIds: ia,
+        iaBrowseUrl: ia[0] ? ('https://archive.org/details/' + ia[0]) : '',
+        access: {
+            publicScan: !!doc.public_scan_b,
+            fulltext: !!doc.has_fulltext,
+            ebook: doc.ebook_access || '',
+        },
+        editionCount: doc.edition_count || 0,
+        source: 'openlibrary-search',
+        fetchedAt: Date.now(),
+    };
+}
+
+/**
+ * Map Library of Congress JSON search (`content.results`) into result rows.
+ * Used by multiple LOC facets (newspapers directory already has a dedicated parser).
+ */
+function mapLocSearchResults(d, q, meta) {
+    meta = meta || {};
+    var items = (d.content && d.content.results) || [];
+    var lane = meta.label || 'Library of Congress';
+    return items.map(function (it) {
+        var title =
+            (it.title ||
+                (it.item && it.item.title) ||
+                (it.index && it.index.title) ||
+                it.id ||
+                'LOC item')
+                .toString()
+                .replace(/<[^>]+>/g, '');
+        var thumb = '';
+        if (it.image_url) {
+            thumb = Array.isArray(it.image_url) ? (it.image_url[0] || '') : String(it.image_url);
+        } else if (it.thumbnail) {
+            thumb = typeof it.thumbnail === 'string' ? it.thumbnail : (it.thumbnail.url || '');
+        }
+        var bits = [lane];
+        if (it.date) bits.push(String(it.date));
+        if (it.digitized) bits.push('digitized');
+        return {
+            title: title.substring(0, 220),
+            source: meta.source || 'history-archive',
+            snippet: bits.join(' — ').substring(0, 280),
+            url: it.id || ('https://www.loc.gov/search/?q=' + encodeURIComponent(q)),
+            date: it.date || '',
+            location: (it.partof && it.partof[0]) || '',
+            archive: lane,
+            thumbnail: thumb
+        };
+    });
+}
 
 /* ══════════════════════════════════════════════════════
    CONNECTORS
    ══════════════════════════════════════════════════════ */
 /** Data connectors (expand: push a new object with { name, icon, enabled, search: async (q) => [...] }).
- *  Current count: 24 — Wikipedia, Wikinews, DuckDuckGo, LOC Newspapers, Open Library, Wayback, Sacred Texts,
+ *  Current count: 37 — Wikipedia, Wikinews, DuckDuckGo, LOC Newspapers, LOC Periodicals, LOC Photos, Open Library, Wayback, Sacred Texts,
  *  Yale, ARDA, arXiv, PubChem, GenBank, LGBTQ Archives, Meta Research, HathiTrust, Internet Archive,
- *  FRED, World Bank, CoinGecko, Wiktionary, Datamuse, YouTube, Video Transcripts. */
+ *  FRED, World Bank, CoinGecko, Wiktionary, Datamuse, YouTube, Video Transcripts,
+ *  Agency wires, Agency live TX (world wires + live CC / captions), Hacker News (Algolia), Substack + YC/HN portals, Crunchbase, Sequoia,
+ *  NOAA Climate, USGS, Earth cycles (USDA / moon / seasons / solar), BBB, DNS governance (IANA / ICANN / RDAP). */
 const CONNECTORS = [
     {
         name: 'Wikipedia', icon: 'W', enabled: true,
@@ -171,15 +265,42 @@ const CONNECTORS = [
             }).catch(function () { return []; })
     },
     {
-        /** Instant answer + related (privacy-friendly; works best with fetch proxy in strict browsers). */
+        /** Instant answer + related — api.duckduckgo.com has no CORS in many browsers; use fetch proxy or HTML fallback. */
         name: 'DuckDuckGo', icon: 'DD', enabled: true,
-        search: q =>
-            corsFetch(
-                'https://api.duckduckgo.com/?q=' +
-                    encodeURIComponent(q) +
-                    '&format=json&no_html=1&no_redirect=1&t=uvspeed'
+        search: function (q) {
+            var eq = encodeURIComponent(q);
+            var webFallback = function () {
+                return [
+                    {
+                        title: 'DuckDuckGo — ' + q,
+                        source: 'duckduckgo',
+                        snippet: 'Web results (instant JSON API blocked by CORS here — set localStorage uvspeed-fetch-proxy-url or open link).',
+                        url: 'https://duckduckgo.com/?q=' + eq
+                    },
+                    {
+                        title: 'DuckDuckGo — HTML',
+                        source: 'duckduckgo',
+                        snippet: 'Legacy HTML results page (same-origin not required for navigation).',
+                        url: 'https://duckduckgo.com/html/?q=' + eq
+                    }
+                ];
+            };
+            var skipDdgJson = false;
+            try {
+                if (!getFetchProxyBase() && typeof location !== 'undefined' && location.hostname) {
+                    if (/^(127\.0\.0\.1|localhost)$/i.test(location.hostname)) skipDdgJson = true;
+                }
+            } catch (eSkip) {}
+            if (skipDdgJson) {
+                return Promise.resolve(webFallback());
+            }
+            return corsFetch(
+                'https://api.duckduckgo.com/?q=' + eq + '&format=json&no_html=1&no_redirect=1&t=uvspeed'
             )
-                .then(r => r.json())
+                .then(function (r) {
+                    if (!r.ok) throw new Error('ddg http');
+                    return r.json();
+                })
                 .then(function (d) {
                     var out = [];
                     if (d.Abstract && String(d.Abstract).trim()) {
@@ -187,7 +308,7 @@ const CONNECTORS = [
                             title: (d.Heading || q).substring(0, 200),
                             source: 'duckduckgo',
                             snippet: String(d.Abstract).substring(0, 280),
-                            url: d.AbstractURL || 'https://duckduckgo.com/?q=' + encodeURIComponent(q),
+                            url: d.AbstractURL || 'https://duckduckgo.com/?q=' + eq,
                             thumbnail: d.Image || ''
                         });
                     }
@@ -201,11 +322,13 @@ const CONNECTORS = [
                             });
                         }
                     });
-                    return out.slice(0, 8);
+                    if (out.length) return out.slice(0, 8);
+                    return webFallback();
                 })
                 .catch(function () {
-                    return [];
-                })
+                    return webFallback();
+                });
+        }
     },
     {
         /** Historic newspapers — LOC newspaper directory (CORS `*`; pairs with History spine #2). */
@@ -239,21 +362,75 @@ const CONNECTORS = [
             }).catch(function () { return []; })
     },
     {
+        /** Historic periodicals — same LOC JSON API, different facet (fills “history” bucket with non-newspaper serials). */
+        name: 'LOC Periodicals', icon: 'Pd', enabled: true,
+        search: q =>
+            corsFetch(
+                'https://www.loc.gov/search/?q=' +
+                    encodeURIComponent(q) +
+                    '&fo=json&c=10&fa=original-format:periodical'
+            )
+                .then(r => r.json())
+                .then(d =>
+                    mapLocSearchResults(d, q, {
+                        source: 'loc-periodicals',
+                        label: 'LOC periodicals'
+                    })
+                )
+                .catch(function () {
+                    return [];
+                })
+    },
+    {
+        /** Prints & photographs — visual history lane; still tagged for History band filters. */
+        name: 'LOC Photos', icon: 'Pt', enabled: true,
+        search: q =>
+            corsFetch('https://www.loc.gov/photos/?q=' + encodeURIComponent(q) + '&fo=json&c=10')
+                .then(r => r.json())
+                .then(d =>
+                    mapLocSearchResults(d, q, {
+                        source: 'loc-photos',
+                        label: 'LOC photos / prints'
+                    })
+                )
+                .catch(function () {
+                    return [];
+                })
+    },
+    {
         name: 'Open Library', icon: 'OL', enabled: true,
-        search: q => corsFetch('https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=5')
+        search: q => corsFetch(
+            'https://openlibrary.org/search.json?q=' + encodeURIComponent(q) +
+            '&limit=8&fields=key,title,subtitle,author_name,first_publish_year,cover_i,subject,' +
+            'ia,public_scan_b,has_fulltext,ebook_access,first_sentence,edition_count,lending_edition_s'
+        )
             .then(r => r.json())
-            .then(d => (d.docs || []).slice(0, 5).map(doc => {
+            .then(d => (d.docs || []).slice(0, 8).map(function(doc) {
                 var cover = doc.cover_i ? ('https://covers.openlibrary.org/b/id/' + doc.cover_i + '-M.jpg') : '';
+                var authorLine = (doc.author_name || []).join(', ');
+                var yearBit = doc.first_publish_year ? ' (' + doc.first_publish_year + ')' : '';
+                var preview = (doc.first_sentence && String(doc.first_sentence).trim()) || '';
+                var snippet = preview
+                    ? (preview.length > 220 ? preview.substring(0, 217) + '…' : preview)
+                    : (authorLine + yearBit + (doc.edition_count ? ' · ' + doc.edition_count + ' ed.' : ''));
                 return {
                     title: doc.title,
                     source: 'openlibrary',
-                    snippet: (doc.author_name || []).join(', ') + (doc.first_publish_year ? ' (' + doc.first_publish_year + ')' : ''),
+                    snippet: snippet,
                     url: 'https://openlibrary.org' + doc.key,
                     year: doc.first_publish_year || '',
                     thumbnail: cover,
-                    olCoverId: doc.cover_i || null
+                    olCoverId: doc.cover_i || null,
+                    olFirstSentence: preview || null,
+                    olIa: doc.ia || [],
+                    olPublicScan: !!doc.public_scan_b,
+                    olHasFulltext: !!doc.has_fulltext,
+                    olEbookAccess: doc.ebook_access || '',
+                    olEditionCount: doc.edition_count || 0,
+                    bookIngestPreview: buildBookIngestPreviewFromOlSearchDoc(doc, cover),
                 };
-            })).catch(() => [])
+            })
+            ).catch(() => [])
     },
     {
         /** CDX API has no CORS from browsers — link-out avoids console noise on mueee / PWAs. */
@@ -295,11 +472,28 @@ const CONNECTORS = [
             .then(r => r.text())
             .then(xml => {
                 const entries = [];
-                const re = /<entry>[\s\S]*?<title>([\s\S]*?)<\/title>[\s\S]*?<id>([\s\S]*?)<\/id>[\s\S]*?<summary>([\s\S]*?)<\/summary>[\s\S]*?<\/entry>/g;
-                let m; while ((m = re.exec(xml)) !== null) entries.push({
-                    title: m[1].trim(), source: 'arxiv', url: m[2].trim(),
-                    snippet: m[3].trim().substring(0, 150)
-                });
+                const re = /<entry>([\s\S]*?)<\/entry>/g;
+                let m;
+                while ((m = re.exec(xml)) !== null) {
+                    const block = m[1];
+                    const tm = /<title>([\s\S]*?)<\/title>/.exec(block);
+                    const idm = /<id>([\s\S]*?)<\/id>/.exec(block);
+                    const sm = /<summary>([\s\S]*?)<\/summary>/.exec(block);
+                    const pub = /<published>([^<]+)<\/published>/.exec(block);
+                    const upd = /<updated>([^<]+)<\/updated>/.exec(block);
+                    if (!tm || !idm) continue;
+                    const publishedAt = pub ? pub[1].trim() : '';
+                    const updatedAt = upd ? upd[1].trim() : '';
+                    entries.push({
+                        title: tm[1].trim().replace(/\s+/g, ' '),
+                        source: 'arxiv',
+                        url: idm[1].trim(),
+                        snippet: sm ? sm[1].trim().substring(0, 150) : '',
+                        publishedAt: publishedAt,
+                        updatedAt: updatedAt,
+                        date: publishedAt || updatedAt || ''
+                    });
+                }
                 return entries;
             }).catch(() => [])
     },
@@ -347,13 +541,18 @@ const CONNECTORS = [
     },
     {
         name: 'Internet Archive', icon: 'IA', enabled: true,
-        search: q => corsFetch('https://archive.org/advancedsearch.php?q=' + encodeURIComponent(q) + '&fl[]=identifier,title&rows=5&output=json')
+        search: q => corsFetch('https://archive.org/advancedsearch.php?q=' + encodeURIComponent(q) + '&fl[]=identifier,title,publicdate&rows=5&output=json')
             .then(r => r.json())
-            .then(d => (d.response?.docs || []).map(doc => ({
-                title: doc.title, source: 'internet-archive',
-                snippet: 'Internet Archive collection',
-                url: 'https://archive.org/details/' + doc.identifier
-            }))).catch(() => [])
+            .then(d => (d.response?.docs || []).map(doc => {
+                var pd = doc.publicdate || '';
+                return {
+                    title: doc.title, source: 'internet-archive',
+                    snippet: 'Internet Archive collection',
+                    url: 'https://archive.org/details/' + doc.identifier,
+                    publishedAt: pd,
+                    date: pd
+                };
+            })).catch(() => [])
     },
     // ── Economic / Monetary connectors ──
     {
@@ -453,6 +652,614 @@ const CONNECTORS = [
                     snippet: ts + ' | ' + (s.gate || 'I') + ' gate | ' + (s.type || 'segment') + ' | qpos[' + (s.qpos || [0,0,0]).join(',') + ']'
                 };
             }));
+        }
+    },
+    // ── Wholesale wire portals (browser: search pages; APIs require contracts + server keys) ──
+    {
+        name: 'Agency wires', icon: 'Aw', enabled: true,
+        search: function (q) {
+            return Promise.resolve([
+                {
+                    title: 'AP News — ' + q,
+                    source: 'press-wire',
+                    snippet: 'Associated Press — wholesale API is contract-only; opens site search.',
+                    url: 'https://apnews.com/search?q=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'Reuters — ' + q,
+                    source: 'press-wire',
+                    snippet: 'Reuters — Connect / Newswires are B2B; opens site search.',
+                    url: 'https://www.reuters.com/site-search/?query=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'AFP — ' + q,
+                    source: 'press-wire',
+                    snippet: 'Agence France-Presse — wholesale feeds are subscription; opens site search.',
+                    url: 'https://www.afp.com/en/search?query=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'EFE — Spain — ' + q,
+                    source: 'press-wire',
+                    snippet: 'EFE Agencia — Spanish-language wire; public search (wholesale API is B2B).',
+                    url: 'https://www.efe.com/efe/english/search/?q=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'Europa Press — ' + q,
+                    source: 'press-wire',
+                    snippet: 'Spanish private wire — site search.',
+                    url: 'https://www.europapress.es/buscar/' + encodeURIComponent(q)
+                },
+                {
+                    title: 'ANSA — Italy — ' + q,
+                    source: 'press-wire',
+                    snippet: 'Agenzia Nazionale Stampa Associata — English search.',
+                    url: 'https://www.ansa.it/sito/english/search.shtml?query=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'dpa — Germany — ' + q,
+                    source: 'press-wire',
+                    snippet: 'Deutsche Presse-Agentur — English wire search.',
+                    url: 'https://www.dpa-international.com/search/?q=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'PA Media — UK — ' + q,
+                    source: 'press-wire',
+                    snippet: 'UK national news agency — public site search.',
+                    url: 'https://www.pa.media/search/?q=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'The Guardian — UK — ' + q,
+                    source: 'press-wire',
+                    snippet: 'Guardian Open Platform / editorial search (not raw wire).',
+                    url: 'https://www.theguardian.com/uk/search?q=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'El País — Spain — ' + q,
+                    source: 'press-wire',
+                    snippet: 'Spanish daily — search (complements EFE / Europa Press).',
+                    url: 'https://elpais.com/buscar/?q=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'EU — Commission search — ' + q,
+                    source: 'press-wire',
+                    snippet: 'European Commission portal — news, press, policy (supranational EU bodies).',
+                    url: 'https://commission.europa.eu/search_en?query=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'EUR-Lex — EU law — ' + q,
+                    source: 'press-wire',
+                    snippet: 'Official EU legal database — directives, regs, decisions.',
+                    url: 'https://eur-lex.europa.eu/search.html?type=simple&lang=en&text=' + encodeURIComponent(q)
+                }
+            ]);
+        }
+    },
+    {
+        /** World news agencies + intl broadcast: live streams, CC, ENR-style captions, UN — link-out only (no wholesale transcript API in-browser). */
+        name: 'Agency live TX', icon: 'Tx', enabled: true,
+        search: function (q) {
+            var eq = encodeURIComponent(q);
+            return Promise.resolve([
+                {
+                    title: 'Reuters — site + video desks — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'Wire + Connect are B2B; browser opens public search / video. Automated room transcripts are subscriber-side.',
+                    url: 'https://www.reuters.com/site-search/?query=' + eq
+                },
+                {
+                    title: 'Bloomberg — search & live — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'Terminal EVT / corporate transcripts are Terminal-only; web search + live video use [CC] where offered.',
+                    url: 'https://www.bloomberg.com/search?query=' + eq
+                },
+                {
+                    title: 'Associated Press — AP News — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'AP Newsroom / wholesale APIs are professional; public site search + alerts.',
+                    url: 'https://apnews.com/search?q=' + eq
+                },
+                {
+                    title: 'AFP — Agence France-Presse — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'Wire + multimedia; full feeds subscription. Site search for public copy.',
+                    url: 'https://www.afp.com/en/search?query=' + eq
+                },
+                {
+                    title: 'BBC News — search — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'BBC World + iPlayer: live programmes often carry broadcast CC (regional rules).',
+                    url: 'https://www.bbc.co.uk/search?q=' + eq
+                },
+                {
+                    title: 'BBC iPlayer — live & catch-up',
+                    source: 'wire-live-tx',
+                    snippet: 'UK: live channels; use player [S]ubtitles where enabled — not a raw transcript API.',
+                    url: 'https://www.bbc.co.uk/iplayer'
+                },
+                {
+                    title: 'CNN — search — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'CNN International live streams: web player [CC] for many regions (FCC-style rules in US).',
+                    url: 'https://www.cnn.com/search?q=' + eq
+                },
+                {
+                    title: 'CNN — live',
+                    source: 'wire-live-tx',
+                    snippet: 'Breaking live video; captions on supported browsers/players.',
+                    url: 'https://www.cnn.com/live'
+                },
+                {
+                    title: 'Al Jazeera English — search — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'Live + on-demand; use player captions for speech-to-text style reading.',
+                    url: 'https://www.aljazeera.com/search/?q=' + eq
+                },
+                {
+                    title: 'Al Jazeera — live',
+                    source: 'wire-live-tx',
+                    snippet: 'AJ English live stream page.',
+                    url: 'https://live.aljazeera.com/'
+                },
+                {
+                    title: 'France 24 — search — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'French intl broadcast — live + VOD; captions vary by platform.',
+                    url: 'https://www.france24.com/en/search/?search_mode=normal&query=' + eq
+                },
+                {
+                    title: 'DW — Deutsche Welle — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'German intl public — live TV + audio; subtitles on many clips.',
+                    url: 'https://www.dw.com/en/search/en/?language=en&phrase=' + eq
+                },
+                {
+                    title: 'Euronews — search — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'Pan-European live + VoD; check player for CC.',
+                    url: 'https://www.euronews.com/search?query=' + eq
+                },
+                {
+                    title: 'Sky News — search — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'UK rolling news — live with broadcast captions on supported apps.',
+                    url: 'https://news.sky.com/search?q=' + eq
+                },
+                {
+                    title: 'NPR — search — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'US public radio + live station streams; transcripts on many articles.',
+                    url: 'https://www.npr.org/search?query=' + eq
+                },
+                {
+                    title: 'CBS News — search — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'Network live + local; web [CC] on many players.',
+                    url: 'https://www.cbsnews.com/search/?q=' + eq
+                },
+                {
+                    title: 'ABC News — search — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'ABC News Live + articles; captions on stream where provided.',
+                    url: 'https://abcnews.go.com/search?searchtext=' + eq
+                },
+                {
+                    title: 'NBC News — search — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'MSNBC / NBC digital — live captions platform-dependent.',
+                    url: 'https://www.nbcnews.com/search/?q=' + eq
+                },
+                {
+                    title: 'UN WebTV — search — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'UN meetings & special events — often with UN verbatim / summary docs; video with caption tracks when posted.',
+                    url: 'https://media.un.org/en/asset/search?query=' + eq
+                },
+                {
+                    title: 'UN News — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'UN coverage + press briefings text (not raw steno).',
+                    url: 'https://news.un.org/en/content/un-news-search?search=' + eq
+                },
+                {
+                    title: 'NHK World — Japan — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'English public international — live TV + many clips with subtitles.',
+                    url: 'https://www3.nhk.or.jp/nhkworld/en/news/'
+                },
+                {
+                    title: 'Kyodo News — English — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'Japanese wire English desk (use site search box for topics).',
+                    url: 'https://english.kyodonews.net/'
+                },
+                {
+                    title: 'Yonhap — English — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'Korea wire English service.',
+                    url: 'https://en.yna.co.kr/search?query=' + eq
+                },
+                {
+                    title: 'Xinhua — English — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'China state wire English — site search.',
+                    url: 'https://english.news.cn/'
+                },
+                {
+                    title: 'TASS — English — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'Russian state wire English.',
+                    url: 'https://tass.com/search?search=' + eq
+                },
+                {
+                    title: 'ANSA — English — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'Italian wire English.',
+                    url: 'https://www.ansa.it/english/'
+                },
+                {
+                    title: 'EFE — English — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'Spanish wire international English.',
+                    url: 'https://www.efe.com/efe/english/4'
+                },
+                {
+                    title: 'dpa international — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'German press agency international desk.',
+                    url: 'https://www.dpa-international.com/news/?s=' + eq
+                },
+                {
+                    title: 'Radio New Zealand — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'RNZ news + live audio; article text and some transcripts.',
+                    url: 'https://www.rnz.co.nz/search?q=' + eq
+                },
+                {
+                    title: 'Australian Associated Press — ' + q,
+                    source: 'wire-live-tx',
+                    snippet: 'AAP newswire surface — wholesale is B2B; public site.',
+                    url: 'https://www.aap.com.au/search/?q=' + eq
+                },
+                {
+                    title: 'Rev — transcripts (human + AI)',
+                    source: 'wire-live-tx',
+                    snippet: 'Third-party: upload AV for transcript; not an agency feed.',
+                    url: 'https://www.rev.com/'
+                },
+                {
+                    title: 'Web Captioner — browser live captions',
+                    source: 'wire-live-tx',
+                    snippet: 'DIY: mic / tab audio → live text in browser (TTY-adjacent for some workflows).',
+                    url: 'https://webcaptioner.com/'
+                },
+                {
+                    title: 'FCC — closed captioning rules (US broadcast)',
+                    source: 'wire-live-tx',
+                    snippet: 'Regulatory context for live CC on TV vs web; not agency transcripts.',
+                    url: 'https://www.fcc.gov/general/closed-captioning-video-programming'
+                },
+                {
+                    title: 'Live captioning — Wikipedia',
+                    source: 'wire-live-tx',
+                    snippet: 'Overview: CART, ENR, steno, vs AI live captioning.',
+                    url: 'https://en.wikipedia.org/wiki/Live_captioning'
+                }
+            ]);
+        }
+    },
+    {
+        /** Public Algolia HN API — CORS-friendly; icon `hN` avoids collision with LOC Newspapers (`HN`). */
+        name: 'Hacker News', icon: 'hN', enabled: true,
+        search: function (q) {
+            return corsFetch(
+                'https://hn.algolia.com/api/v1/search?query=' +
+                    encodeURIComponent(q) +
+                    '&tags=story&hitsPerPage=10'
+            )
+                .then(function (r) {
+                    if (!r.ok) throw new Error(String(r.status));
+                    return r.json();
+                })
+                .then(function (d) {
+                    var hits = d.hits || [];
+                    return hits.map(function (h) {
+                        var id = h.objectID || h.story_id || '';
+                        var u = h.url || (id ? 'https://news.ycombinator.com/item?id=' + id : 'https://news.ycombinator.com');
+                        var pts = h.points != null ? h.points + ' pts' : '';
+                        var au = h.author || '';
+                        var nc = h.num_comments != null ? h.num_comments + ' comments' : '';
+                        var sn = [pts, au, nc].filter(Boolean).join(' · ');
+                        var ca = h.created_at || '';
+                        return {
+                            title: (h.title || q).substring(0, 240),
+                            source: 'hn',
+                            snippet: sn || 'Hacker News',
+                            url: u,
+                            date: ca,
+                            publishedAt: ca
+                        };
+                    });
+                })
+                .catch(function () {
+                    return [];
+                });
+        }
+    },
+    {
+        /** Newsletters + YC/HN portal entry points (link-out until your data lake ingests APIs). */
+        name: 'Substack', icon: 'SS', enabled: true,
+        search: function (q) {
+            return Promise.resolve([
+                {
+                    title: 'Substack discover — ' + q,
+                    source: 'substack',
+                    snippet: 'Newsletter search (link-out). Deep ingest: per-publication RSS or your Worker.',
+                    url: 'https://substack.com/discover/search?q=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'Hacker News search — ' + q,
+                    source: 'yc-portal',
+                    snippet: 'Official Algolia search UI (hn.algolia.com) — same story index as news.ycombinator.com.',
+                    url: 'https://hn.algolia.com/?query=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'news.ycombinator.com — home',
+                    source: 'yc-portal',
+                    snippet: 'HN front page. Use the Hacker News connector for ranked story results.',
+                    url: 'https://news.ycombinator.com'
+                },
+                {
+                    title: 'YC Launches — ' + q,
+                    source: 'yc-portal',
+                    snippet: 'Product launches — ycombinator.com/launches',
+                    url: 'https://www.ycombinator.com/launches?q=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'YC Companies — ' + q,
+                    source: 'yc-portal',
+                    snippet: 'Startup directory — ycombinator.com/companies',
+                    url: 'https://www.ycombinator.com/companies?q=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'YC Library — ' + q,
+                    source: 'yc-portal',
+                    snippet: 'Essays & founder posts — ycombinator.com/library',
+                    url: 'https://www.ycombinator.com/library?q=' + encodeURIComponent(q)
+                }
+            ]);
+        }
+    },
+    {
+        name: 'Crunchbase', icon: 'Cb', enabled: true,
+        search: function (q) {
+            return Promise.resolve([{
+                title: 'Crunchbase — ' + q,
+                source: 'crunchbase',
+                snippet: 'Company & funding search (link-out; Crunchbase API is enterprise).',
+                url: 'https://www.crunchbase.com/textsearch?q=' + encodeURIComponent(q)
+            }]);
+        }
+    },
+    {
+        name: 'Sequoia', icon: 'Sq', enabled: true,
+        search: function (q) {
+            return Promise.resolve([
+                {
+                    title: 'Sequoia podcasts — ' + q,
+                    source: 'sequoia',
+                    snippet: 'Podcasts — sequoiacap.com/podcasts',
+                    url: 'https://www.sequoiacap.com/podcasts/'
+                },
+                {
+                    title: 'Sequoia stories — ' + q,
+                    source: 'sequoia',
+                    snippet: 'Essays & spotlights — sequoiacap.com/stories',
+                    url: 'https://www.sequoiacap.com/stories/'
+                },
+                {
+                    title: 'Sequoia portfolio — ' + q,
+                    source: 'sequoia',
+                    snippet: 'Our companies directory — sequoiacap.com/our-companies',
+                    url: 'https://www.sequoiacap.com/our-companies/#all-panel'
+                }
+            ]);
+        }
+    },
+    // ── NOAA / USGS / agrarian cycles / civic trust / Internet governance ──
+    {
+        /** NCEI + Climate.gov + NWS + CO-OPS — link-out (bulk JSON APIs need keys or server proxy). */
+        name: 'NOAA Climate', icon: 'NC', enabled: true,
+        search: function (q) {
+            var eq = encodeURIComponent(q);
+            return Promise.resolve([
+                {
+                    title: 'NCEI — Climate Data Online — ' + q,
+                    source: 'noaa-climate',
+                    snippet: 'NOAA NCEI — GHCN, hourly, normals, radar mosaics; historical weather & climate archives.',
+                    url: 'https://www.ncei.noaa.gov/access/search/data-search?q=' + eq
+                },
+                {
+                    title: 'Climate.gov — ' + q,
+                    source: 'noaa-climate',
+                    snippet: 'NOAA Climate.gov — maps, tools, news, resilience.',
+                    url: 'https://www.climate.gov/search?q=' + eq
+                },
+                {
+                    title: 'Weather.gov — ' + q,
+                    source: 'noaa-climate',
+                    snippet: 'NOAA National Weather Service — forecasts, alerts, past weather.',
+                    url: 'https://www.weather.gov/search?query=' + eq
+                },
+                {
+                    title: 'CO-OPS — tides & currents — ' + q,
+                    source: 'noaa-climate',
+                    snippet: 'NOAA tides & currents — water levels, predictions, harmonic constituents.',
+                    url: 'https://tidesandcurrents.noaa.gov/'
+                }
+            ]);
+        }
+    },
+    {
+        /** USGS FDSN earthquake GeoJSON (CORS) + water / science link-out. */
+        name: 'USGS', icon: 'UG', enabled: true,
+        search: function (q) {
+            var eq = encodeURIComponent(q);
+            var linkOut = [
+                {
+                    title: 'USGS Water — NWIS — ' + q,
+                    source: 'usgs-earth',
+                    snippet: 'National Water Information System — gauges, discharge, groundwater.',
+                    url: 'https://waterdata.usgs.gov/nwis/inventory?search=' + eq
+                },
+                {
+                    title: 'USGS Science Explorer — ' + q,
+                    source: 'usgs-earth',
+                    snippet: 'USGS science stories, data releases, hazards.',
+                    url: 'https://www.usgs.gov/search?query=' + eq
+                }
+            ];
+            return corsFetch(
+                'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=6&orderby=time&text=' + eq
+            )
+                .then(function (r) { return r.json(); })
+                .then(function (geo) {
+                    var feats = geo.features || [];
+                    if (!feats.length) return linkOut;
+                    var rows = feats.map(function (f) {
+                        var p = f.properties || {};
+                        var place = p.place || '';
+                        var mag = p.mag != null ? String(p.mag) : '';
+                        var t = p.time ? new Date(p.time).toISOString() : '';
+                        return {
+                            title: 'M' + mag + ' — ' + place,
+                            source: 'usgs-earth',
+                            snippet: (t ? t + ' — ' : '') + (p.title || place || 'USGS earthquake'),
+                            url: p.url || 'https://earthquake.usgs.gov/earthquakes/eventpage/' + (p.id || ''),
+                            date: t,
+                            publishedAt: t
+                        };
+                    });
+                    return rows.concat(linkOut.slice(0, 1));
+                })
+                .catch(function () { return linkOut; });
+        }
+    },
+    {
+        /** USDA NASS, moon phases, Landsat, NOAA space weather — seasons & Earth–Sun–Moon coupling. */
+        name: 'Earth cycles', icon: 'Ea', enabled: true,
+        search: function (q) {
+            var eq = encodeURIComponent(q);
+            return Promise.resolve([
+                {
+                    title: 'USDA NASS Quick Stats — ' + q,
+                    source: 'earth-cycles',
+                    snippet: 'USDA National Agricultural Statistics — crops, livestock, census, county data.',
+                    url: 'https://quickstats.nass.usda.gov/'
+                },
+                {
+                    title: 'USDA NASS search — ' + q,
+                    source: 'earth-cycles',
+                    snippet: 'USDA National Agricultural Statistics — publications & search.',
+                    url: 'https://www.nass.usda.gov/Search/?q=' + eq
+                },
+                {
+                    title: 'Moon phases — Time and Date — ' + q,
+                    source: 'earth-cycles',
+                    snippet: 'Lunar calendar — phases, illumination, rise/set (refine location in UI).',
+                    url: 'https://www.timeanddate.com/moon/phases/'
+                },
+                {
+                    title: 'USNO — astronomical data — ' + q,
+                    source: 'earth-cycles',
+                    snippet: 'U.S. Naval Observatory — Sun/Moon rise, phases, celestial almanac.',
+                    url: 'https://aa.usno.navy.mil/data/MoonPhases'
+                },
+                {
+                    title: 'USGS EarthExplorer — Landsat — ' + q,
+                    source: 'earth-cycles',
+                    snippet: 'Landsat & aerial — crop cycles, land change, phenology.',
+                    url: 'https://earthexplorer.usgs.gov/'
+                },
+                {
+                    title: 'NOAA SWPC — space weather — ' + q,
+                    source: 'earth-cycles',
+                    snippet: 'Solar cycles, geomagnetic storms, aurora — Earth–Sun coupling.',
+                    url: 'https://www.swpc.noaa.gov/'
+                }
+            ]);
+        }
+    },
+    {
+        name: 'BBB', icon: 'B3', enabled: true,
+        search: function (q) {
+            var eq = encodeURIComponent(q);
+            return Promise.resolve([
+                {
+                    title: 'BBB Business Profiles — ' + q,
+                    source: 'bbb',
+                    snippet: 'Better Business Bureau — accredited businesses, reviews, complaints.',
+                    url: 'https://www.bbb.org/search?find_text=' + eq + '&find_loc=&page=1'
+                },
+                {
+                    title: 'BBB Scam Tracker — ' + q,
+                    source: 'bbb',
+                    snippet: 'BBB Scam Tracker — report and lookup scams.',
+                    url: 'https://www.bbb.org/scamtracker/'
+                }
+            ]);
+        }
+    },
+    {
+        /** IANA root zone + ICANN RDAP + protocol registries — DNS & naming governance. */
+        name: 'DNS governance', icon: 'IG', enabled: true,
+        search: function (q) {
+            var raw = String(q || '').trim();
+            var domain = raw.replace(/^https?:\/\//i, '').split('/')[0].trim();
+            var rdapQ = encodeURIComponent(domain || raw || 'example.com');
+            return Promise.resolve([
+                {
+                    title: 'ICANN Lookup — ' + (domain || raw || 'domain'),
+                    source: 'iana-icann',
+                    snippet: 'RDAP / WHOIS — domain registration and nameserver data.',
+                    url: 'https://lookup.icann.org/en?q=' + rdapQ
+                },
+                {
+                    title: 'IANA — root zone database',
+                    source: 'iana-icann',
+                    snippet: 'Root zone — TLD delegations and operators.',
+                    url: 'https://www.iana.org/domains/root/db'
+                },
+                {
+                    title: 'IANA — root zone file',
+                    source: 'iana-icann',
+                    snippet: 'Authoritative root zone (zone file download).',
+                    url: 'https://www.iana.org/domains/root/files'
+                },
+                {
+                    title: 'IANA — protocol parameter registries',
+                    source: 'iana-icann',
+                    snippet: 'IANA registries — numbers, protocols, MIME, HTTP status, etc.',
+                    url: 'https://www.iana.org/protocols'
+                },
+                {
+                    title: 'ICANN — ' + q,
+                    source: 'iana-icann',
+                    snippet: 'ICANN — policy, DNS security, accountability.',
+                    url: 'https://www.icann.org/en/search?q=' + encodeURIComponent(q)
+                },
+                {
+                    title: 'Public Suffix List',
+                    source: 'iana-icann',
+                    snippet: 'Mozilla Public Suffix List — eTLD / registrable domains.',
+                    url: 'https://publicsuffix.org/list/public_suffix_list.dat'
+                },
+                {
+                    title: 'RDAP — IANA bootstrap (JSON)',
+                    source: 'iana-icann',
+                    snippet: 'ICANN RDAP DNS bootstrap file — programmatic RDAP entry points.',
+                    url: 'https://data.iana.org/rdap/dns.json'
+                }
+            ]);
         }
     },
 ];
@@ -709,6 +1516,88 @@ async function fetchWikidataExternalIds(qid) {
     return out;
 }
 
+/**
+ * Wikipedia / Wikinews: list images used on the page, resolve thumb + full URL via imageinfo.
+ * Skips obvious UI assets; merges REST lead thumbnail when missing from the list.
+ */
+async function fetchWikiGalleryImages(wikiOrigin, decodedTitle, leadThumbUrl, originalImageUrl) {
+    var leadNorm = (leadThumbUrl || '').split('?')[0].toLowerCase();
+    var out = [];
+    try {
+        var qUrl =
+            wikiOrigin +
+            '/w/api.php?action=query&titles=' +
+            encodeURIComponent(decodedTitle) +
+            '&prop=images&imlimit=28&format=json&origin=*';
+        var r = await corsFetch(qUrl);
+        if (!r.ok) throw new Error(String(r.status));
+        var j = await r.json();
+        var pages = j.query && j.query.pages;
+        if (!pages) throw new Error('no pages');
+        var pk = Object.keys(pages)[0];
+        var page = pages[pk];
+        if (!page || page.missing) throw new Error('missing');
+        var imgs = (page && page.images) || [];
+        var titles = [];
+        for (var i = 0; i < imgs.length && titles.length < 20; i++) {
+            var t = imgs[i].title;
+            if (!t) continue;
+            var tl = t.toLowerCase();
+            if (tl.endsWith('.svg')) continue;
+            if (/icon|logo|wikimedia-commons|wikimedia logo|flag of|emoji|favicon|button/i.test(tl)) continue;
+            titles.push(t);
+        }
+        for (var bi = 0; bi < titles.length; bi += 8) {
+            var batch = titles.slice(bi, bi + 8);
+            var iiUrl =
+                wikiOrigin +
+                '/w/api.php?action=query&titles=' +
+                batch.map(encodeURIComponent).join('|') +
+                '&prop=imageinfo&iiprop=url|thumburl&iiurlwidth=480&format=json&origin=*';
+            var r2 = await corsFetch(iiUrl);
+            if (!r2.ok) continue;
+            var j2 = await r2.json();
+            var p2 = j2.query && j2.query.pages;
+            if (!p2) continue;
+            Object.keys(p2).forEach(function (pid) {
+                var pg = p2[pid];
+                if (pg.missing) return;
+                var ii = pg.imageinfo && pg.imageinfo[0];
+                if (!ii) return;
+                var thumb = ii.thumburl || ii.url;
+                var full = ii.url || thumb;
+                if (!thumb) return;
+                out.push({ title: pg.title || '', thumb: thumb, url: full });
+            });
+        }
+        var seen = {};
+        out = out.filter(function (row) {
+            var k = (row.url || '').split('?')[0];
+            if (!k || seen[k]) return false;
+            seen[k] = true;
+            return true;
+        });
+        if (leadThumbUrl) {
+            var haveLead = out.some(function (o) {
+                return (o.url || '').split('?')[0].toLowerCase() === leadNorm;
+            });
+            if (!haveLead) {
+                out.unshift({
+                    title: 'Lead image',
+                    thumb: leadThumbUrl,
+                    url: originalImageUrl || leadThumbUrl
+                });
+            }
+        }
+    } catch (e) {
+        out = [];
+        if (leadThumbUrl) {
+            out.push({ title: '', thumb: leadThumbUrl, url: originalImageUrl || leadThumbUrl });
+        }
+    }
+    return out;
+}
+
 function wikiBuildMediaRefs(doc) {
     var title = doc.title || '';
     var enc = encodeURIComponent;
@@ -820,6 +1709,17 @@ async function fetchDocument(url, source) {
                     if (!doc.imdbId && wdIds.imdbId) doc.imdbId = wdIds.imdbId;
                     if (wdIds.tmdbId) doc.tmdbId = wdIds.tmdbId;
                 }
+                try {
+                    var gal = await fetchWikiGalleryImages(
+                        wikiOrigin,
+                        decodedTitle,
+                        doc.thumbnail || '',
+                        doc.originalimage || ''
+                    );
+                    if (gal && gal.length) doc.wikiGallery = gal;
+                } catch (eGal) {
+                    /* optional */
+                }
                 doc.mediaRefs = wikiBuildMediaRefs(doc);
                 if (!doc.title) doc.title = decodedTitle;
                 if (restData && restData.lang) doc.language = restData.lang;
@@ -839,15 +1739,103 @@ async function fetchDocument(url, source) {
                 doc.authors = aM ? aM.map(function(a) { return a.replace(/<[^>]+>/g, '').trim(); }) : [];
             }
         }
-        // Open Library: fetch work description + subjects
+        // Open Library: work JSON + search mirror (first_sentence, IA) + editions sample + ingest pack + kbatch profile
         else if (source === 'openlibrary' || url.indexOf('openlibrary.org') !== -1) {
             var keyMatch = url.match(/\/works\/(\w+)/);
             if (keyMatch) {
-                var res = await corsFetch('https://openlibrary.org/works/' + keyMatch[1] + '.json');
+                var wkey = keyMatch[1];
+                var res = await corsFetch('https://openlibrary.org/works/' + wkey + '.json');
                 var data = await res.json();
                 doc.title = data.title || '';
-                doc.content = typeof data.description === 'string' ? data.description : (data.description ? data.description.value : '');
-                doc.subjects = (data.subjects || []).slice(0, 20);
+                doc.olWorkKey = wkey;
+                var desc = typeof data.description === 'string' ? data.description : (data.description ? data.description.value : '');
+                doc.subjects = (data.subjects || []).slice(0, 24);
+                if (data.covers && data.covers.length) {
+                    doc.thumbnail = 'https://covers.openlibrary.org/b/id/' + data.covers[0] + '-M.jpg';
+                }
+                doc.olAuthorNames = [];
+                try {
+                    var sRes = await corsFetch(
+                        'https://openlibrary.org/search.json?q=' + encodeURIComponent('key:/works/' + wkey) +
+                        '&limit=1&fields=first_sentence,ia,public_scan_b,has_fulltext,ebook_access,author_name,title,first_publish_year,cover_i,subject,edition_count'
+                    );
+                    var sJson = await sRes.json();
+                    var sd = (sJson.docs || [])[0];
+                    if (sd) {
+                        doc.olFirstSentence = (sd.first_sentence && String(sd.first_sentence).trim()) || '';
+                        doc.olIa = sd.ia || [];
+                        doc.olPublicScan = !!sd.public_scan_b;
+                        doc.olHasFulltext = !!sd.has_fulltext;
+                        doc.olEbookAccess = sd.ebook_access || '';
+                        if ((sd.author_name || []).length) doc.olAuthorNames = sd.author_name;
+                        if (sd.first_publish_year) doc.year = sd.first_publish_year;
+                        if (sd.cover_i && !doc.thumbnail) {
+                            doc.thumbnail = 'https://covers.openlibrary.org/b/id/' + sd.cover_i + '-M.jpg';
+                        }
+                    }
+                } catch (eOlS) { /* optional */ }
+                try {
+                    var eRes = await corsFetch('https://openlibrary.org/works/' + wkey + '/editions.json?limit=6');
+                    var eJson = await eRes.json();
+                    var entries = eJson.entries || [];
+                    doc.olEditionsSample = entries.slice(0, 5).map(function(e) {
+                        return {
+                            key: e.key,
+                            publish_date: e.publish_date,
+                            publishers: (e.publishers || []).slice(0, 2),
+                            isbn_13: (e.isbn_13 || [])[0],
+                            number_of_pages: e.number_of_pages,
+                        };
+                    });
+                } catch (eOlE) { /* optional */ }
+                var parts = [];
+                if (doc.olFirstSentence) parts.push('Preview: ' + doc.olFirstSentence);
+                if (desc) parts.push(desc);
+                if (doc.subjects.length) parts.push('Subjects: ' + doc.subjects.join(', '));
+                doc.content = parts.length ? parts.join('\n\n') : (desc || 'No description indexed for this work.');
+                doc.bookIngest = {
+                    schema: 'uvspeed.book.ingest.v1',
+                    title: doc.title,
+                    authors: doc.olAuthorNames || [],
+                    year: doc.year || '',
+                    subjects: doc.subjects,
+                    workUrl: 'https://openlibrary.org/works/' + wkey,
+                    openLibraryKey: wkey,
+                    coverUrl: doc.thumbnail || '',
+                    preview: doc.olFirstSentence || (desc ? desc.substring(0, 500) : ''),
+                    description: desc || '',
+                    internetArchiveIds: doc.olIa || [],
+                    iaBrowseUrl: (doc.olIa && doc.olIa[0]) ? ('https://archive.org/details/' + doc.olIa[0]) : '',
+                    readUrl: 'https://openlibrary.org/works/' + wkey,
+                    editionsSample: doc.olEditionsSample || [],
+                    access: {
+                        publicScan: doc.olPublicScan,
+                        fulltext: doc.olHasFulltext,
+                        ebook: doc.olEbookAccess || '',
+                    },
+                    source: 'openlibrary-work',
+                    fetchedAt: Date.now(),
+                };
+                try {
+                    if (doc.olIa && doc.olIa[0]) {
+                        var iaId = doc.olIa[0];
+                        var iaRes = await corsFetch('https://archive.org/metadata/' + encodeURIComponent(iaId));
+                        var iaData = await iaRes.json();
+                        doc.olIaMediatype = (iaData.metadata && iaData.metadata.mediatype) || '';
+                        doc.olIaEmbedUrl = 'https://archive.org/embed/' + encodeURIComponent(iaId);
+                        var files = iaData.files || [];
+                        for (var fi = 0; fi < files.length; fi++) {
+                            var fn = files[fi].name || '';
+                            if (/\.mp3$/i.test(fn) && fn.indexOf('sample') === -1) {
+                                doc.olIaAudioUrl = 'https://archive.org/download/' + encodeURIComponent(iaId) + '/' + encodeURIComponent(fn);
+                                break;
+                            }
+                        }
+                    }
+                } catch (eIaMeta) { /* optional */ }
+                try {
+                    doc._contextProfile = buildContextProfile(doc.content);
+                } catch (eProf) { doc._contextProfile = null; }
             }
         }
         // Internet Archive: metadata endpoint
@@ -875,7 +1863,12 @@ async function fetchDocument(url, source) {
             }
         }
         // Library of Congress item (newspaper directory / history-archive)
-        else if (source === 'history-archive' || (url.indexOf('loc.gov') !== -1 && url.indexOf('/item/') !== -1)) {
+        else if (
+            source === 'history-archive' ||
+            source === 'loc-periodicals' ||
+            source === 'loc-photos' ||
+            (url.indexOf('loc.gov') !== -1 && url.indexOf('/item/') !== -1)
+        ) {
             var locMatch = url.match(/loc\.gov\/item\/(\d+)/);
             if (locMatch) {
                 var locRes = await corsFetch('https://www.loc.gov/item/' + locMatch[1] + '/?fo=json');
@@ -1011,7 +2004,7 @@ function analyzeContext(doc) {
         'The heartbeat metric (' + Math.round(heartbeat * 100) + '% humanity) distinguishes profit-oriented framing from human-oriented content, ' +
         'but this distinction is itself a value judgment encoded in word lists. The system does not understand meaning; it counts patterns.';
 
-    return {
+    var out = {
         tone: tone,
         vocabulary: vocabulary,
         subReferences: subReferences,
@@ -1021,6 +2014,10 @@ function analyzeContext(doc) {
         heartbeat: heartbeat,
         aiPerspective: aiPerspective,
     };
+    if (doc && doc._contextProfile) {
+        out.kbatchContextProfile = doc._contextProfile;
+    }
+    return out;
 }
 
 /* ══════════════════════════════════════════════════════
@@ -1166,13 +2163,171 @@ function analyzePageStructure(html) {
     };
 }
 
-// AI Metric Weighting — score results by usefulness
+/* ══════════════════════════════════════════════════════
+   SOURCE GOVERNANCE (Ground News–style: bias axis + pipeline)
+   Curated heuristics for ranking + UI — expand via Worker/API later.
+   biasAxis: -1 far left … 0 center … +1 far right (approximate).
+   ══════════════════════════════════════════════════════ */
+var DEFAULT_GOVERNANCE = {
+    biasLabel: 'unknown',
+    biasAxis: 0,
+    factuality: 0.5,
+    longevity: 0.5,
+    ownership: 'unknown',
+    transparency: 0.5,
+    pipeline: 'unknown',
+};
+
+var GOVERNANCE_BY_CONNECTOR = {
+    wikipedia: { biasLabel: 'center', biasAxis: 0, factuality: 0.88, longevity: 0.98, ownership: 'Wikimedia', transparency: 0.75, pipeline: 'wiki-community' },
+    wiktionary: { biasLabel: 'center', biasAxis: 0, factuality: 0.85, longevity: 0.96, ownership: 'Wikimedia', transparency: 0.75, pipeline: 'wiki-community' },
+    'wire-news': { biasLabel: 'center', biasAxis: 0, factuality: 0.72, longevity: 0.75, ownership: 'Wikinews', transparency: 0.6, pipeline: 'editorial-wiki' },
+    'history-archive': { biasLabel: 'center', biasAxis: 0, factuality: 0.85, longevity: 0.95, ownership: 'Library of Congress', transparency: 0.9, pipeline: 'federal-archive' },
+    arxiv: { biasLabel: 'n/a', biasAxis: 0, factuality: 0.92, longevity: 0.95, ownership: 'arXiv/Cornell', transparency: 0.95, pipeline: 'preprint-research' },
+    'meta-research': { biasLabel: 'org', biasAxis: -0.05, factuality: 0.78, longevity: 0.88, ownership: 'Meta', transparency: 0.65, pipeline: 'corp-lab' },
+    pubchem: { biasLabel: 'n/a', biasAxis: 0, factuality: 0.95, longevity: 0.98, ownership: 'NCBI/NIH', transparency: 0.9, pipeline: 'gov-science' },
+    genbank: { biasLabel: 'n/a', biasAxis: 0, factuality: 0.95, longevity: 0.98, ownership: 'NCBI/NIH', transparency: 0.9, pipeline: 'gov-science' },
+    hathitrust: { biasLabel: 'center', biasAxis: 0, factuality: 0.88, longevity: 0.98, ownership: 'HathiTrust', transparency: 0.85, pipeline: 'library-consortium' },
+    duckduckgo: { biasLabel: 'aggregator', biasAxis: 0, factuality: 0.55, longevity: 0.7, ownership: 'DuckDuckGo', transparency: 0.5, pipeline: 'instant-answer' },
+    hn: { biasLabel: 'tech-forum', biasAxis: 0, factuality: 0.55, longevity: 0.7, ownership: 'Y Combinator', transparency: 0.55, pipeline: 'forum-vote' },
+    'press-wire': { biasLabel: 'varies', biasAxis: 0, factuality: 0.85, longevity: 0.92, ownership: 'wire agency', transparency: 0.7, pipeline: 'wholesale-wire' },
+    'wire-live-tx': { biasLabel: 'varies', biasAxis: 0, factuality: 0.55, longevity: 0.75, ownership: 'broadcast + wire', transparency: 0.5, pipeline: 'live-cc-linkout' },
+    'yc-portal': { biasLabel: 'startup-ecosystem', biasAxis: 0, factuality: 0.5, longevity: 0.85, ownership: 'Y Combinator', transparency: 0.55, pipeline: 'yc-surface' },
+    substack: { biasLabel: 'varies', biasAxis: 0, factuality: 0.45, longevity: 0.55, ownership: 'authors', transparency: 0.45, pipeline: 'newsletter' },
+    crunchbase: { biasLabel: 'commercial-db', biasAxis: 0, factuality: 0.65, longevity: 0.7, ownership: 'Crunchbase', transparency: 0.55, pipeline: 'startup-db' },
+    sequoia: { biasLabel: 'vc-surface', biasAxis: 0, factuality: 0.5, longevity: 0.88, ownership: 'Sequoia Capital', transparency: 0.45, pipeline: 'vc-portfolio-pr' },
+    youtube: { biasLabel: 'varies', biasAxis: 0, factuality: 0.45, longevity: 0.55, ownership: 'YouTube', transparency: 0.4, pipeline: 'ugc-video' },
+    'video-transcript': { biasLabel: 'varies', biasAxis: 0, factuality: 0.5, longevity: 0.45, ownership: 'transcript', transparency: 0.35, pipeline: 'dca-transcript' },
+    openlibrary: { biasLabel: 'center', biasAxis: 0, factuality: 0.88, longevity: 0.9, ownership: 'Internet Archive', transparency: 0.8, pipeline: 'library-catalog' },
+    'internet-archive': { biasLabel: 'center', biasAxis: 0, factuality: 0.85, longevity: 0.95, ownership: 'Internet Archive', transparency: 0.8, pipeline: 'digital-archive' },
+    coingecko: { biasLabel: 'market-data', biasAxis: 0, factuality: 0.7, longevity: 0.6, ownership: 'CoinGecko', transparency: 0.55, pipeline: 'crypto-market' },
+    fred: { biasLabel: 'gov', biasAxis: 0, factuality: 0.95, longevity: 0.98, ownership: 'St. Louis Fed', transparency: 0.9, pipeline: 'gov-economic' },
+    worldbank: { biasLabel: 'igov', biasAxis: 0, factuality: 0.9, longevity: 0.95, ownership: 'World Bank', transparency: 0.85, pipeline: 'intl-org' },
+    datamuse: { biasLabel: 'lexical', biasAxis: 0, factuality: 0.75, longevity: 0.65, ownership: 'Datamuse', transparency: 0.7, pipeline: 'linguistic-api' },
+    wayback: { biasLabel: 'archive', biasAxis: 0, factuality: 0.8, longevity: 0.98, ownership: 'Internet Archive', transparency: 0.85, pipeline: 'web-archive' },
+    'sacred-texts': { biasLabel: 'archive', biasAxis: 0, factuality: 0.75, longevity: 0.85, ownership: 'sacred-texts.com', transparency: 0.65, pipeline: 'text-archive' },
+    yale: { biasLabel: 'university', biasAxis: 0, factuality: 0.82, longevity: 0.92, ownership: 'Yale', transparency: 0.8, pipeline: 'univ-archive' },
+    arda: { biasLabel: 'research', biasAxis: 0, factuality: 0.8, longevity: 0.85, ownership: 'ARDA', transparency: 0.75, pipeline: 'religion-data' },
+    'lgbtq-archives': { biasLabel: 'archive', biasAxis: 0, factuality: 0.75, longevity: 0.8, ownership: 'LGBTQ Archives', transparency: 0.7, pipeline: 'community-archive' },
+    'noaa-climate': { biasLabel: 'gov', biasAxis: 0, factuality: 0.92, longevity: 0.98, ownership: 'NOAA / DOC', transparency: 0.9, pipeline: 'gov-climate-weather' },
+    'usgs-earth': { biasLabel: 'gov', biasAxis: 0, factuality: 0.93, longevity: 0.98, ownership: 'USGS', transparency: 0.9, pipeline: 'gov-earth-science' },
+    'earth-cycles': { biasLabel: 'varies', biasAxis: 0, factuality: 0.75, longevity: 0.9, ownership: 'USDA / USNO / USGS / NOAA', transparency: 0.75, pipeline: 'agri-astro-landsat' },
+    bbb: { biasLabel: 'registry', biasAxis: 0, factuality: 0.68, longevity: 0.88, ownership: 'Better Business Bureau', transparency: 0.72, pipeline: 'business-trust' },
+    'iana-icann': { biasLabel: 'governance', biasAxis: 0, factuality: 0.96, longevity: 0.99, ownership: 'IANA / ICANN', transparency: 0.88, pipeline: 'dns-root-rdap' },
+};
+
+var GOVERNANCE_BY_HOST = {
+    'apnews.com': { biasLabel: 'center', biasAxis: 0, factuality: 0.92, longevity: 0.95, ownership: 'Associated Press', transparency: 0.85, pipeline: 'wire-cooperative' },
+    'reuters.com': { biasLabel: 'center-left', biasAxis: -0.18, factuality: 0.9, longevity: 0.95, ownership: 'Thomson Reuters', transparency: 0.82, pipeline: 'wire-global' },
+    'nytimes.com': { biasLabel: 'lean-left', biasAxis: -0.35, factuality: 0.78, longevity: 0.95, ownership: 'NYT Co.', transparency: 0.72, pipeline: 'national-daily' },
+    'washingtonpost.com': { biasLabel: 'lean-left', biasAxis: -0.38, factuality: 0.78, longevity: 0.93, ownership: 'Nash Holdings', transparency: 0.7, pipeline: 'national-daily' },
+    'theguardian.com': { biasLabel: 'lean-left', biasAxis: -0.42, factuality: 0.76, longevity: 0.92, ownership: 'Guardian Media', transparency: 0.72, pipeline: 'national-daily' },
+    'bbc.com': { biasLabel: 'center-left', biasAxis: -0.22, factuality: 0.82, longevity: 0.96, ownership: 'BBC', transparency: 0.78, pipeline: 'public-broadcast' },
+    'bbc.co.uk': { biasLabel: 'center-left', biasAxis: -0.22, factuality: 0.82, longevity: 0.96, ownership: 'BBC', transparency: 0.78, pipeline: 'public-broadcast' },
+    'npr.org': { biasLabel: 'center-left', biasAxis: -0.25, factuality: 0.8, longevity: 0.92, ownership: 'NPR', transparency: 0.75, pipeline: 'public-radio' },
+    'cnn.com': { biasLabel: 'lean-left', biasAxis: -0.3, factuality: 0.68, longevity: 0.9, ownership: 'Warner Bros Discovery', transparency: 0.6, pipeline: 'cable-digital' },
+    'foxnews.com': { biasLabel: 'right', biasAxis: 0.55, factuality: 0.55, longevity: 0.88, ownership: 'Fox Corp', transparency: 0.52, pipeline: 'cable-digital' },
+    'wsj.com': { biasLabel: 'center-right', biasAxis: 0.28, factuality: 0.82, longevity: 0.95, ownership: 'Dow Jones', transparency: 0.75, pipeline: 'financial-daily' },
+    'economist.com': { biasLabel: 'center', biasAxis: -0.08, factuality: 0.85, longevity: 0.95, ownership: 'Economist Group', transparency: 0.72, pipeline: 'magazine' },
+    'ft.com': { biasLabel: 'center', biasAxis: -0.1, factuality: 0.84, longevity: 0.94, ownership: 'Nikkei', transparency: 0.74, pipeline: 'financial-daily' },
+    'bloomberg.com': { biasLabel: 'center', biasAxis: -0.05, factuality: 0.82, longevity: 0.93, ownership: 'Bloomberg LP', transparency: 0.7, pipeline: 'terminal-news' },
+    'axios.com': { biasLabel: 'center', biasAxis: -0.12, factuality: 0.75, longevity: 0.75, ownership: 'Axios Media', transparency: 0.65, pipeline: 'digital-native' },
+    'politico.com': { biasLabel: 'center-left', biasAxis: -0.28, factuality: 0.72, longevity: 0.82, ownership: 'Politico', transparency: 0.62, pipeline: 'political-news' },
+    'france24.com': { biasLabel: 'center-left', biasAxis: -0.2, factuality: 0.78, longevity: 0.88, ownership: 'France Médias Monde', transparency: 0.72, pipeline: 'intl-broadcast' },
+    'afp.com': { biasLabel: 'center', biasAxis: -0.05, factuality: 0.88, longevity: 0.94, ownership: 'AFP', transparency: 0.8, pipeline: 'wire-agency' },
+    'substack.com': { biasLabel: 'varies', biasAxis: 0, factuality: 0.45, longevity: 0.5, ownership: 'Substack', transparency: 0.45, pipeline: 'newsletter-platform' },
+    'ycombinator.com': { biasLabel: 'startup-ecosystem', biasAxis: 0, factuality: 0.55, longevity: 0.9, ownership: 'Y Combinator', transparency: 0.55, pipeline: 'accelerator' },
+    'sequoiacap.com': { biasLabel: 'vc-surface', biasAxis: 0, factuality: 0.5, longevity: 0.88, ownership: 'Sequoia Capital', transparency: 0.45, pipeline: 'vc-pr' },
+    'crunchbase.com': { biasLabel: 'commercial-db', biasAxis: 0, factuality: 0.65, longevity: 0.72, ownership: 'Crunchbase', transparency: 0.55, pipeline: 'startup-db' },
+    'wikipedia.org': { biasLabel: 'center', biasAxis: 0, factuality: 0.88, longevity: 0.98, ownership: 'Wikimedia', transparency: 0.75, pipeline: 'wiki-community' },
+    'wiktionary.org': { biasLabel: 'center', biasAxis: 0, factuality: 0.85, longevity: 0.96, ownership: 'Wikimedia', transparency: 0.75, pipeline: 'wiki-community' },
+    'wikinews.org': { biasLabel: 'center', biasAxis: 0, factuality: 0.72, longevity: 0.75, ownership: 'Wikimedia', transparency: 0.6, pipeline: 'editorial-wiki' },
+    'noaa.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.92, longevity: 0.98, ownership: 'NOAA', transparency: 0.9, pipeline: 'gov-climate-weather' },
+    'ncei.noaa.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.93, longevity: 0.98, ownership: 'NOAA NCEI', transparency: 0.9, pipeline: 'gov-climate-archive' },
+    'climate.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.9, longevity: 0.95, ownership: 'NOAA', transparency: 0.88, pipeline: 'gov-climate-comm' },
+    'weather.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.9, longevity: 0.97, ownership: 'NOAA NWS', transparency: 0.88, pipeline: 'gov-weather' },
+    'tidesandcurrents.noaa.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.91, longevity: 0.97, ownership: 'NOAA CO-OPS', transparency: 0.88, pipeline: 'gov-tides' },
+    'swpc.noaa.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.9, longevity: 0.95, ownership: 'NOAA SWPC', transparency: 0.88, pipeline: 'gov-space-weather' },
+    'usgs.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.93, longevity: 0.98, ownership: 'USGS', transparency: 0.9, pipeline: 'gov-earth-science' },
+    'earthquake.usgs.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.94, longevity: 0.98, ownership: 'USGS', transparency: 0.92, pipeline: 'gov-seismic' },
+    'waterdata.usgs.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.92, longevity: 0.98, ownership: 'USGS', transparency: 0.9, pipeline: 'gov-hydrology' },
+    'earthexplorer.usgs.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.9, longevity: 0.95, ownership: 'USGS / NASA', transparency: 0.85, pipeline: 'landsat-portal' },
+    'usda.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.88, longevity: 0.98, ownership: 'USDA', transparency: 0.88, pipeline: 'gov-agriculture' },
+    'nass.usda.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.88, longevity: 0.97, ownership: 'USDA NASS', transparency: 0.85, pipeline: 'gov-ag-stats' },
+    'usno.navy.mil': { biasLabel: 'gov', biasAxis: 0, factuality: 0.94, longevity: 0.98, ownership: 'USNO', transparency: 0.88, pipeline: 'gov-astronomy' },
+    'bbb.org': { biasLabel: 'registry', biasAxis: 0, factuality: 0.68, longevity: 0.88, ownership: 'BBB', transparency: 0.72, pipeline: 'business-trust' },
+    'iana.org': { biasLabel: 'governance', biasAxis: 0, factuality: 0.97, longevity: 0.99, ownership: 'IANA', transparency: 0.9, pipeline: 'iana-registries' },
+    'icann.org': { biasLabel: 'governance', biasAxis: 0, factuality: 0.92, longevity: 0.98, ownership: 'ICANN', transparency: 0.82, pipeline: 'dns-policy' },
+    'lookup.icann.org': { biasLabel: 'governance', biasAxis: 0, factuality: 0.93, longevity: 0.95, ownership: 'ICANN', transparency: 0.85, pipeline: 'rdap-lookup' },
+    'publicsuffix.org': { biasLabel: 'community', biasAxis: 0, factuality: 0.85, longevity: 0.85, ownership: 'Mozilla PSL', transparency: 0.8, pipeline: 'public-suffix-list' },
+    'timeanddate.com': { biasLabel: 'reference', biasAxis: 0, factuality: 0.75, longevity: 0.85, ownership: 'timeanddate.com', transparency: 0.65, pipeline: 'calendar-astro' },
+};
+
+var GOVERNANCE_TLD_GOV = { biasLabel: 'gov', biasAxis: 0, factuality: 0.9, longevity: 0.98, ownership: 'government TLD', transparency: 0.88, pipeline: 'government' };
+var GOVERNANCE_TLD_EDU = { biasLabel: 'academic', biasAxis: 0, factuality: 0.85, longevity: 0.92, ownership: 'academic TLD', transparency: 0.8, pipeline: 'university' };
+
+function _hostFromUrl(url) {
+    if (!url || typeof url !== 'string') return '';
+    try {
+        return new URL(url, 'https://example.invalid').hostname.replace(/^www\./, '').toLowerCase();
+    } catch (e) {
+        return '';
+    }
+}
+
+function _mergeGov(base, override) {
+    var o = {};
+    Object.keys(base).forEach(function (k) { o[k] = base[k]; });
+    if (override) Object.keys(override).forEach(function (k) { o[k] = override[k]; });
+    return o;
+}
+
+function getGovernanceForResult(result) {
+    var r = result || {};
+    var key = String(r.source || '').toLowerCase();
+    var g = GOVERNANCE_BY_CONNECTOR[key] ? _mergeGov(DEFAULT_GOVERNANCE, GOVERNANCE_BY_CONNECTOR[key]) : null;
+    var host = _hostFromUrl(r.url);
+    if (host) {
+        var h = host;
+        var hostHit = null;
+        while (h) {
+            if (GOVERNANCE_BY_HOST[h]) {
+                hostHit = GOVERNANCE_BY_HOST[h];
+                break;
+            }
+            var dot = h.indexOf('.');
+            if (dot < 0) break;
+            h = h.slice(dot + 1);
+        }
+        if (hostHit) {
+            g = g ? _mergeGov(g, hostHit) : _mergeGov(DEFAULT_GOVERNANCE, hostHit);
+        }
+        if (!g) g = _mergeGov(DEFAULT_GOVERNANCE, {});
+        if (host.endsWith('.gov')) g = _mergeGov(g, GOVERNANCE_TLD_GOV);
+        else if (host.endsWith('.edu')) g = _mergeGov(g, GOVERNANCE_TLD_EDU);
+    } else if (!g) {
+        g = _mergeGov(DEFAULT_GOVERNANCE, {});
+    }
+    return g;
+}
+
+function _computeFreshnessScore(result) {
+    var raw = result && result.date;
+    if (!raw) return 0.5;
+    var d = new Date(raw);
+    if (isNaN(d.getTime())) return 0.5;
+    var ageDays = Math.max(0, (Date.now() - d.getTime()) / 86400000);
+    return Math.exp(-ageDays / 72);
+}
+
+// AI Metric Weighting — freshness vs reliability vs longevity + optional bias preference (Ground News–style gov metadata)
 function weightResults(results, opts) {
     opts = opts || {};
     var contextAnalyses = opts.analyses || {};
     var heatmap = opts.heatmap || _heatmapData;
     var userGoal = opts.goal || 'research'; // research | app-building | learning | promo
     var promptModel = opts.promptModel || 'auto';
+    var biasPreference = opts.biasPreference || 'any'; // any | prefer-center
     var depthMod = 1;
     if (promptModel === 'deep') depthMod = 1.12;
     else if (promptModel === 'fast') depthMod = 0.88;
@@ -1180,10 +2335,10 @@ function weightResults(results, opts) {
     else if (promptModel === 'balanced') depthMod = 1;
 
     var goalWeights = {
-        research:      { depth: 0.3, breadth: 0.25, authority: 0.2, recency: 0.1, engagement: 0.15 },
-        'app-building': { depth: 0.15, breadth: 0.15, authority: 0.15, recency: 0.25, engagement: 0.3 },
-        learning:      { depth: 0.35, breadth: 0.2, authority: 0.2, recency: 0.05, engagement: 0.2 },
-        promo:         { depth: 0.1, breadth: 0.3, authority: 0.15, recency: 0.2, engagement: 0.25 },
+        research:      { depth: 0.15, breadth: 0.12, authority: 0.1, fresh: 0.1, reliability: 0.18, longevity: 0.15, engagement: 0.2 },
+        'app-building': { depth: 0.1, breadth: 0.1, authority: 0.08, fresh: 0.22, reliability: 0.12, longevity: 0.08, engagement: 0.3 },
+        learning:      { depth: 0.18, breadth: 0.14, authority: 0.12, fresh: 0.06, reliability: 0.18, longevity: 0.18, engagement: 0.14 },
+        promo:         { depth: 0.08, breadth: 0.18, authority: 0.08, fresh: 0.16, reliability: 0.1, longevity: 0.08, engagement: 0.32 },
     };
     var w = goalWeights[userGoal] || goalWeights.research;
 
@@ -1191,6 +2346,7 @@ function weightResults(results, opts) {
         var id = r.id || String(idx);
         var analysis = contextAnalyses[id] || {};
         var heat = heatmap[id] || {};
+        var gov = getGovernanceForResult(r);
 
         // Depth score: content richness
         var depthScore = 0;
@@ -1204,20 +2360,24 @@ function weightResults(results, opts) {
         if (analysis.subReferences) breadthScore += Math.min(1, analysis.subReferences.length / 15);
         if (r.source) breadthScore += 0.3; // has identifiable source
 
-        // Authority: source reputation + tone
+        // Authority: connector reputation + tone
         var authorityScore = 0;
-        var trustedSources = ['wikipedia', 'wire-news', 'history-archive', 'arxiv', 'pubchem', 'genbank', 'hathitrust'];
+        var trustedSources = ['wikipedia', 'wire-news', 'history-archive', 'loc-periodicals', 'loc-photos', 'arxiv', 'pubchem', 'genbank', 'hathitrust'];
+        var communitySources = ['hn'];
         if (r.source && trustedSources.indexOf(r.source.toLowerCase()) >= 0) authorityScore += 0.6;
+        else if (r.source && communitySources.indexOf(r.source.toLowerCase()) >= 0) authorityScore += 0.28;
         if (analysis.tone && (analysis.tone.academic > 0.3 || analysis.tone.educational > 0.3)) authorityScore += 0.3;
         authorityScore = Math.min(1, authorityScore);
 
-        // Recency
-        var recencyScore = 0.5; // default mid
-        if (r.date) {
-            var age = Date.now() - new Date(r.date).getTime();
-            var ageYears = age / (365.25 * 24 * 3600 * 1000);
-            recencyScore = Math.max(0, 1 - (ageYears / 20));
-        }
+        // Freshness (time-decay; favors newest when date known)
+        var freshScore = _computeFreshnessScore(r);
+
+        // Reliability: governance factuality + transparency + connector authority
+        var reliabilityScore = Math.min(1,
+            gov.factuality * 0.5 + gov.transparency * 0.25 + authorityScore * 0.25);
+
+        // Longevity: institutional endurance (registry + authority)
+        var longevityScore = Math.min(1, gov.longevity * 0.75 + authorityScore * 0.25);
 
         // Engagement from heatmap
         var engagementScore = 0;
@@ -1227,21 +2387,40 @@ function weightResults(results, opts) {
         engagementScore = Math.min(1, engagementScore);
 
         var totalScore = (depthScore * w.depth * depthMod) + (breadthScore * w.breadth) +
-            (authorityScore * w.authority) + (recencyScore * w.recency) +
+            (authorityScore * w.authority) + (freshScore * w.fresh) +
+            (reliabilityScore * w.reliability) + (longevityScore * w.longevity) +
             (engagementScore * w.engagement);
+
+        if (biasPreference === 'prefer-center') {
+            totalScore *= (1 + 0.1 * (1 - Math.min(1, Math.abs(gov.biasAxis || 0))));
+        }
+
+        var round2 = function (x) { return Math.round(x * 100) / 100; };
 
         return {
             result: r,
             id: id,
-            scores: {
-                total: Math.round(totalScore * 100) / 100,
-                depth: Math.round(depthScore * 100) / 100,
-                breadth: Math.round(breadthScore * 100) / 100,
-                authority: Math.round(authorityScore * 100) / 100,
-                recency: Math.round(recencyScore * 100) / 100,
-                engagement: Math.round(engagementScore * 100) / 100,
+            governance: {
+                biasLabel: gov.biasLabel,
+                biasAxis: gov.biasAxis,
+                factuality: gov.factuality,
+                longevity: gov.longevity,
+                ownership: gov.ownership,
+                transparency: gov.transparency,
+                pipeline: gov.pipeline,
             },
-            rank: 0, // set after sorting
+            scores: {
+                total: round2(totalScore),
+                depth: round2(depthScore),
+                breadth: round2(breadthScore),
+                authority: round2(authorityScore),
+                fresh: round2(freshScore),
+                recency: round2(freshScore),
+                reliability: round2(reliabilityScore),
+                longevity: round2(longevityScore),
+                engagement: round2(engagementScore),
+            },
+            rank: 0,
         };
     }).sort(function(a, b) { return b.scores.total - a.scores.total; })
       .map(function(item, idx) { item.rank = idx + 1; return item; });
@@ -1251,7 +2430,11 @@ function weightResults(results, opts) {
 function generateContent(type, results, analyses, opts) {
     opts = opts || {};
     var title = opts.title || 'Research Summary';
-    var weighted = weightResults(results, { analyses: analyses, goal: opts.goal || 'research' });
+    var weighted = weightResults(results, {
+        analyses: analyses,
+        goal: opts.goal || 'research',
+        biasPreference: opts.biasPreference || 'any',
+    });
 
     if (type === 'research-paper') {
         var lines = [];
@@ -1290,7 +2473,7 @@ function generateContent(type, results, analyses, opts) {
         });
         lines.push('## Methodology');
         lines.push('');
-        lines.push('Results weighted using multi-dimensional scoring: depth (' + (opts.goal === 'research' ? '30%' : '15-35%') + '), breadth, authority, recency, and engagement metrics.');
+        lines.push('Results weighted using multi-dimensional scoring: depth, breadth, connector authority, freshness (time decay), reliability (factuality + transparency), longevity (institutional), engagement, and optional center-source bias preference.');
         lines.push('');
         lines.push('---');
         lines.push('*beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}*');
@@ -1996,7 +3179,7 @@ function generateContextRecommendations(intel, capsuleMatches, personaCtx) {
    EXPORT
    ══════════════════════════════════════════════════════ */
 const HistorySearch = {
-    VERSION: '2.7.0',
+    VERSION: '2.10.1',
     search,
     corsFetch,
     getFetchProxyBase,
@@ -2015,6 +3198,8 @@ const HistorySearch = {
     clearHeatmap,
     analyzePageStructure,
     weightResults,
+    getGovernanceForResult,
+    DEFAULT_GOVERNANCE,
     generateContent,
     computeVisionZones,
     drawHeatmap,
@@ -2028,6 +3213,7 @@ const HistorySearch = {
     crossReferenceCapsules,
     buildContextProfile,
     generateContextRecommendations,
+    buildBookIngestPreviewFromOlSearchDoc,
     // YouTube Transcript Analyzer (v2.5)
     fetchTranscript,
     analyzeTranscript,
