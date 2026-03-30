@@ -192,13 +192,13 @@ html[data-theme="light"] .mueee-tl-loop{border-color:#c4b5fd;color:#6d28d9;}
 .mueee-spine-head .mueee-tl-label{flex-shrink:0;}
 .mueee-spine-toggle{min-width:44px;min-height:44px;padding:0 10px 0 0;font-size:11px;}
 #mueee-shell{min-height:100dvh;}
-/* Prompt + model dock first on narrow viewports (keyboard-friendly) */
-#mueee-prompt-bar{order:-1;border-top:none;border-bottom:1px solid var(--qp-border);padding:0;}
-html[data-theme="light"] #mueee-prompt-bar{box-shadow:none;}
-#mueee-spine-dock{order:2;}
-.mueee-frame-wrap{order:3;flex:1;min-height:0;}
-#mueee-rainbow{order:4;border-top:none;}
-.mueee-topbar-main{padding:max(10px,env(safe-area-inset-top,0px)) 12px 10px;}
+/* Prompt-first on narrow viewports only for non–mue-chat shells. mue.html / mueee.html use .mue-chat: keep DOM order (spine → iframe → composer) so Search stays visible; composer remains thumb-friendly at bottom. */
+html:not(.mue-chat) #mueee-prompt-bar{order:-1;border-top:none;border-bottom:1px solid var(--qp-border);padding:0;}
+html[data-theme="light"]:not(.mue-chat) #mueee-prompt-bar{box-shadow:none;}
+html:not(.mue-chat) #mueee-spine-dock{order:2;}
+html:not(.mue-chat) .mueee-frame-wrap{order:3;flex:1;min-height:0;}
+html:not(.mue-chat) #mueee-rainbow{order:4;border-top:none;}
+html:not(.mue-chat) .mueee-topbar-main{padding:max(10px,env(safe-area-inset-top,0px)) 12px 10px;}
 .mueee-footer-meta{justify-content:flex-start;}
 }
 #mueee-prompt-file,#mueee-prompt-camera{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;}
