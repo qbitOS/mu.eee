@@ -4,7 +4,7 @@
 <head>
 <script>try{if(window.parent!==window)document.documentElement.classList.add('qp-embed-chrome');}catch(e){}</script>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, interactive-widget=resizes-content">
 <meta name="theme-color" content="#050810">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -5369,6 +5369,7 @@ if (typeof BroadcastChannel !== 'undefined') {
 function applySearchTheme(isLight) {
     const root = document.documentElement;
     root.classList.toggle('light', isLight);
+    root.setAttribute('data-theme', isLight ? 'light' : 'dark');
     document.querySelector('meta[name="theme-color"]').content = isLight ? '#f8fafc' : '#050810';
     const btn = $('theme-toggle');
     if (btn) {
@@ -5544,7 +5545,16 @@ window.addEventListener('message', function (ev) {
         return;
     }
 });
-if (localStorage.getItem('search-theme') === 'light') applySearchTheme(true);
+(function initSearchThemeFromStorage() {
+    try {
+        var embed = document.documentElement.classList.contains('qp-embed-chrome');
+        var m = embed ? localStorage.getItem('mueee-theme') : null;
+        var s = localStorage.getItem('search-theme');
+        if (m === 'light' || m === 'dark') applySearchTheme(m === 'light');
+        else if (s === 'light') applySearchTheme(true);
+        else if (s === 'dark') applySearchTheme(false);
+    } catch (e) {}
+})();
 
 // ══════════════════ SECTION NAVIGATOR (DOC VIEWER) ══════════════════
 (function initDvSectionNav() {

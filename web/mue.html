@@ -4,7 +4,7 @@
 <html lang="en" class="mue-chat">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,viewport-fit=cover,interactive-widget=resizes-content">
 <meta name="theme-color" content="#050810">
 <title>μ'search · mue</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -223,6 +223,11 @@ html.mue-chat.mue-shell-wide #mueee-shell{max-width:none!important;margin:0!impo
 html[data-theme="light"].mue-chat.mue-shell-wide #mueee-shell{box-shadow:none;}
 html[data-theme="light"].mue-chat #mueee-shell{box-shadow:0 0 0 1px rgba(15,23,42,.06);}
 html.mue-chat .mueee-frame-wrap{flex:1;min-height:0;border-bottom:none;background:var(--qp-bg);}
+/* Full-bleed on phones — mue.html’s 480px column was letterboxing (dark gutters) on iPhone */
+@media (max-width:720px){
+html.mue-chat #mueee-shell{max-width:100%!important;width:100%!important;margin:0!important;min-height:100svh;min-height:100dvh;}
+html.mue-chat{min-height:100svh;min-height:100dvh;}
+}
 html.mue-chat #mueee-prompt-bar{display:flex;position:relative;z-index:200;flex-direction:column;align-items:stretch;align-self:stretch;gap:0;width:100%;max-width:100%;margin:0;padding:0 8px max(4px,env(safe-area-inset-bottom,0px));border-radius:8px 8px 0 0;border:1px solid var(--qp-border);border-bottom:1px solid var(--qp-border);background:var(--qp-bg-tertiary);box-shadow:none;isolation:isolate;box-sizing:border-box;overflow:visible!important;}
 html[data-theme="light"].mue-chat #mueee-prompt-bar{box-shadow:none;}
 html.mue-chat #mueee-tabs,
