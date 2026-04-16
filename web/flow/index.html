@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<!-- beyondBINARY quantum-prefixed | uvspeed | flow explorer — block JSON, horizontal prototype -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<meta name="theme-color" content="#0a0e14">
+<title>μ flow — mobile prototype map</title>
+<link rel="stylesheet" href="../quantum-theme.css">
+<style>
+:root{--phone-w:min(200px,42vw);--phone-aspect:2.1;--hot:rgba(6,182,212,.45);--hot2:rgba(124,58,237,.35);}
+*{box-sizing:border-box;}
+html,body{margin:0;min-height:100%;background:var(--qp-bg,#0a0e14);color:var(--qp-text,#e2e8f0);font-family:ui-monospace,SF Mono,monospace;font-size:11px;}
+#app{display:flex;flex-direction:column;min-height:100dvh;}
+#toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--qp-border,#1e293b);background:var(--qp-bg-secondary,#0f1419);position:sticky;top:0;z-index:30;}
+#toolbar #qp-theme-toggle{flex-shrink:0;margin-left:auto;}
+#toolbar h1{margin:0;font-size:12px;font-weight:800;background:linear-gradient(135deg,#c9a84c,#56d4dd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+#toolbar button,#toolbar a{font:inherit;padding:6px 10px;border-radius:8px;border:1px solid var(--qp-border);background:var(--qp-bg);color:var(--qp-accent,#a78bfa);cursor:pointer;text-decoration:none;}
+#toolbar button:hover{border-color:var(--qp-accent);}
+#meta{color:var(--qp-text-muted,#64748b);font-size:10px;flex:1;min-width:120px;}
+#flow-wrap{flex:1;position:relative;overflow:hidden;}
+#flow-scroll{display:flex;flex-direction:row;gap:20px;padding:16px 20px 120px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;min-height:min(78vh,640px);align-items:flex-start;}
+.flow-screen{flex:0 0 auto;width:var(--phone-w);scroll-snap-align:start;border-radius:18px;border:2px solid var(--qp-border);background:linear-gradient(165deg,#111820,#0c1016);box-shadow:0 12px 40px rgba(0,0,0,.35);position:relative;transition:box-shadow .2s,border-color .2s;}
+.flow-screen[data-active="1"]{border-color:var(--qp-accent);box-shadow:0 0 0 2px rgba(124,58,237,.25),0 16px 48px rgba(0,0,0,.45);}
+.flow-screen[data-target="1"]{border-color:#22d3ee;box-shadow:0 0 0 2px rgba(34,211,238,.3);}
+.flow-cap{padding:6px 10px 4px;font-size:9px;font-weight:700;color:var(--qp-text-muted);text-transform:uppercase;letter-spacing:.06em;}
+.flow-phone{position:relative;width:100%;aspect-ratio:9/19;background:#151b24;border-radius:0 0 16px 16px;overflow:hidden;}
+.flow-layer{position:absolute;inset:0;pointer-events:none;}
+.flow-layer.interactive{pointer-events:auto;}
+.wf-rect,.wf-circ,.wf-bar,.wf-cell{position:absolute;background:rgba(148,163,184,.12);border:1px solid rgba(148,163,184,.2);border-radius:4px;}
+.wf-circ{border-radius:50%;}
+.flow-hot{position:absolute;border:2px dashed var(--hot);background:rgba(6,182,212,.12);cursor:pointer;border-radius:6px;transition:background .15s,transform .1s;z-index:5;}
+.flow-hot:hover,.flow-hot[data-on="1"]{background:rgba(6,182,212,.28);transform:scale(1.02);}
+.flow-hot span{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:4px;white-space:nowrap;background:#0f172a;color:#e2e8f0;padding:2px 6px;border-radius:4px;font-size:9px;opacity:0;pointer-events:none;transition:opacity .15s;z-index:10;}
+.flow-hot:hover span,.flow-hot[data-on="1"] span{opacity:1;}
+#flow-svg{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:20;}
+#flow-svg path{fill:none;stroke:rgba(34,211,238,.55);stroke-width:2;stroke-linecap:round;vector-effect:non-scaling-stroke;}
+#deriv{position:fixed;left:0;right:0;bottom:0;max-height:38vh;overflow:auto;background:rgba(15,23,42,.96);border-top:1px solid var(--qp-border);padding:10px 12px;z-index:25;backdrop-filter:blur(8px);}
+#deriv h2{margin:0 0 8px;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--qp-text-muted);}
+#deriv-list{display:flex;flex-direction:column;gap:4px;}
+.deriv-row{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:8px;background:var(--qp-bg-secondary);border:1px solid var(--qp-border);cursor:pointer;font-size:10px;}
+.deriv-row:hover{border-color:var(--qp-accent);}
+.deriv-row small{color:var(--qp-text-muted);}
+#error{padding:8px 12px;color:#f87171;font-size:11px;}
+@media(max-width:520px){:root{--phone-w:72vw;}}
+</style>
+<script src="../quantum-prefixes.js"></script>
+</head>
+<body>
+<div id="app">
+  <header id="toolbar" data-qp-theme-host>
+    <h1>μ flow</h1>
+    <span id="meta">Loading manifest…</span>
+    <button type="button" id="btn-reload" title="Reload flow-manifest.json">Reload</button>
+    <a href="../mueee.html">mueee</a>
+  </header>
+  <p id="error" hidden></p>
+  <div id="flow-wrap">
+    <svg id="flow-svg" aria-hidden="true"></svg>
+    <div id="flow-scroll"></div>
+  </div>
+  <aside id="deriv">
+    <h2>Derivatives (outgoing)</h2>
+    <div id="deriv-list"><div class="deriv-row">Tap a hotspot to see targets.</div></div>
+  </aside>
+</div>
+<script>
+(function(){
+'use strict';
+var manifest = null;
+var selectedScreenId = null;
+
+function pct(x, axis) {
+  return (x * 100) + '%';
+}
+
+function renderBlock(b, layer) {
+  if (b.type === 'rect') {
+    var e = document.createElement('div');
+    e.className = 'wf-rect';
+    e.style.left = pct(b.x); e.style.top = pct(b.y);
+    e.style.width = pct(b.w); e.style.height = pct(b.h);
+    layer.appendChild(e);
+  } else if (b.type === 'circle') {
+    var c = document.createElement('div');
+    c.className = 'wf-circ';
+    var s = b.s || 0.15;
+    c.style.left = pct(b.x); c.style.top = pct(b.y);
+    c.style.width = pct(s); c.style.height = pct(s);
+    layer.appendChild(c);
+  } else if (b.type === 'bar') {
+    var bar = document.createElement('div');
+    bar.className = 'wf-bar';
+    bar.style.left = pct(b.x); bar.style.top = pct(b.y);
+    bar.style.width = pct(b.w); bar.style.height = pct(b.h);
+    layer.appendChild(bar);
+  } else if (b.type === 'grid') {
+    var cols = b.cols || 3, rows = b.rows || 3, cell = b.cell || 0.2;
+    var gx = b.x, gy = b.y;
+    for (var r = 0; r < rows; r++) {
+      for (var col = 0; col < cols; col++) {
+        var cellEl = document.createElement('div');
+        cellEl.className = 'wf-cell';
+        cellEl.style.left = pct(gx + col * cell * 1.05);
+        cellEl.style.top = pct(gy + r * cell * 1.05);
+        cellEl.style.width = pct(cell);
+        cellEl.style.height = pct(cell * 0.9);
+        layer.appendChild(cellEl);
+      }
+    }
+  } else if (b.type === 'row' && b.n) {
+    for (var i = 0; i < b.n; i++) {
+      var dot = document.createElement('div');
+      dot.className = 'wf-circ';
+      dot.style.left = pct(b.x + i * (b.w / b.n));
+      dot.style.top = pct(b.y);
+      dot.style.width = pct(b.h);
+      dot.style.height = pct(b.h);
+      layer.appendChild(dot);
+    }
+  }
+}
+
+function screenEl(id) {
+  return document.querySelector('.flow-screen[data-id="' + id + '"]');
+}
+
+function drawWires(fromHotEl, toScreenId) {
+  var svg = document.getElementById('flow-svg');
+  while (svg.firstChild) svg.removeChild(svg.firstChild);
+  if (!fromHotEl || !toScreenId) return;
+  var toEl = screenEl(toScreenId);
+  if (!toEl) return;
+  var a = fromHotEl.getBoundingClientRect();
+  var b = toEl.getBoundingClientRect();
+  var x1 = a.left + a.width / 2, y1 = a.top + a.height / 2;
+  var x2 = b.left + b.width / 2, y2 = b.top + b.height / 2;
+  var mx = (x1 + x2) / 2, my = Math.min(y1, y2) - 40;
+  var p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  p.setAttribute('d', 'M' + x1 + ',' + y1 + ' Q' + mx + ',' + my + ' ' + x2 + ',' + y2);
+  svg.appendChild(p);
+}
+
+function showDerivatives(screenId) {
+  var list = document.getElementById('deriv-list');
+  list.innerHTML = '';
+  if (!manifest || !screenId) return;
+  var sc = manifest.screens.filter(function(s) { return s.id === screenId; })[0];
+  if (!sc || !sc.hotspots) return;
+  sc.hotspots.forEach(function(h) {
+    var row = document.createElement('div');
+    row.className = 'deriv-row';
+    row.innerHTML = '<span>' + esc(h.label) + '</span> <small>→</small> <strong>' + esc(h.target) + '</strong>';
+    row.addEventListener('click', function() {
+      var hel = document.querySelector('.flow-hot[data-hid="' + escAttr(h.id) + '"]');
+      if (hel) activateHot(hel, h.target);
+    });
+    list.appendChild(row);
+  });
+  if (!list.children.length) list.innerHTML = '<div class="deriv-row">No hotspots.</div>';
+}
+
+function esc(s) {
+  var d = document.createElement('div');
+  d.textContent = s || '';
+  return d.innerHTML;
+}
+function escAttr(s) { return String(s || '').replace(/"/g, '&quot;'); }
+
+function activateHot(hotEl, targetId) {
+  document.querySelectorAll('.flow-hot[data-on="1"]').forEach(function(x) { x.removeAttribute('data-on'); });
+  document.querySelectorAll('.flow-screen[data-active="1"]').forEach(function(x) { x.removeAttribute('data-active'); });
+  document.querySelectorAll('.flow-screen[data-target="1"]').forEach(function(x) { x.removeAttribute('data-target'); });
+  hotEl.setAttribute('data-on', '1');
+  var screen = hotEl.closest('.flow-screen');
+  if (screen) screen.setAttribute('data-active', '1');
+  var tgt = screenEl(targetId);
+  if (tgt) {
+    tgt.setAttribute('data-target', '1');
+    tgt.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }
+  selectedScreenId = screen ? screen.getAttribute('data-id') : null;
+  drawWires(hotEl, targetId);
+  if (selectedScreenId) showDerivatives(selectedScreenId);
+}
+
+function render() {
+  var root = document.getElementById('flow-scroll');
+  root.innerHTML = '';
+  if (!manifest || !manifest.screens) return;
+  document.getElementById('meta').textContent = (manifest.title || 'Flow') + ' · v' + (manifest.version || '?') + ' · ' + manifest.screens.length + ' screens';
+
+  manifest.screens.forEach(function(sc) {
+    var wrap = document.createElement('article');
+    wrap.className = 'flow-screen';
+    wrap.setAttribute('data-id', sc.id);
+    wrap.setAttribute('data-row', String(sc.row != null ? sc.row : 0));
+    wrap.innerHTML = '<div class="flow-cap">' + esc(sc.title || sc.id) + '</div>';
+
+    var phone = document.createElement('div');
+    phone.className = 'flow-phone';
+
+    var layer = document.createElement('div');
+    layer.className = 'flow-layer';
+    (sc.blocks || []).forEach(function(b) { renderBlock(b, layer); });
+    phone.appendChild(layer);
+
+    var hotLayer = document.createElement('div');
+    hotLayer.className = 'flow-layer interactive';
+    (sc.hotspots || []).forEach(function(h) {
+      var hot = document.createElement('button');
+      hot.type = 'button';
+      hot.className = 'flow-hot';
+      hot.setAttribute('data-hid', h.id);
+      hot.style.left = pct(h.x); hot.style.top = pct(h.y);
+      hot.style.width = pct(h.w); hot.style.height = pct(h.h);
+      hot.setAttribute('aria-label', h.label + ' → ' + h.target);
+      hot.innerHTML = '<span>' + esc(h.label) + '</span>';
+      hot.addEventListener('click', function(ev) {
+        ev.stopPropagation();
+        activateHot(hot, h.target);
+      });
+      hotLayer.appendChild(hot);
+    });
+    phone.appendChild(hotLayer);
+    wrap.appendChild(phone);
+    root.appendChild(wrap);
+  });
+}
+
+function loadManifest(url) {
+  var err = document.getElementById('error');
+  err.hidden = true;
+  return fetch(url, { cache: 'no-store' })
+    .then(function(r) { if (!r.ok) throw new Error(r.status + ' ' + r.statusText); return r.json(); })
+    .then(function(data) {
+      manifest = data;
+      render();
+    })
+    .catch(function(e) {
+      err.textContent = 'Manifest: ' + e.message;
+      err.hidden = false;
+    });
+}
+
+function manifestUrl() {
+  var u = new URL(location.href);
+  var q = u.searchParams.get('src');
+  if (q) return q;
+  return 'flow-manifest.json';
+}
+
+document.getElementById('btn-reload').addEventListener('click', function() { loadManifest(manifestUrl()); });
+
+window.addEventListener('resize', function() {
+  var on = document.querySelector('.flow-hot[data-on="1"]');
+  if (on) {
+    var tid = null;
+    manifest.screens.some(function(s) {
+      return (s.hotspots || []).some(function(h) {
+        if (h.id === on.getAttribute('data-hid')) { tid = h.target; return true; }
+        return false;
+      });
+    });
+    if (tid) drawWires(on, tid);
+  }
+});
+function wireRedrawScroll() {
+  var on = document.querySelector('.flow-hot[data-on="1"]');
+  if (!on || !manifest) return;
+  var tid = null;
+  (manifest.screens || []).some(function(s) {
+    return (s.hotspots || []).some(function(h) {
+      if (h.id === on.getAttribute('data-hid')) { tid = h.target; return true; }
+      return false;
+    });
+  });
+  if (tid) drawWires(on, tid);
+}
+window.addEventListener('scroll', wireRedrawScroll, true);
+document.getElementById('flow-scroll').addEventListener('scroll', wireRedrawScroll);
+
+loadManifest(manifestUrl());
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+if (window.QuantumPrefixes) {
+  try {
+    window.QuantumPrefixes.broadcastState('flow', { ready: true });
+  } catch (e) {}
+}
+})();
+</script>
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('../sw.js', { scope: '../' }).catch(function() {});
+}
+</script>
+</body>
+</html>

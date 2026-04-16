@@ -35,17 +35,17 @@ a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
 #header .nav-btn{background:none;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:6px;font-family:var(--mono);font-size:10px;cursor:pointer;text-decoration:none;}
 #header .nav-btn:hover{color:var(--text);border-color:var(--accent);text-decoration:none;}
 
-/* ── Tabs ── */
-#mode-tabs{display:flex;flex-wrap:wrap;padding:6px 16px 0;gap:4px;background:var(--bg2);}
-.mode-tab{font-family:var(--mono);font-size:11px;padding:6px 16px;border-radius:6px 6px 0 0;border:1px solid var(--border);border-bottom:none;color:var(--muted);cursor:pointer;background:var(--bg);transition:all .15s;}
+/* ── Tabs (in header — same light bar as logo) ── */
+#header .header-mode-tabs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-left:4px;}
+#header .logo-row{align-items:center;}
+.mode-tab{font-family:var(--mono);font-size:11px;padding:5px 12px;border-radius:8px;border:1px solid var(--border);color:var(--muted);cursor:pointer;background:var(--bg);transition:all .15s;}
 .mode-tab:hover{color:var(--text);}
 .mode-tab.active{color:var(--cyan);border-color:var(--cyan);background:var(--bg);font-weight:600;}
 
-/* ── Search composer (prompt layout: model + attachments + prompt + run) ── */
-#search-composer{
-  padding:10px 16px 12px;background:var(--bg2);border-bottom:1px solid rgba(30,45,74,.35);
-  width:100%;max-width:100%;box-sizing:border-box;
-}
+/* ── Search composer (dock: AI/Freya + standalone Search — hidden in mueee iframe for Search) ── */
+#search-dock{padding:10px 16px 12px;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;}
+#search-composer{width:100%;max-width:100%;box-sizing:border-box;}
+html.qp-embed-chrome #search-dock.embed-min-search #search-composer{display:none;}
 .sc-toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;margin-bottom:8px;width:100%;}
 .sc-lbl{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;}
 #prompt-model{
@@ -88,24 +88,58 @@ a{color:var(--accent);text-decoration:none;}a:hover{text-decoration:underline;}
 #timeline{height:44px;border-bottom:1px solid var(--border);background:var(--bg);}
 #tl-canvas{width:100%;height:100%;display:block;}
 
-/* ── Connectors ── */
-#connectors{display:flex;padding:6px 16px;gap:4px;overflow-x:auto;scrollbar-width:none;background:var(--bg2);border-bottom:1px solid rgba(30,45,74,.5);}
-#connectors::-webkit-scrollbar{display:none;}
-.cpill{font-family:var(--mono);font-size:10px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);color:var(--muted);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;background:var(--bg);}
+/* ── Left spine rail: vertical rainbow + timeline + connectors ── */
+.search-panel-body{display:flex;flex:1;min-height:0;flex-direction:row;align-items:stretch;}
+.search-panel-main{display:flex;flex-direction:column;flex:1;min-width:0;min-height:0;}
+#spine-rail{display:flex;flex-direction:row;align-items:stretch;flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);transition:min-width .22s ease,width .22s ease;}
+.rainbow-vertical{display:flex;flex-direction:column;width:8px;min-width:8px;flex-shrink:0;}
+.rainbow-vertical span{flex:1;min-height:6px;width:100%;}
+#timeline-v-wrap{width:34px;min-width:26px;flex:1;min-height:100px;position:relative;border-right:1px solid var(--border);}
+#tl-canvas-v{display:block;width:100%;height:100%;}
+#connectors{display:flex;flex-direction:column;padding:8px 6px;gap:5px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;width:min(168px,26vw);min-width:96px;flex-shrink:0;background:transparent;border:none;}
+#connectors::-webkit-scrollbar{width:4px;}
+.spine-rail-toggle{flex-shrink:0;width:22px;min-width:22px;align-self:stretch;margin:0;padding:4px 2px;border:none;border-left:1px solid var(--border);background:var(--bg3);color:var(--muted);cursor:pointer;font-size:11px;line-height:1.2;border-radius:0;}
+.spine-rail-toggle:hover{color:var(--cyan);background:var(--bg);}
+#spine-rail.spine-rail--collapsed{min-width:22px;width:22px;overflow:hidden;}
+#spine-rail.spine-rail--collapsed .rainbow-vertical,
+#spine-rail.spine-rail--collapsed #timeline-v-wrap,
+#spine-rail.spine-rail--collapsed #connectors{display:none!important;}
+@media(max-width:700px){
+  #connectors{width:min(140px,32vw);min-width:88px;}
+}
+.cpill{font-family:var(--mono);font-size:10px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);color:var(--muted);cursor:pointer;white-space:normal;flex-shrink:0;transition:all .15s;background:var(--bg);width:100%;box-sizing:border-box;text-align:left;}
 .cpill:hover{color:var(--text);border-color:#334155;}
 .cpill.active{color:var(--cyan);border-color:rgba(6,182,212,.3);}
 .cpill.loading{color:#fbbf24;border-color:rgba(251,191,36,.3);animation:pulse .8s ease infinite alternate;}
 .cpill .cnt{font-weight:700;color:var(--green);margin-left:3px;}
 @keyframes pulse{from{opacity:.7}to{opacity:1}}
 
-/* ── Stats ── */
-#stats{display:flex;flex-wrap:wrap;padding:6px 16px;gap:8px 16px;font-family:var(--mono);font-size:10px;color:var(--dim);background:var(--bg2);border-bottom:1px solid var(--border);align-items:center;}
-#stats .v{color:var(--green);}
-#stats .st-prompt-hint{color:var(--muted);max-width:100%;}
+#status-bar .sb-prompt-hint{color:var(--muted);max-width:min(200px,40vw);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 
-/* ── Results ── */
-#results{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:8px;-webkit-overflow-scrolling:touch;}
+/* ── Results (spotlight strip + tinted sections) ── */
+#results{flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:12px;-webkit-overflow-scrolling:touch;}
+.result-spotlight{display:flex;flex-wrap:wrap;gap:10px;align-content:flex-start;}
+.result-spotlight .result{background:var(--bg2);border:1px solid var(--border);}
+.result-section{border-radius:12px;padding:10px 12px 12px;margin:0;border:1px solid rgba(100,116,139,.35);}
+.result-section-title{font:700 10px var(--mono);text-transform:uppercase;letter-spacing:.08em;margin:0 0 8px;opacity:.9;}
+.result-section-inner{display:flex;flex-direction:column;gap:8px;}
+@media(min-width:768px){
+  .result-section-inner{flex-direction:row;flex-wrap:wrap;}
+  .result-section-inner .result{width:calc(50% - 6px);}
+}
+@media(min-width:1100px){
+  .result-section-inner .result{width:calc(33.33% - 8px);}
+}
+.result-section--wiki{background:rgba(59,130,246,.09);}
+.result-section--news{background:rgba(13,148,136,.1);}
+.result-section--history{background:rgba(234,88,12,.09);}
+.result-section--reference{background:rgba(16,185,129,.08);}
+.result-section--video{background:rgba(239,68,68,.07);}
+.result-section--archives{background:rgba(245,158,11,.09);}
+.result-section--more{background:rgba(100,116,139,.12);}
 .result{display:flex;flex-direction:column;gap:4px;padding:12px 14px;background:var(--bg2);border:1px solid var(--border);border-radius:10px;cursor:pointer;transition:all .15s;text-decoration:none;color:inherit;}
+.result--spot{background:var(--bg2);border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.15);}
+:root.light .result--spot{background:#fff;border-color:#e2e8f0;}
 .result:hover{border-color:#334155;background:var(--bg3);text-decoration:none;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.3);}
 .result:active{transform:scale(.99);}
 .r-source{font-family:var(--mono);font-size:10px;color:var(--muted);display:flex;align-items:center;gap:6px;}
@@ -253,24 +287,27 @@ a.dv-ml-a-ref{color:#a78bfa;}
 .dv-hb-label{font-family:var(--mono);font-size:10px;font-weight:700;min-width:40px;text-align:right;}
 .dv-ai{padding:10px;background:var(--bg2);border-radius:8px;font-family:var(--mono);font-size:10px;color:var(--dim);line-height:1.5;margin-top:8px;border:1px solid var(--border);}
 
-/* ── Footer ── */
-#status-bar{display:flex;align-items:center;min-height:22px;background:var(--bg2);border-top:1px solid var(--border);padding:0 10px;padding-bottom:max(0px,env(safe-area-inset-bottom));gap:12px;font-size:.5625rem;font-family:var(--mono);color:var(--dim);flex-shrink:0;box-sizing:border-box;}
+/* ── Status (top strip on all modes) ── */
+#status-bar{display:flex;align-items:center;min-height:26px;background:var(--bg2);border-bottom:1px solid var(--border);padding:4px 10px;padding-top:max(4px,env(safe-area-inset-top));gap:12px;font-size:.5625rem;font-family:var(--mono);color:var(--dim);flex-shrink:0;box-sizing:border-box;order:-100;}
 #status-bar .val{color:var(--green);}
 #status-bar .sep{opacity:.85;}
 #status-bar .spacer{flex:1;}
 
 /* ── Layout ── */
 #app{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;}
+#header{order:0;}
+#search-panel,#freya-panel,#ai-panel,#kbatch-panel,#hexcast-panel,#hub-panel{order:4;flex:1;min-height:0;}
+#search-dock{order:18;}
 
 /* ── Responsive ── */
 @media(min-width:768px){
-    #results{padding:16px 24px;flex-direction:row;flex-wrap:wrap;gap:12px;align-content:flex-start;}
-    .result{width:calc(50% - 6px);}
+    #results{padding:16px 24px;}
+    .result-spotlight .result{width:calc(50% - 6px);}
     #fu-converter{max-width:700px;margin:0 auto;width:100%;}
     #fu-table{padding:0 24px 8px;}
 }
 @media(min-width:1100px){
-    .result{width:calc(33.33% - 8px);}
+    .result-spotlight .result{width:calc(33.33% - 8px);}
 }
 
 /* ===== LIGHT THEME ===== */
@@ -358,7 +395,7 @@ a.dv-ml-a-ref{color:#a78bfa;}
     #header .logo{font-size:14px;}
     #header .ver{font-size:8px;}
     #header .nav-btn{padding:3px 8px;font-size:9px;}
-    #mode-tabs{padding:4px 12px 0;gap:3px;}
+    #header .header-mode-tabs{margin-left:0;gap:3px;}
     .mode-tab{font-size:10px;padding:5px 12px;}
     #search-composer{padding:8px 12px 10px;}
     .sc-toolbar{gap:6px;}
@@ -368,7 +405,6 @@ a.dv-ml-a-ref{color:#a78bfa;}
     #search-btn{width:100%;padding:10px 16px;font-size:12px;align-self:stretch;}
     #connectors{padding:4px 12px;gap:3px;}
     .cpill{font-size:9px;padding:3px 8px;}
-    #stats{padding:4px 12px;gap:12px;font-size:9px;flex-wrap:wrap;}
     #results{padding:8px 12px;gap:6px;}
     .result{padding:10px 12px;width:100% !important;}
     .r-title{font-size:13px;}
@@ -402,59 +438,55 @@ a.dv-ml-a-ref{color:#a78bfa;}
     #status-bar{padding:0 8px;font-size:.5rem;gap:8px;}
 }
 html.qp-embed-chrome #theme-toggle{display:none!important;}
+/* quantum-prefixes.js injects #qp-theme-toggle (fixed top-right); Search uses #theme-toggle + mueee upl-sync-theme */
+#qp-theme-toggle{display:none!important;}
 </style>
 </head>
 <body>
 <div id="app">
+    <div id="status-bar" role="status" aria-live="polite">
+        <span>search</span>
+        <span class="sep">|</span>
+        <span>connectors: <span class="val" id="sb-conn">22</span></span>
+        <span>results: <span class="val" id="sb-res">0</span></span>
+        <span>latency: <span class="val" id="sb-lat">&mdash;</span></span>
+        <span id="sb-prompt" class="sb-prompt-hint" hidden></span>
+        <span class="spacer"></span>
+        <span id="sb-net">offline</span>
+        <span class="sep">|</span>
+        <span>v2.6</span>
+    </div>
     <div id="header">
         <div class="logo-row mueee-title-bar">
             <span class="logo">SEARCH</span>
             <span class="ver" title="v2.6 · Kbatch + Hexcast tabs · Hub catalog">v2.6</span>
+            <div id="mode-tabs" class="header-mode-tabs">
+                <span class="mode-tab active" data-mode="search">&#x1F50D; Search</span>
+                <span class="mode-tab" data-mode="ai">&#x1F9E0; AI Lens</span>
+                <span class="mode-tab" data-mode="freya">&#x1F4CF; FreyaUnits</span>
+                <span class="mode-tab" data-mode="kbatch">&#x2328; Kbatch</span>
+                <span class="mode-tab" data-mode="hexcast">&#x1F3A5; Hexcast</span>
+                <span class="mode-tab" data-mode="hub">&#x1F5C2; Hub</span>
+            </div>
             <span class="spacer"></span>
             <button class="nav-btn" id="theme-toggle" onclick="toggleSearchTheme()" style="background:none;border:1px solid var(--border);cursor:pointer;font-size:12px;" title="Toggle light/dark">&#x263E;</button>
         </div>
     </div>
-    <div id="mode-tabs">
-        <span class="mode-tab active" data-mode="search">&#x1F50D; Search</span>
-        <span class="mode-tab" data-mode="ai">&#x1F9E0; AI Lens</span>
-        <span class="mode-tab" data-mode="freya">&#x1F4CF; FreyaUnits</span>
-        <span class="mode-tab" data-mode="kbatch">&#x2328; Kbatch</span>
-        <span class="mode-tab" data-mode="hexcast">&#x1F3A5; Hexcast</span>
-        <span class="mode-tab" data-mode="hub">&#x1F5C2; Hub</span>
-    </div>
-    <div id="search-composer" aria-label="Search prompt">
-        <div class="sc-toolbar">
-            <label class="sc-lbl" for="prompt-model">Model</label>
-            <select id="prompt-model" aria-label="Model or search depth">
-                <option value="auto">Auto — match connectors to query</option>
-                <option value="fast">Fast — minimal context</option>
-                <option value="balanced">Balanced — default depth</option>
-                <option value="deep">Deep — slower, richer snippets</option>
-                <option value="code">Code &amp; technical</option>
-            </select>
-            <button type="button" class="sc-btn-attach" id="prompt-add-doc" title="Attach plain text or Markdown">+ Add document</button>
-            <input type="file" id="prompt-file-input" multiple accept=".txt,.md,.markdown,text/plain,text/markdown" hidden>
-        </div>
-        <div class="sc-attachments" id="prompt-attachments"></div>
-        <div class="sc-prompt-row">
-            <textarea id="search-input" rows="2" placeholder="Ask or paste keywords. Attach .txt/.md for context (~2.5k chars/file); model tunes AI Lens. Enter — search · Shift+Enter — new line." autocomplete="off" autofocus></textarea>
-            <button type="button" id="search-btn">Search</button>
-        </div>
-    </div>
-    <div class="rainbow mueee-rainbow" role="presentation"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
 
     <!-- ═══ SEARCH PANEL ═══ -->
     <div id="search-panel" class="active">
-        <div id="timeline"><canvas id="tl-canvas"></canvas></div>
-        <div id="connectors"></div>
-        <div id="stats">
-            <span>connectors: <span class="v" id="st-conn">14</span></span>
-            <span>results: <span class="v" id="st-res">0</span></span>
-            <span>latency: <span class="v" id="st-lat">&mdash;</span></span>
-            <span class="st-prompt-hint" id="st-prompt" hidden></span>
-        </div>
-        <div id="results">
-            <div class="empty"><div class="big">&#x1F50D;</div>Search across Wikipedia, arXiv, Sacred Texts,<br>PubChem, Wayback Machine, Open Library & more.<br><br><span style="font-family:var(--mono);font-size:10px;color:var(--accent);">Works offline-first. No account needed.</span></div>
+        <div class="search-panel-body">
+            <div id="spine-rail" class="spine-rail">
+                <div class="rainbow mueee-rainbow rainbow-vertical" role="presentation"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+                <div id="timeline-v-wrap"><canvas id="tl-canvas-v"></canvas></div>
+                <aside id="connectors" aria-label="Data connectors"></aside>
+                <button type="button" id="spine-rail-toggle" class="spine-rail-toggle" aria-expanded="true" title="Collapse connector rail">&#x25C0;</button>
+            </div>
+            <div class="search-panel-main">
+                <div id="results">
+                    <div class="empty"><div class="big">&#x1F50D;</div>Search across Wikipedia, arXiv, Sacred Texts,<br>PubChem, Wayback Machine, Open Library & more.<br><br><span style="font-family:var(--mono);font-size:10px;color:var(--accent);">Works offline-first. No account needed.</span></div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -574,6 +606,28 @@ html.qp-embed-chrome #theme-toggle{display:none!important;}
         </div>
     </div>
 
+    <div id="search-dock" class="search-dock embed-min-search">
+        <div id="search-composer" aria-label="Search prompt">
+            <div class="sc-toolbar">
+                <label class="sc-lbl" for="prompt-model">Model</label>
+                <select id="prompt-model" aria-label="Model or search depth">
+                    <option value="auto">Auto — match connectors to query</option>
+                    <option value="fast">Fast — minimal context</option>
+                    <option value="balanced">Balanced — default depth</option>
+                    <option value="deep">Deep — slower, richer snippets</option>
+                    <option value="code">Code &amp; technical</option>
+                </select>
+                <button type="button" class="sc-btn-attach" id="prompt-add-doc" title="Attach plain text or Markdown">+ Add document</button>
+                <input type="file" id="prompt-file-input" multiple accept=".txt,.md,.markdown,text/plain,text/markdown" hidden>
+            </div>
+            <div class="sc-attachments" id="prompt-attachments"></div>
+            <div class="sc-prompt-row">
+                <textarea id="search-input" rows="2" placeholder="Ask or paste keywords. Attach .txt/.md for context (~2.5k chars/file); model tunes AI Lens. Enter — search · Shift+Enter — new line." autocomplete="off" autofocus></textarea>
+                <button type="button" id="search-btn">Search</button>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══ DOCUMENT VIEWER ═══ -->
     <div id="doc-viewer-overlay"></div>
     <div id="doc-viewer">
@@ -598,17 +652,6 @@ html.qp-embed-chrome #theme-toggle{display:none!important;}
         </div>
     </div>
 
-    <div id="status-bar" role="status" aria-live="polite">
-        <span>search</span>
-        <span class="sep">|</span>
-        <span>connectors: <span class="val" id="sb-conn">14</span></span>
-        <span>results: <span class="val" id="sb-res">0</span></span>
-        <span>latency: <span class="val" id="sb-lat">&mdash;</span></span>
-        <span class="spacer"></span>
-        <span id="sb-net">offline</span>
-        <span class="sep">|</span>
-        <span>v2.6</span>
-    </div>
 </div>
 
 <script src="quantum-prefixes.js"></script>
@@ -737,10 +780,6 @@ function renderDrillClusterStrip() {
 }
 
 function syncSearchStatusBar() {
-  [['st-conn','sb-conn'],['st-res','sb-res'],['st-lat','sb-lat']].forEach(function (pair) {
-    var a = $(pair[0]), b = $(pair[1]);
-    if (a && b) b.textContent = a.textContent;
-  });
   var net = $('sb-net');
   if (net) net.textContent = navigator.onLine ? 'online' : 'offline';
 }
@@ -770,7 +809,7 @@ function buildAugmentedQuery(userText) {
 }
 
 function refreshStPrompt() {
-    var el = $('st-prompt');
+    var el = $('sb-prompt');
     if (!el) return;
     var sel = $('prompt-model');
     var mv = '';
@@ -863,11 +902,12 @@ let activeMode = 'search';
 
 function applySearchModeUi() {
     var m = activeMode;
-    var showComposer = (m === 'search' || m === 'ai' || m === 'freya');
+    var embed = document.documentElement.classList.contains('qp-embed-chrome');
+    var showComposer = (m === 'ai' || m === 'freya' || (m === 'search' && !embed));
     var sc = $('search-composer');
-    var rb = document.querySelector('#app > .rainbow.mueee-rainbow');
+    var dock = $('search-dock');
     if (sc) sc.style.display = showComposer ? '' : 'none';
-    if (rb) rb.style.display = showComposer ? '' : 'none';
+    if (dock) dock.style.display = showComposer ? '' : 'none';
 }
 
 function initHubCatalog() {
@@ -903,10 +943,12 @@ document.querySelectorAll('.mode-tab').forEach(tab => {
         try { localStorage.setItem('search-active-mode', activeMode); } catch (e) {}
         if (activeMode === 'hub') initHubCatalog();
         // Show/hide search-specific elements
-        $('timeline').style.display = activeMode === 'search' ? '' : 'none';
         if (activeMode === 'ai') aiRefresh();
         $('connectors').style.display = activeMode === 'search' ? '' : 'none';
-        $('stats').style.display = activeMode === 'search' ? '' : 'none';
+        var tlr = $('timeline-v-wrap');
+        if (tlr) tlr.style.display = activeMode === 'search' ? '' : 'none';
+        var srr = $('spine-rail');
+        if (srr) srr.style.display = activeMode === 'search' ? '' : 'none';
         var si = $('search-input');
         if (si) {
             si.placeholder = activeMode === 'freya'
@@ -938,19 +980,45 @@ initHubCatalog();
 applySearchModeUi();
 
 /* ══════════════════════════════════════════════════════
-   SEARCH — Timeline
+   SEARCH — Spine rail toggle + Timeline
    ══════════════════════════════════════════════════════ */
+function initSpineRailToggle() {
+    var rail = $('spine-rail');
+    var btn = $('spine-rail-toggle');
+    if (!rail || !btn) return;
+    function apply(collapsed) {
+        rail.classList.toggle('spine-rail--collapsed', collapsed);
+        btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        btn.innerHTML = collapsed ? '&#x25B6;' : '&#x25C0;';
+        btn.title = collapsed ? 'Expand connector rail' : 'Collapse connector rail';
+        try { localStorage.setItem('search-spine-rail-collapsed', collapsed ? '1' : '0'); } catch (e) {}
+        requestAnimationFrame(function () { initTimeline(); });
+    }
+    var saved = false;
+    try { saved = localStorage.getItem('search-spine-rail-collapsed') === '1'; } catch (e) {}
+    if (saved) apply(true);
+    btn.addEventListener('click', function () {
+        apply(!rail.classList.contains('spine-rail--collapsed'));
+    });
+}
+
 function initTimeline(){
-    const cv = $('tl-canvas'); if(!cv) return;
+    const cv = $('tl-canvas-v');
+    if (!cv || !HS.drawTimelineVertical) return;
     function resize(){
         const dpr = window.devicePixelRatio || 1;
         const p = cv.parentElement;
-        cv.width = p.offsetWidth * dpr; cv.height = p.offsetHeight * dpr;
-        cv.style.width = p.offsetWidth + 'px'; cv.style.height = p.offsetHeight + 'px';
-        const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        HS.drawTimeline(cv);
+        if (!p || p.offsetHeight < 8) return;
+        cv.width = p.offsetWidth * dpr;
+        cv.height = p.offsetHeight * dpr;
+        cv.style.width = p.offsetWidth + 'px';
+        cv.style.height = p.offsetHeight + 'px';
+        const ctx = cv.getContext('2d');
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        HS.drawTimelineVertical(cv);
     }
-    resize(); window.addEventListener('resize', resize);
+    resize();
+    window.addEventListener('resize', resize);
 }
 
 /* ── Connector Pills ── */
@@ -963,11 +1031,14 @@ function buildPills(){
         p.addEventListener('click', () => {
             HS.setConnectorEnabled(i, !c.enabled); c.enabled = !c.enabled;
             p.classList.toggle('active');
-            $('st-conn').textContent = HS.getConnectors().filter(x => x.enabled).length;
+            var sbc = $('sb-conn');
+            if (sbc) sbc.textContent = HS.getConnectors().filter(x => x.enabled).length;
             syncSearchStatusBar();
         });
         w.appendChild(p);
     });
+    var sbc0 = $('sb-conn');
+    if (sbc0) sbc0.textContent = HS.getConnectors().filter(function (x) { return x.enabled; }).length;
     syncSearchStatusBar();
 }
 
@@ -1021,8 +1092,8 @@ async function doSearch(rawQuery){
 
     const res = $('results');
     res.innerHTML = '<div class="shimmer"></div><div class="shimmer"></div><div class="shimmer"></div>';
-    $('st-res').textContent = '...';
-    $('st-lat').textContent = '...';
+    if ($('sb-res')) $('sb-res').textContent = '...';
+    if ($('sb-lat')) $('sb-lat').textContent = '...';
     syncSearchStatusBar();
 
     document.querySelectorAll('.cpill').forEach(p => {
@@ -1035,13 +1106,13 @@ async function doSearch(rawQuery){
             const pill = document.querySelector(`.cpill[data-idx="${HS.CONNECTORS.indexOf(HS.CONNECTORS.find(c=>c.name===p.connector))}"]`);
             if(pill){ pill.classList.remove('loading'); if(p.latestBatch.length) pill.innerHTML = HS.CONNECTORS.find(c=>c.name===p.connector).icon + '<span class="cnt">' + p.latestBatch.length + '</span>'; }
             renderResults(p.results);
-            $('st-res').textContent = p.results.length;
+            if ($('sb-res')) $('sb-res').textContent = p.results.length;
             syncSearchStatusBar();
         }
     });
 
-    $('st-res').textContent = result.totalResults;
-    $('st-lat').textContent = result.latencyMs + 'ms';
+    if ($('sb-res')) $('sb-res').textContent = result.totalResults;
+    if ($('sb-lat')) $('sb-lat').textContent = result.latencyMs + 'ms';
     syncSearchStatusBar();
     renderResults(result.results);
 
@@ -1058,22 +1129,99 @@ async function doSearch(rawQuery){
 }
 
 let _lastResults = [];
+function renderResultCard(item, idx, extraClass) {
+    const a = document.createElement('a');
+    a.className = 'result' + (extraClass ? ' ' + extraClass : '');
+    a.href = item.url || '#';
+    a.rel = 'noopener';
+    a.dataset.ridx = String(idx);
+    const col = HS.getSourceColor(item.source);
+    a.innerHTML = `<div class="r-source"><span class="r-dot" style="background:${col};"></span>${esc(item.source)}</div><div class="r-title">${esc(item.title)}</div>${item.snippet ? '<div class="r-snippet">'+esc(item.snippet)+'</div>' : ''}`;
+    a.addEventListener('click', e => {
+        e.preventDefault();
+        openDocViewer(item, idx);
+    });
+    return a;
+}
+function pickSpotlightIndices(results, maxN) {
+    maxN = maxN || 10;
+    const n = results.length;
+    const used = new Array(n).fill(false);
+    const out = [];
+    const prefer = ['wikipedia','wire-news','history-archive','youtube','arxiv','meta-research','openlibrary','wayback','internet-archive','wiktionary'];
+    prefer.forEach(ps => {
+        for (let i = 0; i < n && out.length < maxN; i++) {
+            if (used[i]) continue;
+            if ((results[i].source || '').toLowerCase() === ps) {
+                out.push(i);
+                used[i] = true;
+            }
+        }
+    });
+    for (let i = 0; i < n && out.length < maxN; i++) {
+        if (!used[i]) {
+            out.push(i);
+            used[i] = true;
+        }
+    }
+    return out.slice(0, maxN);
+}
+function bucketForSource(src) {
+    const s = (src || '').toLowerCase();
+    if (s === 'wikipedia' || s === 'wiktionary') return 'wiki';
+    if (s === 'wire-news') return 'news';
+    if (s === 'history-archive') return 'history';
+    if (s === 'youtube' || s === 'video-transcript' || s.indexOf('youtube') >= 0) return 'video';
+    if (['arxiv','meta-research','pubchem','genbank','hathitrust','datamuse'].indexOf(s) >= 0) return 'reference';
+    if (['wayback','openlibrary','internet-archive','sacred-texts','yale','arda','lgbtq-archives'].indexOf(s) >= 0) return 'archives';
+    return 'more';
+}
 function renderResults(results){
     _lastResults = results;
     const el = $('results');
     el.innerHTML = '';
     if(!results.length){ el.innerHTML = '<div class="empty">No results found.</div>'; return; }
+    const spotIdx = pickSpotlightIndices(results, 10);
+    const spotSet = new Set(spotIdx);
+    const spotWrap = document.createElement('div');
+    spotWrap.className = 'result-spotlight';
+    spotWrap.setAttribute('aria-label', 'Top picks');
+    spotIdx.forEach(i => {
+        spotWrap.appendChild(renderResultCard(results[i], i, 'result--spot'));
+    });
+    el.appendChild(spotWrap);
+    const buckets = { wiki: [], news: [], history: [], reference: [], video: [], archives: [], more: [] };
     results.forEach((item, idx) => {
-        const a = document.createElement('a');
-        a.className = 'result'; a.href = item.url || '#'; a.rel = 'noopener';
-        a.dataset.ridx = idx;
-        const col = HS.getSourceColor(item.source);
-        a.innerHTML = `<div class="r-source"><span class="r-dot" style="background:${col};"></span>${esc(item.source)}</div><div class="r-title">${esc(item.title)}</div>${item.snippet ? '<div class="r-snippet">'+esc(item.snippet)+'</div>' : ''}`;
-        a.addEventListener('click', e => {
-            e.preventDefault();
-            openDocViewer(item, idx);
+        if (spotSet.has(idx)) return;
+        const b = bucketForSource(item.source);
+        (buckets[b] || buckets.more).push({ item: item, idx: idx });
+    });
+    const sectionMeta = [
+        { key: 'wiki', title: 'Wikipedia & lexicon', cls: 'result-section--wiki' },
+        { key: 'news', title: 'Wire & news desk (Wikinews)', cls: 'result-section--news' },
+        { key: 'history', title: 'History & newspapers (LOC)', cls: 'result-section--history' },
+        { key: 'reference', title: 'Research & data', cls: 'result-section--reference' },
+        { key: 'video', title: 'YouTube & video', cls: 'result-section--video' },
+        { key: 'archives', title: 'Archives & libraries', cls: 'result-section--archives' },
+        { key: 'more', title: 'More connectors', cls: 'result-section--more' }
+    ];
+    sectionMeta.forEach(sec => {
+        const rows = buckets[sec.key];
+        if (!rows || !rows.length) return;
+        const section = document.createElement('section');
+        section.className = 'result-section ' + sec.cls;
+        section.setAttribute('data-section', sec.key);
+        const h = document.createElement('h3');
+        h.className = 'result-section-title';
+        h.textContent = sec.title;
+        section.appendChild(h);
+        const inner = document.createElement('div');
+        inner.className = 'result-section-inner';
+        rows.forEach(({ item, idx }) => {
+            inner.appendChild(renderResultCard(item, idx, ''));
         });
-        el.appendChild(a);
+        section.appendChild(inner);
+        el.appendChild(section);
     });
 }
 
@@ -1744,6 +1892,7 @@ initPromptComposer();
 /* ══════════════════════════════════════════════════════
    INIT
    ══════════════════════════════════════════════════════ */
+initSpineRailToggle();
 initTimeline();
 buildPills();
 syncSearchStatusBar();
@@ -1775,8 +1924,8 @@ if (typeof BroadcastChannel !== 'undefined') {
                 var stored = JSON.parse(localStorage.getItem('transcript-dca-index') || '[]');
                 stored = stored.concat(e.data.segments);
                 localStorage.setItem('transcript-dca-index', JSON.stringify(stored));
-                var stConn = $('st-conn');
-                if (stConn) stConn.textContent = HS.getConnectors().filter(function(x){return x.enabled;}).length;
+                var sbc = $('sb-conn');
+                if (sbc) sbc.textContent = HS.getConnectors().filter(function(x){return x.enabled;}).length;
                 buildPills();
                 syncSearchStatusBar();
             }
@@ -1811,6 +1960,17 @@ window.addEventListener('message', function (ev) {
             var si = $('search-input');
             if (si) si.value = q;
             doSearch(q.trim());
+        }
+        return;
+    }
+    if (ev.data.type === 'mueee-search-model' && ev.source === window.parent) {
+        var pm = $('prompt-model');
+        if (pm && ev.data.value) {
+            for (var oi = 0; oi < pm.options.length; oi++) {
+                if (pm.options[oi].value === ev.data.value) { pm.selectedIndex = oi; break; }
+            }
+            try { localStorage.setItem('search-prompt-model', ev.data.value); } catch (e) {}
+            refreshStPrompt();
         }
     }
 });
