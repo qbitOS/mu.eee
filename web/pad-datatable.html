@@ -1,0 +1,993 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!--
+  pad-datatable.html — grid-snapped data regions + editable fields.
+  + Auto-packed blocks (no overlap on "+ Block") · scalable bg grid · HTML→layout inferencer.
+  Ref: Data table https://www.framer.com/marketplace/components/data-table/
+  Ref: Progress / polish vibe https://www.framer.com/marketplace/components/progress-slideshow/
+  Schema: { "version":1, "layoutMode":"free"|"row"|"column"|"grid2", "blocks":[{id,x,y,cols,rows,minWidth,minHeight,width,height,...}] }
+  Companion layout designer (draw canvas + AI + preview): web/qbit-studio.html — same family, different skin.
+-->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0b">
+<title>Pad data table — uvspeed</title>
+<link rel="stylesheet" href="quantum-theme.css">
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<style>
+:root{
+  --pds-mono-fg:rgba(250,250,252,.94);
+  --pds-mono-muted:rgba(250,250,252,.46);
+  --pds-mono-faint:rgba(250,250,252,.09);
+  --pds-mono-edge:rgba(250,250,252,.16);
+  --pds-mono-surface:rgba(14,14,16,.78);
+  --pds-mono-input:rgba(8,8,10,.92);
+  --pds-grid-unit:max(6px,min(11px,calc(100vw / 128)));
+  --pds-snap:8;
+}
+[data-theme="light"]{
+  --pds-mono-fg:rgba(12,12,14,.94);
+  --pds-mono-muted:rgba(12,12,14,.48);
+  --pds-mono-faint:rgba(0,0,0,.06);
+  --pds-mono-edge:rgba(0,0,0,.14);
+  --pds-mono-surface:rgba(255,255,255,.86);
+  --pds-mono-input:rgba(255,255,255,.96);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  height:100%;overflow:hidden;
+  background:#0a0a0b;
+  color:var(--pds-mono-fg);
+  font-family:ui-sans-serif,system-ui,-apple-system,"SF Pro Text","Segoe UI",sans-serif;
+  -webkit-font-smoothing:antialiased;
+  letter-spacing:-0.01em;
+}
+[data-theme="light"] html,[data-theme="light"] body{
+  background:#fafafa;
+  color:var(--pds-mono-fg);
+}
+#qp-theme-toggle{z-index:100003!important}
+.pds-toolbar{
+  position:fixed;top:0;left:0;right:0;z-index:100002;
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px 10px;
+  background:rgba(10,10,11,.92);
+  border-bottom:1px solid var(--pds-mono-faint);
+  backdrop-filter:saturate(140%) blur(12px);
+  font:500 11px ui-monospace,monospace;
+}
+[data-theme="light"] .pds-toolbar{
+  background:rgba(250,250,252,.94);
+  border-bottom-color:var(--pds-mono-faint);
+}
+.pds-toolbar label{display:flex;align-items:center;gap:5px;color:var(--pds-mono-muted)}
+.pds-toolbar input[type="number"]{width:52px;padding:5px 7px;border-radius:6px;border:1px solid var(--pds-mono-edge);background:var(--pds-mono-input);color:var(--pds-mono-fg)}
+.pds-toolbar input[type="search"],.pds-toolbar input[type="text"]{width:min(200px,28vw);padding:5px 9px;border-radius:6px;border:1px solid var(--pds-mono-edge);background:var(--pds-mono-input);color:var(--pds-mono-fg)}
+.pds-toolbar select{
+  font:600 10px ui-monospace,monospace;padding:5px 10px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--pds-mono-edge);background:var(--pds-mono-input);color:var(--pds-mono-fg);
+  max-width:min(160px,36vw);
+}
+.pds-toolbar button{
+  font:600 10px ui-monospace,monospace;padding:6px 12px;border-radius:999px;cursor:pointer;
+  border:1px solid var(--pds-mono-edge);background:transparent;color:var(--pds-mono-fg);
+  transition:border-color .15s,background .15s,color .15s;
+}
+.pds-toolbar button:hover{border-color:var(--pds-mono-fg);color:var(--pds-mono-fg)}
+.pds-toolbar button.pds-primary{background:var(--pds-mono-fg);color:#0a0a0b;border-color:transparent}
+[data-theme="light"] .pds-toolbar button.pds-primary{background:#0a0a0b;color:#fafafa}
+/* Progress strip — subtle carousel/timer rhythm (Framer progress-slideshow–class polish) */
+.pds-progress-track{
+  position:fixed;top:0;left:0;right:0;height:2px;z-index:100004;
+  background:var(--pds-mono-faint);pointer-events:none;
+}
+.pds-progress-track i{
+  display:block;height:100%;width:0%;
+  background:linear-gradient(90deg,transparent,var(--pds-mono-fg),transparent);
+  opacity:.55;
+  animation:pds-prog 9s ease-in-out infinite;
+}
+@keyframes pds-prog{
+  0%{width:0%;opacity:.35;margin-left:0}
+  45%{width:72%;opacity:.75;margin-left:0}
+  55%{width:72%;opacity:.75;margin-left:28%}
+  100%{width:0%;opacity:.35;margin-left:100%}
+}
+@media (prefers-reduced-motion:reduce){
+  .pds-progress-track i{animation:none;width:35%;opacity:.4;margin:0}
+}
+.pds-scroll{
+  position:fixed;top:52px;left:0;right:0;bottom:0;overflow:auto;padding:max(16px,2vw);
+  background-color:#0a0a0b;
+}
+[data-theme="light"] .pds-scroll{
+  background-color:#fafafa;
+}
+/* Work surface: grid is *inside* this layer so it scrolls with blocks (seamless). */
+#pds-work{
+  position:relative;
+  min-width:100%;
+  min-height:100%;
+  isolation:isolate;
+}
+/* Measures --pds-grid-unit in px for JS tessellation */
+.pds-cell-probe{
+  position:absolute;left:0;top:0;
+  width:var(--pds-grid-unit);
+  height:var(--pds-grid-unit);
+  opacity:0;pointer-events:none;overflow:hidden;
+}
+/* Mosaic grid: div cells; falls back to CSS tiling when canvas is huge */
+.pds-grid-layer{
+  position:absolute;
+  left:0;top:0;
+  z-index:0;
+  pointer-events:none;
+  box-sizing:border-box;
+  border-top:1px solid var(--pds-mono-faint);
+  border-left:1px solid var(--pds-mono-faint);
+  will-change:transform;
+}
+.pds-grid-layer.pds-grid-fallback{
+  display:block!important;
+  background-image:
+    linear-gradient(var(--pds-mono-faint) 1px,transparent 1px),
+    linear-gradient(90deg,var(--pds-mono-faint) 1px,transparent 1px);
+  background-size:var(--pds-grid-unit) var(--pds-grid-unit);
+  background-position:0 0;
+}
+.pds-grid-cell{
+  box-sizing:border-box;
+  margin:0;
+  border-right:1px solid var(--pds-mono-faint);
+  border-bottom:1px solid var(--pds-mono-faint);
+}
+.pds-block{
+  position:absolute;
+  z-index:1;
+  padding:10px 12px;
+  border:1px solid var(--pds-mono-edge);
+  border-radius:12px;
+  background:var(--pds-mono-surface);
+  box-shadow:0 24px 48px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.04);
+  backdrop-filter:blur(16px);
+}
+[data-theme="light"] .pds-block{
+  box-shadow:0 16px 40px rgba(0,0,0,.08),inset 0 1px 0 rgba(255,255,255,.9);
+}
+.pds-block-title{
+  font:600 10px ui-monospace,monospace;color:var(--pds-mono-muted);
+  letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px;
+}
+.pds-table{width:100%;border-collapse:collapse;font:clamp(11px,1.1vw,13px) ui-monospace,monospace}
+.pds-table th,.pds-table td{padding:3px;vertical-align:middle}
+.pds-table th{text-align:left}
+.pds-table input{
+  width:100%;min-width:64px;padding:7px 10px;
+  border:1px solid var(--pds-mono-faint);
+  border-radius:8px;
+  background:var(--pds-mono-input);
+  color:var(--pds-mono-fg);
+  font:inherit;
+  transition:border-color .15s,box-shadow .15s;
+}
+.pds-table input:focus{
+  outline:none;border-color:var(--pds-mono-edge);
+  box-shadow:0 0 0 3px rgba(250,250,252,.07);
+}
+[data-theme="light"] .pds-table input:focus{box-shadow:0 0 0 3px rgba(0,0,0,.06)}
+.pds-th-wrap{display:flex;align-items:center;gap:4px}
+.pds-sort{cursor:pointer;font-size:10px;opacity:.5;border:none;background:transparent;color:var(--pds-mono-muted);padding:2px 4px;border-radius:4px}
+.pds-sort:hover{opacity:1;background:var(--pds-mono-faint)}
+.pds-panel{
+  display:none;position:fixed;right:12px;top:56px;width:min(440px,94vw);max-height:min(78vh,680px);overflow:auto;z-index:100001;
+  padding:14px;background:var(--pds-mono-surface);border:1px solid var(--pds-mono-edge);border-radius:14px;
+  font:12px ui-monospace,monospace;box-shadow:0 24px 64px rgba(0,0,0,.45);
+}
+[data-theme="light"] .pds-panel{box-shadow:0 20px 50px rgba(0,0,0,.12)}
+.pds-panel.on{display:block}
+.pds-panel h3{font:600 11px system-ui,sans-serif;letter-spacing:.02em;margin:12px 0 6px;color:var(--pds-mono-muted)}
+.pds-panel textarea{width:100%;min-height:140px;font:inherit;padding:10px;border-radius:8px;border:1px solid var(--pds-mono-edge);background:var(--pds-mono-input);color:var(--pds-mono-fg);resize:vertical}
+.pds-panel .pds-actions{margin-top:10px;display:flex;gap:8px;flex-wrap:wrap}
+.pds-hint{color:var(--pds-mono-muted);font-size:10px;margin-top:10px;line-height:1.45}
+.pds-hint a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+.visually-hidden{position:absolute;width:1px;height:1px;clip:rect(0,0,0,0);overflow:hidden}
+.pds-foot{
+  position:fixed;bottom:0;left:0;right:0;padding:6px 12px;font:500 9px ui-monospace,monospace;
+  color:var(--pds-mono-muted);background:linear-gradient(0deg,rgba(10,10,11,.9),transparent);pointer-events:none;text-align:center;
+}
+[data-theme="light"] .pds-foot{background:linear-gradient(0deg,rgba(250,250,252,.95),transparent)}
+.pds-foot a{color:inherit;pointer-events:auto;opacity:.85}
+.pds-foot a:hover{opacity:1}
+</style>
+</head>
+<body>
+<h1 class="visually-hidden">Pad data table workspace</h1>
+<div class="pds-progress-track" aria-hidden="true"><i></i></div>
+<div class="pds-toolbar" role="toolbar" aria-label="Data table controls">
+  <label>Cols <input type="number" id="pds-cols" value="8" min="1" max="64"></label>
+  <label>Rows <input type="number" id="pds-rows" value="10" min="1" max="200"></label>
+  <button type="button" class="pds-primary" id="pds-generate">Generate</button>
+  <input type="search" id="pds-search" placeholder="Search rows…" aria-label="Filter rows">
+  <button type="button" id="pds-csv">Export CSV</button>
+  <button type="button" id="pds-json-export">Export JSON</button>
+  <button type="button" id="pds-json-panel">Import / layout JSON…</button>
+  <button type="button" id="pds-add-block">+ Block</button>
+  <label title="How new blocks (without x/y) flow">Stack
+    <select id="pds-layout-mode" aria-label="Block stack layout">
+      <option value="free" selected>Free pack</option>
+      <option value="row">Row (wrap)</option>
+      <option value="column">Column</option>
+      <option value="grid2">2 column stacks</option>
+    </select>
+  </label>
+  <button type="button" id="pds-reflow" title="Re-run stack positions for all blocks">Reflow</button>
+  <button type="button" id="pds-clear" title="Remove all blocks from the canvas">Clear</button>
+</div>
+<div class="pds-scroll"><div id="pds-work">
+  <span id="pds-cell-probe" class="pds-cell-probe" aria-hidden="true"></span>
+  <div id="pds-grid-layer" class="pds-grid-layer" aria-hidden="true"></div>
+</div></div>
+<div id="pds-panel" class="pds-panel" aria-live="polite">
+  <p style="margin-bottom:8px;color:var(--pds-mono-muted)">Paste layout JSON or infer blocks from HTML (page snippet / exported boilerplate).</p>
+  <textarea id="pds-json-ta" spellcheck="false" placeholder='{"version":1,"blocks":[…]}'></textarea>
+  <div class="pds-actions">
+    <button type="button" class="pds-primary" id="pds-json-apply">Apply JSON</button>
+    <button type="button" id="pds-json-sample">Sample layout</button>
+  </div>
+  <h3>Infer from HTML</h3>
+  <textarea id="pds-html-ta" spellcheck="false" placeholder="Paste &lt;body&gt;… or fragment: sections, articles, grids → block grid boilerplate (heuristic)."></textarea>
+  <div class="pds-actions">
+    <button type="button" class="pds-primary" id="pds-infer-html">HTML → JSON</button>
+    <span class="pds-hint" style="margin:0;align-self:center"><strong>Stack</strong> toolbar: row wrap, column, or 2 parallel stacks. JSON: <code>layoutMode</code>, per-block <code>minWidth</code> / <code>minHeight</code>. <code>x,y</code> → pinned (skipped by Reflow).</span>
+  </div>
+  <h3>Capture HTML (browser-only)</h3>
+  <p class="pds-hint" style="margin-top:0">On the <strong>page you want to mimic</strong>, open DevTools → Console and run:<br><code style="display:block;margin-top:6px;padding:8px;border-radius:6px;background:var(--pds-mono-input);border:1px solid var(--pds-mono-edge);word-break:break-all;font-size:10px">copy(document.documentElement.outerHTML)</code>Then paste here (Infer from HTML). No cross-origin fetch — this path stays client-side.</p>
+  <p class="pds-hint">Data: <a href="https://www.framer.com/marketplace/components/data-table/" rel="noopener noreferrer" target="_blank">Framer Data Table</a> · Motion: <a href="https://www.framer.com/marketplace/components/progress-slideshow/" rel="noopener noreferrer" target="_blank">Progress Slideshow</a>.</p>
+</div>
+<p class="pds-foot"><code>pad-datatable.html</code> · <a href="ugrad-pad-lab.html">μPad lab</a> · <a href="qbit-studio.html">qbit-studio</a> (draw + AI layout) · <a href="pad-grid.html">pad-grid</a> · <a href="interactive-pattern.html">interactive-pattern</a></p>
+<script>
+(function () {
+  'use strict';
+  var work = document.getElementById('pds-work');
+  var scrollEl = document.querySelector('.pds-scroll');
+  var gridLayer = document.getElementById('pds-grid-layer');
+  var cellProbe = document.getElementById('pds-cell-probe');
+  var sortState = { col: -1, dir: 1 };
+  var blockZ = 0;
+  var GRID_CELL_BUDGET = 4800;
+  var gridSyncTimer = 0;
+
+  function scheduleGridSync() {
+    clearTimeout(gridSyncTimer);
+    gridSyncTimer = setTimeout(syncGridLayer, 36);
+  }
+
+  function syncGridLayer() {
+    if (!gridLayer || !work) return;
+    var cellPx = cellProbe && cellProbe.offsetWidth ? Math.max(4, cellProbe.offsetWidth) : 8;
+    var w = Math.max(work.scrollWidth, work.clientWidth || 0, 1);
+    var h = Math.max(work.scrollHeight, work.clientHeight || 0, 1);
+    var nx = Math.max(1, Math.ceil(w / cellPx));
+    var ny = Math.max(1, Math.ceil(h / cellPx));
+    var total = nx * ny;
+    gridLayer.style.width = nx * cellPx + 'px';
+    gridLayer.style.height = ny * cellPx + 'px';
+    if (total > GRID_CELL_BUDGET) {
+      gridLayer.classList.add('pds-grid-fallback');
+      gridLayer.innerHTML = '';
+      gridLayer.style.display = 'block';
+      gridLayer.style.gridTemplateColumns = '';
+      gridLayer.style.gridAutoRows = '';
+      return;
+    }
+    gridLayer.classList.remove('pds-grid-fallback');
+    gridLayer.style.display = 'grid';
+    gridLayer.style.gridTemplateColumns = 'repeat(' + nx + ', ' + cellPx + 'px)';
+    gridLayer.style.gridAutoRows = cellPx + 'px';
+    var frag = document.createDocumentFragment();
+    var i;
+    for (i = 0; i < total; i++) {
+      var d = document.createElement('div');
+      d.className = 'pds-grid-cell';
+      frag.appendChild(d);
+    }
+    gridLayer.innerHTML = '';
+    gridLayer.appendChild(frag);
+  }
+
+  function snapGrid(n) {
+    var step = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--pds-snap')) || 8;
+    return Math.max(0, Math.round(Number(n) / step) * step);
+  }
+
+  function getLayoutMode() {
+    var sel = document.getElementById('pds-layout-mode');
+    var v = sel && sel.value;
+    if (v === 'row' || v === 'column' || v === 'grid2' || v === 'free') return v;
+    return 'free';
+  }
+
+  function applyBlockSizing(blk, spec) {
+    if (!blk || !spec) return;
+    if (spec.minWidth != null && spec.minWidth !== '') blk.style.minWidth = snapGrid(Number(spec.minWidth)) + 'px';
+    if (spec.minHeight != null && spec.minHeight !== '') blk.style.minHeight = snapGrid(Number(spec.minHeight)) + 'px';
+    if (spec.width != null && spec.width !== '') blk.style.width = snapGrid(Number(spec.width)) + 'px';
+    if (spec.height != null && spec.height !== '') blk.style.height = snapGrid(Number(spec.height)) + 'px';
+  }
+
+  function reflowAllBlocks() {
+    var mode = getLayoutMode();
+    var blocks = Array.prototype.slice.call(work.querySelectorAll('.pds-block'));
+    var flowBlocks = blocks.filter(function (b) {
+      return b.dataset.layoutFixed !== '1';
+    });
+    var M = snapGrid(20);
+    var G = snapGrid(24);
+    var viewportW = Math.max(work.clientWidth, (scrollEl && scrollEl.clientWidth) || 0, window.innerWidth - 48);
+    var i;
+    var b;
+    var bw;
+    var bh;
+    var cx;
+    var cy;
+    var rowH;
+    var xLeft;
+    var xRight;
+    var yLeft;
+    var yRight;
+    var colW;
+    if (!flowBlocks.length) return;
+    if (mode === 'free') {
+      for (i = 0; i < flowBlocks.length; i++) {
+        b = flowBlocks[i];
+        b.style.left = '';
+        b.style.top = '';
+        placeBlockAuto(b);
+      }
+      return;
+    }
+    for (i = 0; i < flowBlocks.length; i++) {
+      flowBlocks[i].style.left = '';
+      flowBlocks[i].style.top = '';
+      flowBlocks[i].style.maxWidth = '';
+    }
+    if (mode === 'row') {
+      cx = M;
+      cy = M;
+      rowH = 0;
+      for (i = 0; i < flowBlocks.length; i++) {
+        b = flowBlocks[i];
+        bw = b.offsetWidth;
+        bh = b.offsetHeight;
+        if (cx > M && cx + bw + M > viewportW) {
+          cx = M;
+          cy += rowH + G;
+          rowH = 0;
+        }
+        b.style.left = snapGrid(cx) + 'px';
+        b.style.top = snapGrid(cy) + 'px';
+        cx += bw + G;
+        rowH = Math.max(rowH, bh);
+      }
+    } else if (mode === 'column') {
+      cx = M;
+      cy = M;
+      for (i = 0; i < flowBlocks.length; i++) {
+        b = flowBlocks[i];
+        bh = b.offsetHeight;
+        b.style.left = snapGrid(cx) + 'px';
+        b.style.top = snapGrid(cy) + 'px';
+        cy += bh + G;
+      }
+    } else if (mode === 'grid2') {
+      colW = Math.max(snapGrid(220), Math.floor((viewportW - M * 3 - G) / 2));
+      if (colW < snapGrid(120)) colW = snapGrid(120);
+      xLeft = M;
+      xRight = M + colW + G;
+      yLeft = M;
+      yRight = M;
+      for (i = 0; i < flowBlocks.length; i++) {
+        b = flowBlocks[i];
+        bh = b.offsetHeight;
+        if (i % 2 === 0) {
+          b.style.left = snapGrid(xLeft) + 'px';
+          b.style.top = snapGrid(yLeft) + 'px';
+          b.style.maxWidth = colW + 'px';
+          yLeft += bh + G;
+        } else {
+          b.style.left = snapGrid(xRight) + 'px';
+          b.style.top = snapGrid(yRight) + 'px';
+          b.style.maxWidth = colW + 'px';
+          yRight += bh + G;
+        }
+      }
+    }
+  }
+
+  function getBlockRects(exclude) {
+    return Array.prototype.map
+      .call(work.querySelectorAll('.pds-block'), function (el) {
+        if (el === exclude) return null;
+        return {
+          l: el.offsetLeft,
+          t: el.offsetTop,
+          r: el.offsetLeft + el.offsetWidth,
+          b: el.offsetTop + el.offsetHeight
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function rectsOverlap(ax, ay, w, h, gap, rects) {
+    var ar = ax + w;
+    var ab = ay + h;
+    var i;
+    var r;
+    for (i = 0; i < rects.length; i++) {
+      r = rects[i];
+      if (!(ax >= r.r + gap || ar + gap <= r.l || ay >= r.b + gap || ab + gap <= r.t)) return true;
+    }
+    return false;
+  }
+
+  function placeBlockAuto(blk) {
+    var M = snapGrid(20);
+    var G = snapGrid(24);
+    var bw = blk.offsetWidth;
+    var bh = blk.offsetHeight;
+    var others = getBlockRects(blk);
+    var viewportW = Math.max(work.clientWidth, (scrollEl && scrollEl.clientWidth) || 0, window.innerWidth - 48);
+    var maxR = M;
+    var maxB = M;
+    others.forEach(function (r) {
+      maxR = Math.max(maxR, r.r);
+      maxB = Math.max(maxB, r.b);
+    });
+    var x = others.length ? maxR + G : M;
+    var y = M;
+    if (others.length && x + bw + M > viewportW) {
+      x = M;
+      y = maxB + G;
+    }
+    var tries = 0;
+    while (rectsOverlap(x, y, bw, bh, G, others) && tries < 500) {
+      x += G;
+      if (x + bw + M > viewportW) {
+        x = M;
+        y += Math.max(G, snapGrid(20));
+      }
+      tries++;
+    }
+    blk.style.left = snapGrid(x) + 'px';
+    blk.style.top = snapGrid(y) + 'px';
+  }
+
+  function expandWorkIfNeeded() {
+    var pad = snapGrid(64);
+    var maxR = pad;
+    var maxB = pad;
+    work.querySelectorAll('.pds-block').forEach(function (b) {
+      maxR = Math.max(maxR, b.offsetLeft + b.offsetWidth);
+      maxB = Math.max(maxB, b.offsetTop + b.offsetHeight);
+    });
+    work.style.minWidth = Math.ceil(maxR + pad) + 'px';
+    work.style.minHeight = Math.ceil(maxB + pad) + 'px';
+    scheduleGridSync();
+  }
+
+  function escCell(s) {
+    s = String(s == null ? '' : s);
+    if (/[",\n\r]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function tableFromBlock(host, spec) {
+    host.innerHTML = '';
+    if (spec.title) {
+      var t = document.createElement('div');
+      t.className = 'pds-block-title';
+      t.textContent = spec.title;
+      host.appendChild(t);
+    }
+    var tbl = document.createElement('table');
+    tbl.className = 'pds-table';
+    tbl.dataset.blockId = spec.id || 'block';
+    var thead = document.createElement('thead');
+    var trh = document.createElement('tr');
+    var cols = Math.max(1, spec.cols | 0);
+    var rows = Math.max(1, spec.rows | 0);
+    var headers = spec.headers || [];
+    var c, r, th, inp;
+    for (c = 0; c < cols; c++) {
+      th = document.createElement('th');
+      var wrap = document.createElement('div');
+      wrap.className = 'pds-th-wrap';
+      inp = document.createElement('input');
+      inp.type = 'text';
+      inp.dataset.role = 'header';
+      inp.dataset.col = String(c);
+      inp.placeholder = headers[c] != null && headers[c] !== '' ? String(headers[c]) : 'Col ' + (c + 1);
+      if (headers[c] != null) inp.value = String(headers[c]);
+      var sb = document.createElement('button');
+      sb.type = 'button';
+      sb.className = 'pds-sort';
+      sb.title = 'Sort by this column';
+      sb.textContent = '↕';
+      sb.dataset.colIndex = String(c);
+      sb.addEventListener('click', function (e) {
+        var col = parseInt(e.currentTarget.dataset.colIndex, 10);
+        sortTable(tbl, col);
+      });
+      wrap.appendChild(inp);
+      wrap.appendChild(sb);
+      th.appendChild(wrap);
+      trh.appendChild(th);
+    }
+    thead.appendChild(trh);
+    tbl.appendChild(thead);
+    var tbody = document.createElement('tbody');
+    var cells = spec.cells || [];
+    for (r = 0; r < rows; r++) {
+      var tr = document.createElement('tr');
+      var rowData = cells[r] || [];
+      for (c = 0; c < cols; c++) {
+        var td = document.createElement('td');
+        inp = document.createElement('input');
+        inp.type = 'text';
+        inp.dataset.row = String(r);
+        inp.dataset.col = String(c);
+        if (rowData[c] != null) inp.value = String(rowData[c]);
+        inp.addEventListener('input', function () {
+          applyRowFilter(tbl);
+        });
+        td.appendChild(inp);
+        tr.appendChild(td);
+      }
+      tbody.appendChild(tr);
+    }
+    tbl.appendChild(tbody);
+    host.appendChild(tbl);
+    return tbl;
+  }
+
+  function sortTable(tbl, col) {
+    var tbody = tbl.querySelector('tbody');
+    if (!tbody) return;
+    if (sortState.col === col) sortState.dir = -sortState.dir;
+    else {
+      sortState.col = col;
+      sortState.dir = 1;
+    }
+    var rowArr = Array.prototype.slice.call(tbody.querySelectorAll('tr'));
+    rowArr.sort(function (a, b) {
+      var ia = a.cells[col] && a.cells[col].querySelector('input');
+      var ib = b.cells[col] && b.cells[col].querySelector('input');
+      var va = ia ? ia.value : '';
+      var vb = ib ? ib.value : '';
+      return va.localeCompare(vb, undefined, { numeric: true, sensitivity: 'base' }) * sortState.dir;
+    });
+    rowArr.forEach(function (tr) {
+      tbody.appendChild(tr);
+    });
+    applyRowFilter(tbl);
+  }
+
+  function applyRowFilter(tbl) {
+    var q = (document.getElementById('pds-search').value || '').trim().toLowerCase();
+    var tbody = tbl.querySelector('tbody');
+    if (!tbody) return;
+    Array.prototype.forEach.call(tbody.querySelectorAll('tr'), function (tr) {
+      if (!q) {
+        tr.style.display = '';
+        return;
+      }
+      var text = tr.innerText.toLowerCase();
+      tr.style.display = text.indexOf(q) >= 0 ? '' : 'none';
+    });
+  }
+
+  function applyTableSearchToAll() {
+    Array.prototype.forEach.call(work.querySelectorAll('table.pds-table'), function (tbl) {
+      applyRowFilter(tbl);
+    });
+  }
+
+  function gatherTableJSON(tbl) {
+    var headers = [];
+    tbl.querySelectorAll('thead input[data-role="header"]').forEach(function (inp) {
+      headers.push(inp.value);
+    });
+    var body = [];
+    tbl.querySelectorAll('tbody tr').forEach(function (tr) {
+      var row = [];
+      Array.prototype.forEach.call(tr.querySelectorAll('input'), function (inp) {
+        row.push(inp.value);
+      });
+      body.push(row);
+    });
+    return { headers: headers, rows: body };
+  }
+
+  function exportAllCSV() {
+    var parts = [];
+    work.querySelectorAll('.pds-block').forEach(function (blk, i) {
+      var tbl = blk.querySelector('table');
+      if (!tbl) return;
+      var id = tbl.dataset.blockId || 'block' + i;
+      parts.push('# ' + id);
+      var data = gatherTableJSON(tbl);
+      if (data.headers.length) parts.push(data.headers.map(escCell).join(','));
+      data.rows.forEach(function (row) {
+        parts.push(row.map(escCell).join(','));
+      });
+      parts.push('');
+    });
+    downloadText('pad-data.csv', parts.join('\n'), 'text/csv');
+  }
+
+  function exportLayoutJSON() {
+    var blocks = [];
+    work.querySelectorAll('.pds-block').forEach(function (blk, i) {
+      var tbl = blk.querySelector('table');
+      if (!tbl) return;
+      var rect = blk.style;
+      var spec = {
+        id: tbl.dataset.blockId || 'b' + i,
+        x: parseInt(rect.left, 10) || 0,
+        y: parseInt(rect.top, 10) || 0,
+        cols: tbl.querySelectorAll('thead th').length,
+        rows: tbl.querySelectorAll('tbody tr').length
+      };
+      var g = gatherTableJSON(tbl);
+      spec.headers = g.headers;
+      spec.cells = g.rows;
+      var mw = parseInt(rect.minWidth, 10);
+      var mh = parseInt(rect.minHeight, 10);
+      var ww = parseInt(rect.width, 10);
+      var hh = parseInt(rect.height, 10);
+      if (mw) spec.minWidth = mw;
+      if (mh) spec.minHeight = mh;
+      if (ww) spec.width = ww;
+      if (hh) spec.height = hh;
+      if (blk.dataset.layoutFixed === '1') spec.layoutFixed = true;
+      blocks.push(spec);
+    });
+    var doc = { version: 1, layoutMode: getLayoutMode(), blocks: blocks };
+    downloadText('pad-datatable.json', JSON.stringify(doc, null, 2), 'application/json');
+  }
+
+  function downloadText(name, text, mime) {
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: mime || 'text/plain' }));
+    a.download = name;
+    a.click();
+    setTimeout(function () {
+      URL.revokeObjectURL(a.href);
+    }, 2000);
+  }
+
+  function createBlock(spec, opts) {
+    opts = opts || {};
+    var blk = document.createElement('div');
+    blk.className = 'pds-block';
+    blk.style.zIndex = String(++blockZ);
+    if (!spec.id) spec.id = 'b' + blockZ;
+    spec.title = spec.title || spec.id;
+    tableFromBlock(blk, spec);
+    applyBlockSizing(blk, spec);
+    work.appendChild(blk);
+    if (spec.x != null && spec.y != null) {
+      blk.dataset.layoutFixed = '1';
+      blk.style.left = snapGrid(spec.x) + 'px';
+      blk.style.top = snapGrid(spec.y) + 'px';
+    } else {
+      delete blk.dataset.layoutFixed;
+      if (getLayoutMode() === 'free') {
+        placeBlockAuto(blk);
+      } else if (!opts.skipReflow) {
+        reflowAllBlocks();
+      }
+    }
+    if (!opts.skipExpand) expandWorkIfNeeded();
+  }
+
+  function clearWorkspace() {
+    work.querySelectorAll('.pds-block').forEach(function (el) {
+      el.remove();
+    });
+    blockZ = 0;
+    work.style.minWidth = '';
+    work.style.minHeight = '';
+    scheduleGridSync();
+  }
+
+  function applyDocument(doc) {
+    if (!doc || !doc.blocks || !doc.blocks.length) throw new Error('Need { version:1, blocks:[…] }');
+    var modeSel = document.getElementById('pds-layout-mode');
+    if (doc.layoutMode && modeSel && /^(free|row|column|grid2)$/.test(doc.layoutMode)) {
+      modeSel.value = doc.layoutMode;
+      try {
+        localStorage.setItem('pds-layout-mode', doc.layoutMode);
+      } catch (eLm) {}
+    }
+    clearWorkspace();
+    if (getLayoutMode() === 'free') {
+      doc.blocks.forEach(function (b) {
+        createBlock(Object.assign({}, b));
+      });
+    } else {
+      doc.blocks.forEach(function (b) {
+        var copy = Object.assign({}, b);
+        if (!copy.layoutFixed) {
+          delete copy.x;
+          delete copy.y;
+        }
+        createBlock(copy, { skipReflow: true, skipExpand: true });
+      });
+      reflowAllBlocks();
+      expandWorkIfNeeded();
+    }
+  }
+
+  /** Heuristic HTML → layout doc (paste fragment or body). Omit x/y so blocks auto-pack. */
+  function inferBlocksFromHtml(htmlStr) {
+    htmlStr = String(htmlStr || '').trim();
+    if (!htmlStr) throw new Error('Paste HTML first');
+    var parser = new DOMParser();
+    var doc = parser.parseFromString(htmlStr, 'text/html');
+    var root = doc.body;
+    var i;
+    if (!root || root.querySelector('parsererror') || !root.children.length) {
+      doc = parser.parseFromString('<div id="pds-frag-root">' + htmlStr + '</div>', 'text/html');
+      root = doc.getElementById('pds-frag-root') || doc.body;
+    }
+    var sel = 'section, article, [data-pds-block], [data-block], main > div, [class*="grid"], header, footer, aside';
+    var candidates = [];
+    try {
+      candidates = Array.prototype.slice.call(root.querySelectorAll(sel));
+    } catch (e) {}
+    if (!candidates.length)
+      candidates = Array.prototype.filter.call(root.children, function (n) {
+        return n.nodeType === 1;
+      });
+    if (!candidates.length) candidates = [root];
+    var blocks = [];
+    var slug = function (s) {
+      return String(s || '')
+        .replace(/\W+/g, '-')
+        .replace(/^-|-$/g, '')
+        .slice(0, 40);
+    };
+    for (i = 0; i < candidates.length; i++) {
+      var el = candidates[i];
+      if (!el || el.nodeType !== 1) continue;
+      var kids = [];
+      try {
+        kids = el.querySelectorAll(':scope > *');
+      } catch (e2) {
+        kids = el.children;
+      }
+      var nKids = kids.length;
+      var cols = Math.min(16, Math.max(2, nKids ? Math.ceil(Math.sqrt(nKids)) : 3));
+      var rows = Math.min(200, Math.max(2, nKids ? Math.ceil(nKids / cols) : 4));
+      var h = el.querySelector('h1,h2,h3,h4');
+      var title = (h && h.textContent && h.textContent.trim().slice(0, 56)) || el.id || el.className || 'Block ' + i;
+      title = String(title).trim().slice(0, 56) || 'Block ' + i;
+      var idBase = el.id || el.tagName.toLowerCase() + '-' + i;
+      blocks.push({
+        id: slug('infer-' + idBase) || 'infer-' + i,
+        cols: cols,
+        rows: rows,
+        title: title
+      });
+    }
+    if (!blocks.length) blocks.push({ id: 'inferred', cols: 4, rows: 6, title: 'Inferred region' });
+    return { version: 1, layoutMode: blocks.length > 1 ? 'row' : 'free', blocks: blocks };
+  }
+
+  function generateFromInputs() {
+    var cols = parseInt(document.getElementById('pds-cols').value, 10) || 8;
+    var rows = parseInt(document.getElementById('pds-rows').value, 10) || 10;
+    clearWorkspace();
+    createBlock({ id: 'main', x: 24, y: 24, cols: cols, rows: rows, title: 'Data region' });
+  }
+
+  document.getElementById('pds-generate').addEventListener('click', generateFromInputs);
+  document.getElementById('pds-search').addEventListener('input', applyTableSearchToAll);
+  document.getElementById('pds-csv').addEventListener('click', exportAllCSV);
+  document.getElementById('pds-json-export').addEventListener('click', exportLayoutJSON);
+  document.getElementById('pds-json-panel').addEventListener('click', function () {
+    document.getElementById('pds-panel').classList.toggle('on');
+  });
+  document.getElementById('pds-json-apply').addEventListener('click', function () {
+    try {
+      var doc = JSON.parse(document.getElementById('pds-json-ta').value);
+      applyDocument(doc);
+      document.getElementById('pds-panel').classList.remove('on');
+    } catch (e) {
+      alert('JSON error: ' + (e && e.message ? e.message : e));
+    }
+  });
+  document.getElementById('pds-json-sample').addEventListener('click', function () {
+    document.getElementById('pds-json-ta').value = JSON.stringify(
+      {
+        version: 1,
+        layoutMode: 'row',
+        blocks: [
+          {
+            id: 'narrow',
+            cols: 3,
+            rows: 6,
+            title: 'Narrow',
+            minWidth: 200,
+            headers: ['A', 'B', 'C']
+          },
+          {
+            id: 'wide',
+            cols: 8,
+            rows: 5,
+            title: 'Wide sheet',
+            minWidth: 420,
+            headers: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8']
+          },
+          {
+            id: 'tall',
+            cols: 4,
+            rows: 10,
+            title: 'Tall',
+            minHeight: 280
+          }
+        ]
+      },
+      null,
+      2
+    );
+  });
+  document.getElementById('pds-infer-html').addEventListener('click', function () {
+    try {
+      var inferred = inferBlocksFromHtml(document.getElementById('pds-html-ta').value);
+      document.getElementById('pds-json-ta').value = JSON.stringify(inferred, null, 2);
+      applyDocument(inferred);
+      document.getElementById('pds-panel').classList.remove('on');
+    } catch (e) {
+      alert((e && e.message ? e.message : e) + '');
+    }
+  });
+  document.getElementById('pds-add-block').addEventListener('click', function () {
+    var cols = parseInt(document.getElementById('pds-cols').value, 10) || 4;
+    var rows = parseInt(document.getElementById('pds-rows').value, 10) || 4;
+    createBlock({ id: 'blk-' + Date.now(), cols: cols, rows: rows, title: 'New block' });
+  });
+  document.getElementById('pds-clear').addEventListener('click', function () {
+    var n = work.querySelectorAll('.pds-block').length;
+    if (n && !window.confirm('Clear all ' + n + ' block(s)?')) return;
+    clearWorkspace();
+    document.getElementById('pds-search').value = '';
+  });
+  document.getElementById('pds-layout-mode').addEventListener('change', function () {
+    try {
+      localStorage.setItem('pds-layout-mode', getLayoutMode());
+    } catch (eCh) {}
+    reflowAllBlocks();
+    expandWorkIfNeeded();
+    scheduleGridSync();
+  });
+  document.getElementById('pds-reflow').addEventListener('click', function () {
+    reflowAllBlocks();
+    expandWorkIfNeeded();
+    scheduleGridSync();
+  });
+
+  (function loadLayoutModePreference() {
+    var sel = document.getElementById('pds-layout-mode');
+    if (!sel) return;
+    try {
+      var s = localStorage.getItem('pds-layout-mode');
+      if (s && /^(free|row|column|grid2)$/.test(s)) sel.value = s;
+    } catch (eL) {}
+  })();
+
+  var q = new URLSearchParams(location.search);
+  var qc = parseInt(q.get('cols'), 10);
+  var qr = parseInt(q.get('rows'), 10);
+  if (!isNaN(qc)) document.getElementById('pds-cols').value = String(Math.min(64, Math.max(1, qc)));
+  if (!isNaN(qr)) document.getElementById('pds-rows').value = String(Math.min(200, Math.max(1, qr)));
+  generateFromInputs();
+
+  window.addEventListener('resize', scheduleGridSync);
+  if (window.ResizeObserver && work) {
+    try {
+      new ResizeObserver(scheduleGridSync).observe(work);
+    } catch (eRo) {}
+  }
+  scheduleGridSync();
+  requestAnimationFrame(function () {
+    requestAnimationFrame(syncGridLayer);
+  });
+
+  window.PadDataTable = {
+    VERSION: '1.1.2',
+    applyDocument: applyDocument,
+    inferBlocksFromHtml: inferBlocksFromHtml,
+    clearWorkspace: clearWorkspace,
+    syncGrid: syncGridLayer,
+    exportLayout: function () {
+      exportLayoutJSON();
+    },
+    getState: function () {
+      return { blockCount: work.querySelectorAll('.pds-block').length };
+    }
+  };
+})();
+</script>
+<script>
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function () {
+  'use strict';
+  var QP = window.QuantumPrefixes;
+  try {
+    if (QP && QP.broadcastState) {
+      QP.broadcastState('pad-datatable', {
+        app: 'pad-datatable',
+        version: '1.2.0',
+        role: 'data-grid',
+        ts: Date.now()
+      });
+      if (QP.requestStateSync) QP.requestStateSync();
+    }
+  } catch (e) {}
+  try {
+    var bc = new BroadcastChannel('hexterm');
+    bc.postMessage({ type: 'pad-datatable-ready', source: 'pad-datatable', ts: Date.now() });
+    bc.close();
+  } catch (e2) {}
+})();
+</script>
+<script>
+// ===== μPad lab embed: parent theme sync + hide duplicate ☀/☾ (optional ?uplEmbed=1) =====
+(function () {
+  'use strict';
+  function uplEmbedded() {
+    try {
+      return /[?&]uplEmbed=1(?:&|$)/.test(location.search);
+    } catch (e) { return false; }
+  }
+  function uplHideThemeToggle() {
+    if (!uplEmbedded()) return;
+    try {
+      var tg = document.getElementById('qp-theme-toggle');
+      if (tg) tg.style.setProperty('display', 'none', 'important');
+    } catch (e2) {}
+  }
+  uplHideThemeToggle();
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', uplHideThemeToggle);
+  }
+  setTimeout(uplHideThemeToggle, 0);
+  setTimeout(uplHideThemeToggle, 120);
+  setTimeout(uplHideThemeToggle, 450);
+
+  window.addEventListener('message', function (ev) {
+    try {
+      var d = ev.data;
+      if (!d || d.type !== 'upl-sync-theme') return;
+      if (window.parent === window) return;
+      if (ev.source !== window.parent) return;
+      var th = d.theme === 'light' ? 'light' : 'dark';
+      if (window.QuantumPrefixes && window.QuantumPrefixes.setTheme) {
+        window.QuantumPrefixes.setTheme(th);
+      } else {
+        document.documentElement.setAttribute('data-theme', th);
+      }
+      uplHideThemeToggle();
+    } catch (e3) {}
+  });
+})();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+</script>
+</body>
+</html>

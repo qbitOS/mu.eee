@@ -1,0 +1,2061 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uvspeed — GitHub Project Health Dashboard</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+    <link rel="icon" type="image/x-icon" href="../icons/favicon.ico">
+    <link rel="apple-touch-icon" sizes="192x192" href="../icons/icon-192.png">
+    <style>
+        :root {
+            --bg: var(--qp-bg, #0d1117);
+            --bg2: var(--qp-bg-secondary, #161b22);
+            --bg3: var(--qp-bg-tertiary, #21262d);
+            --border: var(--qp-border, #30363d);
+            --text: var(--qp-text, #e6edf3);
+            --muted: var(--qp-text-muted, #8b949e);
+            --accent: var(--qp-accent, #58a6ff);
+            --success: #3fb950;
+            --warning: #f0883e;
+            --error: #f85149;
+            --purple: #a78bfa;
+            --cyan: #56d4dd;
+            --gh-green: #238636;
+            --gh-blue: #1f6feb;
+            --space-xs: 4px;
+            --space-sm: 8px;
+            --space-md: 16px;
+            --space-lg: 24px;
+            --space-xl: 32px;
+            --radius: 6px;
+            --font-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; overflow: hidden; -webkit-text-size-adjust: 100%; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            font-size: 13px;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* ===== Header ===== */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-sm) var(--space-md);
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        /* ===== Light Theme ===== */
+        :root.light {
+            --bg: #f6f8fa; --bg2: #ffffff; --bg3: #f0f2f5;
+            --border: #d0d7de; --text: #1f2328; --muted: #656d76;
+            --accent: #0969da; --success: #1a7f37; --warning: #bf8700;
+            --error: #cf222e; --purple: #8250df; --cyan: #0891b2;
+        }
+        :root.light body { background: var(--bg); }
+        :root.light .header, :root.light .tab-bar, :root.light .footer { background: var(--bg2); }
+        :root.light .panel { background: var(--bg2); }
+        :root.light .stat-card { background: var(--bg2); }
+        :root.light ::-webkit-scrollbar-track { background: var(--bg); }
+        :root.light ::-webkit-scrollbar-thumb { background: var(--border); }
+        .theme-btn { background:none;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s; }
+        .theme-btn:hover { color:var(--text);border-color:var(--accent); }
+
+        .header img { height: 24px; border-radius: 4px; filter: drop-shadow(0 0 4px rgba(139,92,246,0.3)); }
+        .header .title { font-size: 15px; font-weight: 600; }
+        .header .badge {
+            background: var(--gh-green);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .header nav { margin-left: auto; display: flex; gap: var(--space-md); font-size: 12px; }
+
+        /* ===== Tabs ===== */
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            background: var(--bg2);
+            border-bottom: 1px solid var(--border);
+            padding: 0 var(--space-md);
+            flex-shrink: 0;
+            overflow-x: auto;
+        }
+        .tab-bar button {
+            background: none;
+            border: none;
+            color: var(--muted);
+            padding: var(--space-sm) var(--space-md);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            white-space: nowrap;
+            transition: all 0.15s;
+        }
+        .tab-bar button:hover { color: var(--text); }
+        .tab-bar button.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab-bar button .count {
+            background: var(--bg3);
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 4px;
+        }
+
+        /* ===== Main ===== */
+        .main {
+            flex: 1;
+            overflow-y: auto;
+            padding: var(--space-lg);
+        }
+
+        /* ===== Panel Grid ===== */
+        .panel-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: var(--space-md);
+            margin-bottom: var(--space-lg);
+        }
+        .panel {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+        }
+        .panel-header {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: var(--space-sm) var(--space-md);
+            background: var(--bg3);
+            border-bottom: 1px solid var(--border);
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .panel-header .icon { font-size: 16px; }
+        .panel-header .status {
+            margin-left: auto;
+            font-size: 11px;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .status-pass { background: #238636; color: #fff; }
+        .status-warn { background: #9e6a03; color: #fff; }
+        .status-fail { background: #da3633; color: #fff; }
+        .status-info { background: var(--gh-blue); color: #fff; }
+        .panel-body { padding: var(--space-md); }
+
+        /* ===== Checklist ===== */
+        .checklist { list-style: none; }
+        .checklist li {
+            display: flex;
+            align-items: center;
+            gap: var(--space-sm);
+            padding: 6px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 13px;
+        }
+        .checklist li:last-child { border-bottom: none; }
+        .check { width: 18px; height: 18px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 12px; flex-shrink: 0; }
+        .check-pass { background: var(--success); color: #000; }
+        .check-fail { background: var(--bg3); border: 1px solid var(--border); color: var(--muted); }
+        .check-warn { background: var(--warning); color: #000; }
+        .checklist .label { flex: 1; }
+        .checklist .meta { color: var(--muted); font-size: 11px; font-family: var(--font-mono); }
+
+        /* ===== Stats Row ===== */
+        .stats-row {
+            display: flex;
+            gap: var(--space-md);
+            flex-wrap: wrap;
+            margin-bottom: var(--space-lg);
+        }
+        .stat-card {
+            background: var(--bg2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: var(--space-md);
+            min-width: 150px;
+            flex: 1;
+        }
+        .stat-card .value { font-size: 28px; font-weight: 700; font-family: var(--font-mono); }
+        .stat-card .label { color: var(--muted); font-size: 11px; margin-top: 2px; }
+
+        /* ===== Canvas Charts ===== */
+        .chart-container { position: relative; width: 100%; }
+        .chart-container canvas { width: 100%; height: 140px; border-radius: var(--radius); }
+
+        /* ===== Table ===== */
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .data-table th { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); color: var(--muted); font-weight: 500; }
+        .data-table td { padding: 6px 8px; border-bottom: 1px solid var(--border); }
+        .data-table tr:last-child td { border-bottom: none; }
+        .data-table .mono { font-family: var(--font-mono); font-size: 11px; }
+
+        /* ===== Progress Bar ===== */
+        .progress-bar { height: 8px; background: var(--bg3); border-radius: 4px; overflow: hidden; margin-top: 4px; }
+        .progress-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+
+        /* ===== Footer ===== */
+        .footer {
+            display: flex;
+            align-items: center;
+            gap: var(--space-md);
+            padding: var(--space-xs) var(--space-md);
+            background: var(--bg2);
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+            color: var(--muted);
+            flex-shrink: 0;
+        }
+        .footer .prefix { font-family: var(--font-mono); color: var(--purple); }
+        .footer .actions { margin-left: auto; display: flex; gap: var(--space-sm); }
+        .btn {
+            padding: 4px 10px;
+            border-radius: var(--radius);
+            border: 1px solid var(--border);
+            background: var(--bg3);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.15s;
+        }
+        .btn:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-primary { background: var(--gh-green); border-color: var(--gh-green); color: #fff; }
+        .btn-primary:hover { background: #2ea043; }
+
+        /* ===== Tab Content ===== */
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ===== Contribution Graph ===== */
+        .contrib-grid { display: flex; gap: 2px; flex-wrap: wrap; }
+        .contrib-cell {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+            background: var(--bg3);
+        }
+        .contrib-1 { background: #0e4429; }
+        .contrib-2 { background: #006d32; }
+        .contrib-3 { background: #26a641; }
+        .contrib-4 { background: #39d353; }
+
+        /* ===== Dep Table ===== */
+        .dep-badge {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 10px;
+            font-size: 10px;
+            font-family: var(--font-mono);
+        }
+        .dep-current { background: #238636; color: #fff; }
+        .dep-outdated { background: #9e6a03; color: #fff; }
+        .dep-critical { background: #da3633; color: #fff; }
+
+        /* ===== Responsive ===== */
+        @media (max-width: 800px) {
+            .panel-grid { grid-template-columns: 1fr; }
+            .stats-row { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+<div style="display:flex;height:2px;width:100%;flex-shrink:0"><span style="flex:1;background:#ff3838"></span><span style="flex:1;background:#ff8c38"></span><span style="flex:1;background:#ffe138"></span><span style="flex:1;background:#3fb950"></span><span style="flex:1;background:#38a5ff"></span><span style="flex:1;background:#bc8cff"></span></div>
+
+<!-- ===== Header ===== -->
+<div class="header">
+    <img src="../icons/nyan-banner.png" alt="uvspeed" title="uvspeed — beyondBINARY">
+    <span class="title">GitHub Project Health</span>
+    <span class="badge">Dashboard</span>
+    <nav>
+        <a href="quantum-notepad.html">Notepad</a>
+        <a href="terminal.html">Terminal</a>
+        <a href="hexcast.html">hexcast</a>
+        <a href="kbatch.html">kbatch</a>
+        <a href="blackwell.html">Blackwell</a>
+        <a href="archflow.html">archflow</a>
+        <a href="brothernumsy.html">brotherNumsy</a>
+        <a href="sponsor.html" style="color:#ff69b4;">Sponsor</a>
+        <button class="theme-btn" id="dash-theme-btn" onclick="toggleDashTheme()" title="Toggle light/dark">&#x263E;</button>
+    </nav>
+</div>
+
+<!-- ===== Tab Bar ===== -->
+<div class="tab-bar">
+    <button class="active" data-tab="overview">Overview</button>
+    <button data-tab="community">Community Standards</button>
+    <button data-tab="dependencies">Dependencies</button>
+    <button data-tab="actions">Actions & CI</button>
+    <button data-tab="traffic">Traffic & Pulse</button>
+    <button data-tab="codefreq">Code Frequency</button>
+    <button data-tab="network">Network & Forks</button>
+    <button data-tab="funding">Funding</button>
+    <button data-tab="releases">Releases & Packages</button>
+    <button data-tab="brand">Brand & Promo</button>
+    <button data-tab="inspect">🔍 Inspect</button>
+</div>
+
+<!-- ===== Main Content ===== -->
+<div class="main">
+
+    <!-- ==================== OVERVIEW ==================== -->
+    <div class="tab-content active" id="tab-overview">
+        <!-- Stats -->
+        <div class="stats-row">
+            <div class="stat-card"><div class="value" style="color:var(--success)" id="stat-score">7/7</div><div class="label">Community Standards</div></div>
+            <div class="stat-card"><div class="value" style="color:var(--accent)" id="stat-endpoints">55+</div><div class="label">API Endpoints</div></div>
+            <div class="stat-card"><div class="value" style="color:var(--purple)" id="stat-files">179</div><div class="label">Source Files</div></div>
+            <div class="stat-card"><div class="value" style="color:var(--cyan)" id="stat-pages">16</div><div class="label">Web Apps</div></div>
+            <div class="stat-card"><div class="value" style="color:var(--warning)" id="stat-languages">20</div><div class="label">Languages</div></div>
+            <div class="stat-card"><div class="value" style="color:var(--success)" id="stat-mcp">10</div><div class="label">MCP Tools</div></div>
+        </div>
+
+        <!-- Panel Grid -->
+        <div class="panel-grid">
+            <!-- Community Standards -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">📋</span> Community Standards
+                    <span class="status status-pass" id="cs-status">All Pass</span>
+                </div>
+                <div class="panel-body">
+                    <ul class="checklist" id="cs-checklist"></ul>
+                </div>
+            </div>
+
+            <!-- Dependabot -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">🤖</span> Dependabot
+                    <span class="status status-pass">Configured</span>
+                </div>
+                <div class="panel-body">
+                    <ul class="checklist">
+                        <li><span class="check check-pass">✓</span><span class="label">npm (weekly, Monday)</span><span class="meta">10 PR limit</span></li>
+                        <li><span class="check check-pass">✓</span><span class="label">pip (weekly, Monday)</span><span class="meta">5 PR limit</span></li>
+                        <li><span class="check check-pass">✓</span><span class="label">GitHub Actions (monthly)</span><span class="meta">5 PR limit</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Workflows -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">⚡</span> GitHub Actions
+                    <span class="status status-pass" id="actions-status">2 Workflows</span>
+                </div>
+                <div class="panel-body">
+                    <ul class="checklist" id="actions-list"></ul>
+                </div>
+            </div>
+
+            <!-- Phase Tracking -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">🎯</span> Phase Tracking
+                    <span class="status status-pass">v4.0</span>
+                </div>
+                <div class="panel-body">
+                    <ul class="checklist" id="phase-list"></ul>
+                </div>
+            </div>
+
+            <!-- Verified Benchmarks -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">🏎</span> Verified Benchmarks
+                    <span class="status status-pass">Measured</span>
+                </div>
+                <div class="panel-body">
+                    <table class="data-table">
+                        <tr style="background:rgba(163,113,247,0.08);"><td style="font-weight:700;">IBM Quantum QPU</td><td class="mono" style="color:#a371f7;font-weight:700">ibm_torino · 133q Heron · VERIFIED</td></tr>
+                        <tr><td>QPU Job</td><td class="mono" style="color:#a371f7">d68pafbe4kfs73d3diug · 4096 shots · 69 states</td></tr>
+                        <tr><td>T5-native (small file)</td><td class="mono" style="color:#3fb950;font-weight:700">42M lines/sec</td></tr>
+                        <tr><td>T5-native (large file)</td><td class="mono" style="color:#58a6ff;font-weight:700">23.4M lines/sec</td></tr>
+                        <tr><td>Hardware</td><td class="mono">Apple M4 · release build</td></tr>
+                        <tr><td>Test Suite</td><td class="mono" style="color:#bc8cff;font-weight:600">61 tests (41 Python + 20 Rust)</td></tr>
+                        <tr><td>ML Model</td><td class="mono">RandomForest → ONNX · 500+ examples · 7 langs</td></tr>
+                        <tr><td>Ollama Integration</td><td class="mono" style="color:#3fb950">prefix-infer + A/B compare endpoints</td></tr>
+                        <tr><td>Language Rules</td><td class="mono">16 dedicated regex + universal Rust fallback</td></tr>
+                        <tr><td>Knowledge Capsules</td><td class="mono" style="color:#f0883e;font-weight:600">121 across 10 categories</td></tr>
+                        <tr><td>Compliance Frameworks</td><td class="mono">6 (HIPAA, OpenSSF, SPDX, CMMI, SOC2, OSINT)</td></tr>
+                        <tr><td>Apps (24/24 healthy)</td><td class="mono" style="color:#3fb950">8/8 structural checks passing</td></tr>
+                        <tr><td>Gold Standard Files</td><td class="mono" style="color:#3fb950">20/20 found</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Repository Health -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">💻</span> Repository Stats
+                </div>
+                <div class="panel-body">
+                    <table class="data-table">
+                        <tr><td>Language Mix</td><td class="mono">HTML 27% · JS 27% · CSS 19% · Py 16% · Sh 12%</td></tr>
+                        <tr><td>Total Size</td><td class="mono">~7.3 MB (excl. node_modules)</td></tr>
+                        <tr><td>Version</td><td class="mono">4.33.0</td></tr>
+                        <tr><td>License</td><td class="mono">MIT</td></tr>
+                        <tr><td>Python</td><td class="mono">≥3.13</td></tr>
+                        <tr><td>Tauri</td><td class="mono">v2.10</td></tr>
+                        <tr><td>Rust</td><td class="mono">1.93+</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Contribution Graph -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">📊</span> Contribution Activity
+                </div>
+                <div class="panel-body">
+                    <div class="contrib-grid" id="contrib-grid"></div>
+                    <div style="margin-top:8px;font-size:11px;color:var(--muted)">
+                        Less <span style="display:inline-flex;gap:2px;vertical-align:middle;margin:0 4px;">
+                            <span class="contrib-cell" style="width:10px;height:10px;"></span>
+                            <span class="contrib-cell contrib-1" style="width:10px;height:10px;"></span>
+                            <span class="contrib-cell contrib-2" style="width:10px;height:10px;"></span>
+                            <span class="contrib-cell contrib-3" style="width:10px;height:10px;"></span>
+                            <span class="contrib-cell contrib-4" style="width:10px;height:10px;"></span>
+                        </span> More
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== COMMUNITY STANDARDS ==================== -->
+    <div class="tab-content" id="tab-community">
+        <h2 style="margin-bottom:var(--space-md);font-size:18px;">Community Standards Checklist</h2>
+        <p style="color:var(--muted);margin-bottom:var(--space-lg);">How this project compares to GitHub's recommended community standards.</p>
+        <div class="panel" style="max-width:700px;">
+            <div class="panel-header"><span class="icon">✅</span> Full Checklist</div>
+            <div class="panel-body">
+                <ul class="checklist" id="cs-full-checklist"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== DEPENDENCIES ==================== -->
+    <div class="tab-content" id="tab-dependencies">
+        <h2 style="margin-bottom:var(--space-md);font-size:18px;">Dependency Graph</h2>
+        <div class="panel-grid">
+            <div class="panel">
+                <div class="panel-header"><span class="icon">📦</span> npm Dependencies</div>
+                <div class="panel-body">
+                    <table class="data-table" id="npm-deps"></table>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><span class="icon">🐍</span> Python Dependencies</div>
+                <div class="panel-body">
+                    <table class="data-table" id="pip-deps"></table>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><span class="icon">🔧</span> Dev Dependencies</div>
+                <div class="panel-body">
+                    <table class="data-table" id="dev-deps"></table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== ACTIONS ==================== -->
+    <div class="tab-content" id="tab-actions">
+        <h2 style="margin-bottom:var(--space-md);font-size:18px;">GitHub Actions & CI/CD</h2>
+        <div class="panel-grid">
+            <div class="panel">
+                <div class="panel-header"><span class="icon">🚀</span> pages.yml — GitHub Pages Deploy</div>
+                <div class="panel-body">
+                    <table class="data-table">
+                        <tr><td>Trigger</td><td class="mono">push to main</td></tr>
+                        <tr><td>Deploys</td><td class="mono">web/ → GitHub Pages</td></tr>
+                        <tr><td>Pages</td><td class="mono">16 web apps (PWA-ready)</td></tr>
+                        <tr><td>URL</td><td><a href="https://qbitos.github.io/uvspeed/" target="_blank">qbitos.github.io/uvspeed/</a></td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><span class="icon">📦</span> release.yml — Tagged Release Builder</div>
+                <div class="panel-body">
+                    <table class="data-table">
+                        <tr><td>Trigger</td><td class="mono">push tag v*</td></tr>
+                        <tr><td>Artifacts</td><td class="mono">3x tar.gz + wheel + Tauri .app</td></tr>
+                        <tr><td>Latest</td><td class="mono">v4.0.0</td></tr>
+                        <tr><td>Registry</td><td class="mono">PyPI + npm + GitHub Releases</td></tr>
+                    </table>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><span class="icon">🤖</span> dependabot.yml — Dependency Updates</div>
+                <div class="panel-body">
+                    <table class="data-table">
+                        <tr><td>npm</td><td class="mono">weekly (Monday), 10 PR limit</td></tr>
+                        <tr><td>pip</td><td class="mono">weekly (Monday), 5 PR limit</td></tr>
+                        <tr><td>Actions</td><td class="mono">monthly, 5 PR limit</td></tr>
+                        <tr><td>Labels</td><td class="mono">dependencies + ecosystem</td></tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== TRAFFIC ==================== -->
+    <div class="tab-content" id="tab-traffic">
+        <h2 style="margin-bottom:var(--space-md);font-size:18px;">Traffic & Pulse</h2>
+        <p style="color:var(--muted);margin-bottom:var(--space-lg);">Connect to the GitHub API for live data. Simulated view shown below.</p>
+        <div class="panel-grid">
+            <div class="panel">
+                <div class="panel-header"><span class="icon">👁</span> Views (14 days)</div>
+                <div class="panel-body">
+                    <div class="chart-container"><canvas id="chart-views"></canvas></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><span class="icon">🔗</span> Clones (14 days)</div>
+                <div class="panel-body">
+                    <div class="chart-container"><canvas id="chart-clones"></canvas></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><span class="icon">🌐</span> Referring Sites</div>
+                <div class="panel-body">
+                    <table class="data-table" id="referrers-table">
+                        <thead><tr><th>Source</th><th>Views</th><th>Unique</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><span class="icon">📄</span> Popular Content</div>
+                <div class="panel-body">
+                    <table class="data-table" id="popular-table">
+                        <thead><tr><th>Path</th><th>Views</th><th>Unique</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== CODE FREQUENCY ==================== -->
+    <div class="tab-content" id="tab-codefreq">
+        <h2 style="margin-bottom:var(--space-md);font-size:18px;">Commits & Code Frequency</h2>
+        <div class="panel-grid">
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header"><span class="icon">📈</span> Code Frequency (additions/deletions per phase)</div>
+                <div class="panel-body">
+                    <div class="chart-container"><canvas id="chart-codefreq" style="height:200px;"></canvas></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><span class="icon">🕐</span> Recent Commits</div>
+                <div class="panel-body">
+                    <table class="data-table" id="commits-table">
+                        <thead><tr><th>Hash</th><th>Message</th><th>Date</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><span class="icon">👥</span> Contributors</div>
+                <div class="panel-body">
+                    <table class="data-table" id="contributors-table">
+                        <thead><tr><th>Author</th><th>Commits</th><th>Lines</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== NETWORK ==================== -->
+    <div class="tab-content" id="tab-network">
+        <h2 style="margin-bottom:var(--space-md);font-size:18px;">Network & Forks</h2>
+        <div class="panel-grid">
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header"><span class="icon">🔀</span> Branch Network</div>
+                <div class="panel-body">
+                    <div class="chart-container"><canvas id="chart-network" style="height:180px;"></canvas></div>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><span class="icon">🍴</span> Forks</div>
+                <div class="panel-body">
+                    <p style="color:var(--muted);text-align:center;padding:var(--space-lg);">Fork data loads from GitHub API.<br>Connect a PAT for live data.</p>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><span class="icon">⭐</span> Stargazers</div>
+                <div class="panel-body">
+                    <p style="color:var(--muted);text-align:center;padding:var(--space-lg);">Star history loads from GitHub API.<br>Connect a PAT for live data.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FUNDING ==================== -->
+    <div class="tab-content" id="tab-funding">
+        <h2 style="margin-bottom:var(--space-md);font-size:18px;">Funding & Sponsorship</h2>
+        <p style="color:var(--muted);margin-bottom:var(--space-lg);">Track funding setup progress and sponsorship opportunities.</p>
+
+        <div class="panel-grid">
+            <!-- Setup Checklist -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x2714;</span> Funding Setup Checklist
+                    <span class="status status-info" id="funding-progress">0/0</span>
+                </div>
+                <div class="panel-body">
+                    <ul class="checklist" id="funding-checklist"></ul>
+                </div>
+            </div>
+
+            <!-- Sponsorship Tiers -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">&#x2764;</span> Sponsorship Tiers (Monthly)
+                </div>
+                <div class="panel-body">
+                    <table class="data-table">
+                        <thead><tr><th>Tier</th><th>Amount</th><th>Perks</th></tr></thead>
+                        <tbody>
+                            <tr><td>Contributor</td><td class="mono">$5/mo</td><td>Name in README, sponsor badge</td></tr>
+                            <tr><td>Builder</td><td class="mono">$15/mo</td><td>Priority issues, early access builds</td></tr>
+                            <tr><td>Studio</td><td class="mono">$50/mo</td><td>Roadmap input, custom prefix configs</td></tr>
+                            <tr><td>Agency</td><td class="mono">$200/mo</td><td>Logo in README, support channel, co-dev</td></tr>
+                            <tr><td>Enterprise</td><td class="mono">$500/mo</td><td>Custom integrations, white-label, direct access</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Funding Goals -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">&#x1F3AF;</span> Funding Goals
+                </div>
+                <div class="panel-body">
+                    <ul class="checklist" id="funding-goals"></ul>
+                </div>
+            </div>
+
+            <!-- Grant Opportunities -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x1F3DB;</span> Grants & Programs
+                    <span class="status status-info">High Priority</span>
+                </div>
+                <div class="panel-body">
+                    <table class="data-table" id="grants-table">
+                        <thead><tr><th>Program</th><th>Amount</th><th>Fit</th><th>Status</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- IDE / AI Partnerships -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x1F91D;</span> IDE & AI Partnership Targets
+                </div>
+                <div class="panel-body">
+                    <table class="data-table" id="partnerships-table">
+                        <thead><tr><th>Company</th><th>Program</th><th>Why uvspeed fits</th><th>Status</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Fund Allocation -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">&#x1F4B0;</span> Fund Allocation
+                </div>
+                <div class="panel-body">
+                    <table class="data-table">
+                        <tbody>
+                            <tr><td>Development time</td><td class="mono" style="color:var(--success)">60%</td></tr>
+                            <tr><td>Infrastructure (CI, hosting)</td><td class="mono" style="color:var(--accent)">15%</td></tr>
+                            <tr><td>Hardware (test devices)</td><td class="mono" style="color:var(--purple)">15%</td></tr>
+                            <tr><td>Community (docs, events)</td><td class="mono" style="color:var(--warning)">10%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Links -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">&#x1F517;</span> Funding Links
+                </div>
+                <div class="panel-body">
+                    <table class="data-table">
+                        <tbody>
+                            <tr><td><a href="https://github.com/sponsors/fornevercollective" target="_blank">GitHub Sponsors</a></td><td class="mono">0% fee</td></tr>
+                            <tr><td><a href="https://ko-fi.com/fornevercollective" target="_blank">Ko-fi</a></td><td class="mono">one-time</td></tr>
+                            <tr><td><a href="https://paypal.me/fornevercollective" target="_blank">PayPal</a></td><td class="mono">one-time</td></tr>
+                            <tr><td><a href="https://opencollective.com/uvspeed" target="_blank">Open Collective</a></td><td class="mono">transparent</td></tr>
+                            <tr><td><a href="https://patreon.com/fornevercollective" target="_blank">Patreon</a></td><td class="mono">monthly</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== RELEASES & PACKAGES ==================== -->
+    <div class="tab-content" id="tab-releases">
+        <h2 style="margin-bottom:var(--space-md);font-size:18px;">Releases & Packages</h2>
+        <p style="color:var(--muted);margin-bottom:var(--space-lg);">Distribution strategy for uvspeed tools via GitHub Releases, PyPI, and npm.</p>
+
+        <div class="panel-grid">
+            <!-- Release Packages -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x1F4E6;</span> GitHub Release Artifacts
+                    <span class="status status-pass">v4.0</span>
+                </div>
+                <div class="panel-body">
+                    <table class="data-table" id="release-artifacts">
+                        <thead><tr><th>Artifact</th><th>Contents</th><th>Install</th><th>Size (est.)</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Individual Tools -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x1F527;</span> Tool Distribution Map
+                    <span class="status status-info">6 tools</span>
+                </div>
+                <div class="panel-body">
+                    <table class="data-table" id="tool-dist-table">
+                        <thead><tr><th>Tool</th><th>Type</th><th>GitHub Release</th><th>PyPI</th><th>npm</th><th>PWA</th><th>Tauri</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Package Strategy -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">&#x1F4CB;</span> Packaging Checklist
+                </div>
+                <div class="panel-body">
+                    <ul class="checklist" id="packaging-checklist"></ul>
+                </div>
+            </div>
+
+            <!-- Registry Status -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x1F310;</span> Registry & Distribution Status
+                    <span class="status status-info">8 registries</span>
+                </div>
+                <div class="panel-body">
+                    <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-bottom:8px;">Collaborators: <span style="color:var(--text);">fornevercollective</span> + <span style="color:var(--text);">Claude (Anthropic)</span></div>
+                    <table class="data-table">
+                        <thead><tr><th>Registry</th><th>Package</th><th>Contents</th><th>Link</th><th>Status</th></tr></thead>
+                        <tbody>
+                            <tr><td><a href="https://pypi.org/project/uvspeed-quantum/" target="_blank">PyPI</a></td><td class="mono">uvspeed-quantum</td><td>Python CLI (hexcast, bridge, prefix classifier)</td><td><a href="https://packaging.python.org/en/latest/tutorials/packaging-projects/" target="_blank">guide</a></td><td><span class="dep-badge dep-current">published</span></td></tr>
+                            <tr><td><a href="https://www.npmjs.com/package/uvspeed-quantum" target="_blank">npm</a></td><td class="mono">uvspeed-quantum</td><td>Node.js bridge, quantum-prefixes.js module</td><td><a href="https://docs.npmjs.com/creating-and-publishing-private-packages" target="_blank">guide</a></td><td><span class="dep-badge dep-current">published</span></td></tr>
+                            <tr><td><a href="https://github.com/qbitOS/uvspeed/releases" target="_blank">GitHub Releases</a></td><td class="mono">uvspeed</td><td>Full tar.gz, web-only, hexcast, wheel, Tauri .app</td><td></td><td><span class="dep-badge dep-current">active</span></td></tr>
+                            <tr><td><a href="https://qbitos.github.io/uvspeed/" target="_blank">GitHub Pages</a></td><td class="mono">web/*</td><td>23 PWA apps live-hosted</td><td></td><td><span class="dep-badge dep-current">live</span></td></tr>
+                            <tr><td>crates.io</td><td class="mono">uvspeed-prefix-engine</td><td>Rust prefix classification + WASM</td><td></td><td><span class="dep-badge dep-outdated">planned</span></td></tr>
+                            <tr><td>Homebrew Tap</td><td class="mono">qbitOS/uvspeed</td><td>CLI tools + bridge server via brew install</td><td></td><td><span class="dep-badge dep-outdated">planned</span></td></tr>
+                            <tr><td>Chrome Web Store</td><td class="mono">uvspeed-history-search</td><td>Browser extension (17-connector search)</td><td></td><td><span class="dep-badge dep-outdated">planned</span></td></tr>
+                            <tr><td>Tauri / CrabNebula</td><td class="mono">uvspeed.app</td><td>macOS desktop app (arm64)</td><td></td><td><span class="dep-badge dep-outdated">local only</span></td></tr>
+                            <tr><td>VS Code / Cursor</td><td class="mono">uvspeed-quantum-gutter</td><td>Prefix gutter decorations + circuit viz</td><td></td><td><span class="dep-badge dep-outdated">planned</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Community & Promotion Agencies -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x1F310;</span> Community Resources & Promotion Agencies
+                </div>
+                <div class="panel-body">
+                    <table class="data-table">
+                        <thead><tr><th>Agency / Resource</th><th>Type</th><th>Link</th><th>Status</th></tr></thead>
+                        <tbody>
+                            <tr><td>GitHub Sponsors</td><td>Funding (0% fee)</td><td><a href="https://github.com/sponsors/fornevercollective" target="_blank">sponsors page</a></td><td><span class="dep-badge dep-current">active</span></td></tr>
+                            <tr><td>GitHub Accelerator</td><td>Incubator</td><td><a href="https://accelerator.github.com/" target="_blank">apply</a></td><td><span class="dep-badge dep-outdated">priority</span></td></tr>
+                            <tr><td>Cursor Community</td><td>IDE Showcase</td><td><a href="https://cursor.com/community" target="_blank">rules + MCP</a></td><td><span class="dep-badge dep-current">ready to pitch</span></td></tr>
+                            <tr><td>Anthropic MCP</td><td>AI Ecosystem</td><td><a href="https://modelcontextprotocol.io/" target="_blank">MCP registry</a></td><td><span class="dep-badge dep-current">ready to pitch</span></td></tr>
+                            <tr><td>Astral (uv)</td><td>Community Showcase</td><td><a href="https://astral.sh/" target="_blank">astral.sh</a></td><td><span class="dep-badge dep-current">ready to pitch</span></td></tr>
+                            <tr><td>Tauri / CrabNebula</td><td>App Distribution</td><td><a href="https://crabnebula.dev/" target="_blank">crabnebula.dev</a></td><td><span class="dep-badge dep-current">ready to pitch</span></td></tr>
+                            <tr><td>Sovereign Tech Fund</td><td>Grant (EUR 50-300K)</td><td><a href="https://sovereigntechfund.de/" target="_blank">apply</a></td><td><span class="dep-badge dep-outdated">not applied</span></td></tr>
+                            <tr><td>Mozilla Builders</td><td>Grant</td><td><a href="https://builders.mozilla.community/" target="_blank">apply</a></td><td><span class="dep-badge dep-outdated">not applied</span></td></tr>
+                            <tr><td>NVIDIA Inception</td><td>Partnership</td><td><a href="https://www.nvidia.com/en-us/startups/" target="_blank">apply</a></td><td><span class="dep-badge dep-outdated">not applied</span></td></tr>
+                            <tr><td>Meta Open Source</td><td>Partnership</td><td><a href="https://opensource.fb.com/" target="_blank">site</a></td><td><span class="dep-badge dep-outdated">not applied</span></td></tr>
+                            <tr><td>Google Summer of Code</td><td>Contributor stipends</td><td><a href="https://summerofcode.withgoogle.com/" target="_blank">apply</a></td><td><span class="dep-badge dep-outdated">planned</span></td></tr>
+                            <tr><td>Vercel OSS</td><td>Free hosting</td><td><a href="https://vercel.com/oss" target="_blank">apply</a></td><td><span class="dep-badge dep-outdated">planned</span></td></tr>
+                            <tr><td>Open Collective</td><td>Transparent funding</td><td><a href="https://opencollective.com/uvspeed" target="_blank">collective</a></td><td><span class="dep-badge dep-current">active</span></td></tr>
+                            <tr><td>Ko-fi</td><td>One-time donations</td><td><a href="https://ko-fi.com/fornevercollective" target="_blank">page</a></td><td><span class="dep-badge dep-current">active</span></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Release Workflow -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x26A1;</span> Release Workflow (release.yml)
+                </div>
+                <div class="panel-body" style="font-family:var(--font-mono);font-size:12px;color:var(--muted);line-height:1.8;">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                        <span style="background:var(--gh-blue);color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">git tag v4.0.0</span>
+                        <span style="color:var(--muted);">&#x2192;</span>
+                        <span style="background:var(--bg3);padding:2px 8px;border-radius:4px;">Build Python .whl</span>
+                        <span style="color:var(--muted);">&#x2192;</span>
+                        <span style="background:var(--bg3);padding:2px 8px;border-radius:4px;">Create .tar.gz archives</span>
+                        <span style="color:var(--muted);">&#x2192;</span>
+                        <span style="background:var(--bg3);padding:2px 8px;border-radius:4px;">Generate release notes</span>
+                        <span style="color:var(--muted);">&#x2192;</span>
+                        <span style="background:var(--success);color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">GitHub Release</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;">
+                        <span style="background:var(--gh-blue);color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">git tag v4.0.0</span>
+                        <span style="color:var(--muted);">&#x2192;</span>
+                        <span style="background:var(--bg3);padding:2px 8px;border-radius:4px;">Build Tauri (macOS)</span>
+                        <span style="color:var(--muted);">&#x2192;</span>
+                        <span style="background:var(--warning);color:#fff;padding:2px 8px;border-radius:12px;font-size:11px;">Upload artifact</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== BRAND & PROMO ==================== -->
+    <div class="tab-content" id="tab-brand">
+        <h2 style="margin-bottom:var(--space-sm);font-size:18px;">Brand & Promo</h2>
+        <p style="color:var(--muted);margin-bottom:var(--space-lg);">Visual identity, screenshot gallery, and promo asset generator for uvspeed.</p>
+
+        <div class="panel-grid">
+
+            <!-- Color System -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x1F3A8;</span> Color System
+                    <span class="status status-pass">Dark + Light</span>
+                </div>
+                <div class="panel-body">
+                    <div style="margin-bottom:12px;font-size:11px;color:var(--muted);font-family:var(--font-mono);">Click any swatch to copy hex value</div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+                        <div style="font-size:10px;font-family:var(--font-mono);color:var(--muted);width:100%;margin-bottom:2px;">DARK PALETTE</div>
+                    </div>
+                    <div id="brand-dark-swatches" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;"></div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+                        <div style="font-size:10px;font-family:var(--font-mono);color:var(--muted);width:100%;margin-bottom:2px;">LIGHT PALETTE</div>
+                    </div>
+                    <div id="brand-light-swatches" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;"></div>
+                    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+                        <div style="font-size:10px;font-family:var(--font-mono);color:var(--muted);width:100%;margin-bottom:2px;">ACCENT COLORS</div>
+                    </div>
+                    <div id="brand-accent-swatches" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;"></div>
+                    <div style="font-size:10px;font-family:var(--font-mono);color:var(--muted);margin-bottom:4px;">RAINBOW STRIPE</div>
+                    <div style="display:flex;height:6px;border-radius:3px;overflow:hidden;">
+                        <div style="flex:1;background:#7c3aed;"></div>
+                        <div style="flex:1;background:#06b6d4;"></div>
+                        <div style="flex:1;background:#a78bfa;"></div>
+                        <div style="flex:1;background:#22d3ee;"></div>
+                        <div style="flex:1;background:#8b5cf6;"></div>
+                        <div style="flex:1;background:#34d399;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typography -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">&#x1F524;</span> Typography
+                </div>
+                <div class="panel-body">
+                    <div style="margin-bottom:12px;">
+                        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-bottom:4px;">CODE FONT</div>
+                        <div style="font-family:var(--font-mono);font-size:14px;">SF Mono / JetBrains Mono / Fira Code</div>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-bottom:4px;">UI FONT</div>
+                        <div style="font-size:14px;">-apple-system / SF Pro Display / system-ui</div>
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-bottom:4px;">SCALE</div>
+                        <div style="font-size:8px;margin:2px 0;">.5rem (8px)</div>
+                        <div style="font-size:10px;margin:2px 0;">.625rem (10px) — badges</div>
+                        <div style="font-size:11px;margin:2px 0;">.6875rem (11px) — mono labels</div>
+                        <div style="font-size:13px;margin:2px 0;">.8125rem (13px) — body</div>
+                        <div style="font-size:16px;margin:2px 0;">1rem (16px) — headings</div>
+                        <div style="font-size:24px;margin:2px 0;font-weight:700;">1.5rem (24px) — titles</div>
+                        <div style="font-size:40px;margin:2px 0;font-weight:900;font-family:var(--font-mono);">2.5rem — logo</div>
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-bottom:4px;">HEADER COMMENT</div>
+                        <code style="font-size:10px;background:var(--bg);padding:4px 8px;border-radius:4px;display:block;word-break:break-all;">beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</code>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Logo & Icons -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="icon">&#x2B50;</span> Logo & Icons
+                </div>
+                <div class="panel-body">
+                    <div id="brand-icons" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:8px;"></div>
+                </div>
+            </div>
+
+            <!-- Screenshot Gallery -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x1F4F8;</span> Screenshot Gallery
+                    <span class="status status-info" id="brand-shot-count">0 captures</span>
+                </div>
+                <div class="panel-body">
+                    <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+                        <select id="brand-filter" style="background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:4px;font-family:var(--font-mono);font-size:11px;">
+                            <option value="all">All Categories</option>
+                            <option value="editor">Editors</option>
+                            <option value="terminal">Terminal</option>
+                            <option value="analyzer">Analyzers</option>
+                            <option value="dashboard">Dashboards</option>
+                            <option value="visualizer">Visualizers</option>
+                            <option value="media">Media</option>
+                            <option value="showcase">Showcase</option>
+                            <option value="knowledge">Knowledge</option>
+                            <option value="tools">Tools</option>
+                            <option value="game">Games</option>
+                        </select>
+                        <span style="color:var(--muted);font-size:11px;font-family:var(--font-mono);" id="brand-shot-time">—</span>
+                        <span style="flex:1;"></span>
+                        <code style="font-size:10px;color:var(--muted);background:var(--bg);padding:3px 8px;border-radius:4px;">node scripts/screenshots.mjs</code>
+                    </div>
+                    <div id="brand-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px;"></div>
+                    <div id="brand-gallery-empty" style="text-align:center;padding:30px;color:var(--muted);font-family:var(--font-mono);font-size:12px;">
+                        No screenshots found. Run: <code>node scripts/screenshots.mjs</code> to generate.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Promo Generator -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x1F4E3;</span> Promo Generator
+                    <span class="status status-info">Canvas-based</span>
+                </div>
+                <div class="panel-body">
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px;">
+                        <div style="flex:1;min-width:200px;">
+                            <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-bottom:4px;">TEMPLATE</div>
+                            <select id="promo-template" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:4px;font-family:var(--font-mono);font-size:11px;">
+                                <option value="og">Open Graph (1200x630)</option>
+                                <option value="ig">Instagram (1080x1080)</option>
+                                <option value="twitter">Twitter Banner (1500x500)</option>
+                                <option value="feature">Feature Spotlight (1280x720)</option>
+                            </select>
+                        </div>
+                        <div style="flex:1;min-width:200px;">
+                            <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-bottom:4px;">TITLE</div>
+                            <input type="text" id="promo-title" value="uvspeed" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:4px;font-family:var(--font-mono);font-size:11px;" placeholder="Main title text">
+                        </div>
+                        <div style="flex:1;min-width:200px;">
+                            <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);margin-bottom:4px;">TAGLINE</div>
+                            <input type="text" id="promo-tagline" value="beyondBINARY quantum-prefixed" style="width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 8px;border-radius:4px;font-family:var(--font-mono);font-size:11px;" placeholder="Subtitle text">
+                        </div>
+                        <div style="flex:0 0 auto;display:flex;align-items:flex-end;">
+                            <button class="btn btn-primary" onclick="generatePromo()" style="white-space:nowrap;">Generate & Download</button>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;">
+                        <canvas id="promo-canvas" style="max-width:100%;border:1px solid var(--border);border-radius:6px;background:#000;"></canvas>
+                        <div id="promo-preview-info" style="font-size:10px;color:var(--muted);font-family:var(--font-mono);"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Brand Assets Checklist -->
+            <div class="panel" style="grid-column: 1 / -1;">
+                <div class="panel-header">
+                    <span class="icon">&#x2705;</span> Brand Assets Checklist
+                </div>
+                <div class="panel-body">
+                    <ul class="checklist" id="brand-checklist"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== INSPECT (synced from notepad) ==================== -->
+    <div class="tab-content" id="tab-inspect">
+        <h2 style="margin-bottom:var(--space-sm);font-size:18px;">🔍 Inspect — uvspeed · Quantum beyond<span style="font-weight:900">BINARY</span></h2>
+        <p style="color:var(--muted);margin-bottom:8px;font-size:11px;font-family:var(--font-mono);">
+            <span style="color:var(--accent);font-weight:700">synced from</span> quantum-notepad.html · <span id="inspect-ts" style="color:var(--success)"></span> · <span id="inspect-ver" style="color:var(--purple)">v4.33 · Phase 4.33</span>
+        </p>
+        <div class="panel-grid">
+            <div class="panel" style="grid-column:1/-1">
+                <div class="panel-header"><span class="icon">⚡</span> Dev Phase & .qbit Codec Status</div>
+                <div class="panel-body" style="font-size:11px">
+                    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:12px" id="inspect-phase-cards"></div>
+                </div>
+            </div>
+            <div class="panel" style="grid-column:1/-1">
+                <div class="panel-header"><span class="icon">🏗</span> Iron Line Pipeline Status</div>
+                <div class="panel-body"><div id="inspect-iron-line" style="font-size:11px"></div></div>
+            </div>
+            <div class="panel" style="grid-column:1/-1">
+                <div class="panel-header"><span class="icon">🔗</span> Gluelam Stack Health</div>
+                <div class="panel-body"><div id="inspect-gluelam" style="font-size:11px"></div></div>
+            </div>
+            <div class="panel" style="grid-column:1/-1">
+                <div class="panel-header"><span class="icon">📊</span> App Health Matrix</div>
+                <div class="panel-body"><div id="inspect-apps" style="font-size:10px;font-family:var(--font-mono);max-height:400px;overflow-y:auto"></div></div>
+            </div>
+            <div class="panel" style="grid-column:1/-1">
+                <div class="panel-header"><span class="icon">🎯</span> Verified Performance Metrics</div>
+                <div class="panel-body"><div id="inspect-perf" style="font-size:11px"></div></div>
+            </div>
+            <div class="panel" style="grid-column:1/-1">
+                <div class="panel-header"><span class="icon">📈</span> Trajectory & Positioning</div>
+                <div class="panel-body"><div id="inspect-trajectory" style="font-size:11px"></div></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ===== Footer ===== -->
+<div class="footer">
+    <span class="prefix">{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</span>
+    <span>uvspeed v4.19 — GitHub Project Health</span>
+    <div class="actions">
+        <button class="btn" onclick="window.open('https://github.com/qbitOS/uvspeed','_blank')">GitHub Repo</button>
+        <button class="btn" onclick="window.open('https://github.com/qbitOS/uvspeed/settings','_blank')">Settings</button>
+        <button class="btn" onclick="fetchLiveData()">🔄 Refresh</button>
+        <button class="btn btn-primary" onclick="exportDashboard()">📋 Export</button>
+    </div>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════
+// GitHub Project Health Dashboard — uvspeed
+// ═══════════════════════════════════════════════════════════
+
+const REPO = 'qbitOS/uvspeed';
+const GH_API = `https://api.github.com/repos/${REPO}`;
+
+// ── Tab Switching ──
+document.querySelectorAll('.tab-bar button').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-bar button').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+});
+
+// ── Community Standards ──
+const communityItems = [
+    { name: 'README', file: 'README.md', present: true, desc: 'Project documentation with 1010+ lines' },
+    { name: 'Code of Conduct', file: 'CODE_OF_CONDUCT.md', present: true, desc: 'Contributor Covenant v2.1' },
+    { name: 'Contributing', file: 'CONTRIBUTING.md', present: true, desc: 'Dev setup, prefix system, contribution guide' },
+    { name: 'License', file: 'LICENSE', present: true, desc: 'MIT License' },
+    { name: 'Security Policy', file: 'SECURITY.md', present: true, desc: 'Vulnerability reporting + security features' },
+    { name: 'Issue Templates', file: '.github/ISSUE_TEMPLATE/', present: true, desc: 'Bug report + feature request (YAML forms)' },
+    { name: 'Pull Request Template', file: '.github/pull_request_template.md', present: true, desc: 'Phase, components, testing checklist' },
+];
+
+function renderChecklist(items, containerId) {
+    const ul = document.getElementById(containerId);
+    ul.innerHTML = items.map(item => `
+        <li>
+            <span class="check ${item.present ? 'check-pass' : 'check-fail'}">${item.present ? '✓' : '✗'}</span>
+            <span class="label">${item.name}</span>
+            <span class="meta">${item.file}</span>
+        </li>
+    `).join('');
+}
+
+renderChecklist(communityItems, 'cs-checklist');
+renderChecklist(communityItems.map(i => ({...i, name: `${i.name} — ${i.desc}`})), 'cs-full-checklist');
+
+// ── Phase Tracking ──
+const phases = [
+    { name: 'Phase 1 — Structural Bootstrap', done: true },
+    { name: 'Phase 2 — Execution Bridge', done: true },
+    { name: 'Phase 2.1 — Cross-Project Integration', done: true },
+    { name: 'Phase 2.2 — Release + Game', done: true },
+    { name: 'Phase 2.3 — Interactive Tools', done: true },
+    { name: 'Phase 3.0 — Restructure', done: true },
+    { name: 'Phase 3.1 — Blackwell Live', done: true },
+    { name: 'Phase 3.2 — Dev Pages', done: true },
+    { name: 'Phase 3.3 — Multi-Instance', done: true },
+    { name: 'Phase 4.0 — Terminal/OS App (hexterm + Tauri)', done: true },
+    { name: 'Phase 4.1 — Multi-stream (feed, grid, launcher)', done: true },
+    { name: 'Phase 4.2 — Ecosystem cohesion + funding', done: true },
+    { name: 'Phase 5 — Agent orchestration + AI prefix classifier', done: false },
+];
+
+const phaseList = document.getElementById('phase-list');
+phaseList.innerHTML = phases.map(p => `
+    <li>
+        <span class="check ${p.done ? 'check-pass' : 'check-fail'}">${p.done ? '✓' : '○'}</span>
+        <span class="label">${p.name}</span>
+    </li>
+`).join('');
+
+// ── Actions ──
+const actions = [
+    { name: 'pages.yml', desc: 'GitHub Pages auto-deploy', trigger: 'push main', status: 'active' },
+    { name: 'release.yml', desc: 'Tagged release builder', trigger: 'push v*', status: 'active' },
+    { name: 'dependabot.yml', desc: 'Dependency version updates', trigger: 'weekly', status: 'active' },
+];
+
+document.getElementById('actions-list').innerHTML = actions.map(a => `
+    <li>
+        <span class="check check-pass">✓</span>
+        <span class="label">${a.name} — ${a.desc}</span>
+        <span class="meta">${a.trigger}</span>
+    </li>
+`).join('');
+
+// ── Dependencies ──
+const npmDeps = [
+    { name: 'electron', version: '^40.4.0', type: 'legacy', status: 'outdated' },
+    { name: 'electron-builder', version: '^25.1.0', type: 'legacy', status: 'outdated' },
+    { name: 'express', version: '^4.21.0', type: 'prod', status: 'current' },
+    { name: 'ws', version: '^8.18.0', type: 'prod', status: 'current' },
+    { name: 'xterm', version: '^5.5.0', type: 'prod', status: 'current' },
+    { name: 'xterm-addon-fit', version: '^0.10.0', type: 'prod', status: 'current' },
+];
+
+const pipDeps = [
+    { name: 'websockets', version: '>=12.0', type: 'required', status: 'current' },
+    { name: 'opencv-python-headless', version: '>=4.9', type: 'required', status: 'current' },
+    { name: 'numpy', version: '>=1.24', type: 'required', status: 'current' },
+    { name: 'Pillow', version: '>=9.0', type: 'required', status: 'current' },
+    { name: 'zeroconf', version: '>=0.131', type: 'required', status: 'current' },
+    { name: 'aiohttp', version: '>=3.9', type: 'optional (full)', status: 'current' },
+    { name: 'psutil', version: '>=5.9', type: 'optional (full)', status: 'current' },
+];
+
+const devDeps = [
+    { name: 'pytest', version: '>=7.0', type: 'dev', status: 'current' },
+    { name: 'ruff', version: '>=0.1', type: 'dev', status: 'current' },
+];
+
+function renderDeps(deps, tableId) {
+    const table = document.getElementById(tableId);
+    table.innerHTML = `
+        <thead><tr><th>Package</th><th>Version</th><th>Type</th><th>Status</th></tr></thead>
+        <tbody>${deps.map(d => `
+            <tr>
+                <td class="mono">${d.name}</td>
+                <td class="mono">${d.version}</td>
+                <td>${d.type}</td>
+                <td><span class="dep-badge dep-${d.status}">${d.status}</span></td>
+            </tr>
+        `).join('')}</tbody>
+    `;
+}
+renderDeps(npmDeps, 'npm-deps');
+renderDeps(pipDeps, 'pip-deps');
+renderDeps(devDeps, 'dev-deps');
+
+// ── Contribution Grid ──
+const gridEl = document.getElementById('contrib-grid');
+for (let w = 0; w < 52; w++) {
+    for (let d = 0; d < 7; d++) {
+        const cell = document.createElement('div');
+        cell.className = 'contrib-cell';
+        // Simulate activity — heavier in recent weeks
+        const recency = w / 52;
+        const r = Math.random();
+        if (w > 44) {
+            if (r < 0.7) cell.classList.add('contrib-' + (Math.floor(Math.random() * 4) + 1));
+        } else if (w > 35) {
+            if (r < 0.4) cell.classList.add('contrib-' + (Math.floor(Math.random() * 3) + 1));
+        } else {
+            if (r < 0.1) cell.classList.add('contrib-' + (Math.floor(Math.random() * 2) + 1));
+        }
+        gridEl.appendChild(cell);
+    }
+}
+
+// ── Charts ──
+function drawLineChart(canvasId, datasets, labels) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width = canvas.offsetWidth * 2;
+    const H = canvas.height = canvas.offsetHeight * 2;
+    ctx.scale(2, 2);
+    const w = W / 2, h = H / 2;
+
+    // Background
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(0, 0, w, h);
+
+    // Grid
+    ctx.strokeStyle = '#21262d';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i < 5; i++) {
+        const y = 20 + (h - 40) * i / 4;
+        ctx.beginPath();
+        ctx.moveTo(40, y);
+        ctx.lineTo(w - 10, y);
+        ctx.stroke();
+    }
+
+    // Data
+    datasets.forEach(ds => {
+        const max = Math.max(...ds.data, 1);
+        ctx.strokeStyle = ds.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ds.data.forEach((v, i) => {
+            const x = 40 + (w - 50) * i / (ds.data.length - 1);
+            const y = h - 20 - (h - 40) * v / max;
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Fill
+        ctx.globalAlpha = 0.1;
+        ctx.lineTo(40 + (w - 50), h - 20);
+        ctx.lineTo(40, h - 20);
+        ctx.fillStyle = ds.color;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+    });
+
+    // Labels
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '10px -apple-system, sans-serif';
+    if (labels) {
+        labels.forEach((l, i) => {
+            const x = 40 + (w - 50) * i / (labels.length - 1);
+            ctx.fillText(l, x - 10, h - 4);
+        });
+    }
+}
+
+function drawBarChart(canvasId, additions, deletions, labels) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width = canvas.offsetWidth * 2;
+    const H = canvas.height = canvas.offsetHeight * 2;
+    ctx.scale(2, 2);
+    const w = W / 2, h = H / 2;
+
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(0, 0, w, h);
+
+    const max = Math.max(...additions, ...deletions.map(Math.abs), 1);
+    const barW = (w - 60) / additions.length * 0.35;
+    const mid = h * 0.5;
+
+    additions.forEach((v, i) => {
+        const x = 40 + (w - 60) * i / additions.length;
+        const bh = (mid - 20) * v / max;
+        ctx.fillStyle = '#3fb950';
+        ctx.fillRect(x, mid - bh, barW, bh);
+
+        const dh = (mid - 20) * Math.abs(deletions[i]) / max;
+        ctx.fillStyle = '#f85149';
+        ctx.fillRect(x + barW + 2, mid, barW, dh);
+    });
+
+    // Mid line
+    ctx.strokeStyle = '#30363d';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(40, mid);
+    ctx.lineTo(w - 10, mid);
+    ctx.stroke();
+
+    // Labels
+    ctx.fillStyle = '#8b949e';
+    ctx.font = '9px -apple-system, sans-serif';
+    if (labels) {
+        labels.forEach((l, i) => {
+            const x = 40 + (w - 60) * i / labels.length;
+            ctx.fillText(l, x, h - 4);
+        });
+    }
+
+    // Legend
+    ctx.fillStyle = '#3fb950';
+    ctx.fillRect(w - 120, 8, 8, 8);
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText('Additions', w - 108, 16);
+    ctx.fillStyle = '#f85149';
+    ctx.fillRect(w - 60, 8, 8, 8);
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText('Deletions', w - 48, 16);
+}
+
+function drawNetworkGraph(canvasId) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width = canvas.offsetWidth * 2;
+    const H = canvas.height = canvas.offsetHeight * 2;
+    ctx.scale(2, 2);
+    const w = W / 2, h = H / 2;
+
+    ctx.fillStyle = '#0d1117';
+    ctx.fillRect(0, 0, w, h);
+
+    // Main branch
+    ctx.strokeStyle = '#3fb950';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(20, h / 2);
+    ctx.lineTo(w - 20, h / 2);
+    ctx.stroke();
+
+    // Commits on main
+    const commits = 12;
+    for (let i = 0; i < commits; i++) {
+        const x = 40 + (w - 80) * i / (commits - 1);
+        ctx.fillStyle = '#3fb950';
+        ctx.beginPath();
+        ctx.arc(x, h / 2, 4, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Branch label
+    ctx.fillStyle = '#3fb950';
+    ctx.font = 'bold 11px -apple-system, sans-serif';
+    ctx.fillText('main', w - 50, h / 2 - 10);
+
+    // Tag markers
+    ctx.fillStyle = '#58a6ff';
+    ctx.font = '10px var(--font-mono), monospace';
+    ['v3.3.0', 'v4.0.0'].forEach((tag, i) => {
+        const x = 40 + (w - 80) * (i === 0 ? 0.6 : 0.95);
+        ctx.beginPath();
+        ctx.arc(x, h / 2, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#58a6ff';
+        ctx.fill();
+        ctx.fillStyle = '#8b949e';
+        ctx.fillText(tag, x - 15, h / 2 + 20);
+    });
+}
+
+// Traffic data (simulated — connect GitHub PAT for live)
+const days14 = Array.from({length: 14}, (_, i) => {
+    const d = new Date(); d.setDate(d.getDate() - 13 + i);
+    return (d.getMonth() + 1) + '/' + d.getDate();
+});
+const viewData = [12, 18, 25, 30, 22, 45, 67, 89, 120, 95, 78, 110, 145, 132];
+const cloneData = [2, 3, 1, 5, 4, 8, 12, 15, 10, 7, 9, 14, 18, 11];
+
+// Referrers
+const referrers = [
+    { source: 'github.com', views: 234, unique: 89 },
+    { source: 'google.com', views: 67, unique: 45 },
+    { source: 'cursor.sh', views: 23, unique: 12 },
+    { source: 'reddit.com', views: 15, unique: 11 },
+];
+
+const popular = [
+    { path: '/web/quantum-notepad.html', views: 312, unique: 145 },
+    { path: '/web/brothernumsy.html', views: 89, unique: 56 },
+    { path: '/web/blackwell.html', views: 67, unique: 34 },
+    { path: '/web/github-dashboard.html', views: 45, unique: 23 },
+];
+
+// Commits
+const commitsData = [
+    { hash: 'b72da21', msg: 'v3.3.0 — Multi-instance architecture, MCP server', date: 'Feb 12' },
+    { hash: 'd239a34', msg: 'v3.0.0 — Project restructure: numbered src/', date: 'Feb 12' },
+    { hash: 'e3c8745', msg: 'Add screenshots, notepad cells, Phase 3 cross-check', date: 'Feb 11' },
+    { hash: '77f612f', msg: 'Add kbatch + hexcast + update inspect', date: 'Feb 11' },
+    { hash: '409df5c', msg: 'Add Nyan Cat ambience, FreyaUnits cell', date: 'Feb 11' },
+];
+
+const contributors = [
+    { name: 'fornevercollective', commits: 12, lines: '4,086+' },
+];
+
+// Code frequency per phase
+const codeFreqAdd = [800, 1500, 600, 400, 350, 500, 900, 1200, 4086];
+const codeFreqDel = [50, 200, 80, 30, 20, 100, 50, 100, 238];
+const codeFreqLabels = ['P1', 'P2', 'P2.1', 'P2.2', 'P2.3', 'P3.0', 'P3.1', 'P3.2', 'P3.3'];
+
+// Render tables
+function renderTable(id, rows, cols) {
+    const tbody = document.querySelector(`#${id} tbody`);
+    if (!tbody) return;
+    tbody.innerHTML = rows.map(r => `<tr>${cols.map(c => `<td class="${c.mono ? 'mono' : ''}">${r[c.key]}</td>`).join('')}</tr>`).join('');
+}
+
+renderTable('referrers-table', referrers, [{key:'source',mono:true},{key:'views'},{key:'unique'}]);
+renderTable('popular-table', popular, [{key:'path',mono:true},{key:'views'},{key:'unique'}]);
+renderTable('commits-table', commitsData, [{key:'hash',mono:true},{key:'msg'},{key:'date'}]);
+renderTable('contributors-table', contributors, [{key:'name',mono:true},{key:'commits'},{key:'lines'}]);
+
+// Draw charts on tab switch (canvas needs to be visible)
+function drawAllCharts() {
+    drawLineChart('chart-views', [{data: viewData, color: '#58a6ff'}], days14);
+    drawLineChart('chart-clones', [{data: cloneData, color: '#a78bfa'}], days14);
+    drawBarChart('chart-codefreq', codeFreqAdd, codeFreqDel, codeFreqLabels);
+    drawNetworkGraph('chart-network');
+}
+
+// Redraw when tab becomes visible
+const observer = new MutationObserver(() => setTimeout(drawAllCharts, 50));
+document.querySelectorAll('.tab-content').forEach(el => observer.observe(el, { attributes: true, attributeFilter: ['class'] }));
+setTimeout(drawAllCharts, 100);
+window.addEventListener('resize', () => setTimeout(drawAllCharts, 100));
+
+// ── Live Data Fetch ──
+async function fetchLiveData() {
+    const token = localStorage.getItem('gh_pat');
+    if (!token) {
+        const pat = prompt('Enter GitHub PAT for live data (optional, stored in localStorage):');
+        if (pat) localStorage.setItem('gh_pat', pat);
+        else return;
+    }
+    try {
+        const headers = { Authorization: `token ${localStorage.getItem('gh_pat')}` };
+        const [repo, traffic, clones] = await Promise.all([
+            fetch(GH_API, { headers }).then(r => r.json()),
+            fetch(`${GH_API}/traffic/views`, { headers }).then(r => r.json()).catch(() => null),
+            fetch(`${GH_API}/traffic/clones`, { headers }).then(r => r.json()).catch(() => null),
+        ]);
+        if (repo.stargazers_count !== undefined) {
+            document.getElementById('stat-files').querySelector('.value').textContent = repo.size + ' KB';
+        }
+        alert('Live data refreshed (check console for full response)');
+        console.log('GitHub API response:', { repo, traffic, clones });
+    } catch (e) {
+        console.error('GitHub API error:', e);
+        alert('Failed to fetch: ' + e.message);
+    }
+}
+
+// ── Export ──
+function exportDashboard() {
+    const QP = window.QuantumPrefixes;
+    const data = {
+        repo: REPO,
+        version: '4.0.0',
+        exported: new Date().toISOString(),
+        community: communityItems,
+        phases: phases,
+        dependencies: { npm: npmDeps, pip: pipDeps, dev: devDeps },
+        actions: actions,
+    };
+    // Wrap with quantum prefix metadata (dashboard content is JSON-like)
+    const wrapped = QP ? QP.wrapJsonExport(data, JSON.stringify(data, null, 2), 'github-dashboard') : data;
+    const blob = new Blob([JSON.stringify(wrapped, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `uvspeed-dashboard-${new Date().toISOString().slice(0,10)}.json`;
+    a.click();
+    if (QP) {
+        const meta = QP.prefixMetadata(JSON.stringify(data, null, 2), 'json');
+        QP.broadcastState('github-dashboard', { coverage: meta.coverage, totalLines: meta.totalLines, classifiedLines: meta.classifiedLines, prefixCounts: meta.prefixCounts });
+    }
+}
+
+// ── Funding Setup Checklist ──
+const fundingChecklist = [
+    { name: 'FUNDING.yml created', done: true, desc: 'Enables "Sponsor" button on repo' },
+    { name: 'SPONSORS.md with tiers', done: true, desc: '5 tiers ($5-$500/mo) + one-time options' },
+    { name: 'README sponsor section', done: true, desc: 'Badge, tier table, payment links' },
+    { name: 'Enroll in GitHub Sponsors', done: false, desc: 'Connect Stripe at github.com/sponsors/signup' },
+    { name: 'Create Ko-fi page', done: false, desc: 'Low-friction one-time donations' },
+    { name: 'Create Open Collective', done: false, desc: 'Transparent budget for orgs that need invoicing' },
+    { name: 'PayPal.me link', done: false, desc: 'Direct PayPal payment link' },
+    { name: 'Patreon page', done: false, desc: 'Monthly subscription with content perks' },
+    { name: 'Write GitHub Sponsors profile', done: false, desc: 'Background, project story, why sponsor' },
+    { name: 'Set sponsor tiers in GitHub', done: false, desc: '$5/$15/$50/$200/$500 monthly tiers' },
+    { name: 'Add one-time tier options', done: false, desc: '$5/$25/$100 one-time donations' },
+    { name: 'Post launch on Dev.to', done: false, desc: 'beyondBINARY concept article for visibility' },
+    { name: 'Post on Hacker News', done: false, desc: 'Show HN: 11-symbol prefix system for code' },
+    { name: 'Create 2-min demo video', done: false, desc: 'Short walkthrough for social + sponsors page' },
+    { name: 'Apply: GitHub Accelerator', done: false, desc: '$20K stipend + 10 weeks mentorship' },
+    { name: 'Apply: NLnet Foundation', done: false, desc: 'EU grant up to EUR 50K for dev tooling' },
+    { name: 'Apply: Sovereign Tech Fund', done: false, desc: 'German govt fund EUR 50-300K for open source' },
+    { name: 'Contact: Astral (uv team)', done: false, desc: 'uvspeed showcases uv workflows — partnership' },
+    { name: 'Contact: Cursor team', done: false, desc: 'MCP server + .cursor/rules showcase project' },
+    { name: 'Contact: Anthropic MCP', done: false, desc: 'uvspeed MCP server for ecosystem showcase' },
+];
+
+const fundingCheckEl = document.getElementById('funding-checklist');
+if (fundingCheckEl) {
+    // Load saved state
+    const savedFunding = JSON.parse(localStorage.getItem('uvspeed-funding-checks') || '{}');
+    fundingChecklist.forEach((item, i) => {
+        if (savedFunding[i] !== undefined) item.done = savedFunding[i];
+    });
+
+    fundingCheckEl.innerHTML = fundingChecklist.map((item, i) => `
+        <li style="cursor:pointer;" onclick="toggleFunding(${i})">
+            <span class="check ${item.done ? 'check-pass' : 'check-fail'}" id="fc-${i}">${item.done ? '\u2713' : '\u25CB'}</span>
+            <span class="label">${item.name}</span>
+            <span class="meta">${item.desc}</span>
+        </li>
+    `).join('');
+
+    const doneCount = fundingChecklist.filter(f => f.done).length;
+    document.getElementById('funding-progress').textContent = `${doneCount}/${fundingChecklist.length}`;
+}
+
+function toggleFunding(idx) {
+    fundingChecklist[idx].done = !fundingChecklist[idx].done;
+    const el = document.getElementById('fc-' + idx);
+    el.className = 'check ' + (fundingChecklist[idx].done ? 'check-pass' : 'check-fail');
+    el.textContent = fundingChecklist[idx].done ? '\u2713' : '\u25CB';
+    const doneCount = fundingChecklist.filter(f => f.done).length;
+    document.getElementById('funding-progress').textContent = `${doneCount}/${fundingChecklist.length}`;
+    // Save to localStorage
+    const state = {};
+    fundingChecklist.forEach((f, i) => state[i] = f.done);
+    localStorage.setItem('uvspeed-funding-checks', JSON.stringify(state));
+}
+
+// Funding goals
+const fundingGoals = [
+    { name: 'First 10 sponsors', done: false },
+    { name: '$500/mo — full-time open-source', done: false },
+    { name: '$2,000/mo — test lab + CI + conferences', done: false },
+    { name: '$5,000/mo — hire contributors + research', done: false },
+    { name: 'GitHub Accelerator acceptance', done: false },
+    { name: 'First grant (NLnet / STF)', done: false },
+    { name: 'IDE partnership (Cursor / Anthropic)', done: false },
+];
+const goalsEl = document.getElementById('funding-goals');
+if (goalsEl) {
+    goalsEl.innerHTML = fundingGoals.map(g => `
+        <li>
+            <span class="check ${g.done ? 'check-pass' : 'check-fail'}">${g.done ? '\u2713' : '\u25CB'}</span>
+            <span class="label">${g.name}</span>
+        </li>
+    `).join('');
+}
+
+// Grants table
+const grants = [
+    { program: 'GitHub Accelerator', amount: '$20,000', fit: 'High — novel prefix system + 16 tools', status: 'not applied' },
+    { program: 'NLnet Foundation (NGI)', amount: 'EUR 50,000', fit: 'High — innovative dev tooling', status: 'not applied' },
+    { program: 'Sovereign Tech Fund', amount: 'EUR 50-300K', fit: 'High — open-source infrastructure', status: 'not applied' },
+    { program: 'Mozilla Builders', amount: 'Varies', fit: 'Medium — code classification for AI', status: 'not applied' },
+    { program: 'Google Summer of Code', amount: '$3-6K/contrib', fit: 'Medium — needs org status', status: 'planned' },
+    { program: 'NVIDIA Inception', amount: 'Partnership', fit: 'Medium — Blackwell dashboard + GPU', status: 'not applied' },
+    { program: 'Meta Open Source', amount: 'Partnership', fit: 'Medium — questcast + Quest integration', status: 'not applied' },
+];
+renderTable('grants-table', grants, [
+    {key:'program'}, {key:'amount',mono:true}, {key:'fit'},
+    {key:'status',mono:true}
+]);
+
+// Partnerships table
+const partnerships = [
+    { company: 'Cursor', program: 'Community showcase', why: '.cursor/rules + MCP server integration', status: 'ready to pitch' },
+    { company: 'Anthropic', program: 'MCP ecosystem', why: 'Working MCP server (10 tools) for Claude', status: 'ready to pitch' },
+    { company: 'Astral (uv)', program: 'Community showcase', why: 'Project named "uvspeed" — uv-first workflows', status: 'ready to pitch' },
+    { company: 'Tauri', program: 'CrabNebula', why: 'Tauri v2 multi-window showcase app', status: 'ready to pitch' },
+    { company: 'Vercel', program: 'OSS program', why: 'Free hosting + amplification for PWA apps', status: 'planned' },
+    { company: 'GitHub', program: 'Sponsors + Accelerator', why: '16 web tools + novel prefix system', status: 'priority' },
+];
+renderTable('partnerships-table', partnerships, [
+    {key:'company',mono:true}, {key:'program'}, {key:'why'},
+    {key:'status',mono:true}
+]);
+
+// ── Releases & Packages ──
+const releaseArtifacts = [
+    { artifact: 'uvspeed-4.0.tar.gz', contents: 'Full platform (web + CLI + Tauri source)', install: 'tar xzf + ./install.sh', size: '~8 MB' },
+    { artifact: 'uvspeed-web-4.0.tar.gz', contents: 'Web apps only (16 HTML PWAs)', install: 'Extract and serve', size: '~3 MB' },
+    { artifact: 'hexcast-4.0.tar.gz', contents: 'Hexcast CLI standalone', install: 'pip install .', size: '~50 KB' },
+    { artifact: 'uvspeed_quantum-4.0.whl', contents: 'Python package (hexcast + bridge)', install: 'pip install *.whl', size: '~100 KB' },
+    { artifact: 'uvspeed-macos.app', contents: 'Tauri desktop app (macOS arm64)', install: 'Drag to Applications', size: '~15 MB' },
+];
+renderTable('release-artifacts', releaseArtifacts, [
+    {key:'artifact',mono:true}, {key:'contents'}, {key:'install',mono:true}, {key:'size',mono:true}
+]);
+
+const toolDist = [
+    { tool: 'hexcast', type: 'CLI + Web', gh: '\u2713', pypi: '\u2713', npm: '\u2014', pwa: '\u2713', tauri: '\u2713' },
+    { tool: 'kbatch', type: 'Web', gh: '\u2713', pypi: '\u2014', npm: '\u2014', pwa: '\u2713', tauri: '\u2713' },
+    { tool: 'hexterm', type: 'Web + Desktop', gh: '\u2713', pypi: '\u2014', npm: '\u2014', pwa: '\u2713', tauri: '\u2713' },
+    { tool: 'quantum-notepad', type: 'Web', gh: '\u2713', pypi: '\u2014', npm: '\u2014', pwa: '\u2713', tauri: '\u2713' },
+    { tool: 'brotherNumsy', type: 'Web', gh: '\u2713', pypi: '\u2014', npm: '\u2014', pwa: '\u2713', tauri: '\u2713' },
+    { tool: 'bridge server', type: 'CLI', gh: '\u2713', pypi: '\u2713', npm: '\u2014', pwa: '\u2014', tauri: '\u2014' },
+];
+renderTable('tool-dist-table', toolDist, [
+    {key:'tool',mono:true}, {key:'type'}, {key:'gh'}, {key:'pypi'}, {key:'npm'}, {key:'pwa'}, {key:'tauri'}
+]);
+
+const packagingChecklist = [
+    { name: 'FUNDING.yml + Sponsor button', present: true, file: '.github/FUNDING.yml' },
+    { name: 'release.yml with 3 archives', present: true, file: '.github/workflows/release.yml' },
+    { name: 'Tauri macOS build in CI', present: true, file: 'release.yml tauri-macos job' },
+    { name: 'PyPI publish (uvspeed-quantum)', present: true, file: 'pyproject.toml' },
+    { name: 'npm publish (uvspeed-quantum)', present: true, file: 'package.json' },
+    { name: 'Homebrew tap formula', present: false, file: 'planned' },
+    { name: 'Windows Tauri build in CI', present: false, file: 'planned' },
+    { name: 'Linux AppImage build in CI', present: false, file: 'planned' },
+    { name: 'Docker image for bridge server', present: false, file: 'planned' },
+];
+renderChecklist(packagingChecklist, 'packaging-checklist');
+
+// ── Public API ──
+window.dashboard = {
+    community: communityItems,
+    phases,
+    dependencies: { npm: npmDeps, pip: pipDeps, dev: devDeps },
+    actions,
+    funding: fundingChecklist,
+    grants,
+    partnerships,
+    releaseArtifacts,
+    toolDist,
+    fetchLive: fetchLiveData,
+    export: exportDashboard,
+};
+
+// ═══════════════════════════════════════════════════════════
+// Theme Toggle
+// ═══════════════════════════════════════════════════════════
+function toggleDashTheme() {
+    const root = document.documentElement;
+    root.classList.toggle('light');
+    const isLight = root.classList.contains('light');
+    const btn = document.getElementById('dash-theme-btn');
+    if (btn) btn.textContent = isLight ? '\u2600' : '\u263E';
+    localStorage.setItem('dash-theme', isLight ? 'light' : 'dark');
+}
+window.toggleDashTheme = toggleDashTheme;
+if (localStorage.getItem('dash-theme') === 'light') toggleDashTheme();
+
+// ═══════════════════════════════════════════════════════════
+// Brand Tab — Color Swatches
+// ═══════════════════════════════════════════════════════════
+(function initBrandColors() {
+    const darkPalette = [
+        { name: '--bg', hex: '#0d1117' }, { name: '--bg2', hex: '#161b22' },
+        { name: '--bg3', hex: '#21262d' }, { name: '--border', hex: '#30363d' },
+        { name: '--text', hex: '#e6edf3' }, { name: '--muted', hex: '#8b949e' },
+    ];
+    const lightPalette = [
+        { name: '--bg', hex: '#f6f8fa' }, { name: '--bg2', hex: '#ffffff' },
+        { name: '--bg3', hex: '#f0f2f5' }, { name: '--border', hex: '#d0d7de' },
+        { name: '--text', hex: '#1f2328' }, { name: '--muted', hex: '#656d76' },
+    ];
+    const accents = [
+        { name: 'purple', hex: '#7c3aed' }, { name: 'cyan', hex: '#22d3ee' },
+        { name: 'green', hex: '#34d399' }, { name: 'orange', hex: '#f97316' },
+        { name: 'blue', hex: '#58a6ff' }, { name: 'rose', hex: '#fb7185' },
+        { name: 'yellow', hex: '#fbbf24' }, { name: 'success', hex: '#3fb950' },
+        { name: 'error', hex: '#f85149' },
+    ];
+
+    function renderSwatches(containerId, palette) {
+        const el = document.getElementById(containerId);
+        if (!el) return;
+        el.innerHTML = '';
+        palette.forEach(c => {
+            const swatch = document.createElement('div');
+            const isDark = parseInt(c.hex.slice(1, 3), 16) < 128;
+            swatch.style.cssText = 'width:80px;height:52px;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border);transition:all .15s;background:' + c.hex + ';';
+            swatch.innerHTML = '<div style="font-size:8px;font-family:var(--font-mono);color:' + (isDark ? '#fff' : '#000') + ';opacity:.8;">' + c.name + '</div><div style="font-size:10px;font-family:var(--font-mono);font-weight:700;color:' + (isDark ? '#fff' : '#000') + ';">' + c.hex + '</div>';
+            swatch.title = 'Click to copy ' + c.hex;
+            swatch.onclick = () => {
+                navigator.clipboard.writeText(c.hex).then(() => {
+                    swatch.style.boxShadow = '0 0 0 2px ' + c.hex;
+                    setTimeout(() => { swatch.style.boxShadow = ''; }, 600);
+                });
+            };
+            swatch.onmouseenter = () => { swatch.style.transform = 'scale(1.05)'; };
+            swatch.onmouseleave = () => { swatch.style.transform = ''; };
+            el.appendChild(swatch);
+        });
+    }
+
+    renderSwatches('brand-dark-swatches', darkPalette);
+    renderSwatches('brand-light-swatches', lightPalette);
+    renderSwatches('brand-accent-swatches', accents);
+})();
+
+// ═══════════════════════════════════════════════════════════
+// Brand Tab — Logo & Icons
+// ═══════════════════════════════════════════════════════════
+(function initBrandIcons() {
+    const icons = [
+        { file: 'nyan-banner.png', label: 'Banner', size: '850x170' },
+        { file: 'favicon.png', label: 'Favicon', size: '32x32' },
+        { file: 'icon-192.png', label: 'Icon 192', size: '192x192' },
+        { file: 'hexterm-192.png', label: 'HexTerm 192', size: '192x192' },
+        { file: 'hexterm-512.png', label: 'HexTerm 512', size: '512x512' },
+    ];
+    const container = document.getElementById('brand-icons');
+    if (!container) return;
+    icons.forEach(ic => {
+        const card = document.createElement('div');
+        card.style.cssText = 'text-align:center;padding:8px;background:var(--bg);border-radius:6px;border:1px solid var(--border);';
+        card.innerHTML = '<img src="../icons/' + ic.file + '" style="max-width:80px;max-height:60px;margin-bottom:4px;border-radius:4px;" onerror="this.style.display=\'none\'">' +
+            '<div style="font-size:10px;font-family:var(--font-mono);color:var(--text);">' + ic.label + '</div>' +
+            '<div style="font-size:9px;color:var(--muted);">' + ic.size + '</div>' +
+            '<a href="../icons/' + ic.file + '" download style="font-size:9px;color:var(--accent);font-family:var(--font-mono);">Download</a>';
+        container.appendChild(card);
+    });
+})();
+
+// ═══════════════════════════════════════════════════════════
+// Brand Tab — Screenshot Gallery
+// ═══════════════════════════════════════════════════════════
+let _brandManifest = null;
+(function initBrandGallery() {
+    // Try to load existing screenshots from icons/ (numbered) + icons/screens/ (automated)
+    const gallery = document.getElementById('brand-gallery');
+    const emptyMsg = document.getElementById('brand-gallery-empty');
+    const filterEl = document.getElementById('brand-filter');
+    if (!gallery) return;
+
+    // Load existing numbered screenshots
+    const existingScreenshots = [
+        { file: '01-notepad-main.png', name: 'Quantum Notepad', category: 'editor' },
+        { file: '14-brothernumsy-game-full.png', name: 'Brother Numsy', category: 'game' },
+        { file: '22-kbatch-keyboard-analyzer.png', name: 'KBatch Analyzer', category: 'analyzer' },
+        { file: '23-hexcast-video-broadcast.png', name: 'HexCast', category: 'media' },
+        { file: '25-blackwell-live-dashboard.png', name: 'Blackwell GPU', category: 'dashboard' },
+        { file: '26-archflow-node-visualizer.png', name: 'ArchFlow', category: 'visualizer' },
+        { file: '24-jawta-audio-spatial.png', name: 'Jawta Audio', category: 'media' },
+        { file: '27-questcast-meta-research.png', name: 'QuestCast', category: 'media' },
+        { file: '03-language-benchmarks.png', name: 'Benchmarks', category: 'showcase' },
+        { file: '05-prefix-everything.png', name: 'Prefix System', category: 'showcase' },
+        { file: '12-quantum-navigation.png', name: 'Quantum Nav', category: 'visualizer' },
+        { file: '15-freyaunits-converter-cell.png', name: 'FreyaUnits', category: 'tools' },
+        { file: '10-mermaid-architecture.png', name: 'Architecture', category: 'visualizer' },
+        { file: '28-visual-slice-2d.png', name: 'Visual Slice', category: 'visualizer' },
+        { file: '29-visual-cube-3d.png', name: 'Visual Cube', category: 'visualizer' },
+        { file: '30-visual-orb-quantum.png', name: 'Visual Orb', category: 'visualizer' },
+    ];
+
+    function renderGallery(filter) {
+        gallery.innerHTML = '';
+        const items = filter === 'all' ? existingScreenshots : existingScreenshots.filter(s => s.category === filter);
+        if (items.length === 0) { emptyMsg.style.display = ''; return; }
+        emptyMsg.style.display = 'none';
+        items.forEach(shot => {
+            const card = document.createElement('div');
+            card.style.cssText = 'border-radius:8px;overflow:hidden;border:1px solid var(--border);cursor:pointer;transition:all .15s;background:var(--bg);';
+            card.innerHTML = '<img src="../icons/' + shot.file + '" style="width:100%;height:160px;object-fit:cover;display:block;" loading="lazy" onerror="this.parentElement.style.display=\'none\'">' +
+                '<div style="padding:8px;display:flex;justify-content:space-between;align-items:center;">' +
+                '<span style="font-size:11px;font-weight:600;">' + shot.name + '</span>' +
+                '<span style="font-size:9px;font-family:var(--font-mono);color:var(--muted);background:var(--bg3);padding:1px 6px;border-radius:3px;">' + shot.category + '</span>' +
+                '</div>';
+            card.onmouseenter = () => { card.style.transform = 'translateY(-2px)'; card.style.boxShadow = '0 4px 12px rgba(0,0,0,.3)'; };
+            card.onmouseleave = () => { card.style.transform = ''; card.style.boxShadow = ''; };
+            card.onclick = () => { window.open('../icons/' + shot.file, '_blank'); };
+            gallery.appendChild(card);
+        });
+        document.getElementById('brand-shot-count').textContent = items.length + ' captures';
+    }
+
+    // Also try loading automated screenshots manifest
+    fetch('../icons/screens/manifest.json').then(r => r.json()).then(manifest => {
+        _brandManifest = manifest;
+        document.getElementById('brand-shot-time').textContent = 'Generated: ' + new Date(manifest.generated).toLocaleString();
+        manifest.apps.forEach(app => {
+            const imgFile = app.split || app.dark;
+            if (!imgFile) return;
+            existingScreenshots.push({
+                file: 'screens/' + imgFile,
+                name: app.name,
+                category: app.category || 'other',
+                isAutomated: true,
+            });
+        });
+        renderGallery('all');
+    }).catch(() => {
+        // No automated screenshots yet
+        renderGallery('all');
+    });
+
+    if (filterEl) filterEl.addEventListener('change', () => renderGallery(filterEl.value));
+})();
+
+// ═══════════════════════════════════════════════════════════
+// Brand Tab — Promo Generator
+// ═══════════════════════════════════════════════════════════
+function generatePromo() {
+    const cv = document.getElementById('promo-canvas');
+    if (!cv) return;
+    const ctx = cv.getContext('2d');
+    const templateSel = document.getElementById('promo-template');
+    const title = document.getElementById('promo-title').value || 'uvspeed';
+    const tagline = document.getElementById('promo-tagline').value || 'beyondBINARY quantum-prefixed';
+    const template = templateSel.value;
+
+    const sizes = { og: [1200, 630], ig: [1080, 1080], twitter: [1500, 500], feature: [1280, 720] };
+    const [w, h] = sizes[template] || sizes.og;
+    cv.width = w; cv.height = h;
+
+    // Background gradient
+    const grad = ctx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, '#0d1117'); grad.addColorStop(0.5, '#161b22'); grad.addColorStop(1, '#0d1117');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, w, h);
+
+    // Starfield
+    for (let i = 0; i < 80; i++) {
+        ctx.fillStyle = 'rgba(255,255,255,' + (Math.random() * 0.4 + 0.1) + ')';
+        ctx.beginPath();
+        ctx.arc(Math.random() * w, Math.random() * h, Math.random() * 1.5 + 0.3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    // Rainbow stripe
+    const rainbowColors = ['#7c3aed', '#06b6d4', '#a78bfa', '#22d3ee', '#8b5cf6', '#34d399'];
+    const stripeY = h * 0.48;
+    rainbowColors.forEach((c, i) => {
+        ctx.fillStyle = c;
+        ctx.fillRect(i * (w / 6), stripeY, w / 6 + 1, 3);
+    });
+
+    // Title
+    const titleSize = Math.min(w * 0.08, 80);
+    ctx.font = '900 ' + titleSize + 'px "SF Mono", monospace';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#e6edf3';
+    ctx.fillText(title, w / 2, h * 0.35);
+
+    // Tagline
+    ctx.font = '400 ' + Math.round(titleSize * 0.35) + 'px "SF Mono", monospace';
+    ctx.fillStyle = '#8b949e';
+    ctx.fillText(tagline, w / 2, h * 0.35 + titleSize * 0.7);
+
+    // Prefix symbols
+    ctx.font = '600 ' + Math.round(titleSize * 0.22) + 'px "SF Mono", monospace';
+    ctx.fillStyle = '#58a6ff';
+    ctx.fillText('{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}', w / 2, h * 0.65);
+
+    // Version badge
+    ctx.font = 'bold ' + Math.round(titleSize * 0.18) + 'px "SF Mono", monospace';
+    ctx.fillStyle = '#3fb950';
+    ctx.fillText('v4.19 | 23 apps | 17+ languages', w / 2, h * 0.75);
+
+    // Border glow
+    ctx.strokeStyle = 'rgba(124,58,237,0.4)'; ctx.lineWidth = 2;
+    ctx.strokeRect(1, 1, w - 2, h - 2);
+
+    // Info
+    document.getElementById('promo-preview-info').textContent = w + 'x' + h + ' | ' + template;
+
+    // Auto-download
+    const link = document.createElement('a');
+    link.download = 'uvspeed-promo-' + template + '.png';
+    link.href = cv.toDataURL('image/png');
+    link.click();
+}
+window.generatePromo = generatePromo;
+
+// ═══════════════════════════════════════════════════════════
+// Brand Tab — Assets Checklist
+// ═══════════════════════════════════════════════════════════
+(function initBrandChecklist() {
+    const assets = [
+        { item: 'favicon.png (32x32)', done: true },
+        { item: 'favicon.ico', done: true },
+        { item: 'icon-192.png (PWA)', done: true },
+        { item: 'hexterm-512.png (PWA)', done: true },
+        { item: 'nyan-banner.png (README)', done: true },
+        { item: 'Open Graph card (1200x630)', done: false },
+        { item: 'Twitter banner (1500x500)', done: false },
+        { item: 'Instagram promo (1080x1080)', done: false },
+        { item: '2-min demo video', done: false },
+        { item: 'Light/dark split screenshots (all 23 apps)', done: false },
+        { item: 'App Store listing assets', done: false },
+        { item: 'Version badge consistency (v4.19)', done: true },
+        { item: 'quantum-theme.css shared module', done: true },
+        { item: 'manifest.json (PWA)', done: true },
+    ];
+    const el = document.getElementById('brand-checklist');
+    if (!el) return;
+    el.innerHTML = '';
+    assets.forEach(a => {
+        const li = document.createElement('li');
+        li.className = 'check-item';
+        li.innerHTML = '<span class="check-icon">' + (a.done ? '&#x2705;' : '&#x26AA;') + '</span> ' +
+            '<span style="color:' + (a.done ? 'var(--text)' : 'var(--muted)') + ';">' + a.item + '</span>';
+        el.appendChild(li);
+    });
+})();
+
+// ═══════════════════════════════════════════════════════════
+// Inspect Tab — Synced from quantum-notepad
+// ═══════════════════════════════════════════════════════════
+(function initInspect(){
+  document.getElementById('inspect-ts').textContent=Math.floor(Date.now()/1000);
+
+  const APPS=[
+    {name:'qbit-search',file:'qbit-search.html',layer:'L0-L1',lines:'~1800'},
+    {name:'qbit-medical',file:'qbit-medical.html',layer:'L5-L6',lines:'~1200'},
+    {name:'qbit-studio',file:'qbit-studio.html',layer:'L4',lines:'~900'},
+    {name:'qbit-globe',file:'qbit-globe.html',layer:'L3',lines:'~2000'},
+    {name:'nTerminal',file:'nterminal.html',layer:'L3',lines:'~800'},
+    {name:'uvQbit',file:'uvqbit.html',layer:'L3',lines:'~3200'},
+    {name:'Notepad',file:'quantum-notepad.html',layer:'L4',lines:'~16K'},
+    {name:'HexBench',file:'hexbench.html',layer:'L4',lines:'~1400'},
+    {name:'HexTerm',file:'terminal.html',layer:'L1',lines:'~3800'},
+    {name:'HexCast',file:'hexcast.html',layer:'L5',lines:'~900'},
+    {name:'Research',file:'research-lab.html',layer:'L6',lines:'~1100'},
+    {name:'ArchFlow',file:'archflow.html',layer:'L4',lines:'~900'},
+    {name:'Dashboard',file:'github-dashboard.html',layer:'L7',lines:'~1900'},
+    {name:'kBatch',file:'kbatch.html',layer:'L7',lines:'~4200'},
+    {name:'Blackwell',file:'blackwell.html',layer:'L3',lines:'~1100'},
+    {name:'Jawta',file:'jawta-audio.html',layer:'L6',lines:'~1500'},
+    {name:'FreyaUnits',file:'freya.html',layer:'L6',lines:'~1300'},
+    {name:'History',file:'history.html',layer:'L7',lines:'~3500'},
+    {name:'Search',file:'search.html',layer:'L1',lines:'~1800'},
+    {name:'QA',file:'qa.html',layer:'L7',lines:'~1200'},
+    {name:'μgrad R0',file:'ugrad-r0.html',layer:'L0-L3',lines:'~1600'},
+    {name:'Steno Term',file:'qbit-steno-term.html',layer:'L0',lines:'~800'},
+    {name:'Steno Pad',file:'qbit-steno-pad.html',layer:'L0',lines:'~700'},
+    {name:'Plan Viewer',file:'plan-viewer.html',layer:'L4',lines:'~600'},
+    {name:'qbit Raw v4',file:'qbit-raw.html',layer:'L0',lines:'~1200'},
+    {name:'Sponsor',file:'sponsor.html',layer:'L7',lines:'~1800'},
+    {name:'Launcher',file:'launcher.html',layer:'L0',lines:'~500'},
+    {name:'QPU Results',file:'qpu-goldie-results.html',layer:'L3',lines:'~1000'},
+    {name:'QPU PointCloud',file:'qpu-pointcloud.html',layer:'L3',lines:'~1300'},
+  ];
+
+  const PHASES=[
+    {label:'.qbit Codec',status:'SHIPPED',color:'var(--success)',detail:'scanEncode/scanDecode, 9 modalities, Iron Condor circuit'},
+    {label:'Iron Line L0-L7',status:'SHIPPED',color:'var(--success)',detail:'8 layers, 24ms cortical loop, BroadcastChannel bus'},
+    {label:'Gluelam Stack',status:'SHIPPED',color:'var(--success)',detail:'quantum-prefixes.js + qbit-dac.js + qbit-steno.js, isomorphic'},
+    {label:'μgrad R0-R4',status:'BUILT',color:'var(--success)',detail:'Scalar→Tensor→Adam→Neural→GPT, 19+59 datasets'},
+    {label:'μgrad R5 Cortical',status:'PLANNED',color:'var(--accent)',detail:'Neuralink decode, SensorBridge, 24ms real-time'},
+    {label:'μgrad R6 DNA',status:'PLANNED',color:'var(--muted)',detail:'Organoid parenthood cycle, DNA codon mapping'},
+    {label:'Quantum Codex',status:'SHIPPED',color:'var(--success)',detail:'Bloch astrology chart, Iron Line houses, gate mapping'},
+    {label:'Scan Pipeline',status:'SHIPPED',color:'var(--success)',detail:'9 modalities, quantum locate, bullet-time, preflight'},
+    {label:'Ping Calibration',status:'SHIPPED',color:'var(--success)',detail:'5-node proxy chain, A-F grade, L2 commander stop-gaps'},
+    {label:'3D Globe Infra',status:'SHIPPED',color:'var(--success)',detail:'7 layers, 100+ facilities, IANA/Root DNS/CDN/Proxy'},
+  ];
+
+  const phEl=document.getElementById('inspect-phase-cards');
+  if(phEl){phEl.innerHTML='';PHASES.forEach(p=>{
+    phEl.innerHTML+=`<div style="background:rgba(${p.status==='SHIPPED'?'63,185,80':'136,136,136'},0.08);border:1px solid rgba(${p.status==='SHIPPED'?'63,185,80':'136,136,136'},0.25);border-radius:6px;padding:8px">
+      <div style="font-weight:700;color:${p.color}">${p.status}</div>
+      <div style="color:var(--text);font-weight:600">${p.label}</div>
+      <div style="color:var(--muted);font-size:10px;margin-top:2px">${p.detail}</div></div>`;
+  });}
+
+  const IRON=[
+    {l:'L0',name:'Super Speed',budget:'1.3ms boot',apps:'qbit-raw, μgrad, steno-term/pad',status:'✅'},
+    {l:'L1',name:'Terminal + Search',budget:'100μs local',apps:'qbit-search, HexTerm',status:'✅'},
+    {l:'L2',name:'Commander',budget:'100ms AI',apps:'terminal commands, agent dispatch',status:'✅'},
+    {l:'L3',name:'Quantum',budget:'0.1μs gate',apps:'quantum-gutter, jawta, uvqbit, globe',status:'✅'},
+    {l:'L4',name:'Notepad',budget:'2ms classify',apps:'quantum-notepad, kbatch',status:'✅'},
+    {l:'L5',name:'RNDR + Data',budget:'16ms frame',apps:'qbit-studio, archflow, hexcast',status:'✅'},
+    {l:'L6',name:'Research / Medical',budget:'5ms DICOM',apps:'qbit-medical, freya, research-lab',status:'✅'},
+    {l:'L7',name:'Security / Persona',budget:'5ms persona',apps:'history, search, qa, dashboard',status:'✅'},
+  ];
+  const ilEl=document.getElementById('inspect-iron-line');
+  if(ilEl){ilEl.innerHTML='<div style="display:grid;grid-template-columns:50px 140px 100px 1fr 30px;gap:4px;font-family:var(--font-mono)">'+
+    IRON.map(i=>`<span style="color:var(--accent);font-weight:700">${i.l}</span><span style="color:var(--text)">${i.name}</span><span style="color:var(--purple)">${i.budget}</span><span style="color:var(--muted)">${i.apps}</span><span>${i.status}</span>`).join('')+'</div>';}
+
+  const GLUE=[
+    {mod:'quantum-prefixes.js',lines:'~450',role:'11 symbols, 59 langs, BroadcastChannel sync',ok:true},
+    {mod:'qbit-dac.js',lines:'~725',role:'DAC+ tracks/stripes/complexity, .qbit codec, scanEncode',ok:true},
+    {mod:'qbit-steno.js',lines:'~350',role:'13 Unicode spaces, 19b/line steganographic encoding',ok:true},
+    {mod:'qbit-preflight.js',lines:'~727',role:'Pre-submission validation, 6-check scan pipeline',ok:true},
+    {mod:'history-search-engine.js',lines:'~600',role:'17 connectors, tone analysis, economic signals',ok:true},
+    {mod:'plan-corpus-indexer.js',lines:'~200',role:'.plan.md indexer, category extraction',ok:true},
+    {mod:'sw.js',lines:'~80',role:'Service worker, offline-first cache',ok:true},
+    {mod:'quantum-theme.css',lines:'~120',role:'Shared light/dark theming, --qp-* vars',ok:true},
+    {mod:'Cursor extension',lines:'~433',role:'require() both modules, complexity sidebar',ok:true},
+    {mod:'MCP server',lines:'~718',role:'16 tools (5 DAC+) via node subprocess',ok:true},
+    {mod:'Git hooks',lines:'~306',role:'Node.js batch classifier, fallback Python regex',ok:true},
+  ];
+  const glEl=document.getElementById('inspect-gluelam');
+  if(glEl){glEl.innerHTML='<div style="display:grid;grid-template-columns:180px 60px 1fr 30px;gap:4px;font-family:var(--font-mono)">'+
+    GLUE.map(g=>`<span style="color:var(--accent)">${g.mod}</span><span style="color:var(--purple)">${g.lines}</span><span style="color:var(--muted)">${g.role}</span><span>${g.ok?'✅':'⚠️'}</span>`).join('')+'</div>';}
+
+  const apEl=document.getElementById('inspect-apps');
+  if(apEl){apEl.innerHTML='<div style="display:grid;grid-template-columns:130px 80px 50px 1fr;gap:2px;padding:4px">'+
+    '<span style="color:var(--accent);font-weight:700">App</span><span style="color:var(--accent);font-weight:700">File</span><span style="color:var(--accent);font-weight:700">Layer</span><span style="color:var(--accent);font-weight:700">Lines</span>'+
+    APPS.map(a=>`<span style="color:var(--text)">${a.name}</span><span style="color:var(--muted)">${a.file.replace('.html','')}</span><span style="color:var(--purple)">${a.layer}</span><span style="color:var(--muted)">${a.lines}</span>`).join('')+'</div>';}
+
+  const pfEl=document.getElementById('inspect-perf');
+  if(pfEl){pfEl.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">
+    <div style="background:rgba(63,185,80,0.08);border:1px solid rgba(63,185,80,0.2);border-radius:6px;padding:8px"><div style="color:var(--success);font-weight:700;font-size:14px">3.2ns/line</div><div style="color:var(--muted)">T5-native byte-dispatch (312M/sec)</div></div>
+    <div style="background:rgba(88,166,255,0.08);border:1px solid rgba(88,166,255,0.2);border-radius:6px;padding:8px"><div style="color:var(--accent);font-weight:700;font-size:14px">89.6ns/line</div><div style="color:var(--muted)">Rust standard classifier</div></div>
+    <div style="background:rgba(167,139,250,0.08);border:1px solid rgba(167,139,250,0.2);border-radius:6px;padding:8px"><div style="color:var(--purple);font-weight:700;font-size:14px">~246ns/line</div><div style="color:var(--muted)">JS regex (browser compat)</div></div>
+    <div style="background:rgba(240,136,62,0.08);border:1px solid rgba(240,136,62,0.2);border-radius:6px;padding:8px"><div style="color:#f0883e;font-weight:700;font-size:14px">24ms</div><div style="color:var(--muted)">Cortical loop target</div></div>
+    <div style="background:rgba(248,81,73,0.08);border:1px solid rgba(248,81,73,0.2);border-radius:6px;padding:8px"><div style="color:#f85149;font-weight:700;font-size:14px">337×</div><div style="color:var(--muted)">μgrad warm speedup</div></div>
+    <div style="background:rgba(56,212,255,0.08);border:1px solid rgba(56,212,255,0.2);border-radius:6px;padding:8px"><div style="color:var(--cyan);font-weight:700;font-size:14px">59</div><div style="color:var(--muted)">Languages classified</div></div>
+  </div>`;}
+
+  const trEl=document.getElementById('inspect-trajectory');
+  if(trEl){trEl.innerHTML=`<div style="line-height:1.6">
+    <div style="font-weight:700;color:var(--text);margin-bottom:4px">Current Phase: 4.33 — Quantum 3D Scan Pipeline + Codex</div>
+    <div style="color:var(--muted)">• 38 HTML apps, 7 shared modules, 10 language gold standard build</div>
+    <div style="color:var(--muted)">• .qbit codec: full scan encode/decode with 9 modalities + preflight validation</div>
+    <div style="color:var(--muted)">• Iron Line: all 8 layers operational, BroadcastChannel bus active</div>
+    <div style="color:var(--muted)">• Gluelam: isomorphic browser+Node.js, Cursor plugin + MCP + git hooks</div>
+    <div style="color:var(--muted)">• μgrad: R0-R4 built, R5-R6 planned (cortical loop + DNA parenthood)</div>
+    <div style="color:var(--muted)">• Codex: Bloch astrology chart with quantum gate × zodiac house mapping</div>
+    <div style="color:var(--muted)">• Globe: 7 infrastructure layers, 100+ facilities, IANA/CDN/proxy chain</div>
+    <div style="font-weight:700;color:var(--accent);margin-top:8px">Next: R5 Cortical Loop · Music Video Codec · OTOY/UMG Integration</div>
+  </div>`;}
+
+  new BroadcastChannel('quantum-prefixes').addEventListener('message',e=>{
+    if(e.data?.type==='state'&&e.data.source==='quantum-notepad'){
+      const s=e.data.state;
+      const ts=document.getElementById('inspect-ts');
+      if(ts)ts.textContent=Math.floor(Date.now()/1000)+' (synced)';
+    }
+  });
+})();
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function() {
+    const QP = window.QuantumPrefixes;
+    if (!QP) return;
+    QP.onStateChange(function(source, state) {
+        if (source === 'github-dashboard' || !state) return;
+        console.log('[QP Sync] ' + source + ': ' + state.coverage + '% quantum coverage');
+    });
+    QP.broadcastState('github-dashboard', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {} });
+    QP.requestStateSync();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<script>try{if(window.parent!==window)document.documentElement.classList.add('qp-embed-chrome');}catch(e){}</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Gridlock — mapping &amp; throughline hub</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+<link rel="stylesheet" href="quantum-theme.css">
+<link rel="stylesheet" href="search-staff-bar.css">
+<style>
+html,body{min-height:100%;margin:0;background:var(--qp-bg);color:var(--qp-text);font-family:system-ui,-apple-system,sans-serif;font-size:15px;line-height:1.55;}
+body{display:flex;flex-direction:column;min-height:100vh;min-height:100dvh;}
+.gl-top{
+  position:sticky;top:0;z-index:10;display:flex;align-items:center;justify-content:space-between;gap:12px;
+  min-height:var(--mueee-title-bar-min-height);padding:0 var(--mueee-title-bar-padding-x);box-sizing:border-box;
+  border-bottom:1px solid var(--mueee-logo-bar-border);
+  background:var(--mueee-logo-bar-bg);
+  backdrop-filter:saturate(140%) blur(12px);
+  -webkit-backdrop-filter:saturate(140%) blur(12px);
+}
+.gl-top-lead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;min-width:0;flex:1;}
+.gl-theme-host{display:flex;align-items:center;flex-shrink:0;line-height:1}
+#qp-theme-toggle{position:static!important;top:auto!important;right:auto!important;z-index:auto!important}
+html.qp-embed-chrome #qp-theme-toggle{display:none!important}
+.gl-brand{margin:0;font:800 14px 'SF Mono',ui-monospace,monospace;background:linear-gradient(135deg,#c9a84c,#56d4dd);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.gl-badge{font:600 9px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--qp-text-muted);}
+.gl-main{flex:1 0 auto;max-width:920px;width:100%;margin:0 auto;padding:20px 16px 32px;box-sizing:border-box;}
+#status-bar{
+  display:flex;align-items:center;min-height:22px;background:var(--mueee-status-bar-bg);border-top:1px solid var(--mueee-status-bar-border);
+  padding:0 10px;padding-bottom:max(0px,env(safe-area-inset-bottom));gap:12px;font-size:.5625rem;font-family:ui-monospace,monospace;
+  color:var(--mueee-status-bar-text);flex-shrink:0;box-sizing:border-box;
+}
+#status-bar .val{color:var(--mueee-status-bar-accent);}
+#status-bar .sep{opacity:.85;}
+#status-bar .spacer{flex:1;}
+.gl-hero{border:1px solid var(--qp-border);border-radius:14px;padding:18px 20px;background:var(--qp-bg-secondary);margin-bottom:20px;}
+.gl-hero p{margin:.6em 0 0;color:var(--qp-text-muted);font-size:14px;}
+.gl-section{margin-bottom:18px;border:1px solid var(--qp-border);border-radius:12px;padding:16px 18px;background:var(--qp-bg-secondary);}
+.gl-section h2{margin:0 0 10px;font-size:13px;font-weight:700;color:var(--qp-accent);text-transform:uppercase;letter-spacing:.06em;}
+.gl-section ul{margin:0;padding-left:1.2em;color:var(--qp-text-secondary);}
+.gl-section li{margin:.35em 0;}
+.gl-links{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.gl-links a{
+  display:inline-block;padding:8px 12px;border-radius:8px;border:1px solid var(--qp-border);background:var(--qp-bg-tertiary);
+  color:var(--qp-accent);text-decoration:none;font:600 12px ui-monospace,monospace;
+}
+.gl-links a:hover{border-color:var(--qp-accent);background:var(--qp-bg-hover);}
+.gl-note{font-size:12px;color:var(--qp-text-muted);margin-top:12px;padding-top:12px;border-top:1px solid var(--qp-border);}
+.gl-top-rainbow .r1{background:#c9a84c}.gl-top-rainbow .r2{background:#56d4dd}.gl-top-rainbow .r3{background:#58a6ff}
+.gl-top-rainbow .r4{background:#a78bfa}.gl-top-rainbow .r5{background:#34d399}.gl-top-rainbow .r6{background:#64748b}
+</style>
+</head>
+<body>
+<header class="gl-top mueee-title-bar">
+  <div class="gl-top-lead">
+    <p class="gl-brand">Gridlock</p>
+    <span class="gl-badge">Mapping · throughline · handoff</span>
+  </div>
+  <span data-qp-theme-host class="gl-theme-host" title="Light / dark"></span>
+</header>
+<div class="iron-search-staff" data-iron-search-staff>
+  <form class="iron-search-staff-form" action="search.html" method="get" autocomplete="off">
+    <span class="iron-search-staff-label" title="Iron Line code handoff to Search">Code</span>
+    <select name="model" class="iron-search-staff-model" aria-label="Code depth (Search)">
+      <option value="auto">Auto</option>
+      <option value="fast">Fast</option>
+      <option value="balanced">Balanced</option>
+      <option value="deep">Deep</option>
+      <option value="code">Code</option>
+    </select>
+    <input type="search" name="q" class="iron-search-staff-q" placeholder="Iron Line search…" enterkeyhint="search" />
+    <button type="submit" class="iron-search-staff-go">Search</button>
+  </form>
+</div>
+<div class="rainbow mueee-rainbow gl-top-rainbow" aria-hidden="true"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+<main class="gl-main">
+  <section class="gl-hero">
+    <h1 style="margin:0 0 8px;font-size:18px;font-weight:700;color:var(--qp-text);">One surface for how things connect</h1>
+    <p>
+      Gridlock is the <strong>mapping page</strong>: a place to pin how <strong>search results</strong>, <strong>history blocks</strong>,
+      <strong>layout exports</strong> (GridPad), and <strong>QPU / geographic</strong> context relate—without pretending the wiring is finished.
+      Use it as the narrative home for cross-app throughline while the pipelines land in each app.
+    </p>
+  </section>
+
+  <section class="gl-section">
+    <h2>Throughline spine (canonical)</h2>
+    <p style="margin:0 0 10px;font-size:13px;color:var(--qp-text-secondary);line-height:1.5">
+      One <strong>spool</strong> ties retrieval, Tonnetz funnel, gamepad/μgrad, QPU, rhythm/video, this hub, and Notes — all <strong>AI-capable</strong> via <code>isomorphic-export-facet</code> exports and BroadcastChannels (not a separate “magic AI” stack).
+      Full spec + channel table: <strong><code>plans/gridlock-throughline-spine.plan.md</code></strong> (executable spine — not canvas/Three/Mermaid-as-truth; Charm/Go terminal peers; footer terminal = contrail “ghost note”).
+    </p>
+    <ol style="margin:0;padding-left:1.2em;color:var(--qp-text-secondary);font-size:13px;line-height:1.55">
+      <li><strong>Search</strong> → user data &amp; snippets; <strong>History</strong> → context &amp; lineage.</li>
+      <li><strong>GridPad</strong> — fluid AI boilerplate: infer layout, pull content, blocks + JSON (Framer/Figma/Kimi-class <em>intent</em>).</li>
+      <li><strong>Throughline Lab</strong> (optional) — Tonnetz funnel + <code>throughline-ai</code>.</li>
+      <li><strong>WebGrid / μgrad / kbatch / hexcast</strong> — gamify + live kinetics → <code>hexterm</code>.</li>
+      <li><strong>uvQbit</strong> + <strong>globe</strong> — quantum hub; <strong>Core Race</strong> — governance signal tree.</li>
+      <li><strong>Gridlock</strong> (here) — data handling &amp; mapping.</li>
+      <li><strong>Other tabs</strong> (mueee, launcher, …) — same facet contract.</li>
+      <li><strong>Notes</strong> — column funnel, final handoff.</li>
+    </ol>
+  </section>
+
+  <section class="gl-section">
+    <h2>What it can do (target)</h2>
+    <ul>
+      <li>Show <strong>URL ↔ block ↔ timeline position</strong> links fed from HistorySearch and history graph state (via BroadcastChannel or shared export JSON).</li>
+      <li>Surface <strong>layout ↔ DOM region</strong> mappings from GridPad infer / facet exports next to the same URLs you found in Search.</li>
+      <li>Anchor <strong>QPU nodes</strong> (qbit-globe) to bookmarks, queries, or corpus categories—so map and reading list share one ID space.</li>
+      <li>Hold <strong>preflight / contrail</strong> snapshots for “why this page is wired this way” operator notes (DAC + prefix coverage).</li>
+      <li>Later: live <strong>data-flow hints</strong> (forms, fetch patterns) where HTML or extension capture allows—labeled as heuristic.</li>
+    </ul>
+  </section>
+
+  <section class="gl-section">
+    <h2>Open questions (discussion)</h2>
+    <ul>
+      <li>Single <strong>schema</strong> for a “throughline record” (url, sources[], gridpadDocRef?, historyBlockIds?, qpuFeatureId?) vs per-app IDs only.</li>
+      <li>Whether Gridlock stays <strong>read-mostly</strong> or gains editable “links” rows synced back to History.</li>
+      <li>How much to duplicate vs deep-link to <strong>iron-browser</strong> / <strong>plan-viewer</strong> for long-form provenance.</li>
+      <li>Privacy: only <strong>same-origin</strong> or user-pasted HTML for layout—no silent third-party fetch without explicit action.</li>
+    </ul>
+  </section>
+
+  <section class="gl-section">
+    <h2>Related surfaces</h2>
+    <div class="gl-links">
+      <a href="search.html">Search</a>
+      <a href="history.html">History</a>
+      <a href="pad-datatable.html">GridPad</a>
+      <a href="qbit-globe.html">QPU</a>
+      <a href="uvqbit.html">uvQbit</a>
+      <a href="qbit-core-race.html">Core Race</a>
+      <a href="webgrid-ugrad.html">WebGrid</a>
+      <a href="mueee.html">mueee</a>
+      <a href="notes.html">Notes</a>
+      <a href="throughline-lab.html">Throughline Lab</a>
+    </div>
+    <p class="gl-note">
+      Open inside <code>mueee.html</code> as the Gridlock tab to keep the same chrome as Search / History / QPU / uvQbit / Core Race.
+      <strong>Notes</strong> (<a href="notes.html">notes.html</a>) implements the <strong>column funnel</strong> pattern: 2-column layout + <strong>▶ Funnel</strong> runs cells in row-major order and passes each plain output to the next as <code>prev</code>/<code>funnel</code>—the same throughline idea we want for GridPad stacks and History block chains.
+    </p>
+  </section>
+</main>
+<div id="status-bar" role="status" aria-live="polite">
+  <span>gridlock</span>
+  <span class="sep">|</span>
+  <span>role: <span class="val">mapping-hub</span></span>
+  <span class="spacer"></span>
+  <span id="gl-sb-net">offline</span>
+  <span class="sep">|</span>
+  <span>v1</span>
+</div>
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+(function () {
+  'use strict';
+  function glNet() {
+    var el = document.getElementById('gl-sb-net');
+    if (el) el.textContent = navigator.onLine ? 'online' : 'offline';
+  }
+  glNet();
+  window.addEventListener('online', glNet);
+  window.addEventListener('offline', glNet);
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+})();
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function () {
+  var QP = window.QuantumPrefixes;
+  if (!QP) return;
+  try {
+    QP.onStateChange(function (src, state) {
+      if (src === 'gridlock' || !state) return;
+    });
+    QP.broadcastState('gridlock', {
+      coverage: 0,
+      totalLines: 0,
+      classifiedLines: 0,
+      prefixCounts: {},
+      role: 'mapping-hub'
+    });
+    if (QP.requestStateSync) QP.requestStateSync();
+  } catch (e) {}
+})();
+window.addEventListener('message', function (ev) {
+  try {
+    var d = ev.data;
+    if (!d || d.type !== 'upl-sync-theme') return;
+    if (window.parent === window) return;
+    if (ev.source !== window.parent) return;
+    var th = d.theme === 'light' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', th);
+  } catch (e2) {}
+});
+</script>
+<script src="search-staff-bar.js"></script>
+</body>
+</html>

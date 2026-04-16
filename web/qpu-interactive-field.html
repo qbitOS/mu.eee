@@ -1,0 +1,455 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!-- Multi-cluster isometric QPU field · Interactive Pattern-style proximity · addressable dots/macros · signal flow (no idle Pong) -->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>QPU Interactive Field — world canvas</title>
+<link rel="stylesheet" href="quantum-theme.css">
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{min-height:100%;background:#000;color:#e8ebf0;font-family:system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+body{overflow-x:hidden}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.hud{
+  position:fixed;top:0;left:0;right:0;z-index:100;padding:10px 14px;font:10px ui-monospace,monospace;
+  color:rgba(180,190,210,.55);background:linear-gradient(180deg,rgba(0,0,0,.75),transparent);pointer-events:none;
+}
+.hud b{color:rgba(120,190,255,.9)}
+/* World: cluster grid (Framer Interactive Pattern–style tiling) */
+.world{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:14px;padding:52px 14px 24px;max-width:1900px;margin:0 auto;
+}
+.cluster{
+  position:relative;border-radius:16px;min-height:300px;aspect-ratio:1/1;max-height:min(360px,42vw);
+  border:1px solid rgba(120,170,255,.14);
+  background:radial-gradient(ellipse 90% 70% at 50% 30%,rgba(25,32,48,.95),rgba(4,5,10,.98));
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.04),0 12px 40px rgba(0,0,0,.55);
+  overflow:hidden;
+}
+.cluster .label{
+  position:absolute;top:8px;left:10px;z-index:5;font:600 9px ui-monospace,monospace;letter-spacing:.06em;
+  color:rgba(140,180,255,.45);text-transform:uppercase;
+}
+.cluster-cv{position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+.macro-layer{
+  position:absolute;left:50%;top:48%;transform:translate(-50%,-50%);z-index:3;
+  display:grid;grid-template-columns:repeat(10,1fr);gap:clamp(3px,1.2vw,6px);
+  width:58%;pointer-events:auto;
+}
+.macro-cell{
+  aspect-ratio:1;border-radius:26%;
+  background:rgba(46,50,58,0.22);
+  border:1px solid rgba(255,255,255,.07);
+  cursor:crosshair;
+  transition:background .1s,box-shadow .1s,border-color .1s;
+  -webkit-tap-highlight-color:transparent;
+}
+.macro-cell:hover{background:rgba(56,60,72,0.32)}
+.macro-cell.q-sig{
+  background:rgba(255,255,255,0.38);
+  border-color:rgba(255,255,255,.22);
+  box-shadow:0 0 18px rgba(255,255,255,.32),inset 0 0 12px rgba(255,255,255,.06);
+}
+.macro-cell.q-prox{
+  background:rgba(90,160,255,0.16);
+  border-color:rgba(120,200,255,.18);
+}
+@media (max-width:520px){
+  .cluster{max-height:none;aspect-ratio:auto;min-height:280px}
+  .macro-layer{width:72%}
+}
+</style>
+</head>
+<body>
+<h1 class="visually-hidden">Isometric QPU cluster field with proximity grid</h1>
+<div class="hud">Clusters · <b>move pointer</b> for proximity · <b>click</b> macro / canvas · API: <b>QPUField.pulse</b>(ci,i,j) · <b>QPUField.setDot</b> · <b>QPUField.setMacro</b></div>
+<div class="world" id="world" aria-label="QPU cluster canvas"></div>
+
+<script>
+(function () {
+  'use strict';
+  var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var rafHandle = 0;
+  var DOT = 12;
+  var MACRO = 10;
+  var PAL = ['rgba(255,100,95,0.82)', 'rgba(100,155,255,0.82)', 'rgba(70,210,130,0.82)', 'rgba(240,190,70,0.82)'];
+  var PROX_R = 72;
+  var clusters = [];
+
+  function dotColor(i, j) { return PAL[(i + j * 3) & 3]; }
+
+  function isoPos(i, j, w, h, G) {
+    var pad = 18;
+    var tw = (w - pad * 2) / (G - 1) * 0.52;
+    var th = tw * 0.46;
+    var ox = w * 0.5;
+    var oy = h * 0.14;
+    return { x: ox + (i - j) * tw * 0.92, y: oy + (i + j) * th };
+  }
+
+  function ensureArrays(cl) {
+    var G = cl.G;
+    var j, i;
+    if (!cl.dotSig) {
+      cl.dotSig = [];
+      cl.dotProx = [];
+      for (j = 0; j < G; j++) {
+        cl.dotSig[j] = [];
+        cl.dotProx[j] = [];
+        for (i = 0; i < G; i++) {
+          cl.dotSig[j][i] = 0;
+          cl.dotProx[j][i] = 0;
+        }
+      }
+    }
+  }
+
+  function layoutCluster(cl) {
+    var cv = cl.cv;
+    var rect = cv.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var bw = Math.max(64, Math.floor(rect.width * dpr));
+    var bh = Math.max(64, Math.floor(rect.height * dpr));
+    if (cv.width !== bw || cv.height !== bh) {
+      cv.width = bw;
+      cv.height = bh;
+    }
+    cl.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    cl.w = rect.width;
+    cl.h = rect.height;
+    var w = cl.w;
+    var h = cl.h;
+    var G = cl.G;
+    cl.pos = [];
+    var j, i, p;
+    for (j = 0; j < G; j++) {
+      cl.pos[j] = [];
+      for (i = 0; i < G; i++) {
+        cl.pos[j][i] = isoPos(i, j, w, h, G);
+      }
+    }
+  }
+
+  function drawCluster(cl) {
+    var ctx = cl.ctx;
+    var w = cl.w;
+    var h = cl.h;
+    var G = cl.G;
+    var j, i, p, q, a, b;
+    ctx.clearRect(0, 0, w, h);
+
+    var bg = ctx.createRadialGradient(w * 0.5, h * 0.4, 0, w * 0.5, h * 0.55, w * 0.55);
+    bg.addColorStop(0, 'rgba(88,140,255,0.09)');
+    bg.addColorStop(1, 'transparent');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.strokeStyle = 'rgba(255,220,100,0.35)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(10, h * 0.22);
+    ctx.lineTo(10, h * 0.78);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(w - 10, h * 0.22);
+    ctx.lineTo(w - 10, h * 0.78);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(120,160,255,0.11)';
+    ctx.lineWidth = 5;
+    ctx.globalAlpha = 0.35;
+    ctx.beginPath();
+    ctx.arc(-w * 0.08, h * 0.5, w * 0.55, -0.35, 0.35);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(240,180,80,0.12)';
+    ctx.beginPath();
+    ctx.arc(w * 1.08, h * 0.52, w * 0.52, Math.PI - 0.38, Math.PI + 0.38);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    for (j = 0; j < G; j++) {
+      for (i = 0; i < G; i++) {
+        if (i < G - 1) {
+          p = cl.pos[j][i];
+          q = cl.pos[j][i + 1];
+          ctx.strokeStyle = 'rgba(170,182,205,0.06)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.stroke();
+        }
+        if (j < G - 1) {
+          p = cl.pos[j][i];
+          q = cl.pos[j + 1][i];
+          ctx.beginPath();
+          ctx.moveTo(p.x, p.y);
+          ctx.lineTo(q.x, q.y);
+          ctx.stroke();
+        }
+      }
+    }
+
+    var t = performance.now() * 0.002;
+    for (j = 0; j < G; j++) {
+      for (i = 0; i < G; i++) {
+        p = cl.pos[j][i];
+        var sig = cl.dotSig[j][i];
+        var pr = cl.dotProx[j][i];
+        var amp = Math.min(1, sig + pr * 0.85);
+        var rad = 1.8 + amp * 3.2 + (reduced ? 0 : Math.sin(t + i + j) * 0.15);
+        if (amp > 0.05) {
+          var g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, rad * 4);
+          g.addColorStop(0, 'rgba(255,255,255,' + (0.15 + amp * 0.25) + ')');
+          g.addColorStop(1, 'transparent');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, rad * 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+        ctx.fillStyle = dotColor(i, j);
+        ctx.globalAlpha = 0.35 + amp * 0.65;
+        ctx.fill();
+        ctx.globalAlpha = 1;
+      }
+    }
+
+    var nBar = 16;
+    var bw = w / nBar;
+    for (i = 0; i < nBar; i++) {
+      var ht = 8 + (Math.sin(t * 3 + i * 0.7) * 0.5 + 0.5) * 22;
+      ctx.fillStyle = 'rgba(240,200,80,' + (0.15 + i / nBar * 0.15) + ')';
+      ctx.fillRect(i * bw + 2, h - 28 - ht, bw - 4, ht);
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath();
+    ctx.arc(w - 18, h - 16, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function updateProximity(cl, lx, ly) {
+    var G = cl.G;
+    var j, i, p, d, v;
+    for (j = 0; j < G; j++) {
+      for (i = 0; i < G; i++) {
+        p = cl.pos[j][i];
+        d = Math.hypot(lx - p.x, ly - p.y);
+        v = Math.max(0, 1 - d / PROX_R);
+        cl.dotProx[j][i] = cl.dotProx[j][i] * 0.86 + v * 0.14;
+      }
+    }
+  }
+
+  function decayProximity() {
+    var ci, cl, j, i, G;
+    for (ci = 0; ci < clusters.length; ci++) {
+      cl = clusters[ci];
+      G = cl.G;
+      for (j = 0; j < G; j++) {
+        for (i = 0; i < G; i++) {
+          cl.dotProx[j][i] *= 0.92;
+        }
+      }
+    }
+  }
+
+  function frame() {
+    var ci;
+    decayProximity();
+    for (ci = 0; ci < clusters.length; ci++) {
+      layoutCluster(clusters[ci]);
+      drawCluster(clusters[ci]);
+    }
+    rafHandle = requestAnimationFrame(frame);
+  }
+
+  function macroToDot(cl, mi, mj) {
+    var G = cl.G;
+    var i = clamp(Math.floor((mi + 0.5) / MACRO * G), 0, G - 1);
+    var j = clamp(Math.floor((mj + 0.5) / MACRO * G), 0, G - 1);
+    return { i: i, j: j };
+  }
+
+  function clamp(v, a, b) { return Math.max(a, Math.min(b, v)); }
+
+  function setDot(ci, i, j, on) {
+    var cl = clusters[ci];
+    if (!cl || j < 0 || i < 0 || j >= cl.G || i >= cl.G) return;
+    cl.dotSig[j][i] = on ? 1 : 0;
+  }
+
+  function setMacro(ci, mi, mj, on) {
+    var cl = clusters[ci];
+    if (!cl || !cl.macroEls[mj] || !cl.macroEls[mj][mi]) return;
+    var el = cl.macroEls[mj][mi];
+    if (on) el.classList.add('q-sig'); else el.classList.remove('q-sig');
+    var m = macroToDot(cl, mi, mj);
+    setDot(ci, m.i, m.j, on);
+  }
+
+  function pulseBFS(ci, si, sj, stepMs) {
+    stepMs = stepMs || 55;
+    var cl = clusters[ci];
+    if (!cl) return;
+    var G = cl.G;
+    var dist = [];
+    var j, i, q, cur, c, r, k, di, dj;
+    for (j = 0; j < G; j++) {
+      dist[j] = [];
+      for (i = 0; i < G; i++) dist[j][i] = -1;
+    }
+    q = [[si, sj]];
+    dist[sj][si] = 0;
+    while (q.length) {
+      cur = q.shift();
+      c = cur[0];
+      r = cur[1];
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (off) {
+        di = c + off[0];
+        dj = r + off[1];
+        if (di >= 0 && dj >= 0 && di < G && dj < G && dist[dj][di] < 0) {
+          dist[dj][di] = dist[r][c] + 1;
+          q.push([di, dj]);
+        }
+      });
+    }
+    for (j = 0; j < G; j++) {
+      for (i = 0; i < G; i++) {
+        k = dist[j][i];
+        if (k < 0) continue;
+        setTimeout(function (ii, jj, on) {
+          setDot(ci, ii, jj, on);
+          var mi = clamp(Math.floor((ii + 0.5) / G * MACRO), 0, MACRO - 1);
+          var mj = clamp(Math.floor((jj + 0.5) / G * MACRO), 0, MACRO - 1);
+          setMacro(ci, mi, mj, on);
+        }, k * stepMs, i, j, true);
+        setTimeout(function (ii, jj) {
+          setDot(ci, ii, jj, false);
+          var mi = clamp(Math.floor((ii + 0.5) / G * MACRO), 0, MACRO - 1);
+          var mj = clamp(Math.floor((jj + 0.5) / G * MACRO), 0, MACRO - 1);
+          setMacro(ci, mi, mj, false);
+        }, k * stepMs + 420, i, j);
+      }
+    }
+  }
+
+  function buildWorld() {
+    cancelAnimationFrame(rafHandle);
+    rafHandle = 0;
+    var world = document.getElementById('world');
+    var nCol = Math.max(2, Math.min(5, Math.floor(window.innerWidth / 320)));
+    var n = clamp(Math.ceil(12 / nCol) * nCol, 6, 15);
+    var idx, wrap, lab, cv, macro, mi, mj, row, cell, cl;
+    world.innerHTML = '';
+    clusters = [];
+    for (idx = 0; idx < n; idx++) {
+      wrap = document.createElement('div');
+      wrap.className = 'cluster';
+      lab = document.createElement('div');
+      lab.className = 'label';
+      lab.textContent = 'QPU · ' + (idx < 26 ? String.fromCharCode(65 + idx) : 'C' + idx);
+      cv = document.createElement('canvas');
+      cv.className = 'cluster-cv';
+      macro = document.createElement('div');
+      macro.className = 'macro-layer';
+      cl = {
+        G: DOT,
+        cv: cv,
+        ctx: cv.getContext('2d'),
+        macroEls: [],
+        idx: idx
+      };
+      ensureArrays(cl);
+      for (mj = 0; mj < MACRO; mj++) {
+        row = [];
+        for (mi = 0; mi < MACRO; mi++) {
+          cell = document.createElement('button');
+          cell.type = 'button';
+          cell.className = 'macro-cell';
+          cell.title = 'c' + idx + ' m' + mi + ',' + mj;
+          (function (ci, x, y) {
+            cell.addEventListener('click', function () {
+              var on = !cell.classList.contains('q-sig');
+              setMacro(ci, x, y, on);
+            });
+          }(idx, mi, mj));
+          macro.appendChild(cell);
+          row.push(cell);
+        }
+        cl.macroEls.push(row);
+      }
+      wrap.appendChild(lab);
+      wrap.appendChild(cv);
+      wrap.appendChild(macro);
+      world.appendChild(wrap);
+      clusters.push(cl);
+
+      (function (ci, macroEl, cvEl) {
+        wrap.addEventListener('pointermove', function (e) {
+          var r2 = cvEl.getBoundingClientRect();
+          updateProximity(clusters[ci], e.clientX - r2.left, e.clientY - r2.top);
+          var rm = macroEl.getBoundingClientRect();
+          var lx = e.clientX - rm.left;
+          var ly = e.clientY - rm.top;
+          if (lx < 0 || ly < 0 || lx > rm.width || ly > rm.height) {
+            clusters[ci].macroEls.forEach(function (rr) {
+              rr.forEach(function (el) { el.classList.remove('q-prox'); });
+            });
+            return;
+          }
+          var mx = clamp(Math.floor(lx / rm.width * MACRO), 0, MACRO - 1);
+          var my = clamp(Math.floor(ly / rm.height * MACRO), 0, MACRO - 1);
+          clusters[ci].macroEls.forEach(function (rr, yy) {
+            rr.forEach(function (el, xx) {
+              el.classList.toggle('q-prox', xx === mx && yy === my);
+            });
+          });
+        });
+        wrap.addEventListener('pointerleave', function () {
+          clusters[ci].macroEls.forEach(function (rr) {
+            rr.forEach(function (el) { el.classList.remove('q-prox'); });
+          });
+        });
+      }(idx, macro, cv));
+    }
+    rafHandle = requestAnimationFrame(frame);
+  }
+
+  buildWorld();
+  var resizeT;
+  window.addEventListener('resize', function () {
+    clearTimeout(resizeT);
+    resizeT = setTimeout(buildWorld, 180);
+  });
+
+  window.QPUField = {
+    get clusters() { return clusters; },
+    setDot: setDot,
+    setMacro: setMacro,
+    pulse: pulseBFS,
+    clusterCount: function () { return clusters.length; },
+    rebuild: buildWorld
+  };
+})();
+</script>
+<script>
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function () {
+  try {
+    if (window.QuantumPrefixes && QuantumPrefixes.broadcastState) {
+      QuantumPrefixes.broadcastState('qpu-interactive-field', { app: 'qpu-interactive-field', ts: Date.now() });
+    }
+  } catch (e) {}
+})();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+</script>
+</body>
+</html>

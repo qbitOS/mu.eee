@@ -1,0 +1,863 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<title>uvspeed — QA Walkthrough</title>
+<link rel="manifest" href="manifest.json">
+<style>
+:root {
+    --bg: #0d1117; --bg2: #161b22; --bg3: #21262d; --bg4: #30363d;
+    --border: #30363d; --text: #e6edf3; --muted: #8b949e; --dim: #484f58;
+    --accent: #58a6ff; --green: #3fb950; --yellow: #f0883e; --red: #f85149;
+    --purple: #a78bfa; --cyan: #56d4dd; --pink: #f472b6;
+    --mono: 'SF Mono','Fira Code','JetBrains Mono','Cascadia Code',monospace;
+    --sans: -apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;
+    --radius: 8px; --radius-sm: 5px;
+}
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; }
+html { height:100%; -webkit-text-size-adjust:100%; -moz-text-size-adjust:100%; text-size-adjust:100%; }
+body {
+    height:100%; background:var(--bg); color:var(--text); font-family:var(--sans);
+    font-size:14px; line-height:1.5; overflow:hidden;
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+}
+a { color:var(--accent); text-decoration:none; } a:hover { text-decoration:underline; }
+button { font-family:inherit; cursor:pointer; }
+input,textarea,select { font-family:inherit; }
+
+/* ── Layout ── */
+.app { display:flex; flex-direction:column; height:100vh; height:100dvh; }
+
+/* Header */
+.hdr {
+    background:var(--bg2); border-bottom:1px solid var(--border);
+    padding:6px 12px; display:flex; align-items:center; gap:8px;
+    flex-shrink:0; min-height:44px; flex-wrap:wrap;
+}
+.hdr-title { font-size:.875rem; font-weight:700; white-space:nowrap; display:flex; align-items:center; gap:6px; }
+.hdr-badge { font-size:.5625rem; padding:2px 8px; border-radius:10px; font-weight:600;
+    background:#58a6ff18; border:1px solid #58a6ff44; color:var(--accent); }
+.hdr-nav { display:flex; gap:4px; flex-wrap:wrap; margin-left:auto; }
+.hdr-nav a, .hdr-nav button {
+    padding:3px 8px; border-radius:var(--radius-sm); background:var(--bg3);
+    border:1px solid var(--border); color:var(--muted); font-size:.6875rem;
+    transition:all .15s; text-decoration:none;
+}
+.hdr-nav a:hover, .hdr-nav button:hover { color:var(--accent); border-color:var(--accent); }
+
+/* Progress bar */
+.progress-bar { flex-shrink:0; height:3px; background:var(--bg3); }
+.progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--purple)); transition:width .3s; width:0; }
+
+/* Main split */
+.main { flex:1; display:flex; overflow:hidden; }
+.main-content { flex:1; overflow-y:auto; display:flex; flex-direction:column; }
+.sidebar { width:280px; flex-shrink:0; background:var(--bg2); border-left:1px solid var(--border); overflow-y:auto; display:flex; flex-direction:column; }
+
+/* Stage list (sidebar) */
+.stage-list { flex:1; overflow-y:auto; padding:6px; }
+.stage-item {
+    padding:8px 10px; border-radius:var(--radius-sm); cursor:pointer;
+    border:1px solid transparent; margin-bottom:4px; display:flex; align-items:center; gap:8px;
+    font-size:.75rem; transition:all .15s;
+}
+.stage-item:hover { background:var(--bg3); }
+.stage-item.active { background:var(--bg3); border-color:var(--accent); color:var(--accent); }
+.stage-item.passed { opacity:.7; }
+.stage-item.passed::before { content:''; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--green); flex-shrink:0; }
+.stage-item.active::before { content:''; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0; animation:pulse 1.5s infinite; }
+.stage-item.pending::before { content:''; display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--dim); flex-shrink:0; }
+.stage-item.flagged { border-color:var(--yellow); }
+.stage-item.flagged::before { background:var(--yellow) !important; }
+.stage-badge { margin-left:auto; font-size:.5rem; padding:1px 5px; border-radius:6px; background:var(--bg); border:1px solid var(--border); }
+
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)} }
+
+/* Stage view (main area) */
+.stage-view { flex:1; display:flex; flex-direction:column; padding:0; }
+.stage-header {
+    padding:12px 16px; background:var(--bg2); border-bottom:1px solid var(--border);
+    display:flex; align-items:center; gap:10px; flex-shrink:0; flex-wrap:wrap;
+}
+.stage-num { font-size:1.25rem; font-weight:800; color:var(--accent); font-family:var(--mono); min-width:36px; }
+.stage-title { font-size:1rem; font-weight:600; flex:1; min-width:120px; }
+.stage-meta { font-size:.625rem; color:var(--muted); font-family:var(--mono); }
+
+/* Preview iframe */
+.preview-wrap { flex:1; position:relative; background:#000; min-height:200px; }
+.preview-frame { width:100%; height:100%; border:none; background:#0d1117; }
+.preview-overlay {
+    position:absolute; top:8px; right:8px; display:flex; gap:4px; z-index:10;
+}
+.preview-btn {
+    background:var(--bg2); border:1px solid var(--border); color:var(--muted);
+    padding:4px 8px; border-radius:var(--radius-sm); font-size:.625rem; cursor:pointer;
+}
+.preview-btn:hover { color:var(--accent); border-color:var(--accent); }
+.device-select { background:var(--bg3); border:1px solid var(--border); color:var(--text);
+    padding:3px 6px; border-radius:var(--radius-sm); font-size:.625rem; font-family:var(--mono); }
+
+/* Annotation panel */
+.annot-panel {
+    flex-shrink:0; border-top:1px solid var(--border); background:var(--bg2);
+    max-height:35vh; display:flex; flex-direction:column;
+}
+.annot-header {
+    padding:6px 12px; font-size:.6875rem; font-weight:600; display:flex; align-items:center; gap:8px;
+    border-bottom:1px solid var(--border); flex-shrink:0;
+}
+.annot-tabs { display:flex; gap:2px; }
+.annot-tab {
+    padding:3px 8px; border-radius:var(--radius-sm); font-size:.625rem; cursor:pointer;
+    background:var(--bg3); border:1px solid var(--border); color:var(--muted);
+}
+.annot-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+.annot-body { flex:1; overflow-y:auto; padding:8px 12px; }
+.annot-input-wrap { flex-shrink:0; display:flex; gap:6px; padding:8px 12px; border-top:1px solid var(--border); }
+.annot-input {
+    flex:1; background:var(--bg); border:1px solid var(--border); color:var(--text);
+    padding:6px 10px; border-radius:var(--radius-sm); font-size:.75rem; resize:none;
+    min-height:32px; max-height:80px; font-family:var(--sans);
+}
+.annot-input:focus { outline:none; border-color:var(--accent); }
+.annot-submit {
+    padding:6px 14px; border-radius:var(--radius-sm); background:var(--accent);
+    border:none; color:#fff; font-size:.6875rem; font-weight:600; white-space:nowrap;
+}
+.annot-submit:hover { opacity:.85; }
+.note-item {
+    padding:6px 8px; margin-bottom:4px; border-radius:var(--radius-sm);
+    background:var(--bg); border:1px solid var(--border); font-size:.6875rem;
+    display:flex; flex-direction:column; gap:2px;
+}
+.note-meta { display:flex; gap:6px; font-size:.5625rem; color:var(--muted); font-family:var(--mono); }
+.note-type { padding:1px 5px; border-radius:4px; font-weight:600; font-size:.5rem; }
+.note-type.note { background:#58a6ff22; color:var(--accent); }
+.note-type.bug { background:#f8514922; color:var(--red); }
+.note-type.suggestion { background:#3fb95022; color:var(--green); }
+.note-type.change { background:#f0883e22; color:var(--yellow); }
+
+/* Change order panel */
+.change-order {
+    display:none; flex:1; flex-direction:column; overflow:hidden;
+}
+.change-order.visible { display:flex; }
+.co-list { flex:1; overflow-y:auto; padding:8px; }
+.co-item {
+    padding:8px 10px; margin-bottom:6px; border-radius:var(--radius-sm);
+    background:var(--bg); border:1px solid var(--border); font-size:.6875rem;
+}
+.co-item-head { display:flex; align-items:center; gap:6px; margin-bottom:4px; }
+.co-priority { font-size:.5rem; padding:1px 5px; border-radius:4px; font-weight:700; text-transform:uppercase; }
+.co-priority.high { background:#f8514933; color:var(--red); }
+.co-priority.medium { background:#f0883e33; color:var(--yellow); }
+.co-priority.low { background:#58a6ff22; color:var(--accent); }
+.co-app { font-family:var(--mono); color:var(--purple); }
+.co-actions { display:flex; gap:4px; margin-top:6px; }
+.co-btn { font-size:.5625rem; padding:2px 6px; border-radius:4px; background:var(--bg3);
+    border:1px solid var(--border); color:var(--muted); cursor:pointer; }
+.co-btn:hover { color:var(--accent); }
+
+/* Footer */
+.ftr {
+    flex-shrink:0; background:var(--bg2); border-top:1px solid var(--border);
+    padding:4px 12px; display:flex; align-items:center; gap:8px;
+    font-size:.625rem; color:var(--muted); font-family:var(--mono);
+}
+.ftr-stat { color:var(--text); }
+
+/* ── Responsive ── */
+@media (max-width:768px) {
+    .sidebar { display:none; position:fixed; top:0; left:0; right:0; bottom:0; z-index:100; width:100%; }
+    .sidebar.open { display:flex; }
+    .hdr { padding:4px 8px; min-height:40px; }
+    .hdr-title { font-size:.75rem; }
+    .stage-header { padding:8px 10px; }
+    .annot-panel { max-height:45vh; }
+    .stage-num { font-size:1rem; min-width:28px; }
+    .preview-wrap { min-height:160px; }
+}
+@media (max-width:480px) {
+    .hdr-badge { display:none; }
+    .annot-panel { max-height:50vh; }
+    .stage-header { flex-direction:column; align-items:flex-start; gap:4px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+    <!-- Header -->
+    <div class="hdr">
+        <div class="hdr-title">
+            <span>QA Walkthrough</span>
+            <span class="hdr-badge">v1.0</span>
+            <span class="hdr-badge" id="bridge-status" style="color:var(--muted);border-color:var(--border);">bridge: offline</span>
+        </div>
+        <div class="hdr-nav">
+            <button id="btn-toggle-sidebar" onclick="toggleSidebar()">Stages</button>
+            <button id="btn-change-order" onclick="toggleChangeOrder()">Change Orders <span id="co-count">0</span></button>
+            <button onclick="exportChangeOrders()">Export</button>
+            <button onclick="resetWalkthrough()">Reset</button>
+            <a href="launcher.html">Launcher</a>
+        </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+
+    <!-- Main -->
+    <div class="main">
+        <!-- Stage view -->
+        <div class="main-content">
+            <!-- Stage header -->
+            <div class="stage-header">
+                <span class="stage-num" id="stage-num">01</span>
+                <div style="flex:1;min-width:0;">
+                    <div class="stage-title" id="stage-title">Loading...</div>
+                    <div class="stage-meta" id="stage-meta"></div>
+                </div>
+                <div style="display:flex;gap:4px;">
+                    <button class="preview-btn" onclick="prevStage()" id="btn-prev">Prev</button>
+                    <button class="preview-btn" onclick="passStage()" style="background:var(--green);color:#fff;border-color:var(--green);">Pass</button>
+                    <button class="preview-btn" onclick="flagStage()" style="background:var(--yellow);color:#000;border-color:var(--yellow);">Flag</button>
+                    <button class="preview-btn" onclick="nextStage()" id="btn-next">Next</button>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="preview-wrap" id="preview-wrap">
+                <div class="preview-overlay">
+                    <select class="device-select" id="device-select" onchange="setDevice(this.value)">
+                        <option value="desktop">Desktop</option>
+                        <option value="tablet">Tablet 768px</option>
+                        <option value="mobile">Mobile 390px</option>
+                        <option value="mobile-sm">Mobile 320px</option>
+                    </select>
+                    <button class="preview-btn" onclick="refreshPreview()">Reload</button>
+                    <button class="preview-btn" onclick="openExternal()">Open</button>
+                </div>
+                <iframe class="preview-frame" id="preview-frame" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+            </div>
+
+            <!-- Annotation panel -->
+            <div class="annot-panel">
+                <div class="annot-header">
+                    <span>Annotations</span>
+                    <div class="annot-tabs">
+                        <div class="annot-tab active" data-type="note" onclick="setAnnotType('note',this)">Note</div>
+                        <div class="annot-tab" data-type="bug" onclick="setAnnotType('bug',this)">Bug</div>
+                        <div class="annot-tab" data-type="suggestion" onclick="setAnnotType('suggestion',this)">Suggestion</div>
+                        <div class="annot-tab" data-type="change" onclick="setAnnotType('change',this)">Change Req</div>
+                    </div>
+                    <span style="margin-left:auto;font-size:.5625rem;color:var(--muted);" id="annot-count">0 notes</span>
+                </div>
+                <div class="annot-body" id="annot-body"></div>
+                <div class="annot-input-wrap">
+                    <textarea class="annot-input" id="annot-input" placeholder="Add a note, bug report, or suggestion..." rows="1"></textarea>
+                    <select class="device-select" id="annot-priority" style="width:auto;">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                    <button class="annot-submit" onclick="addAnnotation()">Add</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar: stage list -->
+        <div class="sidebar" id="sidebar">
+            <div style="padding:8px 10px;font-size:.6875rem;font-weight:600;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+                <span>Stages</span>
+                <span style="margin-left:auto;font-size:.5625rem;color:var(--muted);" id="stage-progress">0/0</span>
+                <button class="preview-btn" onclick="toggleSidebar()" style="display:none;" id="btn-close-sidebar">Close</button>
+            </div>
+            <div class="stage-list" id="stage-list"></div>
+            <!-- Change orders below stages -->
+            <div class="change-order" id="change-order-panel">
+                <div style="padding:6px 10px;font-size:.6875rem;font-weight:600;border-top:1px solid var(--border);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;">
+                    Change Orders
+                    <span style="margin-left:auto;font-size:.5625rem;color:var(--muted);" id="co-total">0</span>
+                </div>
+                <div class="co-list" id="co-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="ftr">
+        <span>QA</span>
+        <span style="opacity:.3">|</span>
+        <span id="ftr-current">-</span>
+        <span style="opacity:.3">|</span>
+        <span><span class="ftr-stat" id="ftr-passed">0</span> passed</span>
+        <span><span class="ftr-stat" id="ftr-flagged">0</span> flagged</span>
+        <span><span class="ftr-stat" id="ftr-notes">0</span> notes</span>
+        <span style="flex:1"></span>
+        <span>{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</span>
+    </div>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+(function(){
+'use strict';
+var $ = function(id) { return document.getElementById(id); };
+
+// ══════════════════════════════════════════════════════════════
+//  APP REGISTRY — every app in uvspeed with QA metadata
+// ══════════════════════════════════════════════════════════════
+var APPS = [
+    { id:'launcher',    file:'launcher.html',         name:'Launcher',         icon:'\u{1F680}', cat:'core',    desc:'App launcher hub' },
+    { id:'notepad',     file:'quantum-notepad.html',  name:'Quantum Notepad',  icon:'\u{1F4DD}', cat:'core',    desc:'Main notebook — cells, quantum gutter, terminal' },
+    { id:'terminal',    file:'terminal.html',          name:'HexTerm',          icon:'\u2588',    cat:'core',    desc:'xterm.js terminal with quantum gutter' },
+    { id:'kbatch',      file:'kbatch.html',            name:'KBatch',           icon:'\u2328',    cat:'tools',   desc:'World keyboard analyzer — 15 layouts, StenoEngine' },
+    { id:'hexbench',    file:'hexbench.html',          name:'HexBench',         icon:'\u26A1',    cat:'tools',   desc:'Voltage lab, code editor, node workbench' },
+    { id:'research',    file:'research-lab.html',      name:'Research Lab',     icon:'\u{1F52C}', cat:'tools',   desc:'Markdown research editor with mermaid + preview' },
+    { id:'archflow',    file:'archflow.html',          name:'ArchFlow',         icon:'\u{1F4CA}', cat:'tools',   desc:'n8n-style architecture node visualizer' },
+    { id:'dashboard',   file:'github-dashboard.html',  name:'GitHub Dashboard', icon:'\u{1F4C8}', cat:'tools',   desc:'Repo dashboard — phases, deps, actions' },
+    { id:'gutter',      file:'quantum-gutter.html',    name:'Quantum Gutter',   icon:'\u269B',    cat:'core',    desc:'Prefix system showcase — 3D cube, ML export' },
+    { id:'hexcast',     file:'hexcast.html',           name:'HexCast',          icon:'\u{1F4F9}', cat:'media',   desc:'Video hex broadcast — capture, latency' },
+    { id:'hexcast-send',file:'hexcast-send.html',      name:'HexCast Send',     icon:'\u{1F4F7}', cat:'media',   desc:'Camera to terminal streaming' },
+    { id:'jawta',       file:'jawta-audio.html',       name:'Jawta Audio',      icon:'\u{1F3B5}', cat:'media',   desc:'Spatial audio + Morse + whisper + truth' },
+    { id:'questcast',   file:'questcast.html',         name:'QuestCast',        icon:'\u{1F3AE}', cat:'media',   desc:'Meta Quest broadcast + research' },
+    { id:'freya',       file:'freya.html',             name:'FreyaUnits',       icon:'\u{1F52C}', cat:'tools',   desc:'Galactic converter, calculator, celestial' },
+    { id:'freya-land',  file:'freya-landing.html',     name:'Freya Landing',    icon:'\u{1F30C}', cat:'showcase', desc:'FreyaUnits showcase + roadmap' },
+    { id:'history',     file:'history.html',           name:'History',          icon:'\u231B',    cat:'tools',   desc:'Universal timeline knowledge graph' },
+    { id:'search',      file:'search.html',            name:'Search',           icon:'\u{1F50D}', cat:'tools',   desc:'14-connector universal search PWA' },
+    { id:'blackwell',   file:'blackwell.html',         name:'Blackwell',        icon:'\u{1F9E0}', cat:'tools',   desc:'GPU architecture dashboard' },
+    { id:'sponsor',     file:'sponsor.html',           name:'Sponsor',          icon:'\u2764',    cat:'showcase', desc:'Sponsor page — Rubik\'s cube, tiers' },
+    { id:'numsy',       file:'numsy.html',             name:'Numsy',            icon:'\u{1F4F1}', cat:'media',   desc:'1080x1080 Instagram visual' },
+    { id:'brothernumsy',file:'brothernumsy.html',      name:'Brother Numsy',    icon:'\u{1F3AE}', cat:'media',   desc:'Numsy game variant' },
+    { id:'grid',        file:'grid.html',              name:'Grid',             icon:'\u{1F4F7}', cat:'media',   desc:'Multi-feed grid viewer' },
+    { id:'feed',        file:'feed.html',              name:'Feed',             icon:'\u{1F4F7}', cat:'media',   desc:'Camera feed viewer' },
+];
+
+// ══════════════════════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════════════════════
+var currentStageIndex = 0;
+var annotType = 'note';
+var stages = []; // built from APPS + git changes
+var annotations = {}; // stageId → [{ type, text, priority, ts }]
+var changeOrders = []; // [{ id, stageId, app, text, priority, type, ts, status }]
+var stageStatus = {}; // stageId → 'pending' | 'passed' | 'flagged'
+var changeOrderVisible = false;
+var sidebarOpen = false;
+
+// Load persisted state
+function loadState() {
+    try {
+        var saved = localStorage.getItem('qa-walkthrough-state');
+        if (saved) {
+            var s = JSON.parse(saved);
+            annotations = s.annotations || {};
+            changeOrders = s.changeOrders || [];
+            stageStatus = s.stageStatus || {};
+            currentStageIndex = s.currentStageIndex || 0;
+        }
+    } catch(e) {}
+}
+function saveState() {
+    try {
+        localStorage.setItem('qa-walkthrough-state', JSON.stringify({
+            annotations: annotations,
+            changeOrders: changeOrders,
+            stageStatus: stageStatus,
+            currentStageIndex: currentStageIndex,
+        }));
+    } catch(e) {}
+}
+
+// ══════════════════════════════════════════════════════════════
+//  BUILD STAGES
+// ══════════════════════════════════════════════════════════════
+function buildStages() {
+    stages = APPS.map(function(app, i) {
+        return {
+            id: app.id,
+            index: i,
+            app: app,
+            checklist: [
+                'Page loads without errors',
+                'Mobile viewport scales correctly',
+                'All buttons/controls are tappable',
+                'Dark theme renders properly',
+                'Quantum prefix sync active',
+                'No console errors',
+            ],
+        };
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════════════════════
+function renderStageList() {
+    var list = $('stage-list');
+    var html = '';
+    stages.forEach(function(s, i) {
+        var status = stageStatus[s.id] || 'pending';
+        var noteCnt = (annotations[s.id] || []).length;
+        var cls = status;
+        if (i === currentStageIndex) cls = 'active';
+        else if (status === 'passed' && i < currentStageIndex) cls = 'passed';
+        else if (status === 'flagged') cls = 'flagged';
+        html += '<div class="stage-item ' + cls + '" onclick="goToStage(' + i + ')" data-stage="' + i + '">';
+        html += '<div style="flex:1;min-width:0;">';
+        html += '<div style="font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + s.app.icon + ' ' + s.app.name + '</div>';
+        html += '<div style="font-size:.5625rem;color:var(--muted);">' + s.app.cat + '</div>';
+        html += '</div>';
+        if (noteCnt > 0) html += '<span class="stage-badge">' + noteCnt + '</span>';
+        html += '</div>';
+    });
+    list.innerHTML = html;
+    $('stage-progress').textContent = countPassed() + '/' + stages.length;
+}
+
+function renderCurrentStage() {
+    var s = stages[currentStageIndex];
+    if (!s) return;
+    $('stage-num').textContent = String(currentStageIndex + 1).padStart(2, '0');
+    $('stage-title').textContent = s.app.icon + ' ' + s.app.name;
+    $('stage-meta').textContent = s.app.file + ' \u00B7 ' + s.app.cat + ' \u00B7 ' + s.app.desc;
+    $('ftr-current').textContent = s.app.file;
+    // Load preview
+    var frame = $('preview-frame');
+    var currentSrc = frame.getAttribute('data-src');
+    if (currentSrc !== s.app.file) {
+        frame.src = s.app.file;
+        frame.setAttribute('data-src', s.app.file);
+    }
+    // Update progress
+    var pct = ((currentStageIndex + 1) / stages.length) * 100;
+    $('progress-fill').style.width = pct + '%';
+    // Nav buttons
+    $('btn-prev').disabled = currentStageIndex === 0;
+    $('btn-next').disabled = currentStageIndex === stages.length - 1;
+    // Annotations
+    renderAnnotations();
+    // Stage list active highlight
+    var items = document.querySelectorAll('.stage-item');
+    items.forEach(function(el, i) {
+        el.className = 'stage-item ' + getStageClass(i);
+    });
+    saveState();
+}
+
+function getStageClass(i) {
+    var s = stages[i];
+    if (i === currentStageIndex) return 'active';
+    var status = stageStatus[s.id] || 'pending';
+    if (status === 'flagged') return 'flagged';
+    if (status === 'passed') return 'passed';
+    return 'pending';
+}
+
+function renderAnnotations() {
+    var s = stages[currentStageIndex];
+    var notes = annotations[s.id] || [];
+    var body = $('annot-body');
+    if (notes.length === 0) {
+        body.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.6875rem;padding:16px;">No annotations yet. Add notes, bugs, or change requests below.</div>';
+    } else {
+        var html = '';
+        notes.forEach(function(n, i) {
+            html += '<div class="note-item">';
+            html += '<div class="note-meta">';
+            html += '<span class="note-type ' + n.type + '">' + n.type + '</span>';
+            html += '<span>' + n.priority + '</span>';
+            html += '<span>' + new Date(n.ts).toLocaleTimeString() + '</span>';
+            html += '<span style="margin-left:auto;cursor:pointer;color:var(--red);" onclick="deleteAnnotation(' + i + ')">\u2716</span>';
+            html += '</div>';
+            html += '<div style="margin-top:2px;">' + escHtml(n.text) + '</div>';
+            html += '</div>';
+        });
+        body.innerHTML = html;
+        body.scrollTop = body.scrollHeight;
+    }
+    $('annot-count').textContent = notes.length + ' note' + (notes.length !== 1 ? 's' : '');
+    updateFooterStats();
+}
+
+function renderChangeOrders() {
+    var list = $('co-list');
+    if (changeOrders.length === 0) {
+        list.innerHTML = '<div style="text-align:center;color:var(--muted);font-size:.6875rem;padding:16px;">No change orders yet. Flag stages or add change requests to build the list.</div>';
+    } else {
+        var html = '';
+        changeOrders.forEach(function(co, i) {
+            html += '<div class="co-item">';
+            html += '<div class="co-item-head">';
+            html += '<span class="co-priority ' + co.priority + '">' + co.priority + '</span>';
+            html += '<span class="co-app">' + co.app + '</span>';
+            html += '<span class="note-type ' + co.type + '">' + co.type + '</span>';
+            html += '<span style="margin-left:auto;font-size:.5rem;color:var(--muted);">' + new Date(co.ts).toLocaleDateString() + '</span>';
+            html += '</div>';
+            html += '<div>' + escHtml(co.text) + '</div>';
+            html += '<div class="co-actions">';
+            html += '<button class="co-btn" onclick="resolveChangeOrder(' + i + ')">Resolve</button>';
+            html += '<button class="co-btn" onclick="deleteChangeOrder(' + i + ')">Delete</button>';
+            html += '</div>';
+            html += '</div>';
+        });
+        list.innerHTML = html;
+    }
+    $('co-count').textContent = changeOrders.length;
+    $('co-total').textContent = changeOrders.length;
+}
+
+function updateFooterStats() {
+    $('ftr-passed').textContent = countPassed();
+    $('ftr-flagged').textContent = countFlagged();
+    var totalNotes = 0;
+    Object.values(annotations).forEach(function(arr) { totalNotes += arr.length; });
+    $('ftr-notes').textContent = totalNotes;
+}
+
+function countPassed() {
+    return Object.values(stageStatus).filter(function(s) { return s === 'passed'; }).length;
+}
+function countFlagged() {
+    return Object.values(stageStatus).filter(function(s) { return s === 'flagged'; }).length;
+}
+
+// ══════════════════════════════════════════════════════════════
+//  ACTIONS
+// ══════════════════════════════════════════════════════════════
+window.goToStage = function(i) {
+    currentStageIndex = Math.max(0, Math.min(i, stages.length - 1));
+    renderCurrentStage();
+    renderStageList();
+    // Close sidebar on mobile
+    if (window.innerWidth <= 768) {
+        sidebarOpen = false;
+        $('sidebar').classList.remove('open');
+    }
+};
+
+window.nextStage = function() {
+    if (currentStageIndex < stages.length - 1) {
+        currentStageIndex++;
+        renderCurrentStage();
+        renderStageList();
+    }
+};
+
+window.prevStage = function() {
+    if (currentStageIndex > 0) {
+        currentStageIndex--;
+        renderCurrentStage();
+        renderStageList();
+    }
+};
+
+window.passStage = function() {
+    var s = stages[currentStageIndex];
+    stageStatus[s.id] = 'passed';
+    renderStageList();
+    renderCurrentStage();
+    // Auto-advance
+    if (currentStageIndex < stages.length - 1) {
+        setTimeout(function() { window.nextStage(); }, 300);
+    }
+};
+
+window.flagStage = function() {
+    var s = stages[currentStageIndex];
+    stageStatus[s.id] = 'flagged';
+    // Auto-create change order
+    changeOrders.push({
+        id: 'co_' + Date.now(),
+        stageId: s.id,
+        app: s.app.file,
+        text: 'Flagged during QA — needs review',
+        priority: 'medium',
+        type: 'bug',
+        ts: Date.now(),
+        status: 'open',
+    });
+    renderStageList();
+    renderCurrentStage();
+    renderChangeOrders();
+    saveState();
+};
+
+window.addAnnotation = function() {
+    var input = $('annot-input');
+    var text = input.value.trim();
+    if (!text) return;
+    var s = stages[currentStageIndex];
+    if (!annotations[s.id]) annotations[s.id] = [];
+    var note = {
+        type: annotType,
+        text: text,
+        priority: $('annot-priority').value,
+        ts: Date.now(),
+    };
+    annotations[s.id].push(note);
+    // If it's a change request or bug, auto-add to change orders
+    if (annotType === 'change' || annotType === 'bug') {
+        changeOrders.push({
+            id: 'co_' + Date.now(),
+            stageId: s.id,
+            app: s.app.file,
+            text: text,
+            priority: $('annot-priority').value,
+            type: annotType,
+            ts: Date.now(),
+            status: 'open',
+        });
+        renderChangeOrders();
+    }
+    input.value = '';
+    renderAnnotations();
+    renderStageList();
+    saveState();
+};
+
+window.deleteAnnotation = function(i) {
+    var s = stages[currentStageIndex];
+    if (annotations[s.id]) {
+        annotations[s.id].splice(i, 1);
+        renderAnnotations();
+        renderStageList();
+        saveState();
+    }
+};
+
+window.setAnnotType = function(type, el) {
+    annotType = type;
+    document.querySelectorAll('.annot-tab').forEach(function(t) { t.classList.remove('active'); });
+    el.classList.add('active');
+};
+
+window.resolveChangeOrder = function(i) {
+    changeOrders.splice(i, 1);
+    renderChangeOrders();
+    saveState();
+};
+
+window.deleteChangeOrder = function(i) {
+    changeOrders.splice(i, 1);
+    renderChangeOrders();
+    saveState();
+};
+
+window.toggleChangeOrder = function() {
+    changeOrderVisible = !changeOrderVisible;
+    $('change-order-panel').classList.toggle('visible', changeOrderVisible);
+    renderChangeOrders();
+};
+
+window.toggleSidebar = function() {
+    sidebarOpen = !sidebarOpen;
+    $('sidebar').classList.toggle('open', sidebarOpen);
+};
+
+// ── Device simulation ──
+window.setDevice = function(device) {
+    var wrap = $('preview-wrap');
+    var frame = $('preview-frame');
+    frame.style.width = '100%';
+    frame.style.height = '100%';
+    frame.style.transform = 'none';
+    frame.style.transformOrigin = 'top left';
+    wrap.style.overflow = 'hidden';
+
+    if (device === 'desktop') {
+        // Full width
+        frame.style.maxWidth = 'none';
+    } else if (device === 'tablet') {
+        frame.style.width = '768px';
+        frame.style.height = '1024px';
+        var scale = Math.min(wrap.clientWidth / 768, wrap.clientHeight / 1024, 1);
+        frame.style.transform = 'scale(' + scale + ')';
+        wrap.style.overflow = 'auto';
+    } else if (device === 'mobile') {
+        frame.style.width = '390px';
+        frame.style.height = '844px';
+        var scale2 = Math.min(wrap.clientWidth / 390, wrap.clientHeight / 844, 1);
+        frame.style.transform = 'scale(' + scale2 + ')';
+        wrap.style.overflow = 'auto';
+    } else if (device === 'mobile-sm') {
+        frame.style.width = '320px';
+        frame.style.height = '568px';
+        var scale3 = Math.min(wrap.clientWidth / 320, wrap.clientHeight / 568, 1);
+        frame.style.transform = 'scale(' + scale3 + ')';
+        wrap.style.overflow = 'auto';
+    }
+};
+
+window.refreshPreview = function() {
+    var frame = $('preview-frame');
+    var src = frame.src;
+    frame.src = 'about:blank';
+    setTimeout(function() { frame.src = src; }, 100);
+};
+
+window.openExternal = function() {
+    var s = stages[currentStageIndex];
+    window.open(s.app.file, '_blank');
+};
+
+// ── Export ──
+window.exportChangeOrders = function() {
+    var data = {
+        exportedAt: new Date().toISOString(),
+        source: 'uvspeed-qa-walkthrough',
+        summary: {
+            totalApps: stages.length,
+            passed: countPassed(),
+            flagged: countFlagged(),
+            totalAnnotations: Object.values(annotations).reduce(function(a, b) { return a + b.length; }, 0),
+            totalChangeOrders: changeOrders.length,
+        },
+        changeOrders: changeOrders,
+        annotations: annotations,
+        stageStatus: stageStatus,
+    };
+    // Also build a markdown summary
+    var md = '# QA Walkthrough Report\n\n';
+    md += '**Date:** ' + new Date().toLocaleDateString() + '\n';
+    md += '**Passed:** ' + data.summary.passed + '/' + stages.length + '\n';
+    md += '**Flagged:** ' + data.summary.flagged + '\n';
+    md += '**Change Orders:** ' + changeOrders.length + '\n\n';
+
+    if (changeOrders.length > 0) {
+        md += '## Change Orders\n\n';
+        md += '| Priority | App | Type | Description |\n|---|---|---|---|\n';
+        changeOrders.forEach(function(co) {
+            md += '| ' + co.priority + ' | `' + co.app + '` | ' + co.type + ' | ' + co.text + ' |\n';
+        });
+        md += '\n';
+    }
+
+    // Per-app annotations
+    stages.forEach(function(s) {
+        var notes = annotations[s.id] || [];
+        if (notes.length === 0 && !stageStatus[s.id]) return;
+        md += '### ' + s.app.icon + ' ' + s.app.name + ' (`' + s.app.file + '`)\n';
+        md += '**Status:** ' + (stageStatus[s.id] || 'not reviewed') + '\n\n';
+        notes.forEach(function(n) {
+            md += '- **[' + n.type.toUpperCase() + ' / ' + n.priority + ']** ' + n.text + '\n';
+        });
+        md += '\n';
+    });
+
+    // Download both
+    var jsonBlob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    var mdBlob = new Blob([md], { type: 'text/markdown' });
+    var a1 = document.createElement('a');
+    a1.href = URL.createObjectURL(jsonBlob);
+    a1.download = 'qa-report-' + Date.now() + '.json';
+    a1.click();
+    setTimeout(function() {
+        var a2 = document.createElement('a');
+        a2.href = URL.createObjectURL(mdBlob);
+        a2.download = 'qa-report-' + Date.now() + '.md';
+        a2.click();
+    }, 200);
+};
+
+window.resetWalkthrough = function() {
+    if (!confirm('Reset all QA progress, annotations, and change orders?')) return;
+    annotations = {};
+    changeOrders = [];
+    stageStatus = {};
+    currentStageIndex = 0;
+    saveState();
+    renderStageList();
+    renderCurrentStage();
+    renderChangeOrders();
+};
+
+// ── Keyboard shortcuts ──
+document.addEventListener('keydown', function(e) {
+    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight' || e.key === 'n') window.nextStage();
+    else if (e.key === 'ArrowLeft' || e.key === 'p') window.prevStage();
+    else if (e.key === 'Enter') window.passStage();
+    else if (e.key === 'f') window.flagStage();
+    else if (e.key === 'e') window.exportChangeOrders();
+});
+
+// ── Auto-resize annotation input ──
+$('annot-input').addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = Math.min(this.scrollHeight, 80) + 'px';
+});
+$('annot-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        window.addAnnotation();
+    }
+});
+
+// ── Mobile sidebar toggle ──
+function checkMobile() {
+    var isMobile = window.innerWidth <= 768;
+    $('btn-close-sidebar').style.display = isMobile ? 'block' : 'none';
+    $('btn-toggle-sidebar').style.display = isMobile ? 'block' : '';
+}
+window.addEventListener('resize', checkMobile);
+
+// ── Quantum Bridge health check ──
+function checkBridge() {
+    fetch('http://localhost:8085/api/status').then(function(r) { return r.json(); }).then(function(d) {
+        $('bridge-status').textContent = 'bridge: online';
+        $('bridge-status').style.color = 'var(--green)';
+        $('bridge-status').style.borderColor = 'var(--green)';
+    }).catch(function() {
+        $('bridge-status').textContent = 'bridge: offline';
+        $('bridge-status').style.color = 'var(--muted)';
+        $('bridge-status').style.borderColor = 'var(--border)';
+    });
+}
+
+// Utility
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════════════════════════
+buildStages();
+loadState();
+renderStageList();
+renderCurrentStage();
+renderChangeOrders();
+checkMobile();
+checkBridge();
+setInterval(checkBridge, 30000);
+
+})();
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(function() {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function() {
+    var QP = window.QuantumPrefixes;
+    if (!QP) return;
+    QP.onStateChange(function(source, state) { if (source === 'qa' || !state) return; });
+    QP.broadcastState('qa', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, role: 'qa-walkthrough' });
+    QP.requestStateSync();
+})();
+
+console.log('\u269B uvspeed QA walkthrough');
+console.log('{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}');
+console.log('API: keyboard \u2192 arrows=navigate, enter=pass, f=flag, e=export');
+</script>
+</body>
+</html>

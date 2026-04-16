@@ -1,0 +1,479 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!-- Copyright (c) 2026 qbitOS / ugrad.ai. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Source: https://github.com/qbitOS/uvspeed -->
+<!-- Provenance: ai-created-control-envelope -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>fontlab live</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #fff;
+      --line: #e2e8f0;
+      --ink: #0f172a;
+      --muted: #64748b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Inter, "SF Pro Text", "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      padding: 16px;
+    }
+    .app {
+      width: min(1200px, 98vw);
+      height: 94vh;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--card);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      overflow: hidden;
+    }
+    .head {
+      border-bottom: 1px solid var(--line);
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .head-left { display: flex; flex-direction: column; gap: 4px; }
+    .meta-label {
+      font-size: 11px;
+      line-height: 1;
+      color: #64748b;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .title {
+      margin: 0;
+      font-size: 30px;
+      color: #334155;
+      letter-spacing: -0.01em;
+    }
+    .grid {
+      padding: 14px;
+      display: grid;
+      grid-template-columns: minmax(360px, 1fr) minmax(360px, 1fr);
+      gap: 14px;
+      min-height: 0;
+    }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+      min-height: 0;
+      overflow: auto;
+    }
+    .row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+    .row select, .row button {
+      height: 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      background: #fff;
+      color: #334155;
+      padding: 0 10px;
+      font: 13px/1 Inter, sans-serif;
+    }
+    .row button { cursor: pointer; }
+    .row button:hover { background: #f8fafc; }
+    .row input[type="text"]{
+      height: 34px;
+      border: 1px solid #cbd5e1;
+      border-radius: 10px;
+      background: #fff;
+      color: #334155;
+      padding: 0 10px;
+      font: 13px/1 Inter, sans-serif;
+      min-width: 220px;
+      flex: 1 1 260px;
+    }
+    .txt {
+      width: 100%;
+      min-height: 160px;
+      resize: vertical;
+      border: 1px solid #cbd5e1;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font: 14px/1.45 "SF Mono", Menlo, Consolas, monospace;
+    }
+    .preview {
+      margin-top: 10px;
+      border: 1px dashed #cbd5e1;
+      border-radius: 12px;
+      background: #f8fafc;
+      padding: 12px;
+      min-height: 120px;
+      font-size: 32px;
+      line-height: 1.2;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .summary { font-size: 13px; line-height: 1.55; color: #334155; }
+    .dropzone {
+      border: 1px dashed #93c5fd;
+      background: #f8fbff;
+      color: #1e3a8a;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 12px;
+      line-height: 1.45;
+      margin-bottom: 10px;
+      user-select: none;
+    }
+    .dropzone.active {
+      border-color: #2563eb;
+      background: #eff6ff;
+    }
+    pre {
+      margin: 10px 0 0;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      background: #0b1020;
+      color: #cbd5e1;
+      min-height: 240px;
+      max-height: 420px;
+      overflow: auto;
+      padding: 10px;
+      font: 12px/1.45 "SF Mono", Menlo, Consolas, monospace;
+    }
+    @media (max-width: 980px){ .grid{ grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="head">
+      <div class="head-left">
+        <div class="meta-label">fontlab live v4.0.0</div>
+        <h1 class="title">fontlab live</h1>
+      </div>
+      <div></div>
+    </div>
+    <div class="grid">
+      <div class="card">
+        <div class="row">
+          <select id="target">
+            <option value="qbit_roman_math_core">qbit_roman_math_core</option>
+            <option value="qbit_roman_core">qbit_roman_core</option>
+          </select>
+          <button id="compile" type="button">compile</button>
+          <button id="import-file" type="button">import file</button>
+          <input id="file-input" type="file" accept=".txt,.md,.json,.qjson,.qbit,.qjson.qbit,.html,.js,.ts,.py" style="display:none">
+        </div>
+        <div class="row">
+          <input id="url-input" type="text" placeholder="paste link to text/json/qjson and click import link">
+          <button id="import-url" type="button">import link</button>
+          <button id="export-json" type="button">export .qjson</button>
+          <button id="export-qbit" type="button">export .qjson.qbit</button>
+        </div>
+        <div id="dropzone" class="dropzone">Drop a file or URL here (auto-detect: plain text / JSON snapshot / .qjson.qbit)</div>
+        <textarea id="input" class="txt">A + B = C, ∀x∈R, √x→∞
+The quick brown fox jumps over the lazy dog.</textarea>
+        <div class="preview" id="preview"></div>
+      </div>
+      <div class="card">
+        <div class="summary" id="summary">ready.</div>
+        <pre id="json">{}</pre>
+      </div>
+    </div>
+  </div>
+  <script src="quantum-prefixes.js"></script>
+  <script src="qbit-dac.js"></script>
+  <script src="qbit-steno.js"></script>
+  <script src="qbit-preflight.js"></script>
+  <script src="history-search-engine.js"></script>
+  <script>
+  (function () {
+    'use strict';
+    // ===== QUANTUM PREFIX LIVE SYNC =====
+    try {
+      if (window.QuantumPrefixes && window.QuantumPrefixes.requestStateSync) window.QuantumPrefixes.requestStateSync();
+      if (window.QuantumPrefixes && window.QuantumPrefixes.broadcastState) {
+        window.QuantumPrefixes.broadcastState('fontlab-live', { app: 'fontlab-live', ts: Date.now() });
+      }
+    } catch (_) {}
+    try {
+      var _ironLine = new BroadcastChannel('iron-line');
+      _ironLine.postMessage({ type: 'fontlab-live-ready', source: 'fontlab-live', ts: Date.now() });
+      _ironLine.close();
+    } catch (_) {}
+    try {
+      var _historyBus = new BroadcastChannel('history-search');
+      _historyBus.postMessage({ type: 'fontlab-live-ready', source: 'fontlab-live', ts: Date.now() });
+      _historyBus.close();
+    } catch (_) {}
+    try {
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+    } catch (_) {}
+    var $ = function (id) { return document.getElementById(id); };
+    var input = $('input');
+    var target = $('target');
+    var compileBtn = $('compile');
+    var importFileBtn = $('import-file');
+    var fileInput = $('file-input');
+    var urlInput = $('url-input');
+    var importUrlBtn = $('import-url');
+    var exportJsonBtn = $('export-json');
+    var exportQbitBtn = $('export-qbit');
+    var dropzone = $('dropzone');
+    var preview = $('preview');
+    var summary = $('summary');
+    var json = $('json');
+    var last = null;
+
+    function keyPos(rows) {
+      var pos = {};
+      for (var r = 0; r < rows.length; r++) {
+        var row = rows[r];
+        for (var c = 0; c < row.length; c++) pos[row[c]] = { x: c + r * 0.25, y: r };
+      }
+      pos[' '] = { x: 4.5, y: 3.2 };
+      return pos;
+    }
+    var LAYOUTS = {
+      qwerty: keyPos(['qwertyuiop','asdfghjkl','zxcvbnm']),
+      dvorak: keyPos(['pyfgcrl','aoeuidhtns','qjkxbmwvz']),
+      colemak: keyPos(['qwfpgjluy','arstdhneio','zxcvbkm'])
+    };
+    function strokesFor(text, pos) {
+      var out = [], stroke = [], t = 0, src = String(text || '');
+      for (var i = 0; i < src.length; i++) {
+        var ch = src[i].toLowerCase();
+        if (ch === '\n' || ch === '\r' || ch === ' ') { if (stroke.length > 1) out.push(stroke); stroke = []; t += 16; continue; }
+        var p = pos[ch]; if (!p) continue;
+        stroke.push({ x: p.x * 14, y: p.y * 14, t: t, pressure: Math.min(0.98, 0.42 + ((i % 7) * 0.06)), tiltX: (i % 5) * 3, tiltY: (i % 4) * 2, char: ch });
+        t += 12;
+      }
+      if (stroke.length > 1) out.push(stroke);
+      return out;
+    }
+    function saveFile(filename, text, mime) {
+      var blob = new Blob([String(text || '')], { type: mime || 'text/plain' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(a.href);
+    }
+    function setInfo(msg) {
+      if (!summary) return;
+      summary.innerHTML = String(msg || '');
+    }
+    function looksLikeJson(src) {
+      var t = String(src || '').trim();
+      return !!t && (t[0] === '{' || t[0] === '[');
+    }
+    function applyImportedText(text, sourceLabel) {
+      input.value = String(text || '');
+      run();
+      setInfo('imported from <b>' + sourceLabel + '</b> (auto-detect: plain text)');
+    }
+    function detectAndApply(raw, sourceLabel, allowDecode) {
+      var src = String(raw || '');
+      var label = sourceLabel || 'input';
+      var trimmed = src.trim();
+      if (!trimmed) return false;
+      if (allowDecode !== false && window.qbitCodec && typeof window.qbitCodec.decodeQjson === 'function') {
+        try {
+          if (trimmed.indexOf('quantumGutter') >= 0 || /[\u2000-\u200A]/.test(trimmed)) {
+            var dec = window.qbitCodec.decodeQjson(trimmed, { source: 'fontlab-live-import' });
+            var jsonText = dec && dec.jsonText ? dec.jsonText : '';
+            if (jsonText && jsonText !== trimmed) {
+              return detectAndApply(jsonText, label + ' (decoded qjson.qbit)', false);
+            }
+          }
+        } catch (_e) {}
+      }
+      if (looksLikeJson(trimmed)) {
+        try {
+          var obj = JSON.parse(trimmed);
+          var importedText = null;
+          if (obj && obj.input && typeof obj.input.text === 'string') importedText = obj.input.text;
+          else if (obj && typeof obj.text === 'string') importedText = obj.text;
+          else if (Array.isArray(obj)) importedText = obj.join('\n');
+          if (importedText != null) {
+            input.value = importedText;
+            run();
+            setInfo('imported from <b>' + label + '</b> (auto-detect: JSON payload)');
+            return true;
+          }
+        } catch (_e2) {}
+      }
+      applyImportedText(trimmed, label);
+      return true;
+    }
+    function readFileAsText(file) {
+      return new Promise(function (resolve, reject) {
+        var fr = new FileReader();
+        fr.onload = function () { resolve(String(fr.result || '')); };
+        fr.onerror = function () { reject(new Error('file read error')); };
+        fr.readAsText(file);
+      });
+    }
+    function importFromFile(file) {
+      if (!file) return;
+      readFileAsText(file).then(function (text) {
+        detectAndApply(text, 'file: ' + (file.name || 'unnamed'), true);
+      }).catch(function () {
+        setInfo('failed to import file');
+      });
+    }
+    function importFromUrl(rawUrl) {
+      var url = String(rawUrl || '').trim();
+      if (!url) { setInfo('paste a link first'); return; }
+      fetch(url, { cache: 'no-store' })
+        .then(function (r) {
+          if (!r.ok) throw new Error('fetch failed');
+          return r.text();
+        })
+        .then(function (text) {
+          detectAndApply(text, 'url: ' + url, true);
+        })
+        .catch(function () {
+          setInfo('failed to import from link (CORS or network)');
+        });
+    }
+    function run() {
+      var QC = window.qbitCodec;
+      var txt = String(input.value || '');
+      var tgt = String(target.value || 'qbit_roman_math_core');
+      preview.textContent = txt || '(empty)';
+      if (!QC || !QC.compileFontPack || !QC.liveFontFaceAnalyze) {
+        summary.textContent = 'qbit codec compiler helpers unavailable';
+        return;
+      }
+      var map = {};
+      var ids = Object.keys(LAYOUTS);
+      for (var i = 0; i < ids.length; i++) map[ids[i]] = strokesFor(txt, LAYOUTS[ids[i]]);
+      var pack = QC.compileFontPack({
+        id: 'fontlab-live-pack',
+        name: 'fontlab-live-pack',
+        source: 'fontlab-live',
+        text: txt,
+        language: 'text',
+        fontRef: tgt,
+        layouts: ids,
+        layoutStrokeMap: map
+      }, {
+        source: 'fontlab-live',
+        language: 'text',
+        target: tgt,
+        broadcast: false
+      });
+      var live = QC.liveFontFaceAnalyze({
+        source: 'fontlab-live',
+        text: txt,
+        fontRef: tgt,
+        strokes: map.qwerty || []
+      }, {
+        source: 'fontlab-live',
+        language: 'text',
+        target: tgt,
+        broadcast: false
+      });
+      var cov = (((pack || {}).font || {}).coverage || {});
+      var style = (((live || {}).stroke || {}).style || {});
+      summary.innerHTML =
+        'target: <b>' + tgt + '</b><br>' +
+        'coverage: <b>' + (cov.coveragePct != null ? cov.coveragePct + '%' : 'n/a') + '</b> (' + (cov.supported || 0) + '/' + (cov.required || 0) + ')<br>' +
+        'style: <b>' + (style.label || 'unknown') + '</b> score=' + (style.score != null ? style.score : 'n/a') + '<br>' +
+        'glyphs/layouts: <b>' + (((pack || {}).glyphs || []).length) + '</b> / <b>' + (((pack || {}).layouts || []).length) + '</b>';
+      last = {
+        source: 'fontlab-live',
+        exportedAt: Date.now(),
+        input: { text: txt, target: tgt },
+        pack: {
+          id: (pack || {}).id || null,
+          name: (pack || {}).name || null,
+          pipeline: (pack || {}).pipeline || {},
+          coverage: cov,
+          layouts: (pack || {}).layouts || [],
+          glyphSample: (((pack || {}).glyphs) || []).slice(0, 24)
+        },
+        live: {
+          style: style,
+          strokeMetrics: ((live || {}).stroke || {}).metrics || {},
+          contrail: (live || {}).contrail || {}
+        }
+      };
+      json.textContent = JSON.stringify(last, null, 2);
+    }
+    compileBtn.addEventListener('click', run);
+    input.addEventListener('input', function () { setTimeout(run, 80); });
+    target.addEventListener('change', run);
+    importFileBtn.addEventListener('click', function () { if (fileInput) fileInput.click(); });
+    fileInput.addEventListener('change', function () {
+      var f = fileInput.files && fileInput.files[0];
+      if (f) importFromFile(f);
+      fileInput.value = '';
+    });
+    importUrlBtn.addEventListener('click', function () { importFromUrl(urlInput && urlInput.value); });
+    if (urlInput) {
+      urlInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          importFromUrl(urlInput.value);
+        }
+      });
+    }
+    if (dropzone) {
+      var clearDrop = function () { dropzone.classList.remove('active'); };
+      ['dragenter', 'dragover'].forEach(function (evt) {
+        dropzone.addEventListener(evt, function (e) {
+          e.preventDefault();
+          dropzone.classList.add('active');
+        });
+      });
+      ['dragleave', 'drop'].forEach(function (evt) {
+        dropzone.addEventListener(evt, function (e) {
+          e.preventDefault();
+          clearDrop();
+        });
+      });
+      dropzone.addEventListener('drop', function (e) {
+        var dt = e.dataTransfer;
+        if (!dt) return;
+        if (dt.files && dt.files.length) {
+          importFromFile(dt.files[0]);
+          return;
+        }
+        var uri = dt.getData('text/uri-list') || dt.getData('text/plain');
+        if (uri && /^https?:\/\//i.test(uri.trim())) {
+          importFromUrl(uri.trim());
+          return;
+        }
+        var txt = dt.getData('text/plain');
+        if (txt) detectAndApply(txt, 'drop text', true);
+      });
+    }
+    exportJsonBtn.addEventListener('click', function () {
+      if (!last) run();
+      if (!last) return;
+      saveFile('fontlab-live-' + Date.now() + '.qjson', JSON.stringify(last, null, 2) + '\n', 'application/json');
+    });
+    exportQbitBtn.addEventListener('click', function () {
+      if (!last) run();
+      if (!last) return;
+      if (!(window.qbitCodec && window.qbitCodec.encodeQjson)) return;
+      var encoded = window.qbitCodec.encodeQjson(JSON.stringify(last, null, 2), { source: 'fontlab-live-export' });
+      var out = encoded && encoded.content ? encoded.content : '';
+      if (!out) return;
+      saveFile('fontlab-live-' + Date.now() + '.qjson.qbit', out + '\n', 'text/plain');
+    });
+    run();
+  })();
+  </script>
+</body>
+</html>

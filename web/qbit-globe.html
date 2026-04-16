@@ -1,0 +1,2030 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+<link rel="apple-touch-icon" sizes="192x192" href="../icons/icon-192.png">
+<title>uvspeed — Qbit Globe · Quantum Geographic Codex</title>
+<style>
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+:root {
+    --bg:#0d1117; --bg2:#161b22; --bg3:#21262d; --border:#30363d;
+    --text:#e6edf3; --muted:#8b949e; --accent:#58a6ff; --success:#3fb950;
+    --warn:#f0883e; --error:#f85149; --purple:#a78bfa; --cyan:#56d4dd;
+    --gold:#e2b714; --brass:#c9a84c; --copper:#b87333; --parchment:#2a2218;
+    --mono:'SF Mono','Fira Code','JetBrains Mono',monospace;
+    --sans:-apple-system,'SF Pro Display',BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+    --serif:'Georgia','Palatino Linotype','Book Antiqua',serif;
+    --q0:#ff3838; --q1:#ff8c38; --q2:#ffe138; --q3:#3fb950; --q4:#38a5ff;
+}
+html { scrollbar-width:thin; scrollbar-color:var(--border) var(--bg); }
+body { background:var(--bg); color:var(--text); font-family:var(--sans); font-size:14px; line-height:1.5; height:100vh; overflow:hidden; }
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-track { background:var(--bg); }
+::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+.app { display:flex; flex-direction:column; height:100vh; }
+.rainbow { display:flex; height:3px; width:100%; flex-shrink:0; }
+.rainbow span { flex:1; }
+.r1{background:#ff3838}.r2{background:#ff8c38}.r3{background:#ffe138}.r4{background:#3fb950}.r5{background:#38a5ff}.r6{background:#bc8cff}
+
+/* Header */
+.header { background:var(--bg2); border-bottom:1px solid var(--border); padding:0 16px; display:flex; align-items:center; gap:16px; height:48px; flex-shrink:0; }
+.header .logo { font-family:var(--mono); font-size:13px; font-weight:700; color:var(--gold); white-space:nowrap; }
+.header .logo .sub { color:var(--muted); font-weight:400; }
+.tabs { display:flex; gap:2px; flex:1; overflow-x:auto; }
+.tabs button { background:none; border:none; color:var(--muted); font-family:var(--sans); font-size:12px; font-weight:500; padding:6px 14px; border-radius:6px; cursor:pointer; white-space:nowrap; transition:all .15s; }
+.tabs button:hover { color:var(--text); background:var(--bg3); }
+.tabs button.active { color:var(--accent); background:rgba(88,166,255,.1); }
+.hdr-actions { display:flex; gap:8px; align-items:center; }
+.hdr-actions a, .hdr-actions button { background:var(--bg3); border:1px solid var(--border); color:var(--text); font-size:11px; padding:4px 10px; border-radius:6px; cursor:pointer; font-family:var(--mono); text-decoration:none; transition:all .15s; }
+.hdr-actions a:hover, .hdr-actions button:hover { border-color:var(--accent); color:var(--accent); }
+.theme-toggle { width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; }
+.theme-toggle svg { width:14px; height:14px; fill:currentColor; }
+.theme-toggle:hover { transform:rotate(30deg); }
+
+/* Light theme */
+[data-theme="light"] { --bg:#ffffff; --bg2:#f6f8fa; --bg3:#eaeef2; --border:#d0d7de; --text:#1f2328; --muted:#656d76; --accent:#0969da; --success:#1a7f37; --warn:#9a6700; --error:#f85149; --purple:#8250df; --cyan:#0550ae; --gold:#9a6700; --parchment:#f0ebe0; color-scheme:light; }
+
+/* Main */
+.main { flex:1; overflow:hidden; position:relative; }
+.panel { position:absolute; inset:0; overflow-y:auto; display:none; }
+.panel.active { display:flex; flex-direction:column; }
+.panel canvas { display:block; }
+
+/* Viewer cards */
+.viewer-wrap { display:flex; flex:1; overflow:hidden; }
+.viewer-src { width:320px; flex-shrink:0; background:var(--bg2); border-right:1px solid var(--border); overflow-y:auto; padding:8px 0; }
+.viewer-src .line { display:flex; font-family:var(--mono); font-size:11px; line-height:20px; padding:0 8px; }
+.viewer-src .line:hover { background:var(--bg3); }
+.viewer-src .ln { width:28px; text-align:right; color:var(--muted); flex-shrink:0; margin-right:4px; user-select:none; }
+.viewer-src .pfx { width:24px; flex-shrink:0; font-weight:700; text-align:right; margin-right:6px; }
+.viewer-src .code { flex:1; white-space:pre; overflow-x:hidden; text-overflow:ellipsis; }
+.viewer-cards { flex:1; overflow:auto; padding:16px; display:flex; flex-wrap:wrap; gap:10px; align-content:flex-start; }
+.gcard { background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:12px; width:110px; text-align:center; transition:all .15s; cursor:default; }
+.gcard:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,.4); }
+.gcard .gsym { font-family:var(--mono); font-size:18px; font-weight:800; }
+.gcard .gtgt { font-size:10px; color:var(--muted); margin-top:2px; }
+.gcard .gangle { font-family:var(--mono); font-size:10px; color:var(--cyan); margin-top:2px; }
+.gcard .gprob { font-family:var(--mono); font-size:10px; color:var(--gold); margin-top:4px; padding-top:4px; border-top:1px solid var(--border); }
+.viewer-ctrl { background:var(--bg2); border-bottom:1px solid var(--border); padding:8px 16px; display:flex; gap:8px; align-items:center; flex-shrink:0; }
+.viewer-ctrl select, .viewer-ctrl button { background:var(--bg3); border:1px solid var(--border); color:var(--text); font-size:11px; padding:4px 10px; border-radius:6px; cursor:pointer; font-family:var(--mono); }
+.viewer-ctrl select:focus { outline:none; border-color:var(--accent); }
+.viewer-ctrl .lbl { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; }
+
+/* Codex canvas */
+.codex-wrap { flex:1; position:relative; background:radial-gradient(ellipse at center, #1a1510 0%, #0d1117 70%); }
+[data-theme="light"] .codex-wrap { background:radial-gradient(ellipse at center, #f5f0e5 0%, #f6f8fa 70%); }
+.codex-wrap canvas { position:absolute; inset:0; }
+.codex-controls { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); display:flex; gap:8px; align-items:center; background:rgba(13,17,23,.85); backdrop-filter:blur(8px); border:1px solid var(--border); border-radius:8px; padding:6px 14px; z-index:2; }
+.codex-controls button, .codex-controls input { background:var(--bg3); border:1px solid var(--border); color:var(--text); font-size:11px; padding:4px 10px; border-radius:6px; cursor:pointer; font-family:var(--mono); }
+.codex-controls input[type=range] { width:80px; accent-color:var(--gold); }
+.codex-ticker { position:absolute; bottom:60px; left:50%; transform:translateX(-50%); font-family:var(--mono); font-size:14px; letter-spacing:1px; background:rgba(13,17,23,.8); padding:4px 16px; border-radius:6px; border:1px solid var(--border); z-index:2; white-space:nowrap; }
+
+/* Bloch canvas */
+.bloch-wrap { flex:1; position:relative; background:radial-gradient(ellipse at center, #0f1520 0%, #0d1117 70%); }
+[data-theme="light"] .bloch-wrap { background:radial-gradient(ellipse at center, #edf1f8 0%, #f6f8fa 70%); }
+.bloch-wrap canvas { position:absolute; inset:0; }
+.bloch-controls { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); display:flex; gap:8px; align-items:center; background:rgba(13,17,23,.85); backdrop-filter:blur(8px); border:1px solid var(--border); border-radius:8px; padding:6px 14px; z-index:2; }
+.bloch-controls button { background:var(--bg3); border:1px solid var(--border); color:var(--text); font-size:11px; padding:4px 10px; border-radius:6px; cursor:pointer; font-family:var(--mono); }
+.bloch-controls button:hover { border-color:var(--accent); color:var(--accent); }
+.bloch-info { position:absolute; top:12px; left:12px; font-family:var(--mono); font-size:10px; color:var(--muted); z-index:2; line-height:1.8; }
+
+/* Globe canvas */
+.globe-wrap { flex:1; position:relative; background:radial-gradient(ellipse at center, #0a1628 0%, #0d1117 70%); }
+[data-theme="light"] .globe-wrap { background:radial-gradient(ellipse at center, #e5edf8 0%, #f6f8fa 70%); }
+.globe-wrap canvas { position:absolute; inset:0; }
+.globe-info { position:absolute; top:12px; right:12px; font-family:var(--mono); font-size:10px; color:var(--muted); z-index:2; text-align:right; line-height:1.8; }
+
+/* Map canvas */
+.map-wrap { flex:1; position:relative; background:var(--bg); }
+.map-wrap canvas { position:absolute; inset:0; }
+.map-legend { position:absolute; top:12px; left:12px; font-family:var(--mono); font-size:10px; z-index:2; background:rgba(13,17,23,.85); backdrop-filter:blur(8px); border:1px solid var(--border); border-radius:8px; padding:10px 14px; line-height:2; }
+.map-legend .dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; vertical-align:middle; }
+.map-hover { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); font-family:var(--mono); font-size:11px; color:var(--muted); z-index:2; background:rgba(13,17,23,.8); padding:4px 14px; border-radius:6px; border:1px solid var(--border); white-space:nowrap; }
+
+/* Core Race canvas */
+.core-wrap { flex:1; position:relative; background:radial-gradient(ellipse at center, #0e0a18 0%, #0d1117 60%); overflow:hidden; }
+[data-theme="light"] .core-wrap { background:radial-gradient(ellipse at center, #eae4f4 0%, #f6f8fa 60%); }
+.core-wrap canvas { position:absolute; inset:0; }
+.core-legend { position:absolute; top:12px; left:12px; font-family:var(--mono); font-size:10px; z-index:2; background:rgba(13,17,23,.88); backdrop-filter:blur(8px); border:1px solid var(--border); border-radius:8px; padding:10px 14px; line-height:2.1; max-width:220px; }
+[data-theme="light"] .core-legend { background:rgba(246,248,250,.92); }
+.core-legend .layer-row { display:flex; align-items:center; gap:6px; }
+.core-legend .layer-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.core-legend .layer-label { color:var(--muted); }
+.core-legend .layer-iron { font-weight:600; min-width:36px; }
+.core-hud { position:absolute; top:12px; right:12px; font-family:var(--mono); font-size:10px; color:var(--muted); z-index:2; text-align:right; line-height:1.9; }
+.core-controls { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); display:flex; gap:8px; align-items:center; background:rgba(13,17,23,.85); backdrop-filter:blur(8px); border:1px solid var(--border); border-radius:8px; padding:6px 14px; z-index:2; }
+.core-controls button { background:var(--bg3); border:1px solid var(--border); color:var(--text); font-size:11px; padding:4px 10px; border-radius:6px; cursor:pointer; font-family:var(--mono); }
+.core-controls button:hover { border-color:var(--accent); color:var(--accent); }
+.core-controls input[type=range] { width:80px; accent-color:var(--purple); }
+
+@media(max-width:768px) {
+    .viewer-src { width:200px; }
+    .header { padding:0 8px; gap:8px; }
+    .tabs button { padding:5px 8px; font-size:11px; }
+    .gcard { width:90px; padding:8px; }
+}
+@media(max-width:480px) {
+    .viewer-src { display:none; }
+    .viewer-ctrl select { max-width:140px; }
+}
+/* Embed mode — hide header + rainbow when loaded inside uvQbit */
+.app.embed-mode > .rainbow,
+.app.embed-mode > .header { display: none; }
+.app.embed-mode > .main { height: 100vh; }
+</style>
+</head>
+<body>
+<div class="app">
+<div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+<div class="header">
+    <div class="logo">Qbit Globe <span class="sub">· Quantum Geographic Codex</span></div>
+    <div class="tabs" id="tabs">
+        <button class="active" data-tab="viewer">Viewer</button>
+        <button data-tab="codex">Codex</button>
+        <button data-tab="bloch">Bloch</button>
+        <button data-tab="globe">Globe</button>
+        <button data-tab="map">Map</button>
+        <button data-tab="core">Core Race</button>
+    </div>
+    <div class="hdr-actions">
+        <a href="uvqbit.html" title="Back to uvQbit">uvQbit</a>
+        <button id="btn-export" title="Export QASM">Export</button>
+        <button class="theme-toggle" id="theme-toggle" title="Toggle light/dark mode"><svg class="ico-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><g stroke="currentColor" stroke-width="2" fill="none"><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></g></svg><svg class="ico-moon" viewBox="0 0 24 24" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+    </div>
+</div>
+<div class="main">
+    <!-- VIEWER -->
+    <div class="panel active" id="panel-viewer">
+        <div class="viewer-ctrl">
+            <span class="lbl">Circuit:</span>
+            <select id="v-circuit">
+                <option value="luvukid0">luvukid0 Message</option>
+                <option value="qsphere">beyondBINARY Q-sphere v1</option>
+                <option value="fp-python">Fingerprint: Python</option>
+                <option value="fp-rust">Fingerprint: Rust</option>
+                <option value="fp-js">Fingerprint: JavaScript</option>
+                <option value="cross-qpu">Cross-QPU Experiment</option>
+                <option value="goldie-info">Goldie 121q (ibm_torino)</option>
+            </select>
+            <button id="v-sim">Simulate</button>
+        </div>
+        <div class="viewer-wrap">
+            <div class="viewer-src" id="v-src"></div>
+            <div class="viewer-cards" id="v-cards"></div>
+        </div>
+    </div>
+    <!-- CODEX -->
+    <div class="panel" id="panel-codex">
+        <div class="codex-wrap" id="codex-wrap">
+            <canvas id="cv-codex"></canvas>
+            <div class="codex-ticker" id="codex-ticker"></div>
+            <div class="codex-controls">
+                <button id="cx-pause">Pause</button>
+                <button id="cx-step">Step</button>
+                <button id="cx-reset">Reset</button>
+                <span style="color:var(--muted);font-size:10px;">Speed</span>
+                <input type="range" id="cx-speed" min="0.1" max="3" step="0.1" value="1">
+            </div>
+        </div>
+    </div>
+    <!-- BLOCH -->
+    <div class="panel" id="panel-bloch">
+        <div class="bloch-wrap" id="bloch-wrap">
+            <canvas id="cv-bloch"></canvas>
+            <div class="bloch-info" id="bloch-info"></div>
+            <div class="bloch-controls">
+                <button id="bl-play">Play</button>
+                <button id="bl-step">Step Gate</button>
+                <button id="bl-reset">Reset</button>
+                <button id="bl-toggle">Ideal</button>
+            </div>
+        </div>
+    </div>
+    <!-- GLOBE -->
+    <div class="panel" id="panel-globe">
+        <div class="globe-wrap" id="globe-wrap">
+            <canvas id="cv-globe"></canvas>
+            <div class="globe-info" id="globe-info"></div>
+        </div>
+    </div>
+    <!-- MAP -->
+    <div class="panel" id="panel-map">
+        <div class="map-wrap" id="map-wrap">
+            <canvas id="cv-map"></canvas>
+            <div class="map-legend" id="map-legend"></div>
+            <div class="map-hover" id="map-hover">Hover a point to see quantum coordinates</div>
+        </div>
+    </div>
+    <!-- CORE RACE -->
+    <div class="panel" id="panel-core">
+        <div class="core-wrap" id="core-wrap">
+            <canvas id="cv-core"></canvas>
+            <div class="core-legend" id="core-legend"></div>
+            <div class="core-hud" id="core-hud"></div>
+            <div class="core-controls">
+                <button id="cr-launch">Launch Race</button>
+                <button id="cr-auto" style="border-color:var(--success);color:var(--success)">Auto: ON</button>
+                <button id="cr-reset">Reset</button>
+                <span style="color:var(--muted);font-size:10px">Speed</span>
+                <input type="range" id="cr-speed" min="0.2" max="5" step="0.1" value="1.5">
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script src="qbit-preflight.js"></script>
+<script>
+(function(){
+'use strict';
+var QP = window.QuantumPrefixes;
+var $ = function(id){ return document.getElementById(id); };
+
+// Embed mode detection
+if(location.search.indexOf('embed=1')>=0){
+    document.querySelector('.app').classList.add('embed-mode');
+}
+
+// ━━━━━ Tab Navigation ━━━━━
+var tabBtns = $('tabs').querySelectorAll('button');
+var activeTab = 'viewer';
+tabBtns.forEach(function(btn){
+    btn.addEventListener('click', function(){
+        tabBtns.forEach(function(b){ b.classList.remove('active'); });
+        btn.classList.add('active');
+        document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
+        activeTab = btn.dataset.tab;
+        $('panel-'+activeTab).classList.add('active');
+        if(activeTab==='codex') initCodex();
+        if(activeTab==='bloch') initBloch();
+        if(activeTab==='globe') initGlobe();
+        if(activeTab==='map') initMap();
+        if(activeTab==='core') initCore();
+    });
+});
+
+// ━━━━━ Constants ━━━━━
+var MSG = 'luvukid0FreyaErikaJinxSwillieMrCookieStellaAddieTRE';
+var ALPHA = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';
+var QCOLORS = ['#ff3838','#ff8c38','#ffe138','#3fb950','#38a5ff'];
+var GATE_COLORS = { H:'#569cd6', X:'#f44747', Y:'#3fb950', Z:'#a78bfa', S:'#4ec9b0', T:'#d7ba7d', SX:'#9cdcfe', RZ:'#c586c0', CZ:'#e2b714', M:'#8b949e' };
+var PFX_COLORS = {'n:':'#e2b714','+1:':'#6a9955','-n:':'#c586c0','+0:':'#4ec9b0','0:':'#569cd6','-1:':'#f44747','+n:':'#d7ba7d','+2:':'#9cdcfe','-0:':'#c586c0','+3:':'#ce9178','1:':'#d4d4d4'};
+
+// ━━━━━ QPU Data ━━━━━
+var QPU_RUNS = {
+    run1: { job:'d68soj3e4kfs73d3h37g', shots:1024, probs:{"10000":0.046875,"00000":0.042969,"01000":0.041992,"11000":0.041992,"00110":0.039062,"00010":0.038086,"00001":0.036133,"10010":0.036133,"00011":0.035156,"10100":0.03418,"01110":0.033203,"01101":0.033203,"11010":0.032227,"01010":0.032227,"11100":0.032227,"00100":0.03125,"10110":0.030273,"10101":0.030273,"11001":0.030273,"01100":0.029297,"00111":0.02832,"01011":0.02832,"00101":0.027344,"10011":0.027344,"01111":0.025391,"10001":0.024414,"11101":0.024414,"01001":0.023438,"11110":0.021484,"10111":0.021484,"11011":0.020508,"11111":0.020508} },
+    run2: { job:'d68solpv6o8c73d755h0', shots:1024, probs:{"00100":0.047852,"01000":0.044922,"01011":0.041992,"00101":0.041992,"00010":0.040039,"10000":0.038086,"00110":0.038086,"00011":0.037109,"10010":0.037109,"00000":0.037109,"00001":0.036133,"01001":0.035156,"10001":0.035156,"11001":0.035156,"11111":0.03418,"00111":0.03418,"01100":0.033203,"11010":0.032227,"11101":0.032227,"10110":0.030273,"11000":0.027344,"10011":0.026367,"10101":0.025391,"10100":0.025391,"11011":0.024414,"01010":0.023438,"11110":0.022461,"10111":0.018555,"11100":0.017578,"01101":0.017578,"01111":0.015625,"01110":0.013672} },
+    goldie: { job:'d6co82154hss73b8r0lg', shots:4096, backend:'ibm_torino', qubits:121, gates:1696, depth:134, cost:600, time:8.4,
+        patches:{intro:[90,80,92,99,97,92,97,92,73,51,58],v1a:[85,84,92,95,96,92,93,91,73,25,52],v1b:[33,1,49,46,64,65,94,74,59,24,57],hook:[93,87,100,100,95,96,96,91,90,25,52],v2:[95,85,99,99,93,95,95,92,85,29,53],v2b:[96,87,95,94,96,96,92,95,88,26,53],bridge:[93,85,87,91,95,91,91,55,66,49,73],v3:[92,86,97,94,94,98,99,97,84,24,54],hook2:[96,87,99,99,91,93,91,95,90,32,58],outro1:[77,84,94,97,93,84,90,86,79,29,52],outro2:[96,83,93,98,87,74,84,99,84,39,52]},
+        roles:['src','abs1','abs2','abs3','abs4','ildL','refl','ildR','rfl2','rmL','rmR'],
+        preflight: null }
+};
+
+// ━━━━━ Circuit Library ━━━━━
+var LIB = {};
+LIB['luvukid0'] = 'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[5];\ncreg c[5];\n\nh q[0]; h q[1]; h q[2]; h q[3]; h q[4];\n\nrz(2.6507) q[0]; rz(2.8717) q[1]; rz(2.8962) q[2]; rz(2.8717) q[3]; rz(2.6262) q[4];\nrz(2.5770) q[0]; rz(2.4544) q[1]; rz(1.1781) q[2]; rz(1.7180) q[3]; rz(2.7980) q[4];\n\ncz q[0],q[1]; cz q[1],q[2]; cz q[2],q[3]; cz q[3],q[4]; cz q[0],q[4];\n\nrz(2.4789) q[0]; rz(2.9698) q[1]; rz(2.3808) q[2]; rz(1.6935) q[3]; rz(2.7980) q[4];\nrz(2.5770) q[0]; rz(2.6262) q[1]; rz(2.3808) q[2]; rz(1.8162) q[3]; rz(2.5770) q[4];\n\ncz q[0],q[2]; cz q[1],q[3]; cz q[2],q[4];\n\nrz(2.6998) q[0]; rz(2.9452) q[1]; rz(2.0372) q[2]; rz(2.9207) q[3]; rz(2.5770) q[4];\nrz(2.6507) q[0]; rz(2.6507) q[1]; rz(2.5770) q[2]; rz(2.4789) q[3]; rz(1.8899) q[4];\n\ncz q[0],q[3]; cz q[1],q[4]; cz q[2],q[0];\n\nrz(2.7980) q[0]; rz(1.6444) q[1]; rz(2.7244) q[2]; rz(2.7244) q[3]; rz(2.6262) q[4];\nrz(2.5770) q[0]; rz(2.4789) q[1]; rz(2.0372) q[2]; rz(2.8471) q[3]; rz(2.4789) q[4];\n\ncz q[0],q[1]; cz q[2],q[3]; cz q[3],q[4];\n\nrz(2.6507) q[0]; rz(2.6507) q[1]; rz(2.3808) q[2]; rz(1.5953) q[3]; rz(2.4544) q[4];\nrz(2.4544) q[0]; rz(2.5770) q[1]; rz(2.4789) q[2]; rz(2.0617) q[3]; rz(2.0126) q[4];\n\ncz q[0],q[4]; cz q[1],q[3]; cz q[0],q[2];\n\nrz(1.6935) q[0];\n\nmeasure q[0] -> c[0];\nmeasure q[1] -> c[1];\nmeasure q[2] -> c[2];\nmeasure q[3] -> c[3];\nmeasure q[4] -> c[4];';
+
+LIB['qsphere'] = 'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[5];\ncreg c[5];\n\nrz(1.5708) q[0]; sx q[0]; rz(1.5708) q[0];\nx q[1];\nrz(0.7854) q[2];\nx q[3]; rz(1.5708) q[3];\nx q[4]; rz(3.14159) q[4];\n\ncz q[0],q[1];\ncz q[2],q[3];\ncz q[1],q[2];\n\nrz(1.5708) q[0]; sx q[0];\nrz(0.7854) q[3];\nsx q[4];\n\ncz q[3],q[4];\ncz q[0],q[1];\n\nmeasure q[0] -> c[0];\nmeasure q[1] -> c[1];\nmeasure q[2] -> c[2];\nmeasure q[3] -> c[3];\nmeasure q[4] -> c[4];';
+
+LIB['fp-python'] = 'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[5];\ncreg c[5];\n\nrz(0.7854) q[0];\nx q[2];\nrz(1.5708) q[3]; sx q[3]; rz(1.5708) q[3];\nx q[4];\n\ncz q[0],q[1];\ncz q[2],q[3];\ncz q[1],q[2];\n\nrz(1.2566) q[0];\nrz(0.6283) q[3];\nsx q[2];\n\ncz q[3],q[4];\ncz q[0],q[1];\n\nmeasure q[0] -> c[0];\nmeasure q[1] -> c[1];\nmeasure q[2] -> c[2];\nmeasure q[3] -> c[3];\nmeasure q[4] -> c[4];';
+
+LIB['fp-rust'] = 'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[5];\ncreg c[5];\n\nrz(0.7854) q[1];\nx q[2]; rz(1.5708) q[2];\nrz(1.5708) q[3]; sx q[3]; rz(1.5708) q[3];\nx q[4];\n\ncz q[0],q[1];\ncz q[2],q[3];\ncz q[1],q[2];\n\nrz(1.5708) q[0];\nrz(0.3927) q[3];\nsx q[2];\n\ncz q[3],q[4];\ncz q[0],q[1];\n\nmeasure q[0] -> c[0];\nmeasure q[1] -> c[1];\nmeasure q[2] -> c[2];\nmeasure q[3] -> c[3];\nmeasure q[4] -> c[4];';
+
+LIB['fp-js'] = 'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[5];\ncreg c[5];\n\nrz(0.7854) q[0];\nx q[2];\nrz(1.5708) q[3]; sx q[3]; rz(1.5708) q[3];\nx q[4];\n\ncz q[0],q[1];\ncz q[2],q[3];\ncz q[1],q[2];\n\nrz(0.9425) q[0];\nrz(0.4712) q[3];\nsx q[2];\n\ncz q[3],q[4];\ncz q[0],q[1];\n\nmeasure q[0] -> c[0];\nmeasure q[1] -> c[1];\nmeasure q[2] -> c[2];\nmeasure q[3] -> c[3];\nmeasure q[4] -> c[4];';
+
+LIB['cross-qpu'] = 'OPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[5];\ncreg c[5];\n\nrz(1.5708) q[0]; sx q[0]; rz(1.5708) q[0];\nx q[1];\nrz(0.7854) q[2];\nx q[3]; rz(1.5708) q[3];\nx q[4]; rz(3.14159) q[4];\n\ncz q[0],q[1];\ncz q[2],q[3];\ncz q[1],q[2];\n\nrz(1.5708) q[0]; sx q[0];\nrz(0.7854) q[3];\nsx q[4];\n\ncz q[3],q[4];\ncz q[0],q[1];\n\nmeasure q[0] -> c[0];\nmeasure q[1] -> c[1];\nmeasure q[2] -> c[2];\nmeasure q[3] -> c[3];\nmeasure q[4] -> c[4];';
+
+LIB['goldie-info'] = '// A$AP Rocky "Goldie" — 121q Quantum Acoustic Encoding\n// Backend: ibm_torino (133q Heron r1)\n// Job: d6co82154hss73b8r0lg\n// ISA: 1696 gates (sx:885 rz:191 cz:499 m:121), depth 134\n// 4096 shots, 8.4s QPU time, cost 600 units\n// 11 song sections × 11 qubit roles = 121 qubits\n// Full ISA QASM: circuits/beyondBINARY-heron-goldie-121q-isa-ibm_torino.qasm\n//\nOPENQASM 2.0;\ninclude "qelib1.inc";\nqreg q[133];\ncreg c[121];\n// [121q ISA circuit — 24,850 chars — load from file for simulation]\nmeasure q[112] -> c[0];\nmeasure q[111] -> c[1];\n// ... 119 more measurements ...';
+
+// ━━━━━ QASM Parser ━━━━━
+function parseQASM(src){
+    var lines = src.split('\n'), nq=5, ops=[];
+    lines.forEach(function(raw){
+        var line = raw.replace(/\/\/.*$/,'').trim();
+        if(!line) return;
+        var m;
+        if((m=line.match(/^qreg\s+\w+\[(\d+)\]/))) nq=+m[1];
+        var parts = line.split(';').map(function(s){return s.trim();}).filter(Boolean);
+        parts.forEach(function(p){
+            var m2;
+            if((m2=p.match(/^h\s+\w+\[(\d+)\]/))) ops.push({gate:'H',q:[+m2[1]]});
+            else if((m2=p.match(/^x\s+\w+\[(\d+)\]/))) ops.push({gate:'X',q:[+m2[1]]});
+            else if((m2=p.match(/^y\s+\w+\[(\d+)\]/))) ops.push({gate:'Y',q:[+m2[1]]});
+            else if((m2=p.match(/^z\s+\w+\[(\d+)\]/))) ops.push({gate:'Z',q:[+m2[1]]});
+            else if((m2=p.match(/^s\s+\w+\[(\d+)\]/))) ops.push({gate:'S',q:[+m2[1]]});
+            else if((m2=p.match(/^t\s+\w+\[(\d+)\]/))) ops.push({gate:'T',q:[+m2[1]]});
+            else if((m2=p.match(/^sx\s+\w+\[(\d+)\]/))) ops.push({gate:'SX',q:[+m2[1]]});
+            else if((m2=p.match(/^rz\(([\d.eE+-]+)\)\s+\w+\[(\d+)\]/))) ops.push({gate:'RZ',q:[+m2[2]],param:+m2[1]});
+            else if((m2=p.match(/^cz\s+\w+\[(\d+)\]\s*,\s*\w+\[(\d+)\]/))) ops.push({gate:'CZ',q:[+m2[1],+m2[2]]});
+            else if((m2=p.match(/^measure\s+\w+\[(\d+)\]/))) ops.push({gate:'M',q:[+m2[1]]});
+        });
+    });
+    return {nq:nq,ops:ops,src:src};
+}
+
+// ━━━━━ Minimal Simulator ━━━━━
+function simulate(parsed){
+    var nq=Math.min(parsed.nq,10), dim=1<<nq, sv=[];
+    for(var i=0;i<dim;i++) sv[i]=[0,0];
+    sv[0]=[1,0];
+    var SQRT2=1/Math.sqrt(2);
+    function apply1(fn,t){ var step=1<<t; for(var i=0;i<dim;i+=step*2) for(var j=0;j<step;j++){ var a=sv[i+j],b=sv[i+j+step],r=fn(a,b); sv[i+j]=r[0]; sv[i+j+step]=r[1]; } }
+    parsed.ops.forEach(function(op){
+        if(op.q[0]>=nq||op.gate==='M') return;
+        if(op.gate==='CZ'){ if(op.q[1]>=nq) return; for(var i=0;i<dim;i++) if(((i>>op.q[0])&1)&&((i>>op.q[1])&1)) sv[i]=[-sv[i][0],-sv[i][1]]; }
+        else if(op.gate==='RZ'){ var a=op.param||0,c=Math.cos(a/2),s=Math.sin(a/2),t=op.q[0]; for(var i=0;i<dim;i++){ if(!((i>>t)&1)) sv[i]=[sv[i][0]*c+sv[i][1]*s,sv[i][1]*c-sv[i][0]*s]; else sv[i]=[sv[i][0]*c-sv[i][1]*s,sv[i][1]*c+sv[i][0]*s]; } }
+        else if(op.gate==='H') apply1(function(a,b){return[[(a[0]+b[0])*SQRT2,(a[1]+b[1])*SQRT2],[(a[0]-b[0])*SQRT2,(a[1]-b[1])*SQRT2]];},op.q[0]);
+        else if(op.gate==='X') apply1(function(a,b){return[b,a];},op.q[0]);
+        else if(op.gate==='Y') apply1(function(a,b){return[[-b[1],b[0]],[a[1],-a[0]]];},op.q[0]);
+        else if(op.gate==='Z') apply1(function(a,b){return[a,[-b[0],-b[1]]];},op.q[0]);
+        else if(op.gate==='S') apply1(function(a,b){return[a,[-b[1],b[0]]];},op.q[0]);
+        else if(op.gate==='T'){ var ct=Math.cos(Math.PI/4),st=Math.sin(Math.PI/4); apply1(function(a,b){return[a,[b[0]*ct-b[1]*st,b[0]*st+b[1]*ct]];},op.q[0]); }
+        else if(op.gate==='SX') apply1(function(a,b){return[[(a[0]+b[0]+a[1]-b[1])*.5,(a[1]+b[1]-a[0]+b[0])*.5],[(a[0]+b[0]-a[1]+b[1])*.5,(a[1]+b[1]+a[0]-b[0])*.5]];},op.q[0]);
+    });
+    return {nq:nq,sv:sv};
+}
+
+// ━━━━━ Viewer Tab ━━━━━
+var currentParsed = null, currentSim = null;
+function renderViewer(key){
+    var src = LIB[key] || LIB['luvukid0'];
+    var parsed = parseQASM(src);
+    currentParsed = parsed;
+    var srcEl = $('v-src'), cardsEl = $('v-cards');
+    var lines = src.split('\n');
+    srcEl.innerHTML = '';
+    lines.forEach(function(line,i){
+        var div = document.createElement('div');
+        div.className = 'line';
+        var pfxSym = '', pfxColor = '#8b949e';
+        if(QP){ var cl=QP.classifyLine(line,'qasm'); if(!cl||!cl.sym) cl=QP.classifyLine(line,'c'); if(cl&&cl.sym&&cl.sym!==' '){ pfxSym=cl.sym; pfxColor=PFX_COLORS[cl.sym]||'#8b949e'; } }
+        div.innerHTML = '<span class="ln">'+(i+1)+'</span><span class="pfx" style="color:'+pfxColor+'">'+pfxSym+'</span><span class="code">'+line.replace(/</g,'&lt;')+'</span>';
+        srcEl.appendChild(div);
+    });
+    cardsEl.innerHTML = '';
+    parsed.ops.forEach(function(op,idx){
+        var card = document.createElement('div');
+        card.className = 'gcard';
+        var col = GATE_COLORS[op.gate]||'#8b949e';
+        var label = op.gate;
+        var angle = '';
+        if(op.gate==='RZ'&&op.param!==undefined){
+            var a=op.param;
+            if(Math.abs(a-1.5708)<.01) angle='π/2';
+            else if(Math.abs(a-0.7854)<.01) angle='π/4';
+            else if(Math.abs(a-3.14159)<.01) angle='π';
+            else angle=a.toFixed(3);
+        }
+        var tgt = op.q.map(function(q){return 'q'+q;}).join(',');
+        card.innerHTML = '<div class="gsym" style="color:'+col+'">'+label+'</div><div class="gtgt">'+tgt+'</div>'+(angle?'<div class="gangle">'+angle+'</div>':'')+'<div class="gprob">Gate '+(idx+1)+'</div>';
+        card.style.borderLeftColor = col;
+        card.style.borderLeftWidth = '3px';
+        cardsEl.appendChild(card);
+    });
+}
+function runViewerSim(){
+    if(!currentParsed) return;
+    var result = simulate(currentParsed);
+    currentSim = result;
+    var cards = $('v-cards').querySelectorAll('.gcard');
+    var dim = result.sv.length;
+    var probs = result.sv.map(function(a){return a[0]*a[0]+a[1]*a[1];});
+    var maxP = Math.max.apply(null,probs);
+    cards.forEach(function(card,idx){
+        var probEl = card.querySelector('.gprob');
+        if(probEl){
+            var topStates = [];
+            for(var i=0;i<dim;i++) if(probs[i]>0.01) topStates.push({s:i,p:probs[i]});
+            topStates.sort(function(a,b){return b.p-a.p;});
+            var top = topStates.slice(0,3).map(function(s){ var b=s.s.toString(2); while(b.length<result.nq) b='0'+b; return '|'+b+'⟩ '+(s.p*100).toFixed(0)+'%'; }).join(' ');
+            probEl.textContent = top || 'Gate '+(idx+1);
+            probEl.style.color = 'var(--gold)';
+        }
+    });
+}
+$('v-circuit').addEventListener('change', function(){ renderViewer(this.value); });
+$('v-sim').addEventListener('click', function(){
+    var key = $('v-circuit').value;
+    var src = LIB[key] || LIB['luvukid0'];
+    if(window.QbitPreflight){
+        var backend = key.indexOf('goldie')>=0 ? 'ibm_torino' : 'cpu_simulator';
+        var report = QbitPreflight.preflight(src, backend, {shots: key.indexOf('goldie')>=0 ? 4096 : 1024});
+        if(report.verdict === 'ABORT'){
+            var cardsEl = $('v-cards');
+            cardsEl.innerHTML = QbitPreflight.formatReportHTML(report);
+            QbitPreflight.recordOutcome(report, 'aborted');
+            return;
+        }
+        QbitPreflight.recordOutcome(report, 'pass');
+    }
+    runViewerSim();
+});
+
+// ━━━━━ Da Vinci Codex ━━━━━
+var codexInited = false, codexPaused = false, codexSpeed = 1, codexProgress = 0, codexAnimId = 0;
+var GOLDEN = Math.PI*(3-Math.sqrt(5));
+
+function initCodex(){
+    if(codexInited) return;
+    codexInited = true;
+    var cvs = $('cv-codex'), wrap = $('codex-wrap');
+    var ctx = cvs.getContext('2d');
+    var ticker = $('codex-ticker');
+
+    var msgPath = [];
+    for(var i=0;i<MSG.length;i++){ var idx=ALPHA.indexOf(MSG[i]); if(idx>=0) msgPath.push(idx); }
+
+    function resize(){ var r=wrap.getBoundingClientRect(); var dpr=devicePixelRatio||1; cvs.width=r.width*dpr; cvs.height=r.height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    resize(); window.addEventListener('resize', resize);
+
+    $('cx-pause').addEventListener('click', function(){ codexPaused=!codexPaused; this.textContent=codexPaused?'Play':'Pause'; });
+    $('cx-step').addEventListener('click', function(){ codexProgress=(codexProgress+1)%MSG.length; });
+    $('cx-reset').addEventListener('click', function(){ codexProgress=0; });
+    $('cx-speed').addEventListener('input', function(){ codexSpeed=+this.value; });
+
+    function drawCodex(){
+        codexAnimId = requestAnimationFrame(drawCodex);
+        if(activeTab!=='codex') return;
+        if(!codexPaused) codexProgress += 0.008*codexSpeed;
+        if(codexProgress>=MSG.length) codexProgress -= MSG.length;
+
+        var r = wrap.getBoundingClientRect();
+        var W=r.width, H=r.height, cx=W/2, cy=H/2;
+        var R = Math.min(W,H)*0.42;
+        ctx.clearRect(0,0,W,H);
+
+        // Parchment background glow
+        var bg = ctx.createRadialGradient(cx,cy,0,cx,cy,R*1.3);
+        bg.addColorStop(0,'rgba(42,34,24,0.4)');
+        bg.addColorStop(0.7,'rgba(26,21,16,0.2)');
+        bg.addColorStop(1,'transparent');
+        ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+        // Vitruvian reference circle
+        ctx.strokeStyle='rgba(201,168,76,0.06)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.arc(cx,cy,R*0.55,0,Math.PI*2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx,cy,R*0.35,0,Math.PI*2); ctx.stroke();
+
+        var currentIdx = Math.floor(codexProgress)%MSG.length;
+        var frac = codexProgress - Math.floor(codexProgress);
+        var targetAlphaIdx = msgPath[currentIdx];
+        var targetAngle = -(targetAlphaIdx/ALPHA.length)*Math.PI*2 + Math.PI/2;
+
+        // Outer ring: alphabet characters (rotates to align current char at top)
+        var outerR = R;
+        var outerRotation = targetAngle - frac*(msgPath[(currentIdx+1)%MSG.length]/ALPHA.length*Math.PI*2 - targetAlphaIdx/ALPHA.length*Math.PI*2);
+        ctx.save();
+        for(var i=0;i<ALPHA.length;i++){
+            var a = (i/ALPHA.length)*Math.PI*2 + outerRotation;
+            var px = cx + Math.cos(a)*outerR;
+            var py = cy + Math.sin(a)*outerR;
+            var isActive = (i===targetAlphaIdx);
+            var isInMsg = MSG.indexOf(ALPHA[i])>=0;
+
+            // Medallion
+            ctx.beginPath(); ctx.arc(px,py,isActive?14:10,0,Math.PI*2);
+            if(isActive){
+                ctx.fillStyle='rgba(201,168,76,0.3)'; ctx.fill();
+                ctx.strokeStyle='#c9a84c'; ctx.lineWidth=2; ctx.stroke();
+                var glow=ctx.createRadialGradient(px,py,0,px,py,22);
+                glow.addColorStop(0,'rgba(201,168,76,0.3)');
+                glow.addColorStop(1,'transparent');
+                ctx.fillStyle=glow; ctx.fillRect(px-22,py-22,44,44);
+            } else {
+                ctx.fillStyle=isInMsg?'rgba(163,113,247,0.15)':'rgba(48,54,61,0.3)'; ctx.fill();
+                ctx.strokeStyle=isInMsg?'rgba(163,113,247,0.4)':'rgba(48,54,61,0.5)'; ctx.lineWidth=1; ctx.stroke();
+            }
+            ctx.fillStyle=isActive?'#c9a84c':isInMsg?'#a371f7':'#484f58';
+            ctx.font=(isActive?'bold 13px':'11px')+' '+getComputedStyle(document.body).getPropertyValue('--serif');
+            ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(ALPHA[i],px,py);
+        }
+        ctx.restore();
+
+        // Middle ring: Rz angles
+        var midR = R*0.7;
+        ctx.strokeStyle='rgba(197,134,192,0.1)'; ctx.lineWidth=0.5;
+        ctx.beginPath(); ctx.arc(cx,cy,midR,0,Math.PI*2); ctx.stroke();
+
+        var charCode = MSG.charCodeAt(currentIdx);
+        var rzAngle = (charCode/128)*Math.PI;
+        var rzDisplayAngle = -rzAngle + Math.PI/2;
+
+        for(var i=0;i<12;i++){
+            var a=(i/12)*Math.PI*2 - Math.PI/2;
+            var px=cx+Math.cos(a)*midR;
+            var py=cy+Math.sin(a)*midR;
+            var angleVal = (i/12)*Math.PI*2;
+            ctx.fillStyle='rgba(197,134,192,0.3)';
+            ctx.font='9px '+getComputedStyle(document.body).getPropertyValue('--mono');
+            ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(angleVal.toFixed(2),px,py);
+        }
+        // Active Rz marker
+        var rzPx = cx+Math.cos(rzDisplayAngle)*midR;
+        var rzPy = cy+Math.sin(rzDisplayAngle)*midR;
+        ctx.beginPath(); ctx.arc(rzPx,rzPy,6,0,Math.PI*2);
+        ctx.fillStyle='rgba(197,134,192,0.5)'; ctx.fill();
+        ctx.strokeStyle='#c586c0'; ctx.lineWidth=1.5; ctx.stroke();
+        ctx.fillStyle='#c586c0'; ctx.font='bold 8px '+getComputedStyle(document.body).getPropertyValue('--mono');
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(rzAngle.toFixed(2),rzPx,rzPy);
+
+        // Inner ring: Bloch coordinates / geographic mapping
+        var innerR = R*0.4;
+        ctx.strokeStyle='rgba(86,212,221,0.1)'; ctx.lineWidth=0.5;
+        ctx.beginPath(); ctx.arc(cx,cy,innerR,0,Math.PI*2); ctx.stroke();
+
+        var qi = currentIdx%5;
+        var lat = 25+(qi/4)*24;
+        var accPhase = rzAngle*2;
+        var lon = -125+(accPhase/(2*Math.PI))*58;
+        var geoAngle = (lon+125)/58*Math.PI*2 - Math.PI/2;
+        var gPx = cx+Math.cos(geoAngle)*innerR;
+        var gPy = cy+Math.sin(geoAngle)*innerR;
+        ctx.beginPath(); ctx.arc(gPx,gPy,5,0,Math.PI*2);
+        ctx.fillStyle='rgba(86,212,221,0.4)'; ctx.fill();
+        ctx.strokeStyle='#56d4dd'; ctx.lineWidth=1.5; ctx.stroke();
+        ctx.fillStyle='#56d4dd'; ctx.font='8px '+getComputedStyle(document.body).getPropertyValue('--mono');
+        ctx.fillText(lat.toFixed(1)+'N',gPx,gPy-10);
+        ctx.fillText(Math.abs(lon).toFixed(1)+'W',gPx,gPy+12);
+
+        // Connecting lines between rings (entanglement arcs)
+        ctx.strokeStyle='rgba(226,183,20,0.15)'; ctx.lineWidth=0.5; ctx.setLineDash([3,4]);
+        var outerAngle = (targetAlphaIdx/ALPHA.length)*Math.PI*2 + outerRotation;
+        ctx.beginPath();
+        ctx.moveTo(cx+Math.cos(outerAngle)*outerR*0.85, cy+Math.sin(outerAngle)*outerR*0.85);
+        ctx.lineTo(rzPx,rzPy);
+        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(rzPx,rzPy); ctx.lineTo(gPx,gPy); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Center info
+        ctx.fillStyle='#c9a84c'; ctx.font='bold 20px '+getComputedStyle(document.body).getPropertyValue('--serif');
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText(MSG[currentIdx],cx,cy-8);
+        ctx.fillStyle='#8b949e'; ctx.font='10px '+getComputedStyle(document.body).getPropertyValue('--mono');
+        ctx.fillText('q'+qi+' · code '+charCode+' · Rz '+rzAngle.toFixed(4),cx,cy+12);
+        ctx.fillText(lat.toFixed(1)+'°N  '+Math.abs(lon).toFixed(1)+'°W',cx,cy+26);
+
+        // Ticker
+        var display='';
+        for(var i=0;i<MSG.length;i++){
+            if(i===currentIdx) display+='<span style="color:#c9a84c;font-weight:bold;font-size:1.1em">'+MSG[i]+'</span>';
+            else display+='<span style="color:#484f58">'+MSG[i]+'</span>';
+        }
+        ticker.innerHTML=display;
+    }
+    drawCodex();
+}
+
+// ━━━━━ Bloch Sphere — Animated 5-Qubit Playback ━━━━━
+var blochInited=false, blochPlaying=false, blochGateIdx=0, blochShowQPU=false, blochAnimId=0;
+var blochRotX=-0.3, blochRotY=0, blochDrag=false, blochLX=0, blochLY=0;
+var qubitTrails=[[],[],[],[],[]];
+
+function initBloch(){
+    if(blochInited) return;
+    blochInited=true;
+    var cvs=$('cv-bloch'), wrap=$('bloch-wrap');
+    var ctx=cvs.getContext('2d');
+
+    function resize(){ var r=wrap.getBoundingClientRect(); var dpr=devicePixelRatio||1; cvs.width=r.width*dpr; cvs.height=r.height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    resize(); window.addEventListener('resize',resize);
+
+    wrap.addEventListener('pointerdown',function(e){blochDrag=true;blochLX=e.clientX;blochLY=e.clientY;});
+    window.addEventListener('pointermove',function(e){if(!blochDrag)return;blochRotY+=(e.clientX-blochLX)*0.008;blochRotX+=(e.clientY-blochLY)*0.008;blochRotX=Math.max(-Math.PI/2,Math.min(Math.PI/2,blochRotX));blochLX=e.clientX;blochLY=e.clientY;});
+    window.addEventListener('pointerup',function(){blochDrag=false;});
+
+    $('bl-play').addEventListener('click',function(){blochPlaying=!blochPlaying;this.textContent=blochPlaying?'Pause':'Play';});
+    $('bl-step').addEventListener('click',function(){if(currentParsed)blochGateIdx=Math.min(blochGateIdx+1,currentParsed.ops.length);});
+    $('bl-reset').addEventListener('click',function(){blochGateIdx=0;qubitTrails=[[],[],[],[],[]];});
+    $('bl-toggle').addEventListener('click',function(){blochShowQPU=!blochShowQPU;this.textContent=blochShowQPU?'QPU':'Ideal';});
+
+    function rot3d(x,y,z){
+        var x1=x*Math.cos(blochRotY)-z*Math.sin(blochRotY);
+        var z1=x*Math.sin(blochRotY)+z*Math.cos(blochRotY);
+        var y1=y*Math.cos(blochRotX)-z1*Math.sin(blochRotX);
+        var z2=y*Math.sin(blochRotX)+z1*Math.cos(blochRotX);
+        return[x1,y1,z2];
+    }
+    function proj(x,y,z,W,H){
+        var r=rot3d(x,y,z);
+        var f=2.5/(4+r[2]);
+        var s=Math.min(W,H)*0.35;
+        return{x:W/2+r[0]*s*f, y:H/2+r[1]*s*f, z:r[2], s:f};
+    }
+
+    function getQubitBloch(sv,nq,qi){
+        var dim=sv.length;
+        var a00=[0,0],a11=[0,0],a01=[0,0];
+        for(var i=0;i<dim;i++){
+            var bit=(i>>qi)&1;
+            var re=sv[i][0],im=sv[i][1];
+            var p=re*re+im*im;
+            if(bit===0){ a00[0]+=p; var j=i|(1<<qi); a01[0]+=re*sv[j][0]+im*sv[j][1]; a01[1]+=im*sv[j][0]-re*sv[j][1]; }
+            else a11[0]+=p;
+        }
+        return{x:2*a01[0], y:2*a01[1], z:a00[0]-a11[0]};
+    }
+
+    var stepTimer=0;
+    function drawBloch(){
+        blochAnimId=requestAnimationFrame(drawBloch);
+        if(activeTab!=='bloch') return;
+        if(!blochDrag) blochRotY+=0.003;
+
+        if(blochPlaying&&currentParsed){
+            stepTimer+=0.016;
+            if(stepTimer>0.3){ stepTimer=0; blochGateIdx=Math.min(blochGateIdx+1,currentParsed.ops.length); }
+        }
+
+        var r=wrap.getBoundingClientRect();
+        var W=r.width,H=r.height;
+        ctx.clearRect(0,0,W,H);
+
+        // Background
+        var bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,W*0.5);
+        bg.addColorStop(0,'rgba(15,21,32,0.9)'); bg.addColorStop(1,'rgba(13,17,23,0.95)');
+        ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+        // Wireframe sphere
+        var sR=Math.min(W,H)*0.35;
+        ctx.strokeStyle='rgba(48,54,61,0.3)'; ctx.lineWidth=0.5;
+        for(var lat=1;lat<=5;lat++){
+            var th=(lat/6)*Math.PI, rr=Math.sin(th), yc=Math.cos(th);
+            ctx.beginPath();
+            for(var a=0;a<=48;a++){ var ph=(a/48)*Math.PI*2; var p=proj(rr*Math.cos(ph),yc,rr*Math.sin(ph),W,H); a===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
+            ctx.stroke();
+        }
+        for(var lon=0;lon<8;lon++){
+            var ph=(lon/8)*Math.PI*2;
+            ctx.beginPath();
+            for(var a=0;a<=32;a++){ var th=(a/32)*Math.PI; var p=proj(Math.sin(th)*Math.cos(ph),Math.cos(th),Math.sin(th)*Math.sin(ph),W,H); a===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
+            ctx.stroke();
+        }
+
+        // Axis labels
+        var pN=proj(0,-1,0,W,H), pS=proj(0,1,0,W,H), pX=proj(1,0,0,W,H);
+        ctx.fillStyle='#484f58'; ctx.font='10px '+getComputedStyle(document.body).getPropertyValue('--mono'); ctx.textAlign='center';
+        ctx.fillText('|0⟩',pN.x,pN.y-10);
+        ctx.fillText('|1⟩',pS.x,pS.y+14);
+        ctx.fillText('+X',pX.x+12,pX.y);
+
+        // Simulate up to current gate
+        if(currentParsed){
+            var partialParsed = {nq:currentParsed.nq, ops:currentParsed.ops.slice(0,blochGateIdx)};
+            var result = simulate(partialParsed);
+
+            for(var qi=0;qi<Math.min(result.nq,5);qi++){
+                var bv = getQubitBloch(result.sv,result.nq,qi);
+                var trail = qubitTrails[qi];
+                trail.push({x:bv.x,y:bv.y,z:bv.z});
+                if(trail.length>60) trail.shift();
+
+                // Trail
+                ctx.strokeStyle=QCOLORS[qi]; ctx.lineWidth=1; ctx.globalAlpha=0.15;
+                for(var t=1;t<trail.length;t++){
+                    var p0=proj(trail[t-1].x,trail[t-1].y,trail[t-1].z,W,H);
+                    var p1=proj(trail[t].x,trail[t].y,trail[t].z,W,H);
+                    ctx.globalAlpha=0.05+0.15*(t/trail.length);
+                    ctx.beginPath(); ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y); ctx.stroke();
+                }
+                ctx.globalAlpha=1;
+
+                // Dot
+                var pp=proj(bv.x,-bv.z,bv.y,W,H);
+                ctx.beginPath(); ctx.arc(pp.x,pp.y,5,0,Math.PI*2);
+                ctx.fillStyle=QCOLORS[qi]; ctx.fill();
+
+                // Glow
+                var glow=ctx.createRadialGradient(pp.x,pp.y,0,pp.x,pp.y,16);
+                glow.addColorStop(0,QCOLORS[qi]+'40'); glow.addColorStop(1,'transparent');
+                ctx.fillStyle=glow; ctx.fillRect(pp.x-16,pp.y-16,32,32);
+
+                // Vector line
+                var ctr=proj(0,0,0,W,H);
+                ctx.strokeStyle=QCOLORS[qi]+'80'; ctx.lineWidth=1;
+                ctx.beginPath(); ctx.moveTo(ctr.x,ctr.y); ctx.lineTo(pp.x,pp.y); ctx.stroke();
+            }
+
+            // QPU probability overlay
+            if(blochShowQPU){
+                var probs=QPU_RUNS.run1.probs;
+                Object.keys(probs).forEach(function(state){
+                    var p=probs[state];
+                    if(p<0.02) return;
+                    var bits=state.split('').map(Number);
+                    var theta=0, phi=0;
+                    for(var b=0;b<bits.length;b++){ theta+=bits[b]*Math.PI/bits.length; phi+=bits[b]*Math.PI*2/(bits.length+1); }
+                    var sx=Math.sin(theta)*Math.cos(phi), sy=Math.cos(theta), sz=Math.sin(theta)*Math.sin(phi);
+                    var pp=proj(sx,sy,sz,W,H);
+                    ctx.beginPath(); ctx.arc(pp.x,pp.y,p*80,0,Math.PI*2);
+                    ctx.fillStyle='rgba(240,136,62,'+(p*2)+')'; ctx.fill();
+                });
+            }
+
+            $('bloch-info').innerHTML='Gate: '+blochGateIdx+' / '+currentParsed.ops.length+
+                '<br>'+QCOLORS.map(function(c,i){return '<span style="color:'+c+'">q'+i+'</span>';}).join(' ')+
+                '<br>'+(blochShowQPU?'QPU: ibm_marrakesh':'Ideal simulator')+
+                '<br>Circuit: '+($('v-circuit').value);
+        }
+    }
+    drawBloch();
+}
+
+// ━━━━━ 3D Globe — Quantum Geographic Mapping ━━━━━
+var globeInited=false, globeAnimId=0, globeRotX=-0.4, globeRotY=0.5, globeDrag=false, globeLX=0, globeLY=0, globeZoom=1;
+
+// Simplified world coastline (lon,lat pairs, NaN-separated segments)
+var COAST = [
+// North America outline (simplified)
+-130,50,-125,50,-120,48,-122,37,-117,32,-110,31,-104,29,-97,26,-97,28,-82,25,-80,26,-81,31,-75,35,-70,42,-67,45,-67,47,-60,47,-64,44,-67,44,NaN,
+// Europe
+-10,36,-6,36,0,38,3,43,0,46,-2,48,3,51,5,52,8,54,12,55,13,54,10,57,12,58,18,60,25,60,28,56,28,54,24,56,22,55,20,54,NaN,
+// Africa
+-17,15,-12,8,-5,5,5,5,10,4,10,2,12,-5,15,-5,31,-3,42,12,44,2,40,-11,35,-23,33,-29,28,-33,18,-35,12,-34,15,-27,18,-20,17,-12,10,-5,NaN,
+// South America
+-80,10,-77,8,-73,11,-62,11,-52,4,-51,0,-49,-2,-44,-3,-41,-5,-35,-8,-35,-12,-38,-15,-43,-23,-48,-26,-48,-28,-52,-33,-55,-35,-65,-40,-68,-47,-65,-55,-70,-53,-72,-46,-76,-40,-71,-17,-75,-14,-77,-12,-80,-3,-78,2,-73,5,-77,7,NaN,
+// Australia
+115,-35,115,-22,130,-12,137,-12,142,-11,145,-15,150,-24,153,-28,150,-35,142,-38,136,-35,129,-34,120,-34,115,-35,NaN,
+// Asia (very simplified)
+30,40,35,37,36,32,40,35,45,40,50,38,53,37,55,25,60,25,65,25,70,20,78,8,80,15,88,22,92,20,100,14,105,10,107,2,110,1,118,-8,120,0,121,14,115,22,110,20,107,16,100,22,105,30,110,35,120,40,125,40,130,33,131,31,135,35,140,40,142,43,140,48,135,50,130,48,120,53,NaN
+];
+
+function initGlobe(){
+    if(globeInited) return;
+    globeInited=true;
+    var cvs=$('cv-globe'), wrap=$('globe-wrap');
+    var ctx=cvs.getContext('2d');
+
+    function resize(){ var r=wrap.getBoundingClientRect(); var dpr=devicePixelRatio||1; cvs.width=r.width*dpr; cvs.height=r.height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    resize(); window.addEventListener('resize',resize);
+
+    wrap.addEventListener('pointerdown',function(e){globeDrag=true;globeLX=e.clientX;globeLY=e.clientY;});
+    window.addEventListener('pointermove',function(e){if(!globeDrag)return;globeRotY+=(e.clientX-globeLX)*0.006;globeRotX+=(e.clientY-globeLY)*0.006;globeRotX=Math.max(-Math.PI/2,Math.min(Math.PI/2,globeRotX));globeLX=e.clientX;globeLY=e.clientY;});
+    window.addEventListener('pointerup',function(){globeDrag=false;});
+    wrap.addEventListener('wheel',function(e){e.preventDefault();globeZoom=Math.max(0.6,Math.min(3,globeZoom-e.deltaY*0.002));},{passive:false});
+
+    function geoToSphere(lon,lat){
+        var la=lat*Math.PI/180, lo=lon*Math.PI/180;
+        return{x:Math.cos(la)*Math.cos(lo), y:-Math.sin(la), z:Math.cos(la)*Math.sin(lo)};
+    }
+    function gRot(x,y,z){
+        var x1=x*Math.cos(globeRotY)-z*Math.sin(globeRotY);
+        var z1=x*Math.sin(globeRotY)+z*Math.cos(globeRotY);
+        var y1=y*Math.cos(globeRotX)-z1*Math.sin(globeRotX);
+        var z2=y*Math.sin(globeRotX)+z1*Math.cos(globeRotX);
+        return[x1,y1,z2];
+    }
+    function gProj(x,y,z,W,H){
+        var r=gRot(x,y,z);
+        var rad=Math.min(W,H)*0.4*globeZoom;
+        return{x:W/2+r[0]*rad, y:H/2+r[1]*rad, z:r[2], vis:r[2]<0.1};
+    }
+
+    // Compute quantum geographic coordinates for luvukid0 message
+    var charCoords=[];
+    var accPhase=[0,0,0,0,0];
+    var parsed=parseQASM(LIB['luvukid0']);
+    var rzOps=parsed.ops.filter(function(o){return o.gate==='RZ';});
+    var rzIdx=0;
+    for(var i=0;i<MSG.length;i++){
+        var qi=i%5;
+        if(rzIdx<rzOps.length&&rzOps[rzIdx].q[0]===qi){ accPhase[qi]+=rzOps[rzIdx].param; rzIdx++; }
+        var lat=25+(qi/4)*24;
+        var lon=-125+((accPhase[qi]%(2*Math.PI))/(2*Math.PI))*58;
+        charCoords.push({ch:MSG[i],qi:qi,lat:lat,lon:lon,code:MSG.charCodeAt(i),rz:(MSG.charCodeAt(i)/128)*Math.PI});
+    }
+
+    function drawGlobe(){
+        globeAnimId=requestAnimationFrame(drawGlobe);
+        if(activeTab!=='globe') return;
+        if(!globeDrag) globeRotY+=0.002;
+
+        var r=wrap.getBoundingClientRect();
+        var W=r.width,H=r.height;
+        ctx.clearRect(0,0,W,H);
+
+        var rad=Math.min(W,H)*0.4*globeZoom;
+
+        // Atmosphere glow
+        var atm=ctx.createRadialGradient(W/2,H/2,rad*0.9,W/2,H/2,rad*1.3);
+        atm.addColorStop(0,'rgba(56,165,255,0.08)'); atm.addColorStop(1,'transparent');
+        ctx.fillStyle=atm; ctx.fillRect(0,0,W,H);
+
+        // Globe circle
+        ctx.beginPath(); ctx.arc(W/2,H/2,rad,0,Math.PI*2);
+        ctx.fillStyle='rgba(10,22,40,0.6)'; ctx.fill();
+        ctx.strokeStyle='rgba(88,166,255,0.15)'; ctx.lineWidth=1; ctx.stroke();
+
+        // Grid lines
+        ctx.strokeStyle='rgba(48,54,61,0.2)'; ctx.lineWidth=0.5;
+        for(var la=-60;la<=60;la+=30){
+            ctx.beginPath();
+            for(var lo=-180;lo<=180;lo+=5){ var s=geoToSphere(lo,la); var p=gProj(s.x,s.y,s.z,W,H); if(p.z<0) continue; lo===-180?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
+            ctx.stroke();
+        }
+        for(var lo=-150;lo<=180;lo+=30){
+            ctx.beginPath();
+            for(var la=-90;la<=90;la+=5){ var s=geoToSphere(lo,la); var p=gProj(s.x,s.y,s.z,W,H); if(p.z<0) continue; la===-90?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
+            ctx.stroke();
+        }
+
+        // Coastlines
+        ctx.strokeStyle='rgba(88,166,255,0.25)'; ctx.lineWidth=1;
+        ctx.beginPath();
+        var newSeg=true;
+        for(var i=0;i<COAST.length;i+=2){
+            if(isNaN(COAST[i])){ newSeg=true; i--; continue; }
+            var s=geoToSphere(COAST[i],COAST[i+1]);
+            var p=gProj(s.x,s.y,s.z,W,H);
+            if(p.z<0){ newSeg=true; continue; }
+            if(newSeg){ ctx.moveTo(p.x,p.y); newSeg=false; }
+            else ctx.lineTo(p.x,p.y);
+        }
+        ctx.stroke();
+
+        // US highlight
+        ctx.strokeStyle='rgba(63,185,80,0.3)'; ctx.lineWidth=1.5;
+        ctx.beginPath(); newSeg=true;
+        var usCoast=COAST.slice(0,COAST.indexOf(NaN));
+        for(var i=0;i<usCoast.length;i+=2){
+            var s=geoToSphere(usCoast[i],usCoast[i+1]);
+            var p=gProj(s.x,s.y,s.z,W,H);
+            if(p.z<0){newSeg=true;continue;}
+            if(newSeg){ctx.moveTo(p.x,p.y);newSeg=false;}
+            else ctx.lineTo(p.x,p.y);
+        }
+        ctx.stroke();
+
+        // Character positions as glowing dots
+        var drawables=[];
+        charCoords.forEach(function(cc,i){
+            var s=geoToSphere(cc.lon,cc.lat);
+            var p=gProj(s.x,s.y,s.z,W,H);
+            if(p.z>-0.2) drawables.push({type:'dot',x:p.x,y:p.y,z:p.z,cc:cc,idx:i});
+        });
+
+        // Contrail arcs (great circle approximation)
+        for(var i=1;i<charCoords.length;i++){
+            var c0=charCoords[i-1], c1=charCoords[i];
+            var s0=geoToSphere(c0.lon,c0.lat), s1=geoToSphere(c1.lon,c1.lat);
+            var p0=gProj(s0.x,s0.y,s0.z,W,H), p1=gProj(s1.x,s1.y,s1.z,W,H);
+            if(p0.z<-0.2||p1.z<-0.2) continue;
+            var alpha=Math.max(0.05,0.3-i*0.004);
+            ctx.strokeStyle=QCOLORS[c1.qi]+Math.round(alpha*255).toString(16).padStart(2,'0');
+            ctx.lineWidth=1.5;
+            ctx.beginPath();
+            var steps=12;
+            for(var t=0;t<=steps;t++){
+                var f=t/steps;
+                var mx=s0.x*(1-f)+s1.x*f, my=s0.y*(1-f)+s1.y*f, mz=s0.z*(1-f)+s1.z*f;
+                var len=Math.sqrt(mx*mx+my*my+mz*mz); mx/=len; my/=len; mz/=len;
+                var mp=gProj(mx,my,mz,W,H);
+                t===0?ctx.moveTo(mp.x,mp.y):ctx.lineTo(mp.x,mp.y);
+            }
+            ctx.stroke();
+        }
+
+        // Draw dots on top
+        drawables.sort(function(a,b){return a.z-b.z;});
+        drawables.forEach(function(d){
+            var alpha=Math.max(0.3,1-(0.5-d.z));
+            ctx.globalAlpha=alpha;
+            ctx.beginPath(); ctx.arc(d.x,d.y,4,0,Math.PI*2);
+            ctx.fillStyle=QCOLORS[d.cc.qi]; ctx.fill();
+            var glow=ctx.createRadialGradient(d.x,d.y,0,d.x,d.y,12);
+            glow.addColorStop(0,QCOLORS[d.cc.qi]+'40'); glow.addColorStop(1,'transparent');
+            ctx.fillStyle=glow; ctx.fillRect(d.x-12,d.y-12,24,24);
+            ctx.globalAlpha=1;
+        });
+
+        // Info
+        $('globe-info').innerHTML='Quantum Geographic Codex<br>'+MSG.length+' characters → '+charCoords.length+' coordinates<br>Lat: 25°N–49°N · Lon: 125°W–67°W<br>Bloch φ → Longitude · Qubit → Latitude<br>'+QCOLORS.map(function(c,i){return '<span style="color:'+c+'">q'+i+'</span>';}).join(' ');
+    }
+    drawGlobe();
+}
+
+// ━━━━━ US Map — Albers Projection + Contrail Paths ━━━━━
+var mapInited=false, mapAnimId=0, mapHoverIdx=-1;
+
+// US state centroids (lon,lat) for labeling + approximate borders
+var US_STATES = [
+    {s:'WA',lon:-120.7,lat:47.4},{s:'OR',lon:-120.5,lat:44.0},{s:'CA',lon:-119.7,lat:37.3},
+    {s:'NV',lon:-116.6,lat:39.3},{s:'ID',lon:-114.5,lat:44.2},{s:'MT',lon:-109.6,lat:47.0},
+    {s:'WY',lon:-107.5,lat:43.0},{s:'UT',lon:-111.7,lat:39.3},{s:'CO',lon:-105.5,lat:39.0},
+    {s:'AZ',lon:-111.7,lat:34.2},{s:'NM',lon:-106.0,lat:34.5},{s:'ND',lon:-100.5,lat:47.5},
+    {s:'SD',lon:-100.2,lat:44.4},{s:'NE',lon:-99.8,lat:41.5},{s:'KS',lon:-98.3,lat:38.5},
+    {s:'OK',lon:-97.5,lat:35.5},{s:'TX',lon:-99.3,lat:31.5},{s:'MN',lon:-94.3,lat:46.3},
+    {s:'IA',lon:-93.5,lat:42.0},{s:'MO',lon:-92.5,lat:38.6},{s:'AR',lon:-92.4,lat:34.8},
+    {s:'LA',lon:-92.0,lat:31.0},{s:'WI',lon:-89.6,lat:44.6},{s:'IL',lon:-89.2,lat:40.0},
+    {s:'MS',lon:-89.7,lat:32.7},{s:'MI',lon:-84.5,lat:44.3},{s:'IN',lon:-86.1,lat:40.3},
+    {s:'OH',lon:-82.8,lat:40.4},{s:'KY',lon:-84.7,lat:37.8},{s:'TN',lon:-86.3,lat:35.8},
+    {s:'AL',lon:-86.8,lat:32.8},{s:'GA',lon:-83.5,lat:32.7},{s:'FL',lon:-81.7,lat:28.6},
+    {s:'SC',lon:-80.9,lat:34.0},{s:'NC',lon:-79.4,lat:35.6},{s:'VA',lon:-78.9,lat:37.5},
+    {s:'WV',lon:-80.6,lat:38.9},{s:'PA',lon:-77.6,lat:40.9},{s:'NY',lon:-75.5,lat:42.9},
+    {s:'VT',lon:-72.6,lat:44.1},{s:'NH',lon:-71.6,lat:43.7},{s:'ME',lon:-69.2,lat:45.4},
+    {s:'MA',lon:-71.8,lat:42.4},{s:'CT',lon:-72.7,lat:41.6},{s:'RI',lon:-71.5,lat:41.7},
+    {s:'NJ',lon:-74.7,lat:40.1},{s:'DE',lon:-75.5,lat:39.0},{s:'MD',lon:-76.6,lat:39.0},
+    {s:'DC',lon:-77.0,lat:38.9}
+];
+
+// Simplified US border polyline (lon,lat pairs)
+var US_BORDER = [
+    -124.7,48.4,-123,48.4,-123,49,-104,49,-104,49,-95.2,49,-89,48,-84.8,46.5,
+    -82.5,45,-82.5,42.3,-79,42.3,-79,43,-76.8,43.6,-75,43.3,-73.3,44.2,
+    -71.1,45,-67,47,-67,44.6,-70,43.3,-70,42.7,-71,41.3,-72.5,41,-73.7,40.6,
+    -74,39,-75,38.5,-76,37,-75.7,35.5,-76.5,34.7,-79.5,33.2,-80.5,32.1,
+    -81,30.7,-82,29.1,-81,25.5,-80,25.2,-82,27,-84,29,-86,30,-88,30.2,
+    -89,30.5,-90,29.2,-93,29.5,-94,29.5,-97,26,-97,27,-100,28,-104,31.5,
+    -108,31.5,-111,31.5,-114.7,32.5,-117.1,32.5,-118.5,34,-120.5,34.5,
+    -122,37,-122.5,38,-124,40,-124.5,42,-124.5,46,-124.7,48.4
+];
+
+function initMap(){
+    if(mapInited) return;
+    mapInited=true;
+    var cvs=$('cv-map'), wrap=$('map-wrap');
+    var ctx=cvs.getContext('2d');
+    var hoverEl=$('map-hover');
+
+    function resize(){ var r=wrap.getBoundingClientRect(); var dpr=devicePixelRatio||1; cvs.width=r.width*dpr; cvs.height=r.height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    resize(); window.addEventListener('resize',resize);
+
+    // Albers equal-area conic projection (simplified)
+    var stdPar1=29.5*Math.PI/180, stdPar2=45.5*Math.PI/180, latO=37.5*Math.PI/180, lonO=-96*Math.PI/180;
+    var n=(Math.sin(stdPar1)+Math.sin(stdPar2))/2;
+    var C=Math.pow(Math.cos(stdPar1),2)+2*n*Math.sin(stdPar1);
+    var rho0=Math.sqrt(C-2*n*Math.sin(latO))/n;
+
+    function albersProj(lon,lat,W,H){
+        var la=lat*Math.PI/180, lo=lon*Math.PI/180;
+        var theta=n*(lo-lonO);
+        var rho=Math.sqrt(C-2*n*Math.sin(la))/n;
+        var x=rho*Math.sin(theta);
+        var y=rho0-rho*Math.cos(theta);
+        var scale=Math.min(W,H)*1.8;
+        return{x:W/2+x*scale, y:H/2-y*scale+H*0.05};
+    }
+
+    // Compute quantum coordinates (same as globe)
+    var charCoords=[];
+    var accPhase=[0,0,0,0,0];
+    var parsed=parseQASM(LIB['luvukid0']);
+    var rzOps=parsed.ops.filter(function(o){return o.gate==='RZ';});
+    var rzIdx=0;
+    for(var i=0;i<MSG.length;i++){
+        var qi=i%5;
+        if(rzIdx<rzOps.length&&rzOps[rzIdx].q[0]===qi){ accPhase[qi]+=rzOps[rzIdx].param; rzIdx++; }
+        var lat=25+(qi/4)*24;
+        var lon=-125+((accPhase[qi]%(2*Math.PI))/(2*Math.PI))*58;
+        charCoords.push({ch:MSG[i],qi:qi,lat:lat,lon:lon,code:MSG.charCodeAt(i),rz:(MSG.charCodeAt(i)/128)*Math.PI,phase:accPhase[qi]});
+    }
+
+    // Hover detection
+    var dotPositions=[];
+    cvs.addEventListener('mousemove',function(e){
+        var rect=cvs.getBoundingClientRect();
+        var mx=e.clientX-rect.left, my=e.clientY-rect.top;
+        mapHoverIdx=-1;
+        for(var i=0;i<dotPositions.length;i++){
+            var d=dotPositions[i];
+            if(Math.abs(mx-d.x)<8&&Math.abs(my-d.y)<8){ mapHoverIdx=i; break; }
+        }
+        if(mapHoverIdx>=0){
+            var cc=charCoords[mapHoverIdx];
+            hoverEl.textContent='"'+cc.ch+'" → q'+cc.qi+' · code '+cc.code+' · Rz '+cc.rz.toFixed(4)+' · '+cc.lat.toFixed(1)+'°N '+Math.abs(cc.lon).toFixed(1)+'°W · phase '+cc.phase.toFixed(3);
+        } else hoverEl.textContent='Hover a point to see quantum coordinates';
+    });
+
+    // Legend
+    var legEl=$('map-legend');
+    legEl.innerHTML='<div style="font-weight:600;margin-bottom:4px;color:var(--text)">Qubit → Latitude Band</div>'+
+        QCOLORS.map(function(c,i){return '<div><span class="dot" style="background:'+c+'"></span>q'+i+' · '+(25+i*6)+'°N</div>';}).join('')+
+        '<div style="margin-top:6px;border-top:1px solid var(--border);padding-top:4px;color:var(--muted)">'+MSG.length+' chars · '+charCoords.length+' coords</div>';
+
+    // Name segments for clustering labels
+    var nameSegs=[
+        {name:'luvukid0',start:0,end:8},{name:'Freya',start:8,end:13},{name:'Erika',start:13,end:18},
+        {name:'Jinx',start:18,end:22},{name:'Swillie',start:22,end:29},{name:'MrCookie',start:29,end:37},
+        {name:'Stella',start:37,end:43},{name:'Addie',start:43,end:48},{name:'TRE',start:48,end:51}
+    ];
+
+    var trailAnim=0;
+    function drawMap(){
+        mapAnimId=requestAnimationFrame(drawMap);
+        if(activeTab!=='map') return;
+        trailAnim+=0.01;
+
+        var r=wrap.getBoundingClientRect();
+        var W=r.width,H=r.height;
+        ctx.clearRect(0,0,W,H);
+
+        // Background (theme-aware)
+        var isLt=document.documentElement.getAttribute('data-theme')==='light';
+        ctx.fillStyle=isLt?'#f6f8fa':'#0d1117'; ctx.fillRect(0,0,W,H);
+
+        // Coordinate grid
+        ctx.strokeStyle=isLt?'rgba(0,0,0,0.06)':'rgba(48,54,61,0.2)'; ctx.lineWidth=0.5;
+        for(var la=26;la<=48;la+=2){
+            ctx.beginPath();
+            for(var lo=-125;lo<=-67;lo+=1){ var p=albersProj(lo,la,W,H); lo===-125?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
+            ctx.stroke();
+        }
+        for(var lo=-124;lo<=-68;lo+=4){
+            ctx.beginPath();
+            for(var la=25;la<=49;la+=1){ var p=albersProj(lo,la,W,H); la===25?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y); }
+            ctx.stroke();
+        }
+
+        // US border
+        ctx.strokeStyle='rgba(63,185,80,0.4)'; ctx.lineWidth=1.5;
+        ctx.beginPath();
+        for(var i=0;i<US_BORDER.length;i+=2){
+            var p=albersProj(US_BORDER[i],US_BORDER[i+1],W,H);
+            i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y);
+        }
+        ctx.stroke();
+
+        // State labels
+        ctx.fillStyle='rgba(139,148,158,0.2)'; ctx.font='8px '+getComputedStyle(document.body).getPropertyValue('--mono'); ctx.textAlign='center';
+        US_STATES.forEach(function(st){
+            var p=albersProj(st.lon,st.lat,W,H);
+            ctx.fillText(st.s,p.x,p.y);
+        });
+
+        // Contrail paths with animation
+        dotPositions=[];
+        for(var i=0;i<charCoords.length;i++){
+            var cc=charCoords[i];
+            var p=albersProj(cc.lon,cc.lat,W,H);
+            dotPositions.push({x:p.x,y:p.y});
+        }
+
+        // Draw contrails as arced fading trails
+        for(var i=1;i<charCoords.length;i++){
+            var p0=dotPositions[i-1], p1=dotPositions[i];
+            var qi=charCoords[i].qi;
+            var midX=(p0.x+p1.x)/2, midY=(p0.y+p1.y)/2 - 15;
+            var animOffset = Math.sin(trailAnim+i*0.3)*3;
+
+            ctx.strokeStyle=QCOLORS[qi]; ctx.lineWidth=1.5;
+            ctx.globalAlpha=Math.max(0.1, 0.6-i*0.008);
+            ctx.beginPath();
+            ctx.moveTo(p0.x,p0.y);
+            ctx.quadraticCurveTo(midX,midY+animOffset,p1.x,p1.y);
+            ctx.stroke();
+
+            // Glow
+            ctx.lineWidth=4;
+            ctx.globalAlpha=Math.max(0.02, 0.15-i*0.002);
+            ctx.beginPath();
+            ctx.moveTo(p0.x,p0.y);
+            ctx.quadraticCurveTo(midX,midY+animOffset,p1.x,p1.y);
+            ctx.stroke();
+            ctx.globalAlpha=1;
+        }
+
+        // Character dots
+        dotPositions.forEach(function(dp,i){
+            var cc=charCoords[i];
+            var isHover=(i===mapHoverIdx);
+            var rad=isHover?7:4;
+
+            ctx.beginPath(); ctx.arc(dp.x,dp.y,rad,0,Math.PI*2);
+            ctx.fillStyle=QCOLORS[cc.qi]; ctx.fill();
+
+            if(isHover){
+                var glow=ctx.createRadialGradient(dp.x,dp.y,0,dp.x,dp.y,20);
+                glow.addColorStop(0,QCOLORS[cc.qi]+'60'); glow.addColorStop(1,'transparent');
+                ctx.fillStyle=glow; ctx.fillRect(dp.x-20,dp.y-20,40,40);
+
+                ctx.fillStyle=isLt?'#1f2328':'#e6edf3'; ctx.font='bold 12px '+getComputedStyle(document.body).getPropertyValue('--mono');
+                ctx.textAlign='center'; ctx.fillText(cc.ch,dp.x,dp.y-12);
+            }
+        });
+
+        // Name cluster labels
+        ctx.font='10px '+getComputedStyle(document.body).getPropertyValue('--serif');
+        ctx.textAlign='center';
+        nameSegs.forEach(function(ns){
+            var sumX=0,sumY=0,count=0;
+            for(var i=ns.start;i<ns.end&&i<dotPositions.length;i++){
+                sumX+=dotPositions[i].x; sumY+=dotPositions[i].y; count++;
+            }
+            if(count===0) return;
+            var cx=sumX/count, cy=sumY/count-18;
+            ctx.fillStyle='rgba(201,168,76,0.6)';
+            ctx.fillText(ns.name,cx,cy);
+        });
+    }
+    drawMap();
+}
+
+// ━━━━━ Core Race — Earth-Core Fiber Network Visualization ━━━━━
+var coreInited=false, coreAnimId=0, coreRotX=-0.3, coreRotY=0.6, coreDrag=false, coreLX=0, coreLY=0, coreZoom=1;
+var coreAutoMode=true, coreSpeed=1.5, corePackets=[], coreTime=0;
+
+var EARTH_LAYERS = [
+    {name:'Inner Core',  rFrac:0.19, iron:'L0',   label:'Super Speed',     color:'#ff3838', budget:'1.3ms',  glow:'rgba(255,56,56,.12)'},
+    {name:'Outer Core',  rFrac:0.35, iron:'L1–L2',label:'Terminal+Commander',color:'#ff8c38', budget:'100ms',  glow:'rgba(255,140,56,.09)'},
+    {name:'Lower Mantle',rFrac:0.55, iron:'L3',   label:'Quantum',         color:'#ffe138', budget:'0.1μs',  glow:'rgba(255,225,56,.07)'},
+    {name:'Upper Mantle',rFrac:0.75, iron:'L4–L5',label:'Notepad+RNDR',    color:'#3fb950', budget:'16ms',   glow:'rgba(63,185,80,.06)'},
+    {name:'Crust',       rFrac:0.93, iron:'L6–L7',label:'Research+Persona',color:'#38a5ff', budget:'5ms',    glow:'rgba(56,165,255,.05)'},
+    {name:'Surface',     rFrac:1.00, iron:'—',     label:'Cable Landing',   color:'#bc8cff', budget:'—',      glow:'rgba(188,140,255,.04)'}
+];
+
+var STATIONS = [
+    {name:'New York',     lon:-73.9,lat:40.7,  hub:true},
+    {name:'Virginia Beach',lon:-76.0,lat:36.8, hub:true},
+    {name:'Miami',        lon:-80.2,lat:25.8,  hub:false},
+    {name:'Los Angeles',  lon:-118.2,lat:34.1, hub:true},
+    {name:'London',       lon:-0.1,lat:51.5,   hub:true},
+    {name:'Bilbao',       lon:-2.9,lat:43.3,   hub:false},
+    {name:'Marseille',    lon:5.4,lat:43.3,    hub:true},
+    {name:'Mumbai',       lon:72.9,lat:19.1,   hub:true},
+    {name:'Singapore',    lon:103.8,lat:1.4,   hub:true},
+    {name:'Tokyo',        lon:139.7,lat:35.7,  hub:true},
+    {name:'Sydney',       lon:151.2,lat:-33.9, hub:true},
+    {name:'Fortaleza',    lon:-38.5,lat:-3.7,  hub:false},
+    {name:'Cape Town',    lon:18.4,lat:-33.9,  hub:false},
+    {name:'Lagos',        lon:3.4,lat:6.5,     hub:false},
+    {name:'Dubai',        lon:55.3,lat:25.2,   hub:true},
+    {name:'Hong Kong',    lon:114.2,lat:22.3,  hub:true},
+    {name:'Djibouti',     lon:43.1,lat:11.6,   hub:false},
+    {name:'Perth',        lon:115.9,lat:-31.9, hub:false},
+    {name:'Portland',     lon:-122.7,lat:45.5, hub:false},
+    {name:'Seattle',      lon:-122.3,lat:47.6, hub:false},
+    {name:'São Paulo',    lon:-43.2,lat:-22.9, hub:false},
+    {name:'Chennai',      lon:80.3,lat:13.1,   hub:false},
+    {name:'Busan',        lon:129.0,lat:35.2,  hub:false},
+    {name:'Frankfurt',    lon:8.7,lat:50.1,    hub:true}
+];
+
+var CABLES = [
+    {name:'TAT-14',     from:0,to:4,   color:'#58a6ff'},
+    {name:'MAREA',      from:1,to:5,   color:'#a78bfa'},
+    {name:'BRUSA',      from:11,to:1,  color:'#c586c0'},
+    {name:'FLAG-Atlantic',from:4,to:6, color:'#56d4dd'},
+    {name:'SEA-ME-WE 6',from:6,to:8,  color:'#e2b714'},
+    {name:'Pacific Crossing',from:3,to:9,color:'#ff8c38'},
+    {name:'FASTER',     from:18,to:9,  color:'#ff3838'},
+    {name:'Southern Cross',from:10,to:3,color:'#3fb950'},
+    {name:'SAC',        from:11,to:12, color:'#f85149'},
+    {name:'ACE',        from:4,to:13,  color:'#d7ba7d'},
+    {name:'AAE-1',      from:6,to:14,  color:'#4ec9b0'},
+    {name:'India-ME',   from:14,to:7,  color:'#c586c0'},
+    {name:'SJC',        from:7,to:8,   color:'#9cdcfe'},
+    {name:'APG',        from:8,to:15,  color:'#56d4dd'},
+    {name:'EASSy',      from:16,to:12, color:'#e2b714'},
+    {name:'IndoConnect', from:17,to:8, color:'#ff8c38'},
+    {name:'Hawaiki',    from:10,to:18, color:'#3fb950'},
+    {name:'AJC',        from:9,to:10,  color:'#38a5ff'},
+    {name:'PEACE',      from:7,to:21,  color:'#a78bfa'},
+    {name:'Europe-Asia', from:23,to:7, color:'#ffe138'},
+    {name:'KR-JP',      from:22,to:9,  color:'#ff3838'},
+    {name:'Ellalink',   from:11,to:5,  color:'#bc8cff'}
+];
+
+// ━━━━━ Infrastructure Layers ━━━━━
+
+// Layer 1: Research Facilities — subterranean catchers, particle detectors, radio arrays
+var RESEARCH = [
+    {name:'CERN LHC',             lon:6.05,lat:46.23,  depth:'100m',  type:'particle',    iron:'L3', note:'27km ring, Higgs boson, 13.6 TeV', speed:'40GB/s',bw:'1PB/s detector',code:'ROOT/C++'},
+    {name:'CJPL',                 lon:101.7,lat:28.15,  depth:'2400m', type:'particle',    iron:'L0', note:'China Jinping Underground Lab, dark matter', speed:'10GB/s',bw:'100TB/yr',code:'C++/Python'},
+    {name:'JUNO',                 lon:112.5,lat:22.12,  depth:'700m',  type:'neutrino',    iron:'L3', note:'Jiangmen, 20kt liquid scintillator', speed:'5GB/s',bw:'2PB/yr',code:'ROOT/Python'},
+    {name:'Super-Kamiokande',     lon:137.3,lat:36.43,  depth:'1000m', type:'neutrino',    iron:'L0', note:'ICRR, 50kt water, neutrino mass Nobel 2015', speed:'1GB/s',bw:'500TB/yr',code:'Fortran/C++'},
+    {name:'LIGO Hanford',         lon:-119.4,lat:46.45, depth:'surface',type:'gravity',    iron:'L6', note:'2.5mi vacuum arms, gravitational waves', speed:'20GB/s',bw:'16kHz strain',code:'Python/C'},
+    {name:'LIGO Livingston',      lon:-90.77,lat:30.56, depth:'surface',type:'gravity',    iron:'L6', note:'Twin detector, 1.5B year black hole merger', speed:'20GB/s',bw:'16kHz strain',code:'Python/C'},
+    {name:'Tevatron (Fermilab)',   lon:-88.26,lat:41.84, depth:'surface',type:'particle',   iron:'L3', note:'2nd most powerful accelerator, Higgs verify', speed:'25GB/s',bw:'200TB/yr',code:'ROOT/C++'},
+    {name:'FAST (Aperture SRT)',   lon:106.86,lat:25.65, depth:'surface',type:'radio',      iron:'L1', note:'500m dish, Guizhou, largest single-aperture', speed:'3GB/s',bw:'38GHz',code:'FITS/Python'},
+    {name:'Arecibo Observatory',   lon:-66.75,lat:18.35, depth:'surface',type:'radio',      iron:'L1', note:'305m dish, Puerto Rico (collapsed 2020)', speed:'1GB/s',bw:'10GHz',code:'FITS/IDL'},
+    {name:'HAARP',                 lon:-145.2,lat:62.39, depth:'surface',type:'ionosphere', iron:'L7', note:'180 antennas, 33 acres, UAF', speed:'500MB/s',bw:'2.8-10MHz',code:'MATLAB/C'},
+    {name:'IceCube',               lon:0,lat:-89.99,     depth:'2500m', type:'neutrino',    iron:'L0', note:'86 holes × 1.5mi deep, Antarctica', speed:'100MB/s',bw:'1TB/day',code:'C++/Python'},
+    {name:'ALMA (Atacama)',        lon:-67.75,lat:-23.02, depth:'5000m+',type:'radio',      iron:'L1', note:'66 dishes, 5050m altitude, Chile', speed:'60GB/s',bw:'16GHz×2pol',code:'CASA/Python'},
+    {name:'NIF (LLNL)',            lon:-121.7,lat:37.69, depth:'surface',type:'fusion',     iron:'L5', note:'192 lasers, 500TW, inertial fusion', speed:'50GB/s',bw:'10TB/shot',code:'Fortran/C++'},
+    {name:'FACET (SLAC)',          lon:-122.2,lat:37.42, depth:'surface',type:'particle',   iron:'L3', note:'10TW plasma wakefield, Stanford', speed:'10GB/s',bw:'100TB/yr',code:'ROOT/Python'},
+    {name:'Tianhe-2',              lon:113.3,lat:23.13,  depth:'surface',type:'supercomp',  iron:'L2', note:'33.86 PFLOPS, Guangzhou', speed:'400GB/s',bw:'33.86PF/s',code:'C/Fortran/MPI'},
+    {name:'Bruce Nuclear',         lon:-81.6,lat:44.33,  depth:'surface',type:'nuclear',    iron:'L5', note:'6.2GW, Ontario, 2nd largest reactor', speed:'1GB/s',bw:'6.2GW output',code:'SCADA/PLC'},
+    {name:'Aquarius Reef Base',    lon:-80.45,lat:24.95, depth:'19m',   type:'underwater',  iron:'L6', note:'NASA underwater training, Florida Keys', speed:'100MB/s',bw:'HD video',code:'telemetry'},
+    {name:'Waterworth Subsea',     lon:-5.9,lat:54.6,    depth:'seabed', type:'cable',      iron:'L1', note:'Submarine cable maintenance, North Sea', speed:'200Tbps',bw:'fiber optic',code:'SCADA/REST'}
+];
+
+// Layer 2: Space & Satellite Infrastructure — ground stations, DSN, Starlink gateways
+var SPACE_INFRA = [
+    {name:'NASA DSN Goldstone',    lon:-116.89,lat:35.43, type:'dsn',     note:'70m dish, Mojave, deep space comms', speed:'6.4Gbps',bw:'X/Ka-band',code:'CCSDS/SLE'},
+    {name:'NASA DSN Madrid',       lon:-4.25,lat:40.43,   type:'dsn',     note:'70m dish, Robledo, deep space', speed:'6.4Gbps',bw:'X/Ka-band',code:'CCSDS/SLE'},
+    {name:'NASA DSN Canberra',     lon:148.98,lat:-35.4,  type:'dsn',     note:'70m dish, Tidbinbilla', speed:'6.4Gbps',bw:'X/Ka-band',code:'CCSDS/SLE'},
+    {name:'ESA Cebreros',          lon:-4.37,lat:40.45,   type:'ground',  note:'35m, deep space, Mars Express', speed:'2Gbps',bw:'X/Ka-band',code:'CCSDS/PUS'},
+    {name:'ESA New Norcia',        lon:116.19,lat:-31.05, type:'ground',  note:'35m, Western Australia', speed:'2Gbps',bw:'X/Ka-band',code:'CCSDS/PUS'},
+    {name:'ESA Malargüe',          lon:-69.4,lat:-35.78,  type:'ground',  note:'35m, Argentina', speed:'2Gbps',bw:'X/Ka-band',code:'CCSDS/PUS'},
+    {name:'Starlink Gateway Redmond',lon:-122.12,lat:47.67,type:'starlink',note:'SpaceX primary ground station', speed:'20Gbps',bw:'Ku/Ka-band',code:'gRPC/proto'},
+    {name:'Starlink Gateway Hawthorne',lon:-118.33,lat:33.92,type:'starlink',note:'SpaceX HQ ground station', speed:'20Gbps',bw:'Ku/Ka-band',code:'gRPC/proto'},
+    {name:'Starlink Gateway Boca Chica',lon:-97.16,lat:25.99,type:'starlink',note:'Starbase, Texas', speed:'20Gbps',bw:'Ku/Ka-band',code:'gRPC/proto'},
+    {name:'ISRO Byalalu',          lon:77.37,lat:13.03,   type:'ground',  note:'Indian Deep Space Network, 32m dish', speed:'1Gbps',bw:'S/X-band',code:'ISTRAC/C'},
+    {name:'JAXA Usuda',            lon:138.36,lat:36.13,  type:'ground',  note:'64m dish, Hayabusa2, Japan', speed:'4Gbps',bw:'X/Ka-band',code:'CCSDS/Java'},
+    {name:'Roscosmos Evpatoria',   lon:33.19,lat:45.19,   type:'ground',  note:'70m RT-70, Ukraine/Crimea', speed:'2Gbps',bw:'S/X-band',code:'proprietary'},
+    {name:'Pine Gap',              lon:133.74,lat:-23.8,   type:'sigint',  note:'Joint US-AU surveillance, Alice Springs', speed:'10Gbps',bw:'multi-band',code:'classified'},
+    {name:'Goonhilly',             lon:-5.18,lat:50.05,   type:'ground',  note:'UK deep space, 30m GHY-6', speed:'3Gbps',bw:'X/Ka-band',code:'CCSDS/Python'},
+    {name:'Weilheim',              lon:11.08,lat:47.88,   type:'ground',  note:'DLR ground station, Germany', speed:'2Gbps',bw:'S/X/Ka-band',code:'CCSDS/C++'}
+];
+
+// Layer 3: Data Centers — hyperscale facilities
+var DATA_CENTERS = [
+    {name:'Ashburn (Data Center Alley)',lon:-77.49,lat:39.04,provider:'multi',mw:2500,note:'70%+ US internet, NoVA', speed:'800Tbps',bw:'aggregate IX',code:'BGP/REST'},
+    {name:'The Dalles, OR (Google)',lon:-121.18,lat:45.6,  provider:'Google',mw:600, note:'Columbia River cooling', speed:'100Tbps',bw:'internal mesh',code:'Borg/gRPC'},
+    {name:'Prineville, OR (Meta)',lon:-120.73,lat:44.3,   provider:'Meta',  mw:450, note:'FB primary, high desert', speed:'80Tbps',bw:'FBOSS mesh',code:'Thrift/Hack'},
+    {name:'Council Bluffs (Google)',lon:-95.86,lat:41.26, provider:'Google',mw:400, note:'Iowa, wind-powered', speed:'100Tbps',bw:'internal mesh',code:'Borg/gRPC'},
+    {name:'Quincy, WA (Microsoft)',lon:-119.85,lat:47.23,provider:'Microsoft',mw:350,note:'Hydro-powered, Columbia Basin', speed:'60Tbps',bw:'Azure fabric',code:'Azure/REST'},
+    {name:'Phoenix, AZ (multi)',  lon:-112.07,lat:33.45, provider:'multi', mw:800, note:'CyrusOne, QTS, NTT', speed:'200Tbps',bw:'cross-connect',code:'BGP/REST'},
+    {name:'Dublin (AWS/Microsoft)',lon:-6.26,lat:53.35,  provider:'multi', mw:900, note:'Ireland tax haven, Atlantic cables', speed:'300Tbps',bw:'transatlantic',code:'AWS SDK'},
+    {name:'Amsterdam (Equinix)',   lon:4.9,lat:52.37,    provider:'Equinix',mw:500,note:'AMS-IX, 80+ networks', speed:'200Tbps',bw:'AMS-IX peering',code:'BGP/REST'},
+    {name:'Frankfurt (DE-CIX)',    lon:8.68,lat:50.11,   provider:'multi', mw:700, note:'Largest IX by throughput', speed:'400Tbps',bw:'DE-CIX peering',code:'BGP/RPKI'},
+    {name:'London (Slough)',       lon:-0.6,lat:51.51,   provider:'multi', mw:650, note:'LINX, Equinix LD series', speed:'250Tbps',bw:'LINX peering',code:'BGP/REST'},
+    {name:'Singapore (Telin)',     lon:103.85,lat:1.35,  provider:'multi', mw:400, note:'SE Asia hub, Jurong', speed:'150Tbps',bw:'SGIX peering',code:'BGP/REST'},
+    {name:'Tokyo (Equinix TY)',    lon:139.69,lat:35.69, provider:'Equinix',mw:300,note:'Largest Asia-Pacific IX', speed:'120Tbps',bw:'JPNAP peering',code:'BGP/REST'},
+    {name:'São Paulo (Ascenty)',   lon:-46.63,lat:-23.55,provider:'multi', mw:200, note:'LATAM hub', speed:'80Tbps',bw:'IX.br peering',code:'BGP/REST'},
+    {name:'Mumbai (Navi Mumbai)',  lon:73.0,lat:19.08,   provider:'multi', mw:250, note:'Indian submarine cable landing', speed:'60Tbps',bw:'NIXI peering',code:'BGP/REST'},
+    {name:'Beijing (GDS)',         lon:116.4,lat:39.9,   provider:'GDS',   mw:500, note:'Chinese government cloud', speed:'200Tbps',bw:'internal mesh',code:'proprietary'},
+    {name:'Sydney (Equinix SY)',   lon:151.21,lat:-33.87,provider:'Equinix',mw:150,note:'Southern Cross cable landing', speed:'40Tbps',bw:'IX-AU peering',code:'BGP/REST'}
+];
+
+// Layer 4: Network Hubs — IXPs and submarine cable landing points
+var NETWORK_HUBS = [
+    {name:'DE-CIX Frankfurt',     lon:8.68,lat:50.11,  type:'ixp', tbps:17,  note:'Largest IX globally, 17+ Tbps peak', speed:'17Tbps',bw:'IX peering',code:'BGP/RPKI'},
+    {name:'AMS-IX Amsterdam',     lon:4.9,lat:52.37,   type:'ixp', tbps:12,  note:'2nd largest, 80+ networks', speed:'12Tbps',bw:'IX peering',code:'BGP/RPKI'},
+    {name:'LINX London',          lon:-0.13,lat:51.52,  type:'ixp', tbps:8,   note:'900+ members', speed:'8Tbps',bw:'IX peering',code:'BGP/RPKI'},
+    {name:'Equinix Ashburn',      lon:-77.49,lat:39.04, type:'ixp', tbps:10,  note:'US East primary peering', speed:'10Tbps',bw:'IX peering',code:'BGP/RPKI'},
+    {name:'HKIX Hong Kong',       lon:114.17,lat:22.32, type:'ixp', tbps:3,   note:'Asia primary peering', speed:'3Tbps',bw:'IX peering',code:'BGP/REST'},
+    {name:'JPNAP Tokyo',          lon:139.69,lat:35.69, type:'ixp', tbps:4,   note:'Japan primary IX', speed:'4Tbps',bw:'IX peering',code:'BGP/REST'},
+    {name:'IX.br São Paulo',      lon:-46.63,lat:-23.55,type:'ixp', tbps:15,  note:'Largest LATAM IX', speed:'15Tbps',bw:'IX peering',code:'BGP/RPKI'},
+    {name:'Tanjung Kling (SEA-ME-WE)',lon:102.24,lat:2.19,type:'cable_landing',tbps:100,note:'Melaka, 20+ cables', speed:'100Tbps',bw:'submarine fiber',code:'DWDM/SDH'},
+    {name:'Marseille (MRS)',      lon:5.38,lat:43.3,    type:'cable_landing',tbps:80,note:'Med hub, SEA-ME-WE, AAE-1', speed:'80Tbps',bw:'submarine fiber',code:'DWDM/SDH'},
+    {name:'Fujairah (UAE)',       lon:56.36,lat:25.13,  type:'cable_landing',tbps:60,note:'14 cables, ME hub', speed:'60Tbps',bw:'submarine fiber',code:'DWDM/SDH'},
+    {name:'Manasquan (NJ)',       lon:-74.05,lat:40.12, type:'cable_landing',tbps:50,note:'TAT-14, MAREA landing', speed:'50Tbps',bw:'submarine fiber',code:'DWDM/SDH'},
+    {name:'Porthcurno (UK)',      lon:-5.66,lat:50.04,  type:'cable_landing',tbps:40,note:'Historic cable station, 14 cables', speed:'40Tbps',bw:'submarine fiber',code:'DWDM/SDH'}
+];
+
+// Layer 5: Power Infrastructure — major generation feeding data/research
+var POWER_INFRA = [
+    {name:'Three Gorges Dam',     lon:111.0,lat:30.82,  type:'hydro',   gw:22.5, note:'Largest power station on Earth', speed:'22.5GW',bw:'grid 500kV HVDC',code:'SCADA/IEC61850'},
+    {name:'Itaipu Dam',           lon:-54.59,lat:-25.41,type:'hydro',   gw:14.0, note:'Brazil/Paraguay, 2nd largest', speed:'14GW',bw:'grid 765kV',code:'SCADA/DNP3'},
+    {name:'Grand Coulee Dam',     lon:-118.98,lat:47.96,type:'hydro',   gw:6.8,  note:'Columbia River, powers Quincy DCs', speed:'6.8GW',bw:'grid 500kV',code:'SCADA/DNP3'},
+    {name:'Bruce Nuclear',        lon:-81.6,lat:44.33,  type:'nuclear', gw:6.2,  note:'Ontario, 2nd largest reactor', speed:'6.2GW',bw:'grid 500kV',code:'SCADA/PLC'},
+    {name:'Kashiwazaki-Kariwa',   lon:138.6,lat:37.43,  type:'nuclear', gw:7.97, note:'Largest nuclear plant (offline)', speed:'7.97GW',bw:'grid 500kV',code:'SCADA/PLC'},
+    {name:'Zaporizhzhia NPP',     lon:34.59,lat:47.51,  type:'nuclear', gw:5.7,  note:'Largest in Europe', speed:'5.7GW',bw:'grid 750kV',code:'SCADA/PLC'},
+    {name:'Gansu Wind Farm',      lon:97.0,lat:40.0,    type:'wind',    gw:20.0, note:'Largest wind farm, Gobi Desert', speed:'20GW',bw:'grid 800kV UHVDC',code:'SCADA/IEC61400'},
+    {name:'Bhadla Solar Park',    lon:71.91,lat:27.54,  type:'solar',   gw:2.25, note:'Largest solar, Rajasthan, India', speed:'2.25GW',bw:'grid 400kV',code:'SCADA/Modbus'},
+    {name:'Tengger Desert Solar', lon:104.5,lat:37.5,   type:'solar',   gw:1.55, note:'Ningxia, China', speed:'1.55GW',bw:'grid 330kV',code:'SCADA/Modbus'},
+    {name:'Hornsea Wind Farm',    lon:1.8,lat:53.9,     type:'wind',    gw:2.85, note:'Largest offshore, North Sea, UK', speed:'2.85GW',bw:'HVDC subsea',code:'SCADA/IEC61400'},
+    {name:'Olkiluoto 3',          lon:21.45,lat:61.24,  type:'nuclear', gw:1.6,  note:'EPR reactor, Finland', speed:'1.6GW',bw:'grid 400kV',code:'SCADA/PLC'},
+    {name:'Hoover Dam',           lon:-114.74,lat:36.02,type:'hydro',   gw:2.08, note:'Powers Las Vegas, Nevada', speed:'2.08GW',bw:'grid 230kV',code:'SCADA/DNP3'}
+];
+
+// Layer 6: Manufacturing — chip fabs, hardware, quantum
+var MANUFACTURING = [
+    {name:'TSMC Fab 18',          lon:120.3,lat:23.0,   type:'chip_fab', node:'3nm',  note:'Tainan, most advanced node', speed:'wafer/2mo',bw:'3nm EUV',code:'GDSII/OPC'},
+    {name:'TSMC Fab 21 (Arizona)',lon:-111.93,lat:33.45,type:'chip_fab', node:'4nm',  note:'Phoenix, US CHIPS Act', speed:'wafer/2mo',bw:'4nm EUV',code:'GDSII/OPC'},
+    {name:'Samsung Pyeongtaek',   lon:127.1,lat:36.99,  type:'chip_fab', node:'3nm',  note:'Largest fab by area', speed:'wafer/2mo',bw:'3nm GAA',code:'GDSII/OPC'},
+    {name:'Intel Fab 52/62 (Ohio)',lon:-82.7,lat:40.1,  type:'chip_fab', node:'18A',  note:'New Albany, $20B+', speed:'wafer/3mo',bw:'18A EUV',code:'GDSII/OPC'},
+    {name:'Intel Fab 34 (Ireland)',lon:-6.92,lat:53.29, type:'chip_fab', node:'4nm',  note:'Leixlip, EU production', speed:'wafer/2mo',bw:'Intel 4',code:'GDSII/OPC'},
+    {name:'GlobalFoundries Malta',lon:-73.87,lat:42.98, type:'chip_fab', node:'12nm', note:'New York, specialty', speed:'wafer/1mo',bw:'12LP+',code:'GDSII/OPC'},
+    {name:'Samsung Austin',       lon:-97.76,lat:30.39, type:'chip_fab', node:'5nm',  note:'Texas, S2 expansion', speed:'wafer/2mo',bw:'5nm EUV',code:'GDSII/OPC'},
+    {name:'NVIDIA HQ',            lon:-121.98,lat:37.37,type:'gpu',     node:'—',     note:'Santa Clara, GPU design', speed:'100GB/s HBM3',bw:'PCIe 5.0',code:'CUDA/PTX'},
+    {name:'AMD HQ',               lon:-121.96,lat:37.38,type:'gpu',     node:'—',     note:'Santa Clara, CPU/GPU design', speed:'96GB/s HBM3',bw:'PCIe 5.0',code:'ROCm/HIP'},
+    {name:'IBM Quantum (Yorktown)',lon:-73.8,lat:41.21, type:'quantum',  node:'—',     note:'T.J. Watson, Eagle/Heron QPU', speed:'1KB/s',bw:'4096 shots/run',code:'QASM/Qiskit'},
+    {name:'IBM Quantum (Ehningen)',lon:8.95,lat:48.66,  type:'quantum',  node:'—',     note:'European quantum hub', speed:'1KB/s',bw:'4096 shots/run',code:'QASM/Qiskit'},
+    {name:'Google Quantum AI',    lon:-122.08,lat:37.42,type:'quantum',  node:'—',     note:'Santa Barbara, Willow chip', speed:'1KB/s',bw:'custom shots',code:'Cirq/Python'},
+    {name:'IonQ College Park',    lon:-76.94,lat:38.99, type:'quantum',  node:'—',     note:'Trapped ion, Maryland', speed:'1KB/s',bw:'custom shots',code:'IonQ SDK'},
+    {name:'Foxconn Zhengzhou',    lon:113.62,lat:34.75, type:'assembly', node:'—',     note:'iPhone City, 300K workers', speed:'500K units/day',bw:'SMT line',code:'MES/SAP'},
+    {name:'Foxconn Shenzhen',     lon:114.07,lat:22.62, type:'assembly', node:'—',     note:'Longhua, consumer electronics', speed:'300K units/day',bw:'SMT line',code:'MES/SAP'}
+];
+
+// Layer 7: Internet Governance / CDN / Proxy / Protocol — IANA, ICANN, root DNS, CDN edge, API gateways
+var NET_PROTOCOL = [
+    {name:'IANA (ICANN HQ)',      lon:-117.83,lat:33.68, type:'governance', note:'Internet Assigned Numbers Authority, Playa Vista', speed:'policy',bw:'RFC publication',code:'WHOIS/RDAP',ping:1},
+    {name:'ICANN',                lon:-118.39,lat:33.96, type:'governance', note:'Internet Corporation for Assigned Names and Numbers', speed:'policy',bw:'DNS root zone',code:'EPP/RDAP',ping:1},
+    {name:'IETF/RFC (Fremont)',   lon:-121.98,lat:37.55, type:'governance', note:'Internet Engineering Task Force, RFC standards', speed:'policy',bw:'RFC 9000+',code:'RFC/BCP',ping:2},
+    {name:'W3C (MIT)',            lon:-71.09,lat:42.36,  type:'governance', note:'World Wide Web Consortium, web standards', speed:'policy',bw:'HTML/CSS/WebAPI',code:'HTTP/WebSocket',ping:3},
+    {name:'Root DNS A (Verisign)',lon:-77.49,lat:39.04,  type:'root_dns',   note:'a.root-servers.net, Ashburn VA', speed:'100Gbps',bw:'100K qps',code:'DNS/DNSSEC',ping:1},
+    {name:'Root DNS B (USC-ISI)', lon:-118.29,lat:33.97, type:'root_dns',   note:'b.root-servers.net, Marina del Rey', speed:'10Gbps',bw:'50K qps',code:'DNS/DNSSEC',ping:5},
+    {name:'Root DNS F (ISC)',     lon:-122.27,lat:37.87, type:'root_dns',   note:'f.root-servers.net, anycast global', speed:'100Gbps',bw:'200K qps',code:'DNS/DNSSEC',ping:2},
+    {name:'Root DNS J (Verisign)',lon:-77.49,lat:39.04,  type:'root_dns',   note:'j.root-servers.net, anycast 100+ sites', speed:'100Gbps',bw:'300K qps',code:'DNS/DNSSEC',ping:1},
+    {name:'Root DNS K (RIPE)',    lon:4.9,lat:52.37,     type:'root_dns',   note:'k.root-servers.net, Amsterdam, anycast', speed:'100Gbps',bw:'200K qps',code:'DNS/DNSSEC',ping:8},
+    {name:'Root DNS M (WIDE)',    lon:139.69,lat:35.69,  type:'root_dns',   note:'m.root-servers.net, Tokyo, anycast', speed:'40Gbps',bw:'80K qps',code:'DNS/DNSSEC',ping:12},
+    {name:'Cloudflare 1.1.1.1',  lon:-122.39,lat:37.79, type:'cdn',        note:'Fastest public DNS, 300+ PoPs, WARP VPN', speed:'25Tbps',bw:'edge cache',code:'HTTP/3 QUIC',ping:3},
+    {name:'Cloudflare London',   lon:-0.09,lat:51.51,   type:'cdn',        note:'EU edge PoP, Workers serverless', speed:'25Tbps',bw:'edge compute',code:'HTTP/3 QUIC',ping:5},
+    {name:'Akamai Cambridge',    lon:-71.1,lat:42.36,    type:'cdn',        note:'Largest CDN, 365K+ servers, 135 countries', speed:'300Tbps',bw:'edge cache',code:'HTTP/2 ESI',ping:2},
+    {name:'Fastly SF',           lon:-122.4,lat:37.78,   type:'cdn',        note:'Edge cloud, Compute@Edge, Varnish', speed:'60Tbps',bw:'edge compute',code:'HTTP/2 VCL',ping:4},
+    {name:'KeyCDN Winterthur',   lon:8.73,lat:47.5,     type:'cdn',        note:'Swiss CDN, 40+ PoPs, HTTP/2 push', speed:'10Tbps',bw:'proxy chain',code:'HTTP/2 REST',ping:8},
+    {name:'AWS CloudFront',      lon:-77.49,lat:39.04,   type:'cdn',        note:'450+ PoPs, Lambda@Edge, Shield', speed:'100Tbps',bw:'edge+origin',code:'HTTP/3 REST',ping:1},
+    {name:'Google CDN',          lon:-122.08,lat:37.42,  type:'cdn',        note:'Cloud CDN, Media CDN, 200+ PoPs', speed:'80Tbps',bw:'edge+compute',code:'gRPC/QUIC',ping:2},
+    {name:'Let\'s Encrypt',      lon:-122.4,lat:37.78,   type:'proxy',      note:'Free TLS CA, 300M+ certs, ACME protocol', speed:'10K certs/s',bw:'ACME v2',code:'TLS1.3/ACME',ping:5},
+    {name:'Wikipedia (Ashburn)',  lon:-77.49,lat:39.04,   type:'proxy',      note:'Wikimedia CDN, Varnish edge, 15B+ views/mo', speed:'100Gbps',bw:'MediaWiki API',code:'REST/Action API',ping:1},
+    {name:'Wikipedia (Amsterdam)',lon:4.9,lat:52.37,     type:'proxy',      note:'Wikimedia EU cache, esams cluster', speed:'50Gbps',bw:'MediaWiki API',code:'REST/Action API',ping:6},
+    {name:'Nginx (F5 Seattle)',  lon:-122.33,lat:47.61,  type:'proxy',      note:'Most deployed web server, reverse proxy', speed:'200K rps',bw:'L7 proxy',code:'HTTP/gRPC',ping:3},
+    {name:'HAProxy (Willy)',     lon:2.35,lat:48.86,     type:'proxy',      note:'TCP/HTTP load balancer, 2M+ deployments', speed:'300K rps',bw:'L4-L7 proxy',code:'TCP/HTTP',ping:7},
+    {name:'Envoy/Istio (Google)',lon:-122.08,lat:37.42,  type:'proxy',      note:'Service mesh proxy, gRPC-native, xDS API', speed:'100K rps',bw:'L7 mesh',code:'gRPC/xDS',ping:2}
+];
+
+/* INFRA_SECTION_RENDER */
+
+function initCore(){
+    if(coreInited) return;
+    coreInited=true;
+    var cvs=$('cv-core'), wrap=$('core-wrap');
+    var ctx=cvs.getContext('2d');
+
+    function resize(){ var r=wrap.getBoundingClientRect(); var dpr=devicePixelRatio||1; cvs.width=r.width*dpr; cvs.height=r.height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    resize(); window.addEventListener('resize',resize);
+
+    wrap.addEventListener('pointerdown',function(e){coreDrag=true;coreLX=e.clientX;coreLY=e.clientY;});
+    window.addEventListener('pointermove',function(e){if(!coreDrag)return;coreRotY+=(e.clientX-coreLX)*0.006;coreRotX+=(e.clientY-coreLY)*0.006;coreRotX=Math.max(-Math.PI/2,Math.min(Math.PI/2,coreRotX));coreLX=e.clientX;coreLY=e.clientY;});
+    window.addEventListener('pointerup',function(){coreDrag=false;});
+    wrap.addEventListener('wheel',function(e){e.preventDefault();coreZoom=Math.max(0.5,Math.min(3,coreZoom-e.deltaY*0.002));},{passive:false});
+
+    function cGeo(lon,lat){
+        var la=lat*Math.PI/180,lo=lon*Math.PI/180;
+        return{x:Math.cos(la)*Math.cos(lo),y:-Math.sin(la),z:Math.cos(la)*Math.sin(lo)};
+    }
+    function cRot(x,y,z){
+        var x1=x*Math.cos(coreRotY)-z*Math.sin(coreRotY);
+        var z1=x*Math.sin(coreRotY)+z*Math.cos(coreRotY);
+        var y1=y*Math.cos(coreRotX)-z1*Math.sin(coreRotX);
+        var z2=y*Math.sin(coreRotX)+z1*Math.cos(coreRotX);
+        return[x1,y1,z2];
+    }
+    function cProj(x,y,z,rad,W,H){
+        var r=cRot(x,y,z);
+        return{x:W/2+r[0]*rad,y:H/2+r[1]*rad,z:r[2],vis:r[2]<0.15};
+    }
+
+    function slerp(a,b,t){
+        var dot=a.x*b.x+a.y*b.y+a.z*b.z;
+        dot=Math.max(-1,Math.min(1,dot));
+        var omega=Math.acos(dot);
+        if(omega<0.001) return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t};
+        var sinO=Math.sin(omega);
+        var fa=Math.sin((1-t)*omega)/sinO, fb=Math.sin(t*omega)/sinO;
+        return{x:fa*a.x+fb*b.x,y:fa*a.y+fb*b.y,z:fa*a.z+fb*b.z};
+    }
+
+    // Junction points: magnetic dipole field line intersections at each layer boundary
+    var junctions=[];
+    EARTH_LAYERS.forEach(function(layer,li){
+        if(li===EARTH_LAYERS.length-1) return;
+        var nJunc=6+li*2;
+        for(var j=0;j<nJunc;j++){
+            var angle=(j/nJunc)*Math.PI*2;
+            var latSpread=60-li*8;
+            var lat=latSpread*Math.sin(angle);
+            var lon=(j/nJunc)*360-180;
+            junctions.push({layer:li,r:layer.rFrac,lat:lat,lon:lon,angle:angle,color:layer.color,nextColor:EARTH_LAYERS[li+1].color});
+        }
+    });
+
+    function spawnPacket(cableIdx){
+        var cable=CABLES[cableIdx%CABLES.length];
+        var sA=STATIONS[cable.from], sB=STATIONS[cable.to];
+        corePackets.push({
+            cable:cableIdx%CABLES.length,
+            phase:'ascend',
+            progress:0,
+            speed:0.3+Math.random()*0.4,
+            color:cable.color,
+            fromStation:cable.from,
+            toStation:cable.to,
+            trail:[],
+            born:coreTime,
+            laps:0
+        });
+    }
+
+    $('cr-launch').addEventListener('click',function(){
+        var idx=Math.floor(Math.random()*CABLES.length);
+        spawnPacket(idx);
+    });
+    $('cr-auto').addEventListener('click',function(){
+        coreAutoMode=!coreAutoMode;
+        this.textContent=coreAutoMode?'Auto: ON':'Auto: OFF';
+        this.style.borderColor=coreAutoMode?'var(--success)':'var(--border)';
+        this.style.color=coreAutoMode?'var(--success)':'var(--text)';
+    });
+    $('cr-reset').addEventListener('click',function(){corePackets=[];coreTime=0;});
+    $('cr-speed').addEventListener('input',function(){coreSpeed=+this.value;});
+
+    // Legend
+    var legHTML='<div style="font-weight:700;margin-bottom:4px;color:var(--text);font-size:11px">Iron Line · Earth Layers</div>';
+    EARTH_LAYERS.forEach(function(l){
+        legHTML+='<div class="layer-row"><span class="layer-dot" style="background:'+l.color+'"></span><span class="layer-iron" style="color:'+l.color+'">'+l.iron+'</span><span class="layer-label">'+l.name+'</span></div>';
+    });
+    legHTML+='<div style="margin-top:6px;border-top:1px solid var(--border);padding-top:4px">';
+    legHTML+='<div style="font-weight:700;margin-bottom:3px;color:var(--text);font-size:10px">Infrastructure Layers</div>';
+    var layers=[
+        {key:'_layerResearch',label:'Research ('+RESEARCH.length+')',  color:'#ff3838', icon:'◆'},
+        {key:'_layerSpace',   label:'Space ('+SPACE_INFRA.length+')',  color:'#ffe138', icon:'✦'},
+        {key:'_layerDC',      label:'Data Centers ('+DATA_CENTERS.length+')',color:'#3fb950',icon:'●'},
+        {key:'_layerNet',     label:'Network ('+NETWORK_HUBS.length+')',color:'#e2b714',icon:'▲'},
+        {key:'_layerPower',   label:'Power ('+POWER_INFRA.length+')', color:'#38a5ff', icon:'▽'},
+        {key:'_layerMfg',     label:'Mfg ('+MANUFACTURING.length+')', color:'#a78bfa', icon:'■'},
+        {key:'_layerProto',   label:'Protocol ('+NET_PROTOCOL.length+')', color:'#f0883e', icon:'⊞'}
+    ];
+    layers.forEach(function(ly){
+        legHTML+='<div class="layer-row" style="cursor:pointer" data-toggle="'+ly.key+'"><span class="layer-dot" style="background:'+ly.color+'"></span><span style="color:'+ly.color+';font-size:9px">'+ly.icon+'</span> <span class="layer-label">'+ly.label+'</span></div>';
+    });
+    var totalInfra=RESEARCH.length+SPACE_INFRA.length+DATA_CENTERS.length+NETWORK_HUBS.length+POWER_INFRA.length+MANUFACTURING.length+NET_PROTOCOL.length;
+    legHTML+='</div><div style="margin-top:6px;border-top:1px solid var(--border);padding-top:4px;color:var(--muted);font-size:9px">'+CABLES.length+' cables · '+STATIONS.length+' stations · '+totalInfra+' facilities<br>'+junctions.length+' magnetic junctions</div>';
+    $('core-legend').innerHTML=legHTML;
+    $('core-legend').querySelectorAll('[data-toggle]').forEach(function(el){
+        el.addEventListener('click',function(){
+            var k=this.dataset.toggle;
+            window[k]=window[k]===false?true:false;
+            this.style.opacity=window[k]===false?'0.3':'1';
+        });
+    });
+
+    function drawCore(){
+        coreAnimId=requestAnimationFrame(drawCore);
+        if(activeTab!=='core') return;
+        if(!coreDrag) coreRotY+=0.0015;
+        coreTime+=0.016*coreSpeed;
+
+        if(coreAutoMode&&Math.random()<0.025*coreSpeed&&corePackets.length<40){
+            spawnPacket(Math.floor(Math.random()*CABLES.length));
+        }
+
+        var r=wrap.getBoundingClientRect();
+        var W=r.width,H=r.height;
+        ctx.clearRect(0,0,W,H);
+        var baseRad=Math.min(W,H)*0.38*coreZoom;
+
+        // Deep space background glow
+        var bgGrad=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,baseRad*1.5);
+        bgGrad.addColorStop(0,'rgba(14,10,24,0.6)');
+        bgGrad.addColorStop(0.5,'rgba(13,17,23,0.4)');
+        bgGrad.addColorStop(1,'transparent');
+        ctx.fillStyle=bgGrad; ctx.fillRect(0,0,W,H);
+
+        // Draw concentric Earth layers (back half, then front half for depth)
+        for(var li=EARTH_LAYERS.length-1;li>=0;li--){
+            var layer=EARTH_LAYERS[li];
+            var layerRad=baseRad*layer.rFrac;
+
+            // Layer ring glow
+            ctx.beginPath(); ctx.arc(W/2,H/2,layerRad,0,Math.PI*2);
+            ctx.strokeStyle=layer.color+(li===0?'60':'30');
+            ctx.lineWidth=li===0?2.5:1.2;
+            ctx.stroke();
+
+            // Atmospheric fill (very subtle)
+            if(li>0){
+                var innerRad=baseRad*EARTH_LAYERS[li-1].rFrac;
+                var ringGrad=ctx.createRadialGradient(W/2,H/2,innerRad,W/2,H/2,layerRad);
+                ringGrad.addColorStop(0,'transparent');
+                ringGrad.addColorStop(0.5,layer.glow);
+                ringGrad.addColorStop(1,'transparent');
+                ctx.fillStyle=ringGrad;
+                ctx.beginPath(); ctx.arc(W/2,H/2,layerRad,0,Math.PI*2); ctx.fill();
+            }
+
+            // Layer label on right side
+            var labelX=W/2+layerRad+6, labelY=H/2;
+            if(labelX<W-80){
+                ctx.fillStyle=layer.color+'90';
+                ctx.font='bold 8px '+getComputedStyle(document.body).getPropertyValue('--mono');
+                ctx.textAlign='left'; ctx.textBaseline='middle';
+                ctx.fillText(layer.iron+' '+layer.name,labelX,labelY-(li*2));
+            }
+        }
+
+        // Inner core hot glow
+        var coreGlow=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,baseRad*0.19);
+        coreGlow.addColorStop(0,'rgba(255,100,40,0.5)');
+        coreGlow.addColorStop(0.5,'rgba(255,56,56,0.25)');
+        coreGlow.addColorStop(1,'transparent');
+        ctx.fillStyle=coreGlow; ctx.beginPath(); ctx.arc(W/2,H/2,baseRad*0.19,0,Math.PI*2); ctx.fill();
+
+        // Pulsing core beacon
+        var pulse=0.6+0.4*Math.sin(coreTime*3);
+        ctx.beginPath(); ctx.arc(W/2,H/2,4+pulse*3,0,Math.PI*2);
+        ctx.fillStyle='rgba(255,200,100,'+pulse*0.8+')'; ctx.fill();
+
+        // Magnetic dipole field lines (decorative, show junction routing)
+        ctx.strokeStyle='rgba(167,139,250,0.08)'; ctx.lineWidth=0.8;
+        for(var fl=0;fl<8;fl++){
+            var fAngle=(fl/8)*Math.PI*2+coreTime*0.05;
+            ctx.beginPath();
+            for(var t=0;t<=40;t++){
+                var theta=(t/40)*Math.PI;
+                var fieldR=baseRad*0.95*Math.sin(theta)*Math.sin(theta);
+                var fx=W/2+fieldR*Math.cos(fAngle)*Math.cos(theta-(Math.PI/2));
+                var fy=H/2+fieldR*Math.sin(theta-(Math.PI/2));
+                t===0?ctx.moveTo(fx,fy):ctx.lineTo(fx,fy);
+            }
+            ctx.stroke();
+        }
+
+        // Junction points at layer boundaries (magnetic ring intersections)
+        junctions.forEach(function(jnc){
+            var jR=baseRad*jnc.r;
+            var jAngle=jnc.angle+coreTime*0.02;
+            var jx=W/2+jR*Math.cos(jAngle);
+            var jy=H/2+jR*Math.sin(jAngle)*0.4;
+            var jPulse=0.4+0.6*Math.sin(coreTime*2+jnc.angle*3);
+
+            ctx.beginPath(); ctx.arc(jx,jy,2+jPulse,0,Math.PI*2);
+            ctx.fillStyle=jnc.color+(Math.round(jPulse*180).toString(16).padStart(2,'0'));
+            ctx.fill();
+        });
+
+        // Submarine cables on surface (great-circle arcs)
+        CABLES.forEach(function(cable){
+            var sA=STATIONS[cable.from], sB=STATIONS[cable.to];
+            var gA=cGeo(sA.lon,sA.lat), gB=cGeo(sB.lon,sB.lat);
+            ctx.beginPath();
+            var visible=false;
+            for(var t=0;t<=24;t++){
+                var f=t/24;
+                var mid=slerp(gA,gB,f);
+                var p=cProj(mid.x,mid.y,mid.z,baseRad,W,H);
+                if(p.z<-0.3) continue;
+                visible=true;
+                var alpha=Math.max(0.08,0.4*(1-Math.abs(p.z)));
+                if(t===0||!visible){ctx.moveTo(p.x,p.y);}
+                else ctx.lineTo(p.x,p.y);
+            }
+            ctx.strokeStyle=cable.color+'50';
+            ctx.lineWidth=1.2;
+            ctx.stroke();
+        });
+
+        // Station dots on surface
+        STATIONS.forEach(function(st,si){
+            var g=cGeo(st.lon,st.lat);
+            var p=cProj(g.x,g.y,g.z,baseRad,W,H);
+            if(p.z<-0.2) return;
+            var alpha=Math.max(0.2,1-Math.abs(p.z)*1.5);
+            ctx.globalAlpha=alpha;
+            var dotR=st.hub?4:2.5;
+            ctx.beginPath(); ctx.arc(p.x,p.y,dotR,0,Math.PI*2);
+            ctx.fillStyle=st.hub?'#bc8cff':'#58a6ff'; ctx.fill();
+            if(st.hub){
+                var glow2=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,12);
+                glow2.addColorStop(0,'rgba(188,140,255,0.3)');
+                glow2.addColorStop(1,'transparent');
+                ctx.fillStyle=glow2; ctx.fillRect(p.x-12,p.y-12,24,24);
+            }
+            if(p.z<-0.05){ctx.globalAlpha=1;return;}
+            ctx.font=(st.hub?'bold ':'')+'7px '+getComputedStyle(document.body).getPropertyValue('--mono');
+            ctx.fillStyle='rgba(230,237,243,'+alpha*0.7+')';
+            ctx.textAlign='center'; ctx.textBaseline='bottom';
+            ctx.fillText(st.name,p.x,p.y-dotR-3);
+            ctx.globalAlpha=1;
+        });
+
+        // Radial fiber conduits (core → surface) for each hub station
+        STATIONS.forEach(function(st){
+            if(!st.hub) return;
+            var g=cGeo(st.lon,st.lat);
+            var p1=cProj(g.x,g.y,g.z,baseRad,W,H);
+            if(p1.z<-0.1) return;
+            var p0={x:W/2,y:H/2};
+            ctx.strokeStyle='rgba(188,140,255,0.06)'; ctx.lineWidth=0.8;
+            ctx.setLineDash([2,4]);
+            ctx.beginPath(); ctx.moveTo(p0.x,p0.y); ctx.lineTo(p1.x,p1.y); ctx.stroke();
+            ctx.setLineDash([]);
+        });
+
+        // ━━━ INFRASTRUCTURE LAYERS ━━━
+        var infraAlpha = 0.7;
+        var INFRA_COLORS = {particle:'#ff3838',neutrino:'#ff8c38',radio:'#ffe138',gravity:'#a78bfa',fusion:'#3fb950',supercomp:'#38a5ff',nuclear:'#f85149',underwater:'#56d4dd',ionosphere:'#bc8cff',cable:'#58a6ff',
+            dsn:'#ffe138',ground:'#3fb950',starlink:'#58a6ff',sigint:'#f85149',
+            chip_fab:'#ff3838',gpu:'#3fb950',quantum:'#a78bfa',assembly:'#ff8c38',
+            hydro:'#38a5ff',wind:'#3fb950',solar:'#ffe138',
+            ixp:'#e2b714',cable_landing:'#56d4dd',
+            governance:'#f0883e',root_dns:'#56d4dd',cdn:'#3fb950',proxy:'#bc8cff'};
+        var INFRA_SHAPES = {particle:'◆',neutrino:'◇',radio:'◎',gravity:'◈',fusion:'⊛',supercomp:'▣',nuclear:'⚛',underwater:'≋',ionosphere:'◉',cable:'≈',
+            dsn:'⊕',ground:'⊙',starlink:'✦',sigint:'◉',
+            chip_fab:'▲',gpu:'■',quantum:'◈',assembly:'●',
+            hydro:'▽',wind:'◇',solar:'○',
+            ixp:'◆',cable_landing:'◎',
+            governance:'⚖',root_dns:'⊗',cdn:'⊞',proxy:'⇋'};
+
+        if(window._infraShow!==false){
+        // Research facilities
+        if(window._layerResearch!==false) RESEARCH.forEach(function(fac){
+            var g=cGeo(fac.lon,fac.lat);
+            var p=cProj(g.x,g.y,g.z,baseRad,W,H);
+            if(p.z<-0.15) return;
+            var a=Math.max(0.15,infraAlpha*(1-Math.abs(p.z)*1.2));
+            ctx.globalAlpha=a;
+            var col=INFRA_COLORS[fac.type]||'#58a6ff';
+            ctx.fillStyle=col;
+            ctx.font='8px '+mono; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(INFRA_SHAPES[fac.type]||'●',p.x,p.y);
+            var glow3=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,8);
+            glow3.addColorStop(0,col+'40'); glow3.addColorStop(1,'transparent');
+            ctx.fillStyle=glow3; ctx.fillRect(p.x-8,p.y-8,16,16);
+            if(p.z<0.1){
+                ctx.font='5px '+mono; ctx.fillStyle='rgba(230,237,243,'+a*0.5+')';
+                ctx.textBaseline='top'; ctx.fillText(fac.name,p.x,p.y+6);
+            }
+            ctx.globalAlpha=1;
+        });
+
+        // Space/satellite infrastructure
+        if(window._layerSpace!==false) SPACE_INFRA.forEach(function(sat){
+            var g=cGeo(sat.lon,sat.lat);
+            var p=cProj(g.x,g.y,g.z,baseRad*1.04,W,H);
+            if(p.z<-0.2) return;
+            var a=Math.max(0.1,infraAlpha*0.6*(1-Math.abs(p.z)));
+            ctx.globalAlpha=a;
+            var col=INFRA_COLORS[sat.type]||'#ffe138';
+            ctx.fillStyle=col;
+            ctx.font='7px '+mono; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(INFRA_SHAPES[sat.type]||'✦',p.x,p.y);
+            if(p.z<0.15){
+                ctx.font='5px '+mono; ctx.fillStyle='rgba(230,237,243,'+a*0.4+')';
+                ctx.textBaseline='top'; ctx.fillText(sat.name.split(' ')[0],p.x,p.y+5);
+            }
+            ctx.globalAlpha=1;
+        });
+
+        // Data centers
+        if(window._layerDC!==false) DATA_CENTERS.forEach(function(dc){
+            var g=cGeo(dc.lon,dc.lat);
+            var p=cProj(g.x,g.y,g.z,baseRad*0.99,W,H);
+            if(p.z<-0.2) return;
+            var a=Math.max(0.1,infraAlpha*0.5*(1-Math.abs(p.z)));
+            ctx.globalAlpha=a;
+            var sz=Math.min(6,Math.max(2,dc.mw/300));
+            ctx.beginPath(); ctx.arc(p.x,p.y,sz,0,Math.PI*2);
+            ctx.fillStyle='#3fb95060'; ctx.fill();
+            ctx.strokeStyle='#3fb950'; ctx.lineWidth=0.6; ctx.stroke();
+            if(p.z<0.1&&sz>3){
+                ctx.font='5px '+mono; ctx.fillStyle='rgba(63,185,80,'+a*0.6+')';
+                ctx.textAlign='center'; ctx.textBaseline='top';
+                ctx.fillText(dc.name.split('(')[0].trim(),p.x,p.y+sz+2);
+            }
+            ctx.globalAlpha=1;
+        });
+
+        // Network hubs (IXPs + cable landings)
+        if(window._layerNet!==false) NETWORK_HUBS.forEach(function(hub){
+            var g=cGeo(hub.lon,hub.lat);
+            var p=cProj(g.x,g.y,g.z,baseRad,W,H);
+            if(p.z<-0.15) return;
+            var a=Math.max(0.1,infraAlpha*0.6*(1-Math.abs(p.z)));
+            ctx.globalAlpha=a;
+            var col=hub.type==='ixp'?'#e2b714':'#56d4dd';
+            var sz=hub.type==='ixp'?Math.min(5,hub.tbps/4):3;
+            ctx.beginPath();
+            if(hub.type==='ixp'){ctx.moveTo(p.x,p.y-sz);ctx.lineTo(p.x+sz,p.y+sz);ctx.lineTo(p.x-sz,p.y+sz);ctx.closePath();}
+            else{ctx.arc(p.x,p.y,sz,0,Math.PI*2);}
+            ctx.fillStyle=col+'50'; ctx.fill();
+            ctx.strokeStyle=col; ctx.lineWidth=0.6; ctx.stroke();
+            ctx.globalAlpha=1;
+        });
+
+        // Power infrastructure
+        if(window._layerPower!==false) POWER_INFRA.forEach(function(pw){
+            var g=cGeo(pw.lon,pw.lat);
+            var p=cProj(g.x,g.y,g.z,baseRad*0.97,W,H);
+            if(p.z<-0.25) return;
+            var a=Math.max(0.08,infraAlpha*0.35*(1-Math.abs(p.z)));
+            ctx.globalAlpha=a;
+            var col=INFRA_COLORS[pw.type]||'#ffe138';
+            var sz=Math.min(5,Math.max(1.5,pw.gw/5));
+            ctx.beginPath(); ctx.arc(p.x,p.y,sz,0,Math.PI*2);
+            ctx.fillStyle=col+'30'; ctx.fill();
+            ctx.strokeStyle=col+'60'; ctx.lineWidth=0.4; ctx.stroke();
+            ctx.globalAlpha=1;
+        });
+
+        // Manufacturing
+        if(window._layerMfg!==false) MANUFACTURING.forEach(function(mf){
+            var g=cGeo(mf.lon,mf.lat);
+            var p=cProj(g.x,g.y,g.z,baseRad*1.01,W,H);
+            if(p.z<-0.2) return;
+            var a=Math.max(0.12,infraAlpha*0.55*(1-Math.abs(p.z)));
+            ctx.globalAlpha=a;
+            var col=INFRA_COLORS[mf.type]||'#ff3838';
+            ctx.fillStyle=col;
+            ctx.font='6px '+mono; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(INFRA_SHAPES[mf.type]||'▲',p.x,p.y);
+            if(p.z<0.1){
+                ctx.font='4.5px '+mono; ctx.fillStyle='rgba(230,237,243,'+a*0.4+')';
+                ctx.textBaseline='top'; ctx.fillText(mf.name.split('(')[0].split(' ')[0],p.x,p.y+5);
+            }
+            ctx.globalAlpha=1;
+        });
+
+        // Internet governance / CDN / proxy / protocol
+        if(window._layerProto!==false) NET_PROTOCOL.forEach(function(np){
+            var g=cGeo(np.lon,np.lat);
+            var p=cProj(g.x,g.y,g.z,baseRad*1.06,W,H);
+            if(p.z<-0.2) return;
+            var a=Math.max(0.12,infraAlpha*0.65*(1-Math.abs(p.z)));
+            ctx.globalAlpha=a;
+            var col=INFRA_COLORS[np.type]||'#f0883e';
+            ctx.fillStyle=col;
+            ctx.font='7px '+mono; ctx.textAlign='center'; ctx.textBaseline='middle';
+            ctx.fillText(INFRA_SHAPES[np.type]||'⊞',p.x,p.y);
+            var pingPulse=0.4+0.6*Math.abs(Math.sin(coreTime*2+np.ping));
+            var glow4=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,6+np.ping);
+            glow4.addColorStop(0,col+(Math.round(pingPulse*60).toString(16).padStart(2,'0')));
+            glow4.addColorStop(1,'transparent');
+            ctx.fillStyle=glow4; ctx.fillRect(p.x-10,p.y-10,20,20);
+            if(p.z<0.1){
+                ctx.font='4.5px '+mono; ctx.fillStyle='rgba(240,136,62,'+a*0.5+')';
+                ctx.textBaseline='top'; ctx.fillText(np.name.split('(')[0].split(' ')[0],p.x,p.y+5);
+            }
+            ctx.globalAlpha=1;
+        });
+        } // end infraShow
+
+        // ━━━ RACE PACKETS ━━━
+        var alivePackets=[];
+        corePackets.forEach(function(pkt){
+            var cable=CABLES[pkt.cable];
+            var sA=STATIONS[pkt.fromStation], sB=STATIONS[pkt.toStation];
+            var gA=cGeo(sA.lon,sA.lat), gB=cGeo(sB.lon,sB.lat);
+            pkt.progress+=0.008*pkt.speed*coreSpeed;
+            var totalPhases=3;
+
+            var px,py,pktAlpha=0.9,pktR=3;
+
+            if(pkt.phase==='ascend'){
+                var t=Math.min(pkt.progress,1);
+                var eased=1-Math.pow(1-t,2.5);
+                var surfP=cProj(gA.x,gA.y,gA.z,baseRad,W,H);
+                px=W/2+(surfP.x-W/2)*eased;
+                py=H/2+(surfP.y-H/2)*eased;
+
+                var layerIdx=Math.floor(eased*EARTH_LAYERS.length);
+                if(layerIdx<EARTH_LAYERS.length) pkt.color=EARTH_LAYERS[Math.min(layerIdx,EARTH_LAYERS.length-1)].color;
+
+                // Flash junction points as packet crosses layer boundaries
+                for(var jli=0;jli<EARTH_LAYERS.length-1;jli++){
+                    var boundary=EARTH_LAYERS[jli].rFrac;
+                    if(Math.abs(eased-boundary)<0.05){
+                        var jFlash=ctx.createRadialGradient(px,py,0,px,py,8);
+                        jFlash.addColorStop(0,EARTH_LAYERS[jli].color+'80');
+                        jFlash.addColorStop(1,'transparent');
+                        ctx.fillStyle=jFlash; ctx.fillRect(px-8,py-8,16,16);
+                    }
+                }
+                if(pkt.progress>=1){pkt.phase='surface';pkt.progress=0;pkt.color=cable.color;}
+            }
+            else if(pkt.phase==='surface'){
+                var t=Math.min(pkt.progress,1);
+                var mid=slerp(gA,gB,t);
+                var mp=cProj(mid.x,mid.y,mid.z,baseRad,W,H);
+                px=mp.x; py=mp.y;
+                pktAlpha=mp.z<-0.3?0.1:0.9;
+                pkt.color=cable.color;
+                if(pkt.progress>=1){pkt.phase='descend';pkt.progress=0;}
+            }
+            else if(pkt.phase==='descend'){
+                var t=Math.min(pkt.progress,1);
+                var eased=Math.pow(t,2.5);
+                var surfP=cProj(gB.x,gB.y,gB.z,baseRad,W,H);
+                px=surfP.x+(W/2-surfP.x)*eased;
+                py=surfP.y+(H/2-surfP.y)*eased;
+
+                var layerIdx=EARTH_LAYERS.length-1-Math.floor(eased*EARTH_LAYERS.length);
+                if(layerIdx>=0) pkt.color=EARTH_LAYERS[Math.max(0,layerIdx)].color;
+
+                if(pkt.progress>=1){
+                    pkt.laps++;
+                    if(pkt.laps>=3){return;}
+                    pkt.phase='ascend'; pkt.progress=0;
+                    pkt.fromStation=pkt.toStation;
+                    var newCable=CABLES[Math.floor(Math.random()*CABLES.length)];
+                    pkt.cable=CABLES.indexOf(newCable);
+                    var nextFrom=newCable.from===pkt.fromStation?newCable.from:newCable.to;
+                    var nextTo=newCable.from===pkt.fromStation?newCable.to:newCable.from;
+                    pkt.fromStation=nextFrom; pkt.toStation=nextTo;
+                }
+            }
+
+            if(px!==undefined){
+                pkt.trail.push({x:px,y:py,color:pkt.color});
+                if(pkt.trail.length>30) pkt.trail.shift();
+
+                // Trail
+                for(var ti=1;ti<pkt.trail.length;ti++){
+                    var ta=ti/pkt.trail.length*0.4;
+                    ctx.strokeStyle=pkt.trail[ti].color+Math.round(ta*255).toString(16).padStart(2,'0');
+                    ctx.lineWidth=1.5;
+                    ctx.beginPath();
+                    ctx.moveTo(pkt.trail[ti-1].x,pkt.trail[ti-1].y);
+                    ctx.lineTo(pkt.trail[ti].x,pkt.trail[ti].y);
+                    ctx.stroke();
+                }
+
+                // Packet dot
+                ctx.globalAlpha=pktAlpha;
+                ctx.beginPath(); ctx.arc(px,py,pktR,0,Math.PI*2);
+                ctx.fillStyle=pkt.color; ctx.fill();
+                var pGlow=ctx.createRadialGradient(px,py,0,px,py,10);
+                pGlow.addColorStop(0,pkt.color+'60');
+                pGlow.addColorStop(1,'transparent');
+                ctx.fillStyle=pGlow; ctx.fillRect(px-10,py-10,20,20);
+                ctx.globalAlpha=1;
+            }
+            alivePackets.push(pkt);
+        });
+        corePackets=alivePackets;
+
+        // HUD
+        var ascend=0,surface=0,descend=0;
+        corePackets.forEach(function(p){
+            if(p.phase==='ascend') ascend++;
+            else if(p.phase==='surface') surface++;
+            else descend++;
+        });
+        var totalFac=RESEARCH.length+SPACE_INFRA.length+DATA_CENTERS.length+NETWORK_HUBS.length+POWER_INFRA.length+MANUFACTURING.length+NET_PROTOCOL.length;
+        $('core-hud').innerHTML='<span style="color:var(--text);font-weight:600">Core Race Network</span><br>'+
+            'Packets: <span style="color:var(--accent)">'+corePackets.length+'</span><br>'+
+            '<span style="color:#ff3838">↑ Ascend: '+ascend+'</span> <span style="color:#3fb950">→ Surf: '+surface+'</span> <span style="color:#38a5ff">↓ Desc: '+descend+'</span><br>'+
+            'Speed: ×'+coreSpeed.toFixed(1)+'<br>'+
+            '<span style="color:var(--muted)">'+CABLES.length+' cables · '+STATIONS.filter(function(s){return s.hub;}).length+' hubs</span><br>'+
+            '<span style="color:var(--muted)">'+totalFac+' facilities ('+RESEARCH.length+' research · '+SPACE_INFRA.length+' space · '+DATA_CENTERS.length+' DC)</span><br>'+
+            '<span style="color:var(--muted)">'+NETWORK_HUBS.length+' net · '+POWER_INFRA.length+' power · '+MANUFACTURING.length+' mfg · '+NET_PROTOCOL.length+' proto</span><br>'+
+            '<span style="color:var(--gold)">24ms cortical target</span>';
+    }
+    drawCore();
+}
+
+// ━━━━━ Init ━━━━━
+renderViewer('luvukid0');
+
+// ━━━━━ Export ━━━━━
+$('btn-export').addEventListener('click', function(){
+    var key=$('v-circuit').value;
+    var src=LIB[key]||LIB['luvukid0'];
+    if(QP&&QP.downloadWithPrefixes) QP.downloadWithPrefixes(src,'qbit-globe-'+key+'.qasm','qasm','qbit-globe');
+    else { var b=new Blob([src],{type:'text/plain'}); var a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='qbit-globe-'+key+'.qasm'; a.click(); }
+});
+
+// ━━━━━ Theme Toggle ━━━━━
+(function(){
+    var saved = localStorage.getItem('uvqbit-theme') || 'dark';
+    document.documentElement.setAttribute('data-theme', saved);
+    var btn = $('theme-toggle');
+    function updateIcon(t){
+        var sun=btn.querySelector('.ico-sun'), moon=btn.querySelector('.ico-moon');
+        if(sun&&moon){ sun.style.display=t==='light'?'none':'block'; moon.style.display=t==='light'?'block':'none'; }
+    }
+    updateIcon(saved);
+    btn.addEventListener('click', function(){
+        var cur = document.documentElement.getAttribute('data-theme') || 'dark';
+        var next = cur === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        localStorage.setItem('uvqbit-theme', next);
+        updateIcon(next);
+        document.documentElement.style.transition = 'background .4s, color .4s';
+        setTimeout(function(){ document.documentElement.style.transition=''; }, 500);
+    });
+})();
+
+// ━━━━━ SCAN PIPELINE SYNC + QUANTUM LATTICE ━━━━━
+(function(){
+  var scanBC=new BroadcastChannel('iron-line');
+  scanBC.onmessage=function(e){
+    if(e.data&&e.data.type==='scan-locate'&&e.data.point){
+      var pt=e.data.point;
+      var hud=$('core-hud');
+      if(hud){
+        var scanInfo=document.createElement('div');
+        scanInfo.style.cssText='color:#a78bfa;font-size:9px;margin-top:4px;border-top:1px solid var(--border);padding-top:4px';
+        scanInfo.textContent='SCAN: idx='+pt.idx+' θ='+(pt.theta*180/Math.PI).toFixed(1)+'° score='+pt.score.toFixed(3)+' L'+e.data.layer;
+        var old=hud.querySelector('.scan-pip');if(old)old.remove();
+        scanInfo.className='scan-pip';hud.appendChild(scanInfo);
+      }
+    }
+
+    // Gate submit from photonic park — spawn ascending packet (core → crust)
+    if(e.data&&e.data.type==='gate-submit'&&e.data.source==='ugrad-photonic-park'){
+      if(coreInited&&typeof CABLES!=='undefined'){
+        var cableIdx=e.data.gate%CABLES.length;
+        corePackets.push({
+          cable:cableIdx,phase:'ascend',progress:0,
+          speed:0.6+Math.random()*0.3,
+          color:e.data.riderColor||'#a78bfa',
+          fromStation:CABLES[cableIdx].from,toStation:CABLES[cableIdx].to,
+          trail:[],born:coreTime,laps:0,
+          gateData:{gate:e.data.gate,rider:e.data.riderName,verdict:e.data.verdict,nQ:e.data.nQ}
+        });
+        // Acknowledge to park
+        try{var ack=new BroadcastChannel('iron-line');
+        ack.postMessage({type:'gate-globe-ack',source:'qbit-globe',gate:e.data.gate,rider:e.data.rider,t:performance.now()});
+        ack.close()}catch(ex){}
+      }
+      var hud=$('core-hud');
+      if(hud){
+        var gInfo=hud.querySelector('.gate-pip');
+        if(!gInfo){gInfo=document.createElement('div');gInfo.className='gate-pip';gInfo.style.cssText='color:#e040fb;font-size:9px;margin-top:4px;border-top:1px solid var(--border);padding-top:4px';hud.appendChild(gInfo)}
+        gInfo.textContent='GATE '+e.data.gate+': '+e.data.riderName+' → '+e.data.verdict+' ('+e.data.nQ+'Q) ↑crust';
+      }
+    }
+
+    // Gate result from IBM via park — spawn descending packet (crust → core)
+    if(e.data&&e.data.type==='gate-result'&&e.data.source==='ugrad-photonic-park'){
+      if(coreInited&&typeof CABLES!=='undefined'){
+        var cableIdx=(e.data.gate+3)%CABLES.length;
+        corePackets.push({
+          cable:cableIdx,phase:'descend',progress:1,
+          speed:0.5+Math.random()*0.3,
+          color:e.data.hellingerFidelity>0.9?'#3fb950':e.data.hellingerFidelity>0.7?'#ffe138':'#f85149',
+          fromStation:CABLES[cableIdx].to,toStation:CABLES[cableIdx].from,
+          trail:[],born:coreTime,laps:0,
+          gateData:{gate:e.data.gate,rider:e.data.riderName,hFid:e.data.hellingerFidelity}
+        });
+      }
+      var hud=$('core-hud');
+      if(hud){
+        var gInfo=hud.querySelector('.gate-pip');
+        if(!gInfo){gInfo=document.createElement('div');gInfo.className='gate-pip';gInfo.style.cssText='color:#3fb950;font-size:9px;margin-top:4px;border-top:1px solid var(--border);padding-top:4px';hud.appendChild(gInfo)}
+        gInfo.textContent='IBM RESULT G'+e.data.gate+': '+e.data.riderName+' H:'+(e.data.hellingerFidelity*100).toFixed(1)+'% ↓core';
+      }
+    }
+  };
+  var kbBC=new BroadcastChannel('kbatch-training');
+  kbBC.onmessage=function(e){
+    if(e.data&&e.data.contrail&&coreInited){
+      var hud=$('core-hud');
+      if(hud){
+        var kbInfo=hud.querySelector('.kb-pip');
+        if(!kbInfo){kbInfo=document.createElement('div');kbInfo.className='kb-pip';kbInfo.style.cssText='color:#e2b714;font-size:9px;margin-top:2px';hud.appendChild(kbInfo);}
+        kbInfo.textContent='kbatch contrail: '+e.data.contrail.length+' pts';
+      }
+    }
+  };
+
+  var cv=$('cv-core');
+  if(cv){
+    var tip=document.createElement('div');
+    tip.style.cssText='position:absolute;background:rgba(13,17,23,0.95);border:1px solid #30363d;border-radius:6px;padding:6px 10px;color:#c9d1d9;font:10px monospace;pointer-events:none;z-index:100;display:none;max-width:300px';
+    cv.parentElement.style.position='relative';
+    cv.parentElement.appendChild(tip);
+
+    var allFacs=[];
+    RESEARCH.forEach(function(f){allFacs.push(f)});
+    SPACE_INFRA.forEach(function(f){allFacs.push(f)});
+    DATA_CENTERS.forEach(function(f){allFacs.push(f)});
+    NETWORK_HUBS.forEach(function(f){allFacs.push(f)});
+    POWER_INFRA.forEach(function(f){allFacs.push(f)});
+    MANUFACTURING.forEach(function(f){allFacs.push(f)});
+    NET_PROTOCOL.forEach(function(f){allFacs.push(f)});
+
+    cv.addEventListener('mousemove',function(e){
+      var rect=cv.getBoundingClientRect();
+      var mx=e.clientX-rect.left, my=e.clientY-rect.top;
+      var closest=null, dist=Infinity;
+      var W=rect.width,H=rect.height,baseRad=Math.min(W,H)*0.38*coreZoom;
+      function cG(lon,lat){var la=lat*Math.PI/180,lo=lon*Math.PI/180;return{x:Math.cos(la)*Math.cos(lo),y:-Math.sin(la),z:Math.cos(la)*Math.sin(lo)};}
+      function cR(x,y,z){var x1=x*Math.cos(coreRotY)-z*Math.sin(coreRotY);var z1=x*Math.sin(coreRotY)+z*Math.cos(coreRotY);var y1=y*Math.cos(coreRotX)-z1*Math.sin(coreRotX);return[x1,y1];}
+      allFacs.forEach(function(f){
+        var g=cG(f.lon,f.lat);var r=cR(g.x,g.y,g.z);
+        var px=W/2+r[0]*baseRad,py=H/2+r[1]*baseRad;
+        var d=Math.sqrt((mx-px)*(mx-px)+(my-py)*(my-py));
+        if(d<dist&&d<20){dist=d;closest=f;}
+      });
+      if(closest){
+        tip.style.display='block';tip.style.left=(mx+12)+'px';tip.style.top=(my-10)+'px';
+        tip.innerHTML='<b style="color:#58a6ff">'+closest.name+'</b><br>'+
+          (closest.note||'')+'<br>'+
+          (closest.speed?'<span style="color:#3fb950">Speed:</span> '+closest.speed+'<br>':'')+
+          (closest.bw?'<span style="color:#a78bfa">BW:</span> '+closest.bw+'<br>':'')+
+          (closest.code?'<span style="color:#ffe138">Code:</span> '+closest.code+'<br>':'')+
+          (closest.ping!==undefined?'<span style="color:#f0883e">Ping:</span> ~'+closest.ping+'ms':'');
+      }else{tip.style.display='none';}
+    });
+    cv.addEventListener('mouseleave',function(){tip.style.display='none';});
+  }
+})();
+
+// ━━━━━ PWA + Quantum Sync ━━━━━
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+// ===== QUANTUM PREFIX LIVE SYNC =====
+if(QP){
+    QP.onStateChange(function(source,state){ if(source==='qbit-globe'||!state) return; });
+    QP.broadcastState('qbit-globe',{coverage:0,totalLines:0,classifiedLines:0,prefixCounts:{},role:'quantum-geographic-codex'});
+    QP.requestStateSync();
+}
+})();
+</script>
+</body>
+</html>

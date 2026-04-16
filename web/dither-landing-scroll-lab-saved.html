@@ -1,0 +1,841 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!-- qbitos.ai — depth grid + dot field + vertical line flow + dial scroll (Framer-parity sketch, no cube) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#030508">
+<meta name="description" content="qbitos.ai — Iron Line scroll lab: depth grid, interactive pattern, timeline, data plane">
+<title>qbitos.ai — Iron Line Scroll Lab</title>
+<link rel="stylesheet" href="quantum-theme.css">
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    .visually-hidden { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    html { scroll-behavior: smooth; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        color: #e8f4ff;
+        background: #030508;
+        overflow-x: hidden;
+        min-height: 100%;
+    }
+    body.loader-active { overflow: hidden; }
+
+    /* —— Flowing vertical grid lines (vertical-grid-lines vibe) —— */
+    .v-flow-lines {
+        position: fixed;
+        inset: 0;
+        z-index: 5;
+        pointer-events: none;
+        display: flex;
+        justify-content: space-evenly;
+        opacity: 0.35;
+    }
+    .v-flow-lines .vline {
+        position: relative;
+        width: 1px;
+        height: 100%;
+        background: linear-gradient(180deg, transparent 0%, rgba(100, 180, 255, 0.12) 40%, rgba(100, 180, 255, 0.12) 60%, transparent 100%);
+    }
+    .vline .seg {
+        position: absolute;
+        left: -2px;
+        width: 5px;
+        height: 18%;
+        border-radius: 2px;
+        background: linear-gradient(180deg, rgba(0, 242, 255, 0.5), rgba(255, 0, 229, 0.35));
+        box-shadow: 0 0 12px rgba(120, 220, 255, 0.4);
+        animation: vSeg 4.8s ease-in-out infinite;
+        opacity: 0.85;
+    }
+    @keyframes vSeg {
+        0%, 100% { top: 6%; opacity: 0.35; }
+        50% { top: 78%; opacity: 1; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .vline .seg { animation: none; top: 40%; opacity: 0.5; }
+    }
+
+    /* —— Vertical dial nav (VerticalDialNav-style) —— */
+    .dial-nav {
+        position: fixed;
+        right: 0.35rem;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 40;
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        padding: 0.5rem 0.35rem;
+        background: rgba(6, 12, 22, 0.75);
+        backdrop-filter: blur(10px);
+        border-radius: 999px 0 0 999px;
+        border: 1px solid rgba(120, 200, 255, 0.15);
+    }
+    .dial-nav a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        text-decoration: none;
+        color: rgba(200, 230, 255, 0.55);
+        font-size: 0.65rem;
+        font-weight: 800;
+        border: 1px solid transparent;
+        transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    }
+    .dial-nav a:hover, .dial-nav a:focus-visible { outline: none; color: #fff; background: rgba(80, 160, 255, 0.2); }
+    .dial-nav a.active {
+        color: #fff;
+        border-color: rgba(0, 242, 255, 0.45);
+        box-shadow: 0 0 16px rgba(0, 242, 255, 0.25);
+        background: rgba(40, 100, 180, 0.35);
+    }
+
+    .main-scroll {
+        scroll-snap-type: y mandatory;
+        overflow-y: auto;
+        max-height: 100vh;
+    }
+    .main-scroll.loader-lock { overflow: hidden; }
+    .snap-section {
+        scroll-snap-align: start;
+        min-height: 100vh;
+        position: relative;
+        padding: 3.5rem 1.25rem 4rem;
+        padding-right: 3rem;
+    }
+
+    /* —— Hero: depth + dot field canvas + hover grid + pong cells —— */
+    .hero {
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding-bottom: 6rem;
+    }
+    #hero-depth-canvas {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 0;
+    }
+    .hero-grid {
+        position: absolute;
+        inset: 0;
+        z-index: 2;
+        display: grid;
+        grid-template-columns: repeat(16, 1fr);
+        grid-template-rows: repeat(10, 1fr);
+        gap: 1px;
+        pointer-events: auto;
+    }
+    .hero-cell {
+        background: rgba(4, 10, 20, 0.25);
+        border: 1px solid rgba(80, 140, 220, 0.06);
+        transition: background 0.15s, box-shadow 0.15s;
+        position: relative;
+        min-height: 0;
+    }
+    .hero-cell:hover {
+        background: rgba(0, 242, 255, 0.08);
+        box-shadow: inset 0 0 20px rgba(255, 0, 229, 0.06);
+    }
+    .hero-cell--pong {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.45);
+    }
+    .hero-cell--pong canvas { width: 100%; height: 100%; image-rendering: pixelated; }
+    .hero-copy {
+        position: relative;
+        z-index: 4;
+        max-width: 40rem;
+        margin-left: 4%;
+    }
+    .seta-steps {
+        font-size: clamp(0.95rem, 2.8vw, 1.25rem);
+        line-height: 1.75;
+        font-weight: 600;
+        color: rgba(200, 225, 255, 0.72);
+        margin-bottom: 1.25rem;
+    }
+    .seta-steps span { display: block; opacity: 0.88; }
+    .hero h1 {
+        font-size: clamp(2.5rem, 9vw, 4rem);
+        font-weight: 900;
+        letter-spacing: -0.03em;
+        background: linear-gradient(135deg, #00f2ff, #ff00e5 55%, #fff 100%);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        filter: drop-shadow(0 0 24px rgba(0, 242, 255, 0.25));
+    }
+    .hero-lead { margin-top: 0.75rem; color: rgba(220, 235, 255, 0.65); max-width: 34rem; }
+
+    /* —— Interactive pattern section —— */
+    .section-pattern h2 { margin-bottom: 1rem; font-size: 1.35rem; }
+    .pattern-stage {
+        position: relative;
+        min-height: 52vh;
+        border-radius: 12px;
+        background: rgba(8, 16, 30, 0.6);
+        border: 1px solid rgba(120, 200, 255, 0.12);
+        overflow: hidden;
+    }
+    .pattern-grid {
+        display: grid;
+        grid-template-columns: repeat(20, 1fr);
+        grid-auto-rows: minmax(28px, 1fr);
+        height: 100%;
+        min-height: 52vh;
+    }
+    .pattern-cell {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.65rem;
+        color: rgba(140, 200, 255, 0.2);
+        transition: transform 0.12s, color 0.12s, opacity 0.12s;
+        user-select: none;
+    }
+
+    /* —— Base box + border gradient frames —— */
+    .section-boxes h2 { margin-bottom: 1.25rem; }
+    .box-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+    .gradient-frame {
+        padding: 2px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #00f2ff, #7b5cff 45%, #ff00e5 80%);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
+    .gradient-frame-inner {
+        background: rgba(4, 8, 18, 0.92);
+        border-radius: 12px;
+        padding: 1.25rem;
+        min-height: 140px;
+    }
+    .gradient-frame-inner h3 { font-size: 1rem; margin-bottom: 0.5rem; color: #a8d8ff; }
+    .gradient-frame-inner p { font-size: 0.85rem; color: rgba(200, 220, 255, 0.55); line-height: 1.45; }
+
+    /* —— Premium timeline —— */
+    .section-timeline h2 { margin-bottom: 2rem; }
+    .timeline {
+        position: relative;
+        max-width: 560px;
+        margin: 0 auto;
+        padding-left: 1.5rem;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        border-radius: 2px;
+        background: linear-gradient(180deg, rgba(0, 242, 255, 0.8), rgba(255, 0, 229, 0.5));
+        box-shadow: 0 0 20px rgba(120, 200, 255, 0.3);
+    }
+    .tl-card {
+        margin-bottom: 1.75rem;
+        padding: 1rem 1.25rem;
+        background: rgba(10, 20, 40, 0.65);
+        border-radius: 10px;
+        border: 1px solid rgba(120, 200, 255, 0.1);
+        opacity: 0;
+        transform: translateX(-12px);
+        transition: opacity 0.55s ease, transform 0.55s ease;
+    }
+    .tl-card.visible { opacity: 1; transform: translateX(0); }
+    .tl-card h3 { font-size: 0.95rem; color: #8ecfff; margin-bottom: 0.35rem; }
+
+    /* —— Data table —— */
+    .section-data h2 { margin-bottom: 0.75rem; }
+    .table-wrap {
+        padding: 2px;
+        border-radius: 12px;
+        background: linear-gradient(160deg, rgba(0, 242, 255, 0.35), rgba(123, 92, 255, 0.25), rgba(255, 0, 229, 0.25));
+        overflow: auto;
+        max-height: 62vh;
+    }
+    .table-inner { background: #060c18; border-radius: 10px; overflow: hidden; }
+    .table-toolbar { padding: 0.75rem 1rem; border-bottom: 1px solid rgba(120, 200, 255, 0.1); display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; }
+    .table-toolbar input {
+        flex: 1;
+        min-width: 160px;
+        padding: 0.5rem 0.75rem;
+        border-radius: 8px;
+        border: 1px solid rgba(120, 200, 255, 0.2);
+        background: rgba(4, 10, 22, 0.9);
+        color: #e8f4ff;
+        font-size: 0.85rem;
+    }
+    table.data-grid { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    .data-grid th, .data-grid td { padding: 0.65rem 1rem; text-align: left; border-bottom: 1px solid rgba(120, 200, 255, 0.06); }
+    .data-grid th { background: rgba(30, 80, 140, 0.25); color: #9ecfff; position: sticky; top: 0; }
+    .data-grid tr:nth-child(even) td { background: rgba(12, 24, 48, 0.25); }
+    .data-grid tbody tr:hover td { background: rgba(0, 242, 255, 0.06); }
+    .data-grid tr[hidden] { display: none; }
+
+    /* —— Loader (no cube) —— */
+    .loader {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: radial-gradient(ellipse at 50% 28%, #0a1528 0%, #030508 70%);
+        transition: opacity 0.65s ease, clip-path 0.85s cubic-bezier(0.4, 0, 0.2, 1);
+        clip-path: inset(0 0 0 0);
+    }
+    body.loader-done .loader {
+        pointer-events: none;
+        opacity: 0;
+        clip-path: inset(0 0 100% 0);
+    }
+    .loader-pixel-field { position: absolute; inset: 0; display: grid; gap: 1px; opacity: 0.4; z-index: 0; pointer-events: none; }
+    .loader-pixel-cell { background: rgba(8, 24, 48, 0.35); border: 1px solid rgba(80, 160, 255, 0.07); animation: lpx 2.4s ease-in-out infinite; }
+    @keyframes lpx { 0%, 100% { opacity: 0.2; } 45% { opacity: 0.65; } }
+    .loader-stage { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; }
+    .flip-board { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.05em; margin-bottom: 1rem; font-size: clamp(1rem, 3.5vw, 1.65rem); font-weight: 850; max-width: 90vw; min-height: 2.4em; }
+    .flip-board .flap { display: inline-block; transform-origin: 50% 100%; animation: flapTick 3s ease-in-out infinite; animation-delay: calc(var(--fi, 0) * 0.055s); padding: 0.08em 0.1em; border-radius: 4px; border: 1px solid rgba(120, 200, 255, 0.18); background: rgba(255,255,255,0.04); }
+    .flip-board.phase-title .flap { text-transform: none; }
+    @keyframes flapTick { 0%, 100% { transform: rotateX(0); } 11% { transform: rotateX(-86deg); } 22% { transform: rotateX(0); } }
+    .loader-pct { font-size: clamp(2.5rem, 12vw, 3.8rem); font-weight: 200; font-variant-numeric: tabular-nums; }
+    .loader-bar { width: min(78vw, 400px); height: 4px; border-radius: 2px; background: rgba(255,255,255,0.08); margin: 0.35rem 0 0.75rem; overflow: hidden; }
+    .loader-bar > i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #4af, #a8f, #4f8); }
+    .loader-net { font-family: ui-monospace, monospace; font-size: 0.62rem; color: rgba(140, 210, 255, 0.7); text-align: center; width: min(90vw, 400px); margin-bottom: 0.5rem; min-height: 2.4em; }
+    .loader-sub { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(160, 200, 230, 0.5); text-align: center; max-width: 420px; }
+
+    .waveform-strip { position: fixed; left: 0; right: 0; bottom: 0; height: 5px; z-index: 30; pointer-events: none; opacity: 0.55; }
+    .waveform-strip::before { content: ''; position: absolute; inset: -30% 0; background: linear-gradient(90deg, #0ff5, #48f, #f4a, #ff08, #0ff5); background-size: 200% 100%; animation: wf 12s linear infinite; }
+    @keyframes wf { to { transform: translateX(-20%); } }
+    .contrail-strip {
+        position: fixed; left: 50%; transform: translateX(-50%); bottom: 4.75rem; z-index: 25;
+        max-width: min(94vw, 680px); font-family: ui-monospace, monospace; font-size: 9px;
+        color: rgba(160, 220, 255, 0.45); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+    }
+    .dock {
+        position: fixed; left: 50%; bottom: 1rem; transform: translateX(-50%); z-index: 35;
+        display: flex; gap: 0.3rem; padding: 0.35rem 0.5rem; background: rgba(6, 12, 22, 0.8);
+        backdrop-filter: blur(10px); border-radius: 999px; border: 1px solid rgba(120, 180, 255, 0.18);
+    }
+    .dock a { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 11px; text-decoration: none; color: #cfe8ff; background: rgba(40, 90, 160, 0.22); font-weight: 800; font-size: 0.75rem; }
+    .dock a:hover { background: rgba(80, 160, 255, 0.3); }
+    @media (max-width: 640px) {
+        .hero-grid { grid-template-columns: repeat(8, 1fr); grid-template-rows: repeat(12, 1fr); }
+        .dial-nav { right: 0; border-radius: 0; }
+        .pattern-grid { grid-template-columns: repeat(10, 1fr); }
+    }
+</style>
+</head>
+<body class="loader-active">
+<div class="loader" id="iron-loader" role="status">
+    <div class="loader-pixel-field" id="loader-pixel-field"></div>
+    <div class="loader-stage">
+        <div class="flip-board" id="flip-board"></div>
+        <div class="loader-pct" id="loader-pct">0</div>
+        <div class="loader-bar"><i id="loader-bar-i"></i></div>
+        <div class="loader-net" id="loader-net">…</div>
+        <div class="loader-sub" id="loader-sub">Iron Line</div>
+    </div>
+</div>
+
+<div class="v-flow-lines" id="v-flow-lines" aria-hidden="true"></div>
+
+<nav class="dial-nav" aria-label="Section dial">
+    <a href="#s-hero" data-i="0">0</a>
+    <a href="#s-pattern" data-i="1">1</a>
+    <a href="#s-boxes" data-i="2">2</a>
+    <a href="#s-timeline" data-i="3">3</a>
+    <a href="#s-data" data-i="4">4</a>
+</nav>
+
+<main class="main-scroll loader-lock" id="main-scroll">
+    <section id="s-hero" class="snap-section hero">
+        <canvas id="hero-depth-canvas" aria-hidden="true"></canvas>
+        <div class="hero-grid" id="hero-grid"></div>
+        <div class="hero-copy">
+            <div class="seta-steps">
+                <span>1 — Depth field + dot ripple.</span>
+                <span>2 — Grid hover + column light flow.</span>
+                <span>3 — Scroll: Iron Line plane → data.</span>
+            </div>
+            <h1>qbitos.ai</h1>
+            <p class="hero-lead">Hero sketch blending depth-grid motion, dot distortion, and hover tiles — some cells run micro-Pong. Inspired by interactive layout components; implemented in vanilla canvas + CSS.</p>
+        </div>
+    </section>
+
+    <section id="s-pattern" class="snap-section section-pattern">
+        <h2>Interactive pattern</h2>
+        <p style="opacity:0.65;margin-bottom:0.75rem;max-width:42rem;font-size:0.9rem;">Proximity-weighted grid (dots/plus). Move pointer — cells brighten and scale like Framer “Interactive Pattern”.</p>
+        <div class="pattern-stage" id="pattern-stage"><div class="pattern-grid" id="pattern-grid"></div></div>
+    </section>
+
+    <section id="s-boxes" class="snap-section section-boxes">
+        <h2>Base frames</h2>
+        <p style="opacity:0.65;margin-bottom:1rem;max-width:42rem;font-size:0.9rem;">Gradient border shells — “Base Box” + “Border Gradient” layout pass.</p>
+        <div class="box-row">
+            <div class="gradient-frame"><div class="gradient-frame-inner"><h3>DAC · codec</h3><p>Tracks, stripes, .qbit preflight — single gluelam surface for prefixes + steno.</p></div></div>
+            <div class="gradient-frame"><div class="gradient-frame-inner"><h3>Quantum gutter</h3><p>Eleven-symbol line address space — export and bench across 59 languages.</p></div></div>
+            <div class="gradient-frame"><div class="gradient-frame-inner"><h3>Iron Line bus</h3><p>BroadcastChannel telemetry — loader and apps share L0–L7 transcript state.</p></div></div>
+        </div>
+    </section>
+
+    <section id="s-timeline" class="snap-section section-timeline">
+        <h2>Iron Line timeline</h2>
+        <div class="timeline" id="timeline">
+            <div class="tl-card"><h3>L0–L1</h3><p>Steno + terminal velocity — T5 classify, uterm, search mesh.</p></div>
+            <div class="tl-card"><h3>L2–L3</h3><p>Commander + quantum — kbatch corpus, gutter, uvqbit circuits.</p></div>
+            <div class="tl-card"><h3>L4–L5</h3><p>Notepad / RNDR — quantum-notepad, archflow, hexcast frames.</p></div>
+            <div class="tl-card"><h3>L6–L7</h3><p>Research + persona — medical, history, QA governance plane.</p></div>
+        </div>
+    </section>
+
+    <section id="s-data" class="snap-section section-data">
+        <h2>Layer table</h2>
+        <p style="opacity:0.65;margin-bottom:0.75rem;font-size:0.9rem;">Compact data-plane — filter rows (Data Table-style).</p>
+        <div class="table-wrap">
+            <div class="table-inner">
+                <div class="table-toolbar">
+                    <label for="table-filter" class="visually-hidden">Filter</label>
+                    <input id="table-filter" type="search" placeholder="Filter layers, apps, notes…" autocomplete="off">
+                </div>
+                <table class="data-grid" id="iron-table">
+                    <thead><tr><th>Layer</th><th>App</th><th>Budget</th><th>Note</th></tr></thead>
+                    <tbody>
+                        <tr><td>L0</td><td>uterm / steno</td><td>1.3ms boot</td><td>T5-native classify</td></tr>
+                        <tr><td>L1</td><td>iron-browser</td><td>100µs</td><td>17 connectors</td></tr>
+                        <tr><td>L2</td><td>kbatch</td><td>100ms AI</td><td>Capsule + corpus</td></tr>
+                        <tr><td>L3</td><td>uvqbit</td><td>0.1µs gate</td><td>Preflight pipeline</td></tr>
+                        <tr><td>L4</td><td>quantum-notepad</td><td>2ms</td><td>Cells + gutter</td></tr>
+                        <tr><td>L5</td><td>qbit-studio</td><td>16ms</td><td>WebGL RNDR</td></tr>
+                        <tr><td>L6</td><td>qbit-medical</td><td>5ms</td><td>DICOM stack</td></tr>
+                        <tr><td>L7</td><td>history / qa</td><td>5ms</td><td>Persona + policy</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p style="margin-top:1rem;font-size:0.72rem;opacity:0.4;"><a href="launcher.html">Launcher</a> · <a href="kbatch.html">kbatch</a> · <a href="plan-viewer.html">plan viewer</a></p>
+    </section>
+</main>
+
+<div class="waveform-strip" aria-hidden="true"></div>
+<div class="contrail-strip" id="contrail-strip">contrail · · ·</div>
+<nav class="dock" aria-label="Apps">
+    <a href="launcher.html" title="Launcher">⌁</a>
+    <a href="kbatch.html">K</a>
+    <a href="quantum-gutter.html">◇</a>
+    <a href="freya.html">◯</a>
+    <a href="iron-browser.html">⎘</a>
+</nav>
+
+<script>
+(function () {
+    'use strict';
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const mainScroll = document.getElementById('main-scroll');
+    const body = document.body;
+
+    const vflow = document.getElementById('v-flow-lines');
+    const nlines = Math.min(22, Math.max(10, Math.floor(window.innerWidth / 72)));
+    for (let i = 0; i < nlines; i++) {
+        const line = document.createElement('div');
+        line.className = 'vline';
+        const seg = document.createElement('div');
+        seg.className = 'seg';
+        seg.style.animationDelay = (i * 0.28 + (i % 3) * 0.65) + 's';
+        seg.style.animationDuration = (4 + (i % 5) * 0.4) + 's';
+        line.appendChild(seg);
+        vflow.appendChild(line);
+    }
+
+    const sections = Array.from(document.querySelectorAll('.snap-section'));
+    const dialLinks = Array.from(document.querySelectorAll('.dial-nav a'));
+    function scrollSectionIntoView(el) {
+        mainScroll.scrollTo({ top: el.offsetTop, behavior: reduced ? 'auto' : 'smooth' });
+    }
+    dialLinks.forEach(function (a) {
+        a.addEventListener('click', function (e) {
+            e.preventDefault();
+            const id = a.getAttribute('href').slice(1);
+            const t = document.getElementById(id);
+            if (t) scrollSectionIntoView(t);
+        });
+    });
+    let currentIdx = 0;
+    const ioDial = new IntersectionObserver(function (entries) {
+        let best = null;
+        entries.forEach(function (en) {
+            if (en.isIntersecting && (!best || en.intersectionRatio > best.intersectionRatio)) best = en;
+        });
+        if (!best) return;
+        const id = best.target.id;
+        currentIdx = sections.indexOf(best.target);
+        dialLinks.forEach(function (link) {
+            link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+        });
+    }, { root: mainScroll, threshold: [0.28, 0.45, 0.62, 0.78] });
+    sections.forEach(function (s) { ioDial.observe(s); });
+    if (dialLinks[0]) dialLinks[0].classList.add('active');
+
+    Array.from(document.querySelectorAll('.tl-card')).forEach(function (c) {
+        const io = new IntersectionObserver(function (ents) {
+            ents.forEach(function (en) { if (en.isIntersecting) en.target.classList.add('visible'); });
+        }, { root: mainScroll, threshold: 0.12 });
+        io.observe(c);
+    });
+
+    const ironTable = document.getElementById('iron-table');
+    const filterInp = document.getElementById('table-filter');
+    if (filterInp && ironTable) {
+        filterInp.addEventListener('input', function () {
+            const q = filterInp.value.trim().toLowerCase();
+            ironTable.querySelectorAll('tbody tr').forEach(function (tr) {
+                const text = tr.textContent.toLowerCase();
+                tr.hidden = !!(q && text.indexOf(q) === -1);
+            });
+        });
+    }
+
+    const depthCanvas = document.getElementById('hero-depth-canvas');
+    const heroSection = document.getElementById('s-hero');
+    let heroMx = 0.5;
+    let heroMy = 0.5;
+    function heroPointer(e) {
+        const r = heroSection.getBoundingClientRect();
+        heroMx = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+        heroMy = Math.max(0, Math.min(1, (e.clientY - r.top) / r.height));
+        if (reduced) paintDepth();
+    }
+    heroSection.addEventListener('pointermove', heroPointer);
+    heroSection.addEventListener('pointerleave', function () { heroMx = 0.5; heroMy = 0.5; if (reduced) paintDepth(); });
+
+    function resizeDepth() {
+        if (!depthCanvas) return;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const r = heroSection.getBoundingClientRect();
+        depthCanvas.width = Math.max(1, Math.floor(r.width * dpr));
+        depthCanvas.height = Math.max(1, Math.floor(r.height * dpr));
+        depthCanvas._dpr = dpr;
+        depthCanvas._cw = r.width;
+        depthCanvas._ch = r.height;
+    }
+    let depthT0 = performance.now();
+    function paintDepth() {
+        if (!depthCanvas || !depthCanvas._cw) return;
+        const ctx = depthCanvas.getContext('2d');
+        const dpr = depthCanvas._dpr;
+        const wCss = depthCanvas._cw;
+        const hCss = depthCanvas._ch;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.fillStyle = '#030508';
+        ctx.fillRect(0, 0, wCss, hCss);
+        const mx = heroMx * wCss;
+        const my = heroMy * hCss;
+        const R = Math.min(wCss, hCss) * 0.44;
+        const cols = 26;
+        const rows = 16;
+        const cellW = wCss / cols;
+        const cellH = hCss / rows;
+        for (let j = 0; j <= rows; j++) {
+            for (let i = 0; i <= cols; i++) {
+                const cx = i * cellW;
+                const cy = j * cellH;
+                const dx = cx - mx;
+                const dy = cy - my;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const inf = Math.max(0, 1 - dist / R);
+                const ox = dx * inf * 0.11;
+                const oy = dy * inf * 0.11;
+                const x = cx + ox;
+                const y = cy + oy;
+                ctx.fillStyle = 'rgba(80, 200, 255, ' + (0.06 + inf * 0.28) + ')';
+                ctx.beginPath();
+                ctx.arc(x, y, 0.8 + inf * 3.2, 0, Math.PI * 2);
+                ctx.fill();
+                if (i < cols && j < rows && (i + j) % 2 === 0) {
+                    ctx.strokeStyle = 'rgba(100, 170, 255, ' + (0.05 + inf * 0.14) + ')';
+                    ctx.lineWidth = 0.6;
+                    ctx.strokeRect(cx + ox * 0.25, cy + oy * 0.25, cellW * 0.94, cellH * 0.94);
+                }
+            }
+        }
+        if (!reduced) {
+            const t = (performance.now() - depthT0) * 0.001;
+            ctx.strokeStyle = 'rgba(255, 0, 229, 0.07)';
+            ctx.lineWidth = 1;
+            for (let ring = 0; ring < 3; ring++) {
+                const rad = ((t * 38 + ring * 48) % 130) / 130 * Math.min(wCss, hCss) * 0.52;
+                ctx.beginPath();
+                ctx.arc(mx, my, rad, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        if (!reduced) requestAnimationFrame(paintDepth);
+    }
+    resizeDepth();
+    window.addEventListener('resize', resizeDepth);
+    if (reduced) paintDepth();
+    else requestAnimationFrame(paintDepth);
+
+    function mountPong(canvas) {
+        let ro = 0;
+        const ctx = canvas.getContext('2d');
+        let W = 40;
+        let H = 40;
+        let dpr = 1;
+        let bx;
+        let by;
+        let bvx;
+        let bvy;
+        let pL;
+        let pR;
+        let ballInited = false;
+        function sync() {
+            const r = canvas.getBoundingClientRect();
+            dpr = Math.min(2, window.devicePixelRatio || 1);
+            W = Math.max(10, Math.floor(r.width));
+            H = Math.max(10, Math.floor(r.height));
+            canvas.width = W * dpr;
+            canvas.height = H * dpr;
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+            if (!ballInited) {
+                bx = W * 0.5;
+                by = H * 0.5;
+                bvx = Math.max(0.8, W * 0.022);
+                bvy = Math.max(0.6, H * 0.018);
+                if (Math.random() > 0.5) bvx = -bvx;
+                pL = H * 0.5;
+                pR = H * 0.5;
+                ballInited = true;
+            }
+        }
+        sync();
+        if (typeof ResizeObserver !== 'undefined') new ResizeObserver(sync).observe(canvas);
+        const pw = function () { return Math.max(2, W * 0.07); };
+        const ph = function () { return H * 0.24; };
+        function loop() {
+            bx += bvx;
+            by += bvy;
+            if (by < 5 || by > H - 5) bvy *= -1;
+            const pxl = 4;
+            const pxr = W - 4 - pw();
+            if (bx < pxl + pw()) {
+                if (by > pL - ph() / 2 && by < pL + ph() / 2) {
+                    bx = pxl + pw();
+                    bvx = Math.abs(bvx);
+                } else {
+                    bx = W * 0.5;
+                    by = H * 0.5;
+                }
+            }
+            if (bx > pxr) {
+                if (by > pR - ph() / 2 && by < pR + ph() / 2) {
+                    bx = pxr;
+                    bvx = -Math.abs(bvx);
+                } else {
+                    bx = W * 0.5;
+                    by = H * 0.5;
+                }
+            }
+            pL += (by - pL) * 0.16;
+            pR += (by - pR) * 0.12;
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+            ctx.fillRect(0, 0, W, H);
+            ctx.fillStyle = 'rgba(0, 242, 255, 0.55)';
+            ctx.fillRect(pxl, pL - ph() / 2, pw(), ph());
+            ctx.fillRect(pxr, pR - ph() / 2, pw(), ph());
+            ctx.fillStyle = '#e94dff';
+            ctx.beginPath();
+            ctx.arc(bx, by, Math.max(1.5, W * 0.065), 0, Math.PI * 2);
+            ctx.fill();
+            if (!reduced) ro = requestAnimationFrame(loop);
+        }
+        if (!reduced) loop();
+        else {
+            ctx.fillStyle = 'rgba(0, 242, 255, 0.45)';
+            ctx.fillRect(4, H / 2 - ph() / 2, pw(), ph());
+            ctx.fillRect(W - 4 - pw(), H / 2 - ph() / 2, pw(), ph());
+            ctx.fillStyle = '#e94dff';
+            ctx.beginPath();
+            ctx.arc(W / 2, H / 2, 3, 0, 7);
+            ctx.fill();
+        }
+        return function () { if (ro) cancelAnimationFrame(ro); };
+    }
+
+    const heroGrid = document.getElementById('hero-grid');
+    const COLS = 16;
+    const ROWS = 10;
+    const pongPos = new Set(['2,2', '6,1', '10,4', '13,1', '4,6', '14,6', '8,7', '11,8']);
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'hero-cell';
+            if (pongPos.has(c + ',' + r)) {
+                cell.classList.add('hero-cell--pong');
+                const cv = document.createElement('canvas');
+                cell.appendChild(cv);
+                mountPong(cv);
+            }
+            heroGrid.appendChild(cell);
+        }
+    }
+
+    const patternGrid = document.getElementById('pattern-grid');
+    const patternStage = document.getElementById('pattern-stage');
+    const PCOLS = 20;
+    const PROWS = 18;
+    for (let i = 0; i < PCOLS * PROWS; i++) {
+        const d = document.createElement('div');
+        d.className = 'pattern-cell';
+        d.textContent = i % 3 === 0 ? '+' : '·';
+        patternGrid.appendChild(d);
+    }
+    const cellMeta = [];
+    function layoutPatternMeta() {
+        cellMeta.length = 0;
+        const sr = patternStage.getBoundingClientRect();
+        Array.from(patternGrid.children).forEach(function (cell) {
+            const cr = cell.getBoundingClientRect();
+            cellMeta.push({
+                el: cell,
+                cx: (cr.left + cr.right) / 2 - sr.left,
+                cy: (cr.top + cr.bottom) / 2 - sr.top
+            });
+        });
+    }
+    let pRaf = 0;
+    let pPtr = { x: -9999, y: -9999 };
+    function applyPatternProx() {
+        pRaf = 0;
+        const px = pPtr.x;
+        const py = pPtr.y;
+        const rad = 130;
+        cellMeta.forEach(function (m) {
+            const dist = Math.hypot(px - m.cx, py - m.cy);
+            const inf = Math.max(0, 1 - dist / rad);
+            m.el.style.opacity = String(0.14 + inf * 0.86);
+            m.el.style.transform = 'scale(' + (1 + inf * 0.5) + ')';
+            m.el.style.color = inf > 0.35 ? 'rgba(0,242,255,0.88)' : 'rgba(140,200,255,0.22)';
+        });
+    }
+    patternStage.addEventListener('pointermove', function (e) {
+        const sr = patternStage.getBoundingClientRect();
+        pPtr.x = e.clientX - sr.left;
+        pPtr.y = e.clientY - sr.top;
+        if (!pRaf) pRaf = requestAnimationFrame(applyPatternProx);
+    });
+    patternStage.addEventListener('pointerleave', function () {
+        pPtr.x = -9999;
+        resetPatternCells();
+    });
+    function resetPatternCells() {
+        cellMeta.forEach(function (m) {
+            m.el.style.opacity = '0.35';
+            m.el.style.transform = 'scale(1)';
+            m.el.style.color = 'rgba(140, 200, 255, 0.22)';
+        });
+    }
+    if (typeof ResizeObserver !== 'undefined') {
+        new ResizeObserver(function () {
+            requestAnimationFrame(function () {
+                layoutPatternMeta();
+                applyPatternProx();
+            });
+        }).observe(patternStage);
+    }
+    requestAnimationFrame(function () { layoutPatternMeta(); resetPatternCells(); });
+
+    const strip = document.getElementById('contrail-strip');
+    document.addEventListener('pointermove', function (e) {
+        if (!strip) return;
+        strip.textContent = 'x:' + Math.round(e.clientX) + ' y:' + Math.round(e.clientY) + ' · dial §' + currentIdx;
+    });
+
+    const phases = [
+        { sub: 'Depth grid · dot field', net: '∿ hero plane' },
+        { sub: 'Flow lines · dial nav', net: '◇ L0–L7 sections' },
+        { sub: 'Iron Line', net: '✓ qbitos.ai' }
+    ];
+    const flipBoard = document.getElementById('flip-board');
+    const titleStr = 'IRON LINE';
+    flipBoard.textContent = '';
+    titleStr.split('').forEach(function (ch, fi) {
+        const sp = document.createElement('span');
+        sp.className = 'flap';
+        sp.style.setProperty('--fi', String(fi));
+        sp.textContent = ch;
+        flipBoard.appendChild(sp);
+    });
+    const loaderPct = document.getElementById('loader-pct');
+    const loaderBar = document.getElementById('loader-bar-i');
+    const loaderNet = document.getElementById('loader-net');
+    const loaderSub = document.getElementById('loader-sub');
+    const pixField = document.getElementById('loader-pixel-field');
+    const pw = Math.min(28, Math.max(10, Math.floor(window.innerWidth / 32)));
+    const ph = 12;
+    pixField.style.gridTemplateColumns = 'repeat(' + pw + ', 1fr)';
+    for (let i = 0; i < pw * ph; i++) {
+        const d = document.createElement('div');
+        d.className = 'loader-pixel-cell';
+        d.style.animationDelay = (i % 19) * 0.035 + 's';
+        pixField.appendChild(d);
+    }
+    const dur = reduced ? 420 : 2400;
+    const start = performance.now();
+    function tickLoader() {
+        const t = performance.now() - start;
+        const p = Math.min(100, (t / dur) * 100);
+        loaderPct.textContent = String(Math.floor(p));
+        loaderBar.style.width = p + '%';
+        const phIndex = p < 34 ? 0 : (p < 68 ? 1 : 2);
+        loaderSub.textContent = phases[phIndex].sub;
+        loaderNet.textContent = phases[phIndex].net;
+        if (p < 100) requestAnimationFrame(tickLoader);
+        else finishLoader();
+    }
+    function finishLoader() {
+        body.classList.remove('loader-active');
+        body.classList.add('loader-done');
+        mainScroll.classList.remove('loader-lock');
+        loaderPct.textContent = '100';
+        loaderBar.style.width = '100%';
+        loaderSub.textContent = 'Scroll · dial';
+        loaderNet.textContent = 'Iron Line ready';
+        try {
+            new BroadcastChannel('iron-line').postMessage({ src: 'dither-landing', phase: 'boot', ts: Date.now() });
+        } catch (e1) {}
+    }
+    tickLoader();
+})();
+</script>
+<script>
+/* ===== QUANTUM PREFIX LIVE SYNC ===== */
+(function () {
+    try {
+        if (window.QuantumPrefixes && QuantumPrefixes.broadcastState) {
+            QuantumPrefixes.broadcastState('dither-landing', { app: 'qbitos-scroll-lab', ts: Date.now() });
+        }
+    } catch (e) {}
+})();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+</script>
+</body>
+</html>

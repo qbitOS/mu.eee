@@ -1,0 +1,1223 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>hexcast — Live Video Hex Broadcast</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+    <link rel="icon" type="image/x-icon" href="../icons/favicon.ico">
+    <style>
+        /* ═══════════════════════════════════════════════
+           hexcast — uvspeed live video broadcast template
+           Video → hex stream encoding → latency benchmarks
+           ═══════════════════════════════════════════════ */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { -webkit-text-size-adjust: 100%; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        body {
+            background: var(--qp-bg, #0d1117); color: var(--qp-text-secondary, #c9d1d9);
+            font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace;
+            overflow-y: auto; overflow-x: hidden;
+            min-height: 100vh; display: flex; flex-direction: column;
+            user-select: none; -webkit-user-select: none;
+        }
+
+        /* ── Header ── */
+        #header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 16px; background: #161b22; border-bottom: 1px solid #30363d;
+            font-size: 0.8125rem; z-index: 10; flex-wrap: wrap; gap: 4px;
+        }
+        #header a { color: #58a6ff; text-decoration: none; margin-left: 12px; }
+        #header a:hover { text-decoration: underline; }
+        .hdr-title { font-weight: 700; color: #da3633; }
+        .hdr-sub { color: #8b949e; font-size: 0.6875rem; }
+        .hdr-live { display: inline-flex; align-items: center; gap: 4px; }
+        .hdr-dot {
+            width: 8px; height: 8px; border-radius: 50%; background: #484f58;
+            animation: none;
+        }
+        .hdr-dot.live { background: #da3633; animation: pulse 1.2s ease infinite; }
+        @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+        .fullscreen-btn {
+            background: none; border: 1px solid #30363d; border-radius: 4px;
+            color: #8b949e; font-family: inherit; font-size: 0.6875rem;
+            padding: 2px 8px; cursor: pointer; transition: all 0.15s;
+        }
+        .fullscreen-btn:hover { background: #21262d; color: #c9d1d9; }
+        body.fullscreen #header, body.fullscreen #footer, body.fullscreen #bottom-panels { display: none; }
+        body.fullscreen #main-area { height: 100vh; }
+        body.fullscreen .fs-exit { display: block; }
+        .fs-exit {
+            display: none; position: fixed; top: 8px; right: 8px; z-index: 100;
+            background: rgba(13,17,23,0.85); border: 1px solid #30363d; border-radius: 6px;
+            color: #8b949e; font-family: inherit; font-size: 0.75rem; padding: 4px 12px; cursor: pointer;
+        }
+        .fs-exit:hover { background: rgba(33,38,45,0.95); color: #c9d1d9; }
+
+        /* ── Controls Bar ── */
+        #controls {
+            display: flex; gap: 6px; padding: 6px 16px; flex-wrap: wrap; align-items: center;
+            background: #161b22; border-bottom: 1px solid #21262d; font-size: 0.6875rem;
+        }
+        .ctrl-btn {
+            padding: 4px 12px; border: 1px solid #30363d; border-radius: 4px;
+            background: #21262d; color: #c9d1d9; font-family: inherit; font-size: 0.6875rem;
+            cursor: pointer; transition: all 0.15s;
+        }
+        .ctrl-btn:hover { background: #30363d; }
+        .ctrl-btn.active { background: #da363322; border-color: #da3633; color: #f97583; }
+        .ctrl-btn.primary { background: #da3633; border-color: #da3633; color: #fff; }
+        .ctrl-btn.primary:hover { background: #b62324; }
+        .ctrl-select {
+            padding: 3px 8px; background: #0d1117; border: 1px solid #30363d; border-radius: 4px;
+            color: #c9d1d9; font-family: inherit; font-size: 0.6875rem;
+        }
+        .ctrl-label { color: #484f58; }
+
+        /* ── Main Area ── */
+        #main-area {
+            flex: 1 1 auto; display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr auto;
+            gap: 1px; background: #21262d;
+            min-height: min(60vh, 500px);
+        }
+
+        /* ── Stats Bar (spans full width) ── */
+        #stats-bar {
+            grid-column: 1 / -1;
+            display: flex; gap: 14px; padding: 6px 16px; flex-wrap: wrap;
+            background: #161b22; font-size: 0.6875rem;
+        }
+        .stat { display: flex; align-items: center; gap: 4px; }
+        .stat-label { color: #484f58; }
+        .stat-val { font-weight: 700; }
+        .c-red { color: #f97583; } .c-green { color: #7ee787; } .c-blue { color: #58a6ff; }
+        .c-orange { color: #f0883e; } .c-purple { color: #d2a8ff; } .c-yellow { color: #e6b422; }
+        .c-dim { color: #8b949e; }
+
+        /* ── Video & Hex Panels ── */
+        .panel { background: #0d1117; display: flex; flex-direction: column; overflow: hidden; }
+        .panel-title {
+            padding: 4px 10px; font-size: 0.625rem; font-weight: 700;
+            background: #161b22; border-bottom: 1px solid #21262d;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .panel-canvas-wrap { flex: 1; position: relative; min-height: 0; }
+        .panel-canvas-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+        .panel-canvas-wrap video {
+            position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+            background: #000; display: none;
+        }
+        .placeholder {
+            position: absolute; inset: 0; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; gap: 8px; color: #484f58;
+        }
+        .placeholder .icon { font-size: 2rem; }
+
+        /* ── Latency Chart ── */
+        #latency-bar {
+            grid-column: 1 / -1;
+            background: #161b22; border-top: 1px solid #21262d;
+            display: flex; flex-direction: column; min-height: 80px;
+        }
+        #latency-bar .panel-title { border-bottom: none; border-top: 1px solid #21262d; }
+        #latency-canvas-wrap { flex: 1; position: relative; min-height: 60px; }
+        #latency-canvas-wrap canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+        /* ── Footer ── */
+        #footer {
+            display: flex; align-items: center; justify-content: center; gap: 16px;
+            padding: 6px 16px; background: #161b22; border-top: 1px solid #30363d;
+            font-size: 0.6875rem; color: #484f58; flex-wrap: wrap; z-index: 10;
+        }
+        #footer a { color: #58a6ff; text-decoration: none; }
+
+        /* ═══ Reusable: Code Cell & Terminal ═══ */
+        #bottom-panels { display: flex; flex-direction: column; border-top: 1px solid #30363d; }
+        .bp-section { border-bottom: 1px solid #21262d; }
+        .bp-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 6px 16px; background: #161b22; cursor: pointer;
+            font-size: 0.75rem; font-weight: 700;
+        }
+        .bp-header:hover { background: #1c2129; }
+        .bp-header .tag { font-size: 0.5625rem; padding: 2px 6px; border-radius: 4px; }
+        .bp-body { padding: 0; overflow: hidden; transition: max-height 0.3s ease; }
+        .bp-body.collapsed { max-height: 0 !important; }
+        .code-cell-area { display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 200px; }
+        .code-editor { display: flex; flex-direction: column; border-right: 1px solid #21262d; }
+        .code-editor textarea {
+            flex: 1; background: #0d1117; color: #c9d1d9; border: none; padding: 12px;
+            font-family: inherit; font-size: 0.8125rem; line-height: 1.6; resize: none;
+            outline: none; min-height: 180px; user-select: text; -webkit-user-select: text;
+        }
+        .code-toolbar {
+            display: flex; align-items: center; gap: 6px; padding: 4px 12px;
+            background: #161b22; border-bottom: 1px solid #21262d; font-size: 0.6875rem;
+        }
+        .code-toolbar button {
+            padding: 3px 10px; border: 1px solid #30363d; border-radius: 4px;
+            background: #21262d; color: #c9d1d9; font-family: inherit; font-size: 0.6875rem; cursor: pointer;
+        }
+        .code-toolbar button:hover { background: #30363d; }
+        .code-toolbar .btn-run { background: #238636; border-color: #2ea043; color: #fff; }
+        .code-toolbar .btn-run:hover { background: #2ea043; }
+        .code-output {
+            background: #0d1117; padding: 12px; font-size: 0.75rem; line-height: 1.5;
+            overflow-y: auto; max-height: 300px; min-height: 180px; white-space: pre-wrap; word-break: break-all;
+        }
+        .code-output .out-line { color: #8b949e; }
+        .code-output .out-result { color: #7ee787; }
+        .code-output .out-error { color: #f97583; }
+        .code-output .out-info { color: #58a6ff; }
+        .terminal-area {
+            background: #0d1117; padding: 8px 12px; min-height: 120px; max-height: 300px;
+            overflow-y: auto; font-size: 0.75rem; line-height: 1.6;
+        }
+        .terminal-area .term-line { color: #8b949e; }
+        .terminal-area .term-line.result { color: #7ee787; }
+        .terminal-area .term-line.error { color: #f97583; }
+        .terminal-area .term-line.info { color: #58a6ff; }
+        .terminal-area .term-line.warn { color: #e6b422; }
+        .term-input-row {
+            display: flex; align-items: center; padding: 4px 12px;
+            background: #161b22; border-top: 1px solid #21262d;
+        }
+        .term-prompt { color: #da3633; font-size: 0.75rem; margin-right: 6px; white-space: nowrap; }
+        .term-input-row input {
+            flex: 1; background: transparent; border: none; color: #c9d1d9;
+            font-family: inherit; font-size: 0.75rem; outline: none;
+            user-select: text; -webkit-user-select: text;
+        }
+        @media (max-width: 700px) {
+            #main-area { grid-template-columns: 1fr; }
+            .code-cell-area { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+<div style="display:flex;height:2px;width:100%;flex-shrink:0"><span style="flex:1;background:#ff3838"></span><span style="flex:1;background:#ff8c38"></span><span style="flex:1;background:#ffe138"></span><span style="flex:1;background:#3fb950"></span><span style="flex:1;background:#38a5ff"></span><span style="flex:1;background:#bc8cff"></span></div>
+    <div id="header">
+        <div>
+            <span class="hdr-live"><span class="hdr-dot" id="live-dot"></span></span>
+            <span class="hdr-title">hexcast</span>
+            <span class="hdr-sub"> — live video hex broadcast + latency bench</span>
+        </div>
+        <div>
+            <button class="fullscreen-btn" id="btn-fullscreen">&#x26F6; Fullscreen</button>
+            <a href="kbatch.html">kbatch</a>
+            <a href="questcast.html">questcast</a>
+            <a href="jawta-audio.html">jawta</a>
+            <a href="archflow.html">archflow</a>
+            <a href="blackwell.html" style="color:#76b900">Blackwell</a>
+            <a href="brothernumsy.html">Game</a>
+            <a href="quantum-notepad.html">Notepad</a>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div id="controls">
+        <button class="ctrl-btn primary" id="btn-camera">&#x1F4F7; Camera</button>
+        <button class="ctrl-btn" id="btn-screen">&#x1F5B5; Screen</button>
+        <button class="ctrl-btn" id="btn-test-pattern">&#x25A6; Test Pattern</button>
+        <span class="ctrl-label">|</span>
+        <label class="ctrl-label">Encode:</label>
+        <select class="ctrl-select" id="sel-encode">
+            <option value="color">Color Thermal</option>
+            <option value="gray">Grayscale</option>
+            <option value="fax">Fax B/W</option>
+            <option value="signal">Signal</option>
+        </select>
+        <label class="ctrl-label">Res:</label>
+        <select class="ctrl-select" id="sel-res">
+            <option value="36">36×36</option>
+            <option value="72" selected>72×72</option>
+            <option value="108">108×108</option>
+            <option value="144">144×144</option>
+        </select>
+        <label class="ctrl-label">FPS:</label>
+        <select class="ctrl-select" id="sel-fps">
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15" selected>15</option>
+            <option value="30">30</option>
+            <option value="60">60</option>
+        </select>
+        <span class="ctrl-label">|</span>
+        <button class="ctrl-btn" id="btn-broadcast">&#x1F4E1; Broadcast</button>
+        <button class="ctrl-btn" id="btn-receive">&#x1F4E5; Receive</button>
+        <button class="ctrl-btn" id="btn-bench">&#x23F1; Benchmark</button>
+        <button class="ctrl-btn" id="btn-snap">&#x1F4F8; Snapshot</button>
+    </div>
+
+    <!-- Main Area -->
+    <div id="main-area">
+        <button class="fs-exit" id="btn-fs-exit">&#x2716; Exit</button>
+
+        <!-- Stats Bar -->
+        <div id="stats-bar">
+            <div class="stat"><span class="stat-label">Source</span> <span class="stat-val c-red" id="s-source">none</span></div>
+            <div class="stat"><span class="stat-label">FPS</span> <span class="stat-val c-blue" id="s-fps">0</span></div>
+            <div class="stat"><span class="stat-label">Encode</span> <span class="stat-val c-orange" id="s-encode">0ms</span></div>
+            <div class="stat"><span class="stat-label">Decode</span> <span class="stat-val c-purple" id="s-decode">0ms</span></div>
+            <div class="stat"><span class="stat-label">Latency</span> <span class="stat-val c-green" id="s-latency">0ms</span></div>
+            <div class="stat"><span class="stat-label">Jitter</span> <span class="stat-val c-yellow" id="s-jitter">0ms</span></div>
+            <div class="stat"><span class="stat-label">Size</span> <span class="stat-val c-dim" id="s-size">0 B</span></div>
+            <div class="stat"><span class="stat-label">Throughput</span> <span class="stat-val c-blue" id="s-throughput">0 kB/s</span></div>
+            <div class="stat"><span class="stat-label">Frames</span> <span class="stat-val c-dim" id="s-frames">0</span></div>
+            <div class="stat"><span class="stat-label">Dropped</span> <span class="stat-val c-red" id="s-dropped">0</span></div>
+        </div>
+
+        <!-- Source panel (left) -->
+        <div class="panel">
+            <div class="panel-title">
+                <span style="color:#da3633;">&#x25C9; Source</span>
+                <span id="source-info" style="color:#484f58;">No input</span>
+            </div>
+            <div class="panel-canvas-wrap" id="source-wrap">
+                <video id="video-el" autoplay muted playsinline></video>
+                <canvas id="cv-source"></canvas>
+                <div class="placeholder" id="source-placeholder">
+                    <div class="icon">&#x1F4F7;</div>
+                    <div>Click <b style="color:#da3633;">Camera</b> or <b>Screen</b> to start</div>
+                    <div style="font-size:0.5625rem;">or use <b>Test Pattern</b> for synthetic source</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hex stream panel (right) -->
+        <div class="panel">
+            <div class="panel-title">
+                <span style="color:#f0883e;">&#x2B22; Hex Stream</span>
+                <span id="hex-info" style="color:#484f58;">Waiting for source...</span>
+            </div>
+            <div class="panel-canvas-wrap">
+                <canvas id="cv-hex"></canvas>
+            </div>
+        </div>
+
+        <!-- Latency chart (bottom, full width) -->
+        <div id="latency-bar">
+            <div class="panel-title">
+                <span style="color:#7ee787;">&#x1F4C8; Latency Benchmark</span>
+                <span id="bench-info" style="color:#484f58;">Encode (orange) · Decode (purple) · Round-trip (green) · Jitter (yellow)</span>
+            </div>
+            <div id="latency-canvas-wrap">
+                <canvas id="cv-latency"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ Bloch Bridge Panel: D-Wave Source/Target/Detector ═══ -->
+    <div id="bloch-panel" style="background:#0d1117;border:1px solid #21262d;border-radius:6px;margin:8px 12px;padding:8px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+            <span style="color:#58a6ff;font:bold 11px monospace;">BLOCH BRIDGE &mdash; Source/Target/Detector</span>
+            <span style="display:flex;gap:4px;">
+                <button class="bloch-mode-btn" data-mode="mono" style="font:9px monospace;background:#21262d;color:#8b949e;border:1px solid #30363d;border-radius:3px;padding:1px 5px;cursor:pointer;">Mono</button>
+                <button class="bloch-mode-btn" data-mode="stereo" style="font:9px monospace;background:#21262d;color:#8b949e;border:1px solid #30363d;border-radius:3px;padding:1px 5px;cursor:pointer;">Stereo</button>
+                <button class="bloch-mode-btn" data-mode="360" style="font:9px monospace;background:#21262d;color:#8b949e;border:1px solid #30363d;border-radius:3px;padding:1px 5px;cursor:pointer;">360</button>
+                <button class="bloch-mode-btn" data-mode="lightfield" style="font:9px monospace;background:#21262d;color:#8b949e;border:1px solid #30363d;border-radius:3px;padding:1px 5px;cursor:pointer;">LF</button>
+                <button id="qvid-record" style="font:9px monospace;background:#da363322;color:#da3633;border:1px solid #da363355;border-radius:3px;padding:1px 5px;cursor:pointer;">REC</button>
+            </span>
+        </div>
+        <div style="display:flex;gap:6px;">
+            <canvas id="cv-bloch-strip" width="480" height="64" style="background:#010409;border-radius:4px;flex:1;"></canvas>
+            <canvas id="cv-bridge-ring" width="64" height="64" style="background:#010409;border-radius:4px;"></canvas>
+        </div>
+        <div style="display:flex;gap:6px;margin-top:4px;">
+            <canvas id="cv-bridge-heatmap" width="480" height="40" style="background:#010409;border-radius:4px;flex:1;"></canvas>
+            <canvas id="cv-bridge-gauge" width="100" height="40" style="background:#010409;border-radius:4px;"></canvas>
+        </div>
+        <canvas id="cv-bridge-prefix" width="580" height="6" style="background:#010409;border-radius:2px;width:100%;margin-top:3px;"></canvas>
+        <div style="display:flex;justify-content:space-between;margin-top:3px;">
+            <span id="bloch-stats" style="font:9px monospace;color:#484f58;">Waiting for frames...</span>
+            <span id="bloch-fidelity" style="font:9px monospace;color:#484f58;"></span>
+        </div>
+    </div>
+
+    <div id="footer">
+        <span>{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</span>
+        <span>&middot;</span>
+        <span style="color:#da3633;">hexcast: live video hex broadcast</span>
+        <span>&middot;</span>
+        <a href="quantum-notepad.html">uvspeed notepad</a>
+        <span>&middot;</span>
+        <a href="kbatch.html">kbatch</a>
+        <span>&middot;</span>
+        <span>API: <code>window.hexcast</code></span>
+    </div>
+
+    <!-- ═══ Bottom Panels: Code Cell + Terminal ═══ -->
+    <div id="bottom-panels">
+        <div class="bp-section">
+            <div class="bp-header" id="code-panel-toggle">
+                <span style="color:#7ee787;">&#9889; Live Code Cell</span>
+                <span>
+                    <span class="tag" style="background:#238636;color:#fff;">JS</span>
+                    <span class="tag" style="background:#21262d;color:#8b949e;">hexcast API</span>
+                    <span style="color:#484f58;margin-left:6px;">&#9660;</span>
+                </span>
+            </div>
+            <div class="bp-body collapsed" id="code-panel-body">
+                <div class="code-cell-area">
+                    <div class="code-editor">
+                        <div class="code-toolbar">
+                            <button class="btn-run" id="code-run">&#9654; Run</button>
+                            <button id="code-clear">Clear</button>
+                            <button id="code-example">Example</button>
+                            <button id="code-sync">Sync State</button>
+                            <span style="flex:1;"></span>
+                            <span style="color:#484f58;">Ctrl+Enter to run</span>
+                        </div>
+                        <textarea id="code-input" placeholder="// hexcast API — control video broadcast from code&#10;// hexcast.startCamera(), hexcast.state, hexcast.benchmark()&#10;" spellcheck="false"></textarea>
+                    </div>
+                    <div>
+                        <div class="code-toolbar" style="justify-content:space-between;">
+                            <span style="color:#7ee787;">Output</span>
+                            <button id="output-clear">Clear Output</button>
+                        </div>
+                        <div class="code-output" id="code-output">
+                            <div class="out-info">// Output appears here when you run code</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="bp-section">
+            <div class="bp-header" id="term-panel-toggle">
+                <span style="color:#da3633;">&#x2622; Terminal</span>
+                <span>
+                    <span class="tag" style="background:#da363322;color:#da3633;">hexcast</span>
+                    <span style="color:#484f58;margin-left:6px;">&#9660;</span>
+                </span>
+            </div>
+            <div class="bp-body collapsed" id="term-panel-body">
+                <div class="terminal-area" id="term-output">
+                    <div class="term-line info">Welcome to hexcast terminal — live video hex broadcast</div>
+                    <div class="term-line">Type <b style="color:#da3633;">help</b> for commands.</div>
+                    <div class="term-line" style="color:#484f58;">───────────────────────────────────────────────</div>
+                </div>
+                <div class="term-input-row">
+                    <span class="term-prompt">hx&gt;</span>
+                    <input type="text" id="term-input" placeholder="help, camera, screen, broadcast, bench, snap ..." autocomplete="off" spellcheck="false">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="quantum-prefixes.js"></script>
+    <script src="qbit-dac.js"></script>
+    <script src="qbit-steno.js"></script>
+    <script src="hexcast-bloch-bridge.js"></script>
+    <script>
+    // ================================================================
+    //  hexcast — Live Video Hex Broadcast + Latency Benchmarks
+    //  Captures video (camera/screen/test-pattern), encodes each frame
+    //  into a hex stream grid, measures encode/decode/round-trip latency.
+    // ================================================================
+
+    // ──────────────────── STATE ────────────────────
+    const STATE = {
+        source: 'none',      // 'camera', 'screen', 'test', 'none'
+        streaming: false,
+        broadcasting: false,
+        encodeMode: 'color',  // 'color', 'gray', 'fax', 'signal'
+        resolution: 72,
+        fps: 15,
+        frameCount: 0,
+        droppedFrames: 0,
+        hexData: null,        // Uint8Array of hex-encoded frame
+        rawFrame: null,       // ImageData of captured frame
+        latency: { encode: 0, decode: 0, roundTrip: 0, jitter: 0 },
+        latencyHistory: [],   // [{encode, decode, roundTrip, jitter, t}]
+        throughput: 0,
+        frameSize: 0,
+        startTime: 0,
+        animId: null,
+        stream: null,
+        broadcastChannel: null,
+    };
+
+    // Thermal color mapping (matches quantum-notepad hex stream style)
+    function thermalColor(val, mode) {
+        const n = val / 255;
+        if (mode === 'color') {
+            const hue = (1 - n) * 200;
+            return `hsl(${hue}, 85%, ${20 + n * 50}%)`;
+        }
+        if (mode === 'gray') {
+            const g = Math.floor(n * 220);
+            return `rgb(${g},${g},${g})`;
+        }
+        if (mode === 'fax') {
+            return n > 0.5 ? '#fff' : '#000';
+        }
+        // signal — green phosphor
+        const g = Math.floor(n * 200);
+        return `rgb(0,${g},${Math.floor(g*0.3)})`;
+    }
+
+    // ──────────────────── VIDEO CAPTURE ────────────────────
+    const videoEl = document.getElementById('video-el');
+    const cvSource = document.getElementById('cv-source');
+    const ctxSource = cvSource.getContext('2d', { willReadFrequently: true });
+    const placeholder = document.getElementById('source-placeholder');
+
+    async function startCamera() {
+        stopSource();
+        try {
+            STATE.stream = await navigator.mediaDevices.getUserMedia({
+                video: { width: { ideal: 640 }, height: { ideal: 480 }, facingMode: 'user' },
+                audio: false,
+            });
+            videoEl.srcObject = STATE.stream;
+            videoEl.style.display = 'block';
+            placeholder.style.display = 'none';
+            STATE.source = 'camera';
+            STATE.streaming = true;
+            STATE.startTime = performance.now();
+            document.getElementById('live-dot').classList.add('live');
+            startLoop();
+        } catch (e) {
+            alert('Camera access denied: ' + e.message);
+        }
+    }
+
+    async function startScreen() {
+        stopSource();
+        try {
+            STATE.stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+            videoEl.srcObject = STATE.stream;
+            videoEl.style.display = 'block';
+            placeholder.style.display = 'none';
+            STATE.source = 'screen';
+            STATE.streaming = true;
+            STATE.startTime = performance.now();
+            document.getElementById('live-dot').classList.add('live');
+            STATE.stream.getVideoTracks()[0].onended = () => stopSource();
+            startLoop();
+        } catch (e) {
+            alert('Screen share cancelled: ' + e.message);
+        }
+    }
+
+    function startTestPattern() {
+        stopSource();
+        STATE.source = 'test';
+        STATE.streaming = true;
+        STATE.startTime = performance.now();
+        videoEl.style.display = 'none';
+        placeholder.style.display = 'none';
+        document.getElementById('live-dot').classList.add('live');
+        startLoop();
+    }
+
+    function stopSource() {
+        if (STATE.stream) {
+            STATE.stream.getTracks().forEach(t => t.stop());
+            STATE.stream = null;
+        }
+        videoEl.srcObject = null;
+        videoEl.style.display = 'none';
+        STATE.streaming = false;
+        STATE.source = 'none';
+        document.getElementById('live-dot').classList.remove('live');
+        if (STATE.animId) { cancelAnimationFrame(STATE.animId); STATE.animId = null; }
+        placeholder.style.display = '';
+    }
+
+    // ──────────────────── ENCODE / DECODE PIPELINE ────────────────────
+    function captureFrame() {
+        const res = STATE.resolution;
+        cvSource.width = res;
+        cvSource.height = res;
+
+        if (STATE.source === 'test') {
+            // Generate test pattern (color bars + moving scan line)
+            const t = (performance.now() / 50) % res;
+            for (let y = 0; y < res; y++) {
+                for (let x = 0; x < res; x++) {
+                    const barIdx = Math.floor(x / (res / 8));
+                    const colors = [[255,255,255],[255,255,0],[0,255,255],[0,255,0],[255,0,255],[255,0,0],[0,0,255],[0,0,0]];
+                    const c = colors[barIdx] || [0,0,0];
+                    // Scanline effect
+                    const scanDist = Math.abs(y - t);
+                    const scanBoost = scanDist < 3 ? 1.5 : 1;
+                    ctxSource.fillStyle = `rgb(${Math.min(255,c[0]*scanBoost)},${Math.min(255,c[1]*scanBoost)},${Math.min(255,c[2]*scanBoost)})`;
+                    ctxSource.fillRect(x, y, 1, 1);
+                }
+            }
+        } else if (videoEl.readyState >= videoEl.HAVE_CURRENT_DATA) {
+            ctxSource.drawImage(videoEl, 0, 0, res, res);
+        } else {
+            return null;
+        }
+
+        return ctxSource.getImageData(0, 0, res, res);
+    }
+
+    function encodeToHex(imageData) {
+        const t0 = performance.now();
+        const pixels = imageData.data;
+        const len = imageData.width * imageData.height;
+        const hex = new Uint8Array(len);
+
+        for (let i = 0; i < len; i++) {
+            const off = i * 4;
+            const r = pixels[off], g = pixels[off+1], b = pixels[off+2];
+            // Encode based on mode
+            if (STATE.encodeMode === 'gray' || STATE.encodeMode === 'fax') {
+                hex[i] = Math.floor(0.299 * r + 0.587 * g + 0.114 * b);
+            } else if (STATE.encodeMode === 'signal') {
+                hex[i] = Math.floor(0.299 * r + 0.587 * g + 0.114 * b);
+            } else {
+                // Color — pack luminance weighted by hue
+                const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+                const maxC = Math.max(r, g, b), minC = Math.min(r, g, b);
+                const sat = maxC > 0 ? (maxC - minC) / maxC : 0;
+                hex[i] = Math.floor(lum * (0.5 + sat * 0.5));
+            }
+        }
+        const encodeTime = performance.now() - t0;
+        return { hex, encodeTime };
+    }
+
+    function decodeHex(hex, mode) {
+        // Decode is measured by the time to render the hex stream canvas
+        return hex; // actual rendering is in renderHex
+    }
+
+    // ──────────────────── RENDER HEX STREAM ────────────────────
+    const cvHex = document.getElementById('cv-hex');
+
+    function renderHex() {
+        const ctx = cvHex.getContext('2d');
+        const W = cvHex.width = cvHex.parentElement.clientWidth;
+        const H = cvHex.height = cvHex.parentElement.clientHeight;
+        ctx.fillStyle = '#0d1117';
+        ctx.fillRect(0, 0, W, H);
+
+        if (!STATE.hexData) return;
+
+        const t0 = performance.now();
+        const res = STATE.resolution;
+        const cw = W / res, ch = H / res;
+        const mode = STATE.encodeMode;
+
+        // Render hex grid cells
+        for (let r = 0; r < res; r++) {
+            for (let c = 0; c < res; c++) {
+                const val = STATE.hexData[r * res + c] || 0;
+                ctx.fillStyle = thermalColor(val, mode);
+                ctx.fillRect(c * cw, r * ch, cw - 0.3, ch - 0.3);
+            }
+        }
+
+        // Hex labels overlay (top rows, small text)
+        if (res <= 72) {
+            const maxLabelRows = Math.min(4, res);
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            ctx.font = `${Math.max(5, cw * 0.4)}px monospace`;
+            ctx.textAlign = 'center';
+            for (let r = 0; r < maxLabelRows; r++) {
+                for (let c = 0; c < res; c++) {
+                    const val = STATE.hexData[r * res + c] || 0;
+                    ctx.fillText(val.toString(16).toUpperCase().padStart(2, '0'),
+                        c * cw + cw / 2, r * ch + ch * 0.75);
+                }
+            }
+            ctx.textAlign = 'start';
+        }
+
+        // Scan line effect
+        const scanY = ((performance.now() / 30) % res) * ch;
+        ctx.fillStyle = mode === 'signal' ? 'rgba(0,255,80,0.08)' : 'rgba(255,255,255,0.05)';
+        ctx.fillRect(0, scanY, W, ch * 2);
+
+        const decodeTime = performance.now() - t0;
+        STATE.latency.decode = decodeTime;
+        return decodeTime;
+    }
+
+    // ──────────────────── RENDER SOURCE PREVIEW ────────────────────
+    function renderSource() {
+        if (STATE.source === 'test') {
+            // Already drawn by captureFrame into cvSource, but we need to scale to display
+            const wrap = document.getElementById('source-wrap');
+            const dCanvas = document.createElement('canvas');
+            // Just use cv-source for display when test pattern
+            cvSource.style.display = 'block';
+        }
+    }
+
+    // ──────────────────── LATENCY CHART ────────────────────
+    const cvLatency = document.getElementById('cv-latency');
+
+    function renderLatencyChart() {
+        const ctx = cvLatency.getContext('2d');
+        const W = cvLatency.width = cvLatency.parentElement.clientWidth;
+        const H = cvLatency.height = cvLatency.parentElement.clientHeight;
+        ctx.fillStyle = '#161b22';
+        ctx.fillRect(0, 0, W, H);
+
+        const hist = STATE.latencyHistory;
+        if (hist.length < 2) {
+            ctx.fillStyle = '#484f58'; ctx.font = '11px monospace'; ctx.textAlign = 'center';
+            ctx.fillText('Latency data will appear here when streaming...', W/2, H/2);
+            ctx.textAlign = 'start';
+            return;
+        }
+
+        const maxPts = Math.min(hist.length, 300);
+        const data = hist.slice(-maxPts);
+        const maxVal = Math.max(1, ...data.map(d => Math.max(d.encode, d.decode, d.roundTrip)));
+        const xStep = W / (maxPts - 1 || 1);
+        const padB = 12;
+
+        // Grid lines
+        ctx.strokeStyle = '#21262d';
+        ctx.lineWidth = 0.5;
+        for (let g = 0; g < 4; g++) {
+            const gy = (g / 3) * (H - padB);
+            ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke();
+        }
+
+        // Draw lines: encode (orange), decode (purple), roundTrip (green), jitter (yellow)
+        const series = [
+            { key: 'encode', color: '#f0883e' },
+            { key: 'decode', color: '#d2a8ff' },
+            { key: 'roundTrip', color: '#7ee787' },
+            { key: 'jitter', color: '#e6b422' },
+        ];
+
+        series.forEach(s => {
+            ctx.strokeStyle = s.color;
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            data.forEach((d, i) => {
+                const x = i * xStep;
+                const y = (H - padB) - (d[s.key] / maxVal) * (H - padB - 4);
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+        });
+
+        // Y-axis labels
+        ctx.fillStyle = '#484f58';
+        ctx.font = '9px monospace';
+        ctx.fillText('0ms', 2, H - 2);
+        ctx.fillText(maxVal.toFixed(1) + 'ms', 2, 10);
+    }
+
+    // ──────────────────── MAIN LOOP ────────────────────
+    let lastFrameTime = 0;
+
+    function frameLoop(now) {
+        if (!STATE.streaming) return;
+
+        const interval = 1000 / STATE.fps;
+        if (now - lastFrameTime < interval) {
+            STATE.animId = requestAnimationFrame(frameLoop);
+            return;
+        }
+
+        const frameStart = performance.now();
+        lastFrameTime = now;
+
+        // Capture
+        const imageData = captureFrame();
+        if (!imageData) {
+            STATE.animId = requestAnimationFrame(frameLoop);
+            return;
+        }
+
+        // Encode
+        const { hex, encodeTime } = encodeToHex(imageData);
+        STATE.hexData = hex;
+        STATE.latency.encode = encodeTime;
+        STATE.frameSize = hex.length;
+
+        // Render hex (measures decode time)
+        renderHex();
+
+        // Round trip = encode + decode
+        STATE.latency.roundTrip = STATE.latency.encode + STATE.latency.decode;
+
+        // Jitter (variance from expected frame interval)
+        const actualInterval = performance.now() - frameStart + interval;
+        STATE.latency.jitter = Math.abs(actualInterval - interval);
+
+        // Throughput
+        const elapsed = (performance.now() - STATE.startTime) / 1000;
+        STATE.frameCount++;
+        STATE.throughput = elapsed > 0 ? (STATE.frameSize * STATE.frameCount) / elapsed / 1024 : 0;
+
+        // History
+        STATE.latencyHistory.push({
+            encode: STATE.latency.encode,
+            decode: STATE.latency.decode,
+            roundTrip: STATE.latency.roundTrip,
+            jitter: STATE.latency.jitter,
+            t: performance.now(),
+        });
+        if (STATE.latencyHistory.length > 600) STATE.latencyHistory.shift();
+
+        // Broadcast via BroadcastChannel
+        if (STATE.broadcasting && STATE.broadcastChannel) {
+            STATE.broadcastChannel.postMessage({
+                type: 'hexframe',
+                hex: Array.from(hex),
+                res: STATE.resolution,
+                mode: STATE.encodeMode,
+                t: performance.now(),
+            });
+        }
+
+        // Update UI
+        updateStats();
+        renderLatencyChart();
+
+        // Show source canvas for test pattern
+        if (STATE.source === 'test') {
+            cvSource.style.display = 'block';
+        }
+
+        STATE.animId = requestAnimationFrame(frameLoop);
+    }
+
+    function startLoop() {
+        STATE.frameCount = 0;
+        STATE.latencyHistory = [];
+        STATE.startTime = performance.now();
+        lastFrameTime = 0;
+        STATE.animId = requestAnimationFrame(frameLoop);
+    }
+
+    // ──────────────────── BROADCAST CHANNEL ────────────────────
+    function startBroadcast() {
+        if (STATE.broadcastChannel) STATE.broadcastChannel.close();
+        STATE.broadcastChannel = new BroadcastChannel('hexcast-stream');
+        STATE.broadcasting = true;
+        document.getElementById('btn-broadcast').classList.add('active');
+    }
+
+    function stopBroadcast() {
+        STATE.broadcasting = false;
+        if (STATE.broadcastChannel) { STATE.broadcastChannel.close(); STATE.broadcastChannel = null; }
+        document.getElementById('btn-broadcast').classList.remove('active');
+    }
+
+    function startReceive() {
+        if (STATE.broadcastChannel) STATE.broadcastChannel.close();
+        stopSource();
+        STATE.broadcastChannel = new BroadcastChannel('hexcast-stream');
+        STATE.broadcastChannel.onmessage = (e) => {
+            if (e.data.type === 'hexframe') {
+                const receiveTime = performance.now();
+                STATE.hexData = new Uint8Array(e.data.hex);
+                STATE.resolution = e.data.res;
+                STATE.encodeMode = e.data.mode;
+                STATE.frameCount++;
+                const latency = receiveTime - e.data.t;
+                STATE.latency.roundTrip = latency;
+                STATE.latency.decode = 0;
+                STATE.latency.encode = 0;
+                STATE.latency.jitter = Math.abs(latency - (STATE.latencyHistory.length > 0
+                    ? STATE.latencyHistory[STATE.latencyHistory.length-1].roundTrip : latency));
+                STATE.latencyHistory.push({
+                    encode: 0, decode: 0, roundTrip: latency, jitter: STATE.latency.jitter,
+                    t: receiveTime,
+                });
+                if (STATE.latencyHistory.length > 600) STATE.latencyHistory.shift();
+                renderHex();
+                updateStats();
+                renderLatencyChart();
+            }
+        };
+        STATE.source = 'receive';
+        document.getElementById('live-dot').classList.add('live');
+        placeholder.innerHTML = '<div class="icon">&#x1F4E1;</div><div>Receiving broadcast stream...</div><div style="font-size:0.5625rem;color:#7ee787;">Open another tab with hexcast to broadcast</div>';
+        placeholder.style.display = '';
+        document.getElementById('btn-receive').classList.add('active');
+    }
+
+    // ──────────────────── BENCHMARK ────────────────────
+    function runBenchmark() {
+        const results = [];
+        const resolutions = [36, 72, 108, 144];
+        const modes = ['color', 'gray', 'fax', 'signal'];
+
+        // Create synthetic test data
+        for (const res of resolutions) {
+            const testImg = new ImageData(res, res);
+            for (let i = 0; i < testImg.data.length; i += 4) {
+                testImg.data[i] = Math.random() * 255;
+                testImg.data[i+1] = Math.random() * 255;
+                testImg.data[i+2] = Math.random() * 255;
+                testImg.data[i+3] = 255;
+            }
+
+            for (const mode of modes) {
+                const origMode = STATE.encodeMode;
+                STATE.encodeMode = mode;
+
+                // Encode benchmark (100 iterations)
+                const iterations = 100;
+                const t0 = performance.now();
+                for (let i = 0; i < iterations; i++) {
+                    encodeToHex(testImg);
+                }
+                const encodeAvg = (performance.now() - t0) / iterations;
+
+                STATE.encodeMode = origMode;
+                results.push({
+                    resolution: `${res}×${res}`,
+                    mode,
+                    pixels: res * res,
+                    encodeMs: encodeAvg,
+                    throughputMB: (res * res / encodeAvg) / 1024,
+                });
+            }
+        }
+        return results;
+    }
+
+    // ──────────────────── SNAPSHOT ────────────────────
+    function takeSnapshot() {
+        const canvas = document.getElementById('cv-hex');
+        const url = canvas.toDataURL('image/png');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `hexcast-${STATE.resolution}x${STATE.resolution}-${Date.now()}.png`;
+        a.click();
+    }
+
+    // ──────────────────── STATS UPDATE ────────────────────
+    function updateStats() {
+        document.getElementById('s-source').textContent = STATE.source;
+        document.getElementById('s-fps').textContent =
+            STATE.frameCount > 0 ? ((STATE.frameCount / ((performance.now() - STATE.startTime) / 1000)) || 0).toFixed(1) : '0';
+        document.getElementById('s-encode').textContent = STATE.latency.encode.toFixed(2) + 'ms';
+        document.getElementById('s-decode').textContent = STATE.latency.decode.toFixed(2) + 'ms';
+        document.getElementById('s-latency').textContent = STATE.latency.roundTrip.toFixed(2) + 'ms';
+        document.getElementById('s-jitter').textContent = STATE.latency.jitter.toFixed(2) + 'ms';
+        const size = STATE.frameSize;
+        document.getElementById('s-size').textContent = size > 1024 ? (size/1024).toFixed(1) + ' KB' : size + ' B';
+        document.getElementById('s-throughput').textContent = STATE.throughput.toFixed(1) + ' kB/s';
+        document.getElementById('s-frames').textContent = STATE.frameCount;
+        document.getElementById('s-dropped').textContent = STATE.droppedFrames;
+        document.getElementById('source-info').textContent = STATE.source === 'none' ? 'No input' :
+            `${STATE.source} · ${STATE.resolution}×${STATE.resolution} @ ${STATE.fps}fps`;
+        document.getElementById('hex-info').textContent = STATE.streaming || STATE.source === 'receive'
+            ? `${STATE.encodeMode} · ${STATE.frameSize} bytes/frame` : 'Waiting for source...';
+    }
+
+    // ──────────────────── CONTROL BUTTONS ────────────────────
+    document.getElementById('btn-camera').addEventListener('click', startCamera);
+    document.getElementById('btn-screen').addEventListener('click', startScreen);
+    document.getElementById('btn-test-pattern').addEventListener('click', startTestPattern);
+    document.getElementById('btn-broadcast').addEventListener('click', () => {
+        STATE.broadcasting ? stopBroadcast() : startBroadcast();
+    });
+    document.getElementById('btn-receive').addEventListener('click', startReceive);
+    document.getElementById('btn-bench').addEventListener('click', () => {
+        const results = runBenchmark();
+        console.table(results);
+        alert('Benchmark complete! Check console (F12) for results.\n\nFastest: '
+            + results.reduce((a,b) => a.encodeMs < b.encodeMs ? a : b).resolution
+            + ' ' + results.reduce((a,b) => a.encodeMs < b.encodeMs ? a : b).mode
+            + ' @ ' + results.reduce((a,b) => a.encodeMs < b.encodeMs ? a : b).encodeMs.toFixed(3) + 'ms');
+    });
+    document.getElementById('btn-snap').addEventListener('click', takeSnapshot);
+
+    document.getElementById('sel-encode').addEventListener('change', e => { STATE.encodeMode = e.target.value; });
+    document.getElementById('sel-res').addEventListener('change', e => { STATE.resolution = parseInt(e.target.value); });
+    document.getElementById('sel-fps').addEventListener('change', e => { STATE.fps = parseInt(e.target.value); });
+
+    // ──────────────────── GLOBAL API ────────────────────
+    window.hexcast = {
+        get state() {
+            return {
+                source: STATE.source, streaming: STATE.streaming,
+                broadcasting: STATE.broadcasting, encodeMode: STATE.encodeMode,
+                resolution: STATE.resolution, fps: STATE.fps,
+                frameCount: STATE.frameCount, droppedFrames: STATE.droppedFrames,
+                latency: { ...STATE.latency },
+                throughput: STATE.throughput, frameSize: STATE.frameSize,
+            };
+        },
+        startCamera, startScreen, startTestPattern, stopSource,
+        startBroadcast, stopBroadcast, startReceive,
+        benchmark: runBenchmark,
+        snapshot: takeSnapshot,
+        get hexData() { return STATE.hexData ? new Uint8Array(STATE.hexData) : null; },
+        get latencyHistory() { return [...STATE.latencyHistory]; },
+        setEncode: (mode) => { STATE.encodeMode = mode; document.getElementById('sel-encode').value = mode; },
+        setResolution: (res) => { STATE.resolution = res; document.getElementById('sel-res').value = String(res); },
+        setFPS: (fps) => { STATE.fps = fps; document.getElementById('sel-fps').value = String(fps); },
+        exportJSON: () => JSON.stringify({
+            state: window.hexcast.state,
+            latencyHistory: STATE.latencyHistory.slice(-100),
+        }, null, 2),
+    };
+
+    // ──────────────────── RESIZE ────────────────────
+    window.addEventListener('resize', () => { renderHex(); renderLatencyChart(); });
+    renderHex(); renderLatencyChart(); updateStats();
+
+    // ──────────────────── CODE CELL (template) ────────────────────
+    (function(){
+        const codeInput = document.getElementById('code-input');
+        const codeOutput = document.getElementById('code-output');
+        function appendOutput(text, cls='out-line') {
+            const div = document.createElement('div'); div.className = cls; div.textContent = text;
+            codeOutput.appendChild(div); codeOutput.scrollTop = codeOutput.scrollHeight;
+        }
+        function runCode() {
+            const code = codeInput.value; if (!code.trim()) return;
+            appendOutput('▶ Running...', 'out-info');
+            const oL=console.log, oW=console.warn, oE=console.error; const logs=[];
+            console.log=(...a)=>{logs.push({t:'log',m:a.map(String).join(' ')});oL(...a);};
+            console.warn=(...a)=>{logs.push({t:'warn',m:a.map(String).join(' ')});oW(...a);};
+            console.error=(...a)=>{logs.push({t:'error',m:a.map(String).join(' ')});oE(...a);};
+            try { const r=eval(code); logs.forEach(l=>appendOutput(l.m,l.t==='error'?'out-error':l.t==='warn'?'out-info':'out-line'));
+                if(r!==undefined)appendOutput('→ '+String(r),'out-result');
+            } catch(e){ logs.forEach(l=>appendOutput(l.m,'out-line')); appendOutput('Error: '+e.message,'out-error'); }
+            console.log=oL;console.warn=oW;console.error=oE;
+        }
+        document.getElementById('code-run').addEventListener('click', runCode);
+        document.getElementById('code-clear').addEventListener('click', ()=>{codeInput.value='';});
+        document.getElementById('output-clear').addEventListener('click', ()=>{codeOutput.innerHTML='';});
+        codeInput.addEventListener('keydown', e=>{ if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runCode();} e.stopPropagation(); });
+        document.getElementById('code-example').addEventListener('click', ()=>{
+            codeInput.value = `// hexcast API — live video broadcast control
+// Start test pattern
+hexcast.startTestPattern();
+
+// Wait a bit then check stats
+setTimeout(() => {
+    const s = hexcast.state;
+    console.log('Source:', s.source);
+    console.log('FPS:', s.fps, '| Frames:', s.frameCount);
+    console.log('Encode:', s.latency.encode.toFixed(2) + 'ms');
+    console.log('Decode:', s.latency.decode.toFixed(2) + 'ms');
+    console.log('Round-trip:', s.latency.roundTrip.toFixed(2) + 'ms');
+    console.log('Jitter:', s.latency.jitter.toFixed(2) + 'ms');
+    console.log('Throughput:', s.throughput.toFixed(1) + ' kB/s');
+    console.log('Frame size:', s.frameSize + ' bytes');
+
+    // Run full benchmark
+    console.log('\\n--- Running Benchmark ---');
+    const bench = hexcast.benchmark();
+    bench.forEach(b => {
+        console.log(b.resolution + ' ' + b.mode + ': ' + b.encodeMs.toFixed(3) + 'ms');
+    });
+}, 1000);`;
+        });
+        document.getElementById('code-sync').addEventListener('click', ()=>{
+            appendOutput('── hexcast State ──','out-info');
+            appendOutput(hexcast.exportJSON(),'out-result');
+        });
+        document.getElementById('code-panel-toggle').addEventListener('click', ()=>{
+            document.getElementById('code-panel-body').classList.toggle('collapsed');
+        });
+    })();
+
+    // ──────────────────── TERMINAL (template) ────────────────────
+    (function(){
+        const termOut = document.getElementById('term-output');
+        const termIn = document.getElementById('term-input');
+        const hist=[]; let hIdx=-1;
+        function tp(t,c=''){const d=document.createElement('div');d.className='term-line '+c;d.innerHTML=t;termOut.appendChild(d);termOut.scrollTop=termOut.scrollHeight;}
+
+        const CMDS = {
+            help: ()=>{
+                tp('─── hexcast Commands ───','info');
+                tp('<b>camera</b>     — start camera capture');
+                tp('<b>screen</b>     — start screen capture');
+                tp('<b>test</b>       — start test pattern');
+                tp('<b>stop</b>       — stop source');
+                tp('<b>broadcast</b>  — toggle BroadcastChannel send');
+                tp('<b>receive</b>    — listen for broadcast from another tab');
+                tp('<b>bench</b>      — run encode/decode benchmark');
+                tp('<b>snap</b>       — save hex stream as PNG');
+                tp('<b>status</b>     — current streaming stats');
+                tp('<b>latency</b>    — latency summary');
+                tp('<b>encode &lt;mode&gt;</b> — set encode mode (color/gray/fax/signal)');
+                tp('<b>res &lt;n&gt;</b>     — set resolution (36/72/108/144)');
+                tp('<b>fps &lt;n&gt;</b>     — set FPS (5/10/15/30/60)');
+                tp('<b>export</b>     — export full JSON state');
+                tp('<b>eval &lt;js&gt;</b>   — evaluate JavaScript');
+                tp('<b>clear</b>      — clear terminal');
+            },
+            camera: ()=>{ startCamera(); tp('📷 Starting camera...','info'); },
+            screen: ()=>{ startScreen(); tp('🖵 Starting screen share...','info'); },
+            test: ()=>{ startTestPattern(); tp('▦ Test pattern started','info'); },
+            stop: ()=>{ stopSource(); tp('⏹ Source stopped','info'); },
+            broadcast: ()=>{ STATE.broadcasting?stopBroadcast():startBroadcast(); tp(STATE.broadcasting?'📡 Broadcasting ON':'📡 Broadcasting OFF','info'); },
+            receive: ()=>{ startReceive(); tp('📥 Receiving mode — open another hexcast tab to broadcast','info'); },
+            bench: ()=>{
+                tp('Running benchmark...','info');
+                const r=runBenchmark();
+                r.forEach(b=>tp(`${b.resolution} ${b.mode}: <b style="color:#f0883e;">${b.encodeMs.toFixed(3)}ms</b> (${b.throughputMB.toFixed(0)} KB/ms)`));
+                tp('Done.','result');
+            },
+            snap: ()=>{ takeSnapshot(); tp('📸 Snapshot saved','result'); },
+            status: ()=>{
+                const s=hexcast.state;
+                tp(`Source: <b style="color:#da3633;">${s.source}</b> | Streaming: ${s.streaming} | Broadcasting: ${s.broadcasting}`);
+                tp(`Resolution: ${s.resolution}×${s.resolution} | FPS: ${s.fps} | Encode: ${s.encodeMode}`);
+                tp(`Frames: ${s.frameCount} | Dropped: ${s.droppedFrames} | Throughput: ${s.throughput.toFixed(1)} kB/s`);
+            },
+            latency: ()=>{
+                const s=hexcast.state;
+                tp('─── Latency ───','info');
+                tp(`Encode: <b style="color:#f0883e;">${s.latency.encode.toFixed(2)}ms</b>`);
+                tp(`Decode: <b style="color:#d2a8ff;">${s.latency.decode.toFixed(2)}ms</b>`);
+                tp(`Round-trip: <b style="color:#7ee787;">${s.latency.roundTrip.toFixed(2)}ms</b>`);
+                tp(`Jitter: <b style="color:#e6b422;">${s.latency.jitter.toFixed(2)}ms</b>`);
+                if(STATE.latencyHistory.length>10){
+                    const last50=STATE.latencyHistory.slice(-50);
+                    const avgRT=last50.reduce((a,b)=>a+b.roundTrip,0)/last50.length;
+                    const maxRT=Math.max(...last50.map(d=>d.roundTrip));
+                    const minRT=Math.min(...last50.map(d=>d.roundTrip));
+                    tp(`Avg(50): ${avgRT.toFixed(2)}ms | Min: ${minRT.toFixed(2)}ms | Max: ${maxRT.toFixed(2)}ms`);
+                }
+            },
+            export: ()=>{ tp('── JSON Export ──','info'); tp(hexcast.exportJSON(),'result'); },
+            clear: ()=>{ termOut.innerHTML=''; },
+        };
+
+        function proc(input){
+            const t=input.trim(); if(!t) return;
+            tp(`<span style="color:#da3633;">hx&gt;</span> ${t}`);
+            hist.unshift(t); hIdx=-1;
+            const parts=t.split(/\s+/); const cmd=parts[0].toLowerCase();
+            if(cmd==='encode'&&parts[1]){ hexcast.setEncode(parts[1]); tp(`Encode mode: ${parts[1]}`,'result'); }
+            else if(cmd==='res'&&parts[1]){ hexcast.setResolution(parseInt(parts[1])); tp(`Resolution: ${parts[1]}`,'result'); }
+            else if(cmd==='fps'&&parts[1]){ hexcast.setFPS(parseInt(parts[1])); tp(`FPS: ${parts[1]}`,'result'); }
+            else if((cmd==='eval'||cmd==='js')&&parts.length>=2){
+                try{const r=eval(t.slice(cmd.length).trim());if(r!==undefined)tp('→ '+String(r),'result');}catch(e){tp('Error: '+e.message,'error');}
+            } else if(CMDS[cmd]){ CMDS[cmd](); }
+            else{ try{const r=eval(t);if(r!==undefined)tp('→ '+String(r),'result');}catch(e){tp(`Unknown: <b>${cmd}</b>. Type <b>help</b>.`,'error');} }
+        }
+        termIn.addEventListener('keydown', e=>{
+            e.stopPropagation();
+            if(e.key==='Enter'){proc(termIn.value);termIn.value='';}
+            else if(e.key==='ArrowUp'){if(hist.length){hIdx=Math.min(hIdx+1,hist.length-1);termIn.value=hist[hIdx];}}
+            else if(e.key==='ArrowDown'){if(hIdx>0){hIdx--;termIn.value=hist[hIdx];}else{hIdx=-1;termIn.value='';}}
+        });
+        document.getElementById('term-panel-toggle').addEventListener('click', ()=>{
+            document.getElementById('term-panel-body').classList.toggle('collapsed');
+        });
+    })();
+
+    // ──────────────────── FULLSCREEN (template) ────────────────────
+    (function(){
+        function enter(){
+            document.body.classList.add('fullscreen'); renderHex(); renderLatencyChart();
+            if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});
+        }
+        function exit(){
+            document.body.classList.remove('fullscreen'); renderHex(); renderLatencyChart();
+            if(document.fullscreenElement)document.exitFullscreen().catch(()=>{});
+        }
+        document.getElementById('btn-fullscreen').addEventListener('click', enter);
+        document.getElementById('btn-fs-exit').addEventListener('click', exit);
+        document.addEventListener('fullscreenchange', ()=>{
+            if(!document.fullscreenElement){document.body.classList.remove('fullscreen');renderHex();renderLatencyChart();}
+        });
+        window.addEventListener('keydown', e=>{
+            if(e.key==='Escape'&&document.body.classList.contains('fullscreen'))exit();
+        });
+    })();
+
+    // ===== PWA SERVICE WORKER =====
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+    }
+
+    // ===== QUANTUM PREFIX LIVE SYNC =====
+    (function() {
+        const QP = window.QuantumPrefixes;
+        if (!QP) return;
+        QP.onStateChange(function(source, state) {
+            if (source === 'hexcast' || !state) return;
+            // Cross-app awareness
+        });
+        QP.broadcastState('hexcast', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, mode: 'video-hex-stream' });
+        QP.requestStateSync();
+    })();
+
+    </script>
+    <script src="bloch-video-codec.js"></script>
+    <script src="bloch-video-renderer.js"></script>
+    <script src="qubo-hexcast-classifier.js"></script>
+    <script>
+    (function(){
+        var renderer = new QvidRenderer({
+            blochCanvas: document.getElementById('cv-bloch-strip'),
+            ringCanvas: document.getElementById('cv-bridge-ring'),
+            heatmapCanvas: document.getElementById('cv-bridge-heatmap'),
+            gaugeCanvas: document.getElementById('cv-bridge-gauge'),
+            prefixCanvas: document.getElementById('cv-bridge-prefix')
+        });
+        var statsEl = document.getElementById('bloch-stats');
+        var fidEl = document.getElementById('bloch-fidelity');
+        var recording = false;
+        var recordedFrames = [];
+
+        var bsCh = new BroadcastChannel('bloch-state');
+        bsCh.onmessage = function(e) {
+            var d = e.data;
+            if (d.type === 'bloch-state') {
+                renderer.render(d);
+                if (statsEl) statsEl.textContent = 'f#' + d.frameIndex + ' | ' +
+                    d.deltaMs.toFixed(1) + 'ms | cone:' + (d.lightConeRadius||0) +
+                    ' | v:' + (d.ballisticVelocity||0).toFixed(2) + ' | ' + (d.mode||'mono');
+                if (fidEl) fidEl.textContent = 'F:' + ((d.fidelity||0)*100).toFixed(0) +
+                    '% KZ:' + ((d.kzConvergence||0)*100).toFixed(0) + '%';
+                if (recording) recordedFrames.push(d);
+            }
+        };
+
+        document.querySelectorAll('.bloch-mode-btn').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                var mode = btn.getAttribute('data-mode');
+                if (window.BlochBridge) window.BlochBridge.setMode(mode);
+                document.querySelectorAll('.bloch-mode-btn').forEach(function(b){
+                    b.style.background = '#21262d'; b.style.color = '#8b949e';
+                });
+                btn.style.background = '#58a6ff33'; btn.style.color = '#58a6ff';
+            });
+        });
+
+        var recBtn = document.getElementById('qvid-record');
+        if (recBtn) recBtn.addEventListener('click', function(){
+            if (!recording) {
+                recording = true; recordedFrames = [];
+                recBtn.style.background = '#da3633'; recBtn.style.color = '#fff';
+                recBtn.textContent = 'STOP';
+            } else {
+                recording = false;
+                recBtn.style.background = '#da363322'; recBtn.style.color = '#da3633';
+                recBtn.textContent = 'REC';
+                if (recordedFrames.length > 0 && window.QvidCodec) {
+                    var mode = (window.BlochBridge && window.BlochBridge.config.mode) || 'mono';
+                    QvidCodec.download(recordedFrames, {
+                        mode: mode, fps: 30,
+                        elevationRing: !!(window.BlochBridge && window.BlochBridge.config.elevationRing)
+                    }, 'hexcast-' + Date.now() + '.qvid');
+                }
+            }
+        });
+
+        window.hexcast = window.hexcast || {};
+        window.hexcast.blochRenderer = renderer;
+        window.hexcast.qvidRecord = function() { if(recBtn) recBtn.click(); };
+    })();
+    </script>
+</body>
+</html>

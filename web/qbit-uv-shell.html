@@ -1,0 +1,322 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!-- Copyright (c) 2026 qbitOS / ugrad.ai. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Source: https://github.com/qbitOS/uvspeed -->
+<!-- Provenance: ai-created-control-envelope -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>qbit uv shell</title>
+<style>
+  :root{
+    --bg:#f6f3ed;--panel:#fcfaf6;--line:#ddd6ca;--text:#2a2a2a;--dim:#746e63;
+    --gold:#8f7a47;--cyan:#4d6e72;--green:#2d7a49;--red:#b44b4b;--mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font:13px/1.45 var(--mono)}
+  #bgfx{position:fixed;inset:0;z-index:0;pointer-events:none}
+  #app{display:flex;flex-direction:column;height:100%;position:relative;z-index:1}
+  #head{display:flex;gap:8px;align-items:center;padding:8px 10px;border-bottom:1px solid var(--line);background:rgba(252,250,246,.88);backdrop-filter:blur(2px)}
+  #head .logo{color:var(--gold);font-weight:700;letter-spacing:.8px}
+  #head .stat{color:var(--dim);font-size:11px}
+  #head .pill{border:1px solid var(--line);border-radius:999px;padding:2px 8px;color:var(--dim);font-size:11px;background:rgba(255,255,255,.55)}
+  #out{flex:1;overflow:auto;padding:10px 12px}
+  .ln{white-space:pre-wrap;word-break:break-word}
+  .dim{color:var(--dim)} .ok{color:var(--green)} .err{color:var(--red)} .gold{color:var(--gold)} .cyan{color:var(--cyan)}
+  #prompt{display:flex;align-items:center;gap:8px;padding:8px 10px;border-top:1px solid var(--line);background:rgba(252,250,246,.9)}
+  #ps{color:var(--gold);font-weight:700}
+  #in{flex:1;background:transparent;border:none;outline:none;color:var(--text);font:13px var(--mono)}
+  #hint{padding:5px 10px;border-top:1px solid var(--line);font-size:11px;color:var(--dim);background:rgba(246,243,237,.92)}
+</style>
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script src="qbit-preflight.js"></script>
+</head>
+<body>
+<canvas id="bgfx"></canvas>
+<div id="app">
+  <div id="head">
+    <span class="logo">qbit uv shell</span>
+    <span class="stat" id="engine">booting...</span>
+    <span class="pill" id="lane">lane:mistral</span>
+    <span class="pill" id="mode">noblink:off</span>
+    <span style="flex:1"></span>
+    <span class="stat" id="bootms"></span>
+  </div>
+  <div id="out"></div>
+  <div id="prompt"><span id="ps">>>> </span><input id="in" autocomplete="off" spellcheck="false"></div>
+  <div id="hint">chat-first shell · blockize foundation · search/history launch · commands: help</div>
+</div>
+<script>
+(function(){
+  'use strict';
+  var t0=performance.now();
+  var QP=window.QuantumPrefixes||null;
+  var codec=window.qbitCodec||null;
+  var OUT=document.getElementById('out');
+  var IN=document.getElementById('in');
+  var LANE=document.getElementById('lane');
+  var MODE=document.getElementById('mode');
+  var ENGINE=document.getElementById('engine');
+  var BOOTMS=document.getElementById('bootms');
+  var LS='qbit-uv-shell-state';
+  var state={lane:'mistral',noBlink:false,chat:true,lastBlockize:null,history:[]};
+
+  try{
+    var s=JSON.parse(localStorage.getItem(LS)||'{}');
+    state.lane=s.lane||state.lane;
+    state.noBlink=!!s.noBlink;
+    state.chat=s.chat!==false;
+    state.lastBlockize=s.lastBlockize||null;
+    state.history=Array.isArray(s.history)?s.history.slice(-120):[];
+  }catch(_){}
+
+  var hexBC=null, qpBC=null;
+  try{ hexBC=new BroadcastChannel('hexterm'); }catch(_){}
+  try{ qpBC=new BroadcastChannel('quantum-prefixes'); }catch(_){}
+
+  function save(){
+    try{
+      localStorage.setItem(LS,JSON.stringify({
+        lane:state.lane,noBlink:state.noBlink,chat:state.chat,lastBlockize:state.lastBlockize,history:state.history.slice(-120)
+      }));
+    }catch(_){}
+  }
+  function startDots(){
+    var cv=document.getElementById('bgfx');
+    if(!cv) return;
+    var ctx=cv.getContext('2d');
+    if(!ctx) return;
+    var dots=[];
+    function resize(){
+      cv.width=window.innerWidth;
+      cv.height=window.innerHeight;
+      dots=[];
+      var n=Math.max(24,Math.floor((cv.width*cv.height)/42000));
+      for(var i=0;i<n;i++){
+        dots.push({
+          x:Math.random()*cv.width,
+          y:Math.random()*cv.height,
+          r:Math.random()*2.1+0.6,
+          vx:(Math.random()-.5)*0.22,
+          vy:(Math.random()-.5)*0.22,
+          a:Math.random()*0.28+0.08
+        });
+      }
+    }
+    function draw(){
+      ctx.clearRect(0,0,cv.width,cv.height);
+      for(var i=0;i<dots.length;i++){
+        var d=dots[i];
+        d.x+=d.vx; d.y+=d.vy;
+        if(d.x<0||d.x>cv.width) d.vx*=-1;
+        if(d.y<0||d.y>cv.height) d.vy*=-1;
+        ctx.beginPath();
+        ctx.fillStyle='rgba(120,110,90,'+d.a.toFixed(3)+')';
+        ctx.arc(d.x,d.y,d.r,0,Math.PI*2);
+        ctx.fill();
+      }
+      requestAnimationFrame(draw);
+    }
+    resize();
+    window.addEventListener('resize',resize);
+    draw();
+  }
+  function ln(txt,cls){
+    var d=document.createElement('div');
+    d.className='ln'+(cls?' '+cls:'');
+    d.textContent=txt;
+    OUT.appendChild(d);
+    OUT.scrollTop=OUT.scrollHeight;
+  }
+  function emit(type,payload){
+    if(!hexBC)return;
+    try{ hexBC.postMessage(Object.assign({type:type,source:'qbit-uv-shell',ts:Date.now()},payload||{})); }catch(_){}
+  }
+  function classifyFast(line){
+    var t=String(line||'').trim();
+    if(!t) return ' ';
+    if(/^#/.test(t)) return '+1:';
+    if(/^(import |from |require)/.test(t)) return '-n:';
+    if(/^(if |else|switch|case)/.test(t)) return '+n:';
+    if(/^(for |while |loop)/.test(t)) return '+2:';
+    if(/^(return |yield)/.test(t)) return '-0:';
+    if(/^(const |let |var )/.test(t)||/^[a-zA-Z_]\w*\s*=/.test(t)) return '1:';
+    return '0:';
+  }
+  function classify(line){
+    if(state.noBlink) return classifyFast(line);
+    if(QP&&QP.classifyLine){
+      var r=QP.classifyLine(line,'auto');
+      return r&&r.sym?r.sym:' ';
+    }
+    return classifyFast(line);
+  }
+  function setLane(l){
+    state.lane=(l||'mistral').toLowerCase();
+    LANE.textContent='lane:'+state.lane;
+    save();
+  }
+  function setNoBlink(v){
+    state.noBlink=!!v;
+    MODE.textContent='noblink:'+(state.noBlink?'on':'off');
+    save();
+  }
+  function openApp(name){
+    var m={search:'search.html',history:'history.html',terminal:'terminal.html',uterm:'uterm.html'};
+    var p=m[(name||'').toLowerCase()];
+    if(!p){ ln('unknown app: '+name,'err'); return; }
+    window.open(p,'_blank');
+    ln('opened '+p,'ok');
+  }
+  function doSearch(q){
+    var query=(q||'').trim();
+    if(!query){ ln('usage: search <query>','dim'); return; }
+    try{
+      var bc=new BroadcastChannel('history-search');
+      bc.postMessage({type:'search',query:query,source:'qbit-uv-shell'});
+      bc.close();
+    }catch(_){}
+    window.open('search.html','_blank');
+    ln('search dispatched: '+query,'ok');
+  }
+  function doHistory(q){
+    var query=(q||'').trim();
+    if(!query){ window.open('history.html','_blank'); ln('opened history.html','ok'); return; }
+    try{
+      var bc=new BroadcastChannel('history-search');
+      bc.postMessage({type:'timeline',query:query,source:'qbit-uv-shell'});
+      bc.close();
+    }catch(_){}
+    window.open('history.html','_blank');
+    ln('timeline dispatched: '+query,'ok');
+  }
+  function cmdBlockize(args){
+    if(!codec||typeof codec.blockizeMulticast!=='function'){ ln('blockize unavailable (qbitCodec missing)','err'); return; }
+    var sub=(args[0]||'run').toLowerCase();
+    var channels=['iron-line','quantum-prefixes','kbatch-training','hexterm'];
+    var textArgs=args.slice(0);
+    if(sub==='channels'){
+      channels=String(args[1]||'').split(',').map(function(s){return s.trim();}).filter(Boolean);
+      textArgs=args.slice(2);
+    }
+    if(sub==='export'){
+      if(!state.lastBlockize){ ln('no blockize payload yet','dim'); return; }
+      var payload=JSON.stringify(state.lastBlockize.payload||state.lastBlockize,null,2);
+      var blob=new Blob([payload],{type:'application/json'});
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='qbit-uv-blockize-'+Date.now()+'.qjson';
+      a.click();
+      URL.revokeObjectURL(a.href);
+      ln('exported '+a.download,'ok');
+      return;
+    }
+    var text=(textArgs.join(' ').trim())||('lane '+state.lane+' ts '+Date.now());
+    var blk=codec.blockizeMulticast(text,{source:'qbit-uv-shell',language:'text',channels:channels,broadcast:true});
+    state.lastBlockize=blk; save();
+    var stats=blk&&blk.payload&&blk.payload.stats?blk.payload.stats:{};
+    ln('blockize multicast sent '+(stats.lines||0)+' lines · '+(blk.routed||[]).length+'/'+(blk.channels||[]).length,'ok');
+  }
+  function quickBench(){
+    var src='const x=1\nif(x){return x}\n';
+    var loops=8000;
+    var t=performance.now();
+    for(var i=0;i<loops;i++) classify(src);
+    var ms=performance.now()-t;
+    var ns=((ms*1e6)/loops).toFixed(1);
+    ln('bench classify: '+loops+' loops | '+ms.toFixed(2)+'ms | '+ns+' ns/loop','cyan');
+  }
+  function chat(msg){
+    var m=String(msg||'').trim();
+    if(!m) return;
+    ln('you> '+m,'cyan');
+    emit('qbit-chat',{lane:state.lane,text:m});
+    ln(state.lane+'> ack '+m.slice(0,140),'gold');
+  }
+  function help(){
+    ln('commands:','gold');
+    ln('  help, clear, status, bench');
+    ln('  chat on|off|status');
+    ln('  lane <mistral|ugrad|granite>');
+    ln('  noblink on|off|status');
+    ln('  blockize [text]');
+    ln('  blockize channels a,b,c [text]');
+    ln('  blockize export');
+    ln('  search <query> | history [query]');
+    ln('  open <search|history|terminal|uterm>');
+    ln('  t5 | wasm | rust');
+  }
+  function run(raw){
+    var input=String(raw||'').trim();
+    if(!input){ return; }
+    state.history.push(input); if(state.history.length>120) state.history=state.history.slice(-120);
+    save();
+    var p=input.split(/\s+/), cmd=p[0].toLowerCase(), args=p.slice(1);
+    if(cmd==='help') return help();
+    if(cmd==='clear'){ OUT.innerHTML=''; return; }
+    if(cmd==='status'){ ln('lane='+state.lane+' chat='+(state.chat?'on':'off')+' noblink='+(state.noBlink?'on':'off'),'dim'); return; }
+    if(cmd==='bench') return quickBench();
+    if(cmd==='chat'){
+      var s=(args[0]||'status').toLowerCase();
+      if(s==='on'){ state.chat=true; save(); ln('chat on','ok'); return; }
+      if(s==='off'){ state.chat=false; save(); ln('chat off','dim'); return; }
+      ln('chat '+(state.chat?'on':'off'),'dim'); return;
+    }
+    if(cmd==='lane'){ if(!args[0]) ln('lane='+state.lane,'dim'); else { setLane(args[0]); ln('lane set '+state.lane,'ok'); } return; }
+    if(cmd==='noblink'){
+      var m=(args[0]||'status').toLowerCase();
+      if(m==='on') setNoBlink(true); else if(m==='off') setNoBlink(false);
+      ln('noblink '+(state.noBlink?'on':'off'),'dim'); return;
+    }
+    if(cmd==='blockize') return cmdBlockize(args);
+    if(cmd==='search') return doSearch(args.join(' '));
+    if(cmd==='history') return doHistory(args.join(' '));
+    if(cmd==='open') return openApp(args[0]||'');
+    if(cmd==='mistral'||cmd==='ugrad'||cmd==='granite'){ setLane(cmd); return chat(args.join(' ')); }
+    if(cmd==='t5'){ ln('t5 native target: 3.2ns/line (rust engine)','ok'); return; }
+    if(cmd==='wasm'){ ln('wasm target lane: ~300ns/line warm path','ok'); return; }
+    if(cmd==='rust'){ ln('rust standard lane: ~89.6ns/line','ok'); return; }
+    if(state.chat) return chat(input);
+    ln('unknown: '+cmd+' (help)','err');
+  }
+
+  // ===== QUANTUM PREFIX LIVE SYNC =====
+  try{
+    var _ironLine = new BroadcastChannel('iron-line');
+    _ironLine.postMessage({type:'qbit-uv-shell-ready',source:'qbit-uv-shell',ts:Date.now()});
+    _ironLine.close();
+    if(QP&&QP.requestStateSync) QP.requestStateSync();
+    if(QP&&QP.broadcastState){
+      QP.broadcastState('qbit-uv-shell',{lane:state.lane,noBlink:state.noBlink,chat:state.chat});
+    }
+    if(QP&&QP.onStateChange){
+      QP.onStateChange(function(_s){});
+    }
+  }catch(_){}
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',function(){ navigator.serviceWorker.register('sw.js').catch(function(){}); });
+  }
+
+  setLane(state.lane);
+  setNoBlink(state.noBlink);
+  ENGINE.textContent='fast boot · chat-first · blockize core';
+  BOOTMS.textContent='boot '+(performance.now()-t0).toFixed(1)+'ms';
+  startDots();
+  ln('qbit uv shell ready','ok');
+  ln('>>> Send a message (/? for help)','dim');
+  IN.focus();
+  IN.addEventListener('keydown',function(e){
+    if(e.key==='Enter'){
+      var v=IN.value; IN.value='';
+      run(v);
+    }
+  });
+})();
+</script>
+</body>
+</html>

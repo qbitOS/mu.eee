@@ -2,7 +2,7 @@
 // Service Worker — Offline-first PWA cache for quantum notepad
 // Phase 4.82 · Caches all 35 web apps + shared modules for full offline operation
 
-const CACHE_NAME = 'uvspeed-v4.312';
+const CACHE_NAME = 'uvspeed-v4.333';
 const OFFLINE_URLS = [
     './',
     'quantum-notepad.html',
@@ -53,6 +53,8 @@ const OFFLINE_URLS = [
     'flow/index.html',
     'flow/flow-manifest.json',
     'mueee.html',
+    'mue.html',
+    'codestral-chat.html',
     'qa.html',
     'uvqbit.html',
     'qbit-globe.html',
@@ -70,6 +72,10 @@ const OFFLINE_URLS = [
     'qbit-raw-v2.html',
     'qbit-raw-v3.html',
     'quantum-prefixes.js',
+    'uvspeed-icons.js',
+    'vendor-icons.css',
+    'search-icons.css',
+    'mueee-icons.css',
     'ugrad-game-registry.js',
     'ugrad-corpus-export.js',
     'ugrad-go-ascii.js',
@@ -78,6 +84,8 @@ const OFFLINE_URLS = [
     'isomorphic-export-facet.js',
     'spine-hub-catalog.js',
     'mueee-throughline-spine.js',
+    'mueee-mu-context.js',
+    'mueee-mistral-bridge.js',
     'qbit-steno-term.html',
     'qbit-steno-pad.html',
     'micrograd-steno.html',
@@ -160,6 +168,7 @@ const OFFLINE_URLS = [
     'iron-browser.html',
     'plan-corpus-indexer.js',
     'history-search-engine.js',
+    'search-transcript-pipelines.js',
     'search-spine-concepts.js',
     'search-drill-cluster.js',
     'search-staff-bar.css',

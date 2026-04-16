@@ -1,0 +1,2804 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>hexbench — Voltage Lab | Power Supply + Electronics Workbench</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/hexterm-favicon.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0d1117">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="https://cdn.jsdelivr.net/npm/marked@15/marked.min.js"></script>
+    <script src="quantum-prefixes.js"></script>
+    <script src="qbit-dac.js"></script>
+    <script src="qbit-steno.js"></script>
+    <style>
+        :root {
+            --bg:var(--qp-bg,#0d1117);--bg2:var(--qp-bg-secondary,#161b22);--bg3:var(--qp-bg-tertiary,#21262d);--bg4:#2d333b;
+            --border:var(--qp-border,#30363d);--border-m:#484f58;--text:var(--qp-text,#e6edf3);--text-m:var(--qp-text-muted,#8b949e);--text-s:var(--qp-text-secondary,#c9d1d9);
+            --accent:var(--qp-accent,#58a6ff);--accent-s:rgba(88,166,255,.15);--green:#3fb950;--orange:#f0883e;
+            --red:#f85149;--purple:#a78bfa;--cyan:#56d4dd;--yellow:#ffe138;
+            --sp-xs:4px;--sp-sm:8px;--sp-md:16px;--sp-lg:24px;--rad:6px;
+            --mono:'SF Mono','Fira Code','JetBrains Mono','Cascadia Code',monospace;
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;overflow:hidden;touch-action:manipulation}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5}
+        a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
+        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+
+        .app{display:flex;flex-direction:column;height:100vh}
+
+        /* Rainbow bar */
+        .rainbow{display:flex;height:2px;width:100%;flex-shrink:0}
+        .rainbow span{flex:1}
+        .r1{background:#ff3838}.r2{background:#ff8c38}.r3{background:#ffe138}.r4{background:#3fb950}.r5{background:#38a5ff}.r6{background:#bc8cff}
+
+        /* Header */
+        .hdr{background:var(--bg2);border-bottom:1px solid var(--border);padding:var(--sp-sm) var(--sp-lg);display:flex;align-items:center;justify-content:space-between;gap:var(--sp-md);flex-shrink:0;min-height:44px}
+        .hdr-title{display:flex;align-items:center;gap:var(--sp-sm);font-size:.9375rem;font-weight:600;white-space:nowrap}
+        .hdr-logo{height:22px;width:auto;border-radius:4px;filter:drop-shadow(0 0 4px rgba(88,166,255,.3))}
+        .hdr-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(255,225,56,.12);border:1px solid var(--yellow);color:var(--yellow);border-radius:10px;padding:2px 8px;font-size:.5625rem;font-weight:600}
+        .hdr-nav{display:flex;align-items:center;gap:4px;font-size:.6875rem;flex-wrap:wrap}
+        .hdr-nav a{padding:2px 7px;border-radius:var(--rad);background:var(--bg3);border:1px solid var(--border);color:var(--text-m);transition:all .15s}
+        .hdr-nav a:hover{color:var(--accent);border-color:var(--accent);text-decoration:none}
+
+        /* Main 3-panel layout */
+        .main{flex:1;display:flex;overflow:hidden}
+        .panel-resize{width:4px;background:var(--border);cursor:col-resize;flex-shrink:0;transition:background .15s}
+        .panel-resize:hover,.panel-resize.active{background:var(--accent)}
+
+        /* Left: Doc / Parts / Code */
+        .doc-panel{width:42%;min-width:280px;display:flex;flex-direction:column;background:var(--bg);overflow:hidden}
+        .doc-toolbar{display:flex;align-items:center;gap:4px;padding:6px 12px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
+        .doc-tab{padding:3px 10px;font-size:.625rem;font-weight:600;border:1px solid var(--border);border-radius:var(--rad);background:var(--bg3);color:var(--text-m);cursor:pointer;transition:all .15s}
+        .doc-tab:hover{color:var(--text)}
+        .doc-tab.active{background:var(--accent-s);color:var(--accent);border-color:var(--accent)}
+        .doc-edit-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column}
+        .doc-editor{flex:1;padding:16px 20px;font-family:var(--mono);font-size:.8125rem;line-height:1.7;color:var(--text-s);background:var(--bg);border:none;resize:none;outline:none;overflow-y:auto;tab-size:4}
+        .doc-rendered{flex:1;padding:16px 20px;overflow-y:auto;display:none}
+        .doc-rendered h1{font-size:1.375rem;font-weight:700;color:var(--text);margin:0 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+        .doc-rendered h2{font-size:1.0625rem;font-weight:700;color:var(--text);margin:20px 0 8px}
+        .doc-rendered h3{font-size:.875rem;font-weight:700;color:var(--accent);margin:16px 0 6px}
+        .doc-rendered p{margin:0 0 10px;font-size:.8125rem;color:var(--text-s);line-height:1.7}
+        .doc-rendered code{background:var(--bg3);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:.75rem;color:var(--green)}
+        .doc-rendered pre{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad);padding:12px;margin:8px 0 12px;overflow-x:auto}
+        .doc-rendered pre code{background:transparent;padding:0;color:var(--text-s);font-size:.6875rem;line-height:1.6}
+        .doc-rendered table{width:100%;border-collapse:collapse;font-size:.6875rem;margin:8px 0 12px}
+        .doc-rendered th{text-align:left;padding:4px 8px;background:var(--bg3);border:1px solid var(--border);color:var(--accent);font-weight:700}
+        .doc-rendered td{padding:4px 8px;border:1px solid var(--border);color:var(--text-s)}
+        .doc-rendered strong{color:var(--text);font-weight:700}
+        .doc-rendered em{color:var(--orange)}
+        .doc-rendered blockquote{border-left:3px solid var(--yellow);padding:4px 12px;margin:8px 0;background:rgba(255,225,56,.06);color:var(--text-m);font-size:.8125rem}
+        .doc-rendered ul,.doc-rendered ol{margin:4px 0 10px 20px;font-size:.8125rem}
+        .doc-rendered li{margin:2px 0;color:var(--text-s)}
+        .doc-rendered hr{border:none;border-top:1px solid var(--border);margin:16px 0}
+        .doc-status{display:flex;align-items:center;gap:6px;padding:4px 12px;border-top:1px solid var(--border);background:var(--bg2);font-size:.5625rem;color:var(--text-m);flex-shrink:0}
+
+        /* Supplier Panel (hidden until tab switch) */
+        .supplier-panel{flex:1;overflow-y:auto;padding:12px;display:none}
+        .supplier-panel.active{display:block}
+        .supplier-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad);padding:10px;margin-bottom:8px;cursor:pointer;transition:all .15s}
+        .supplier-card:hover{border-color:var(--accent);background:var(--bg3)}
+        .supplier-card .s-name{font-weight:700;font-size:.8125rem;color:var(--text);display:flex;align-items:center;gap:6px}
+        .supplier-card .s-url{font-size:.625rem;color:var(--accent);font-family:var(--mono)}
+        .supplier-card .s-desc{font-size:.6875rem;color:var(--text-m);margin-top:4px}
+        .supplier-search{width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--rad);color:var(--text);font-family:var(--mono);font-size:.75rem;outline:none;margin-bottom:8px}
+        .supplier-search:focus{border-color:var(--accent)}
+
+        /* Arduino Code Panel */
+        .code-panel{flex:1;overflow:hidden;display:none;flex-direction:column}
+        .code-panel.active{display:flex}
+        .code-toolbar{display:flex;align-items:center;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg2)}
+        .code-toolbar button{padding:3px 10px;font-size:.625rem;font-weight:600;border:1px solid var(--border);border-radius:var(--rad);background:var(--bg3);color:var(--text-m);cursor:pointer;transition:all .15s}
+        .code-toolbar button:hover{color:var(--green);border-color:var(--green)}
+        .code-toolbar button.active-btn{color:var(--green);border-color:var(--green);background:rgba(63,185,80,.1)}
+        .code-editor{flex:1;padding:12px;font-family:var(--mono);font-size:.75rem;line-height:1.8;color:var(--green);background:var(--bg);border:none;resize:none;outline:none;overflow-y:auto;tab-size:4}
+        .code-output{height:120px;min-height:60px;border-top:1px solid var(--border);overflow-y:auto;padding:8px 12px;font-family:var(--mono);font-size:.6875rem;color:var(--text-m);background:var(--bg2)}
+
+        /* Right: Workbench Canvas */
+        .canvas-panel{flex:1;min-width:300px;display:flex;flex-direction:column;overflow:hidden;position:relative}
+        .canvas-toolbar{display:flex;align-items:center;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
+        .canvas-split{flex:1;display:flex;flex-direction:column;overflow:hidden}
+        .canvas-area{flex:1;position:relative;overflow:hidden;background:var(--bg);min-height:100px}
+        .canvas-grid{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(circle,var(--border) .5px,transparent .5px);background-size:24px 24px;opacity:.4}
+        .canvas-scroll{position:absolute;inset:0;overflow:hidden;cursor:grab}
+        .canvas-scroll:active{cursor:grabbing}
+        .canvas-inner{min-width:2400px;min-height:1600px;position:relative;padding:40px;transform-origin:0 0}
+        .zoom-controls{position:absolute;bottom:12px;right:12px;display:flex;gap:4px;z-index:20}
+        .zoom-controls button{background:var(--bg2);border:1px solid var(--border);color:var(--text);width:28px;height:28px;border-radius:6px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+        .zoom-controls button:hover{background:var(--accent);color:#fff}
+        .zoom-label{background:var(--bg2);border:1px solid var(--border);color:var(--text-m);padding:2px 8px;border-radius:6px;font-size:11px;display:flex;align-items:center}
+
+        /* Horizontal split resize */
+        .hsplit-resize{height:5px;background:var(--border);cursor:row-resize;flex-shrink:0;transition:background .15s;position:relative;z-index:10}
+        .hsplit-resize:hover,.hsplit-resize.active{background:var(--accent)}
+        .hsplit-resize::after{content:'';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:32px;height:3px;border-radius:2px;background:rgba(255,255,255,.18)}
+
+        /* Pybricks Builder panel */
+        .pb-panel{height:38%;min-height:80px;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+        .pb-toolbar{display:flex;align-items:center;gap:4px;padding:4px 10px;border-top:1px solid var(--border);background:var(--bg2);flex-shrink:0;flex-wrap:wrap}
+        .pb-toolbar .pb-title{font-size:.625rem;font-weight:700;color:#f5cd00;margin-right:4px;display:flex;align-items:center;gap:4px}
+        .pb-toolbar .pb-title img{height:14px}
+        .pb-canvas-wrap{flex:1;position:relative;overflow:auto;background:var(--bg)}
+        .pb-canvas{min-width:1400px;min-height:600px;position:relative;padding:20px}
+        .pb-grid{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(90deg,rgba(255,255,255,.03) 1px,transparent 1px),linear-gradient(rgba(255,255,255,.03) 1px,transparent 1px);background-size:20px 20px;opacity:.6}
+
+        /* Pybricks blocks */
+        .pb-block{position:absolute;cursor:move;user-select:none;border-radius:6px;font-family:var(--mono);font-size:.6875rem;font-weight:700;min-width:120px;box-shadow:0 2px 8px rgba(0,0,0,.3);transition:box-shadow .12s;z-index:1}
+        .pb-block:hover{box-shadow:0 4px 16px rgba(0,0,0,.5)}
+        .pb-block-head{padding:5px 10px;border-radius:6px 6px 0 0;display:flex;align-items:center;gap:6px;color:#fff}
+        .pb-block-body{padding:4px 10px 6px;border-radius:0 0 6px 6px;display:flex;flex-direction:column;gap:3px}
+        .pb-block-row{display:flex;align-items:center;gap:6px;font-size:.5625rem;color:rgba(255,255,255,.85)}
+        .pb-block-input{background:rgba(0,0,0,.25);border:none;border-radius:4px;padding:2px 6px;font-family:var(--mono);font-size:.5625rem;color:#fff;width:60px;outline:none}
+        .pb-block-input:focus{box-shadow:0 0 0 1px rgba(255,255,255,.4)}
+        .pb-block-select{background:rgba(0,0,0,.25);border:none;border-radius:4px;padding:2px 4px;font-family:var(--mono);font-size:.5625rem;color:#fff;outline:none}
+        .pb-block .pb-notch-top{position:absolute;top:-4px;left:20px;width:24px;height:4px;border-radius:0 0 4px 4px}
+        .pb-block .pb-notch-bot{position:absolute;bottom:-4px;left:20px;width:24px;height:4px;border-radius:4px 4px 0 0}
+        .pb-block-connector{position:absolute;width:8px;height:8px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:transparent;cursor:pointer;z-index:2}
+        .pb-block-connector:hover{background:rgba(255,255,255,.4)}
+        .pb-block-connector.out{right:-6px;top:50%;transform:translateY(-50%)}
+        .pb-block-connector.in{left:-6px;top:50%;transform:translateY(-50%)}
+
+        /* Pybricks block palette chips */
+        .pb-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;font-size:.5625rem;font-weight:600;border-radius:var(--rad);cursor:pointer;transition:all .12s;white-space:nowrap;border:1px solid transparent}
+        .pb-chip:hover{filter:brightness(1.2);transform:translateY(-1px)}
+        .pb-chip.cat-motion{background:rgba(0,119,220,.2);color:#09f;border-color:rgba(0,119,220,.3)}
+        .pb-chip.cat-sensor{background:rgba(63,185,80,.15);color:var(--green);border-color:rgba(63,185,80,.25)}
+        .pb-chip.cat-logic{background:rgba(240,136,62,.15);color:var(--orange);border-color:rgba(240,136,62,.25)}
+        .pb-chip.cat-hub{background:rgba(245,205,0,.15);color:#f5cd00;border-color:rgba(245,205,0,.25)}
+        .pb-chip.cat-loop{background:rgba(169,128,230,.15);color:#a980e6;border-color:rgba(169,128,230,.25)}
+        .pb-chip.cat-var{background:rgba(255,87,87,.15);color:var(--red);border-color:rgba(255,87,87,.25)}
+        .pb-chip.cat-stream{background:rgba(226,73,138,.15);color:#e2498a;border-color:rgba(226,73,138,.25)}
+
+        /* Nodes */
+        .node{position:absolute;background:var(--bg2);border:2px solid var(--border);border-radius:10px;min-width:160px;box-shadow:0 4px 16px rgba(0,0,0,.3);cursor:move;user-select:none;transition:box-shadow .15s,border-color .15s;z-index:1}
+        .node:hover{box-shadow:0 6px 24px rgba(0,0,0,.5);border-color:var(--accent)}
+        .node.selected{border-color:var(--accent);box-shadow:0 0 0 2px rgba(88,166,255,.25)}
+        .node.action-node{border-style:dashed}
+        .node.action-node.running{border-color:var(--orange);animation:pulse-border 1s ease infinite}
+        .node.action-node.done{border-color:var(--green);border-style:solid}
+        .node.action-node.error{border-color:var(--red);border-style:solid}
+        @keyframes pulse-border{0%,100%{box-shadow:0 0 0 0 rgba(240,136,62,.4)}50%{box-shadow:0 0 0 6px rgba(240,136,62,0)}}
+        .node-hdr{padding:6px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:6px;border-radius:8px 8px 0 0}
+        .node-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:.8125rem;flex-shrink:0}
+        .node-name{font-size:.75rem;font-weight:600}
+        .node-sub{font-size:.5rem;color:var(--text-m)}
+        .node-body{padding:6px 10px;font-size:.625rem}
+        .node-ports{display:flex;flex-direction:column;gap:2px}
+        .node-port{display:flex;align-items:center;gap:4px;padding:1px 0;font-family:var(--mono);font-size:.5rem;color:var(--text-m)}
+        .port-dot{width:7px;height:7px;border-radius:50%;border:2px solid var(--border);background:var(--bg);flex-shrink:0;cursor:crosshair}
+        .port-dot.connected{background:var(--green);border-color:var(--green)}
+        .port-dot.out{margin-left:auto}
+        .node-action-bar{padding:4px 8px;border-top:1px solid var(--border);display:flex;gap:3px}
+        .node-run-btn{flex:1;padding:2px 4px;font-size:.5rem;font-weight:700;border:1px solid var(--border);border-radius:3px;background:var(--bg3);color:var(--green);cursor:pointer;transition:all .15s}
+        .node-run-btn:hover{background:var(--green);color:#fff;border-color:var(--green)}
+
+        /* Connections SVG */
+        .connections-svg{position:absolute;inset:0;pointer-events:none;z-index:0}
+        .conn-path{fill:none;stroke:var(--border);stroke-width:2;transition:stroke .15s}
+        .conn-path.active{stroke:var(--green);stroke-width:2;filter:drop-shadow(0 0 3px rgba(63,185,80,.3))}
+
+        /* Palette chips */
+        .pal-chip{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;font-size:.5625rem;font-weight:600;border:1px solid var(--border);border-radius:var(--rad);background:var(--bg3);color:var(--text-m);cursor:pointer;transition:all .12s;white-space:nowrap}
+        .pal-chip:hover{border-color:var(--accent);color:var(--accent)}
+        .pal-chip.action{border-color:var(--orange);color:var(--orange);background:rgba(240,136,62,.08)}
+
+        /* PSU Live Monitor */
+        .psu-monitor{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad);padding:10px;margin:8px 0}
+        .psu-monitor .psu-title{font-size:.75rem;font-weight:700;color:var(--yellow);margin-bottom:6px;display:flex;align-items:center;gap:6px}
+        .psu-row{display:flex;gap:8px;margin:4px 0}
+        .psu-val{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:var(--rad);padding:6px 8px;text-align:center}
+        .psu-val .psu-num{font-family:var(--mono);font-size:1.5rem;font-weight:700;color:var(--green);letter-spacing:1px}
+        .psu-val .psu-unit{font-size:.5625rem;color:var(--text-m)}
+        .psu-val .psu-label{font-size:.5rem;color:var(--text-m);margin-top:2px}
+        .psu-slider{width:100%;-webkit-appearance:none;height:4px;border-radius:2px;background:var(--border);outline:none;margin:6px 0}
+        .psu-slider::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--yellow);cursor:pointer;border:2px solid var(--bg)}
+        /* Bench thermal canvas */
+        .bench-thermal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad);padding:8px;margin-bottom:6px}
+        .bench-thermal canvas{width:100%;height:60px;display:block;border-radius:4px;background:#0a0e14}
+        .bench-thermal-stats{display:flex;gap:8px;margin-top:4px;font-family:var(--mono);font-size:.5625rem;color:var(--text-m);flex-wrap:wrap}
+        .bench-thermal-stats .bt-val{font-weight:700}
+        .bench-thermal-stats .bt-cpu{color:var(--accent)}
+        .bench-thermal-stats .bt-mem{color:var(--green)}
+        .bench-thermal-stats .bt-gpu{color:var(--orange)}
+        .bt-tabs{display:flex;gap:2px;margin-bottom:4px;flex-wrap:wrap}
+        .bt-tab{padding:2px 7px;font-size:.5rem;font-weight:600;border:1px solid var(--border);border-radius:3px;background:var(--bg3);color:var(--text-m);cursor:pointer;transition:all .12s;white-space:nowrap}
+        .bt-tab:hover{color:var(--text);border-color:var(--text-m)}
+        .bt-tab.active{background:var(--accent-s);color:var(--accent);border-color:var(--accent)}
+        /* Stage checklist — collapsible mini cards */
+        .stage-wrap{margin:0 10px 6px;border:1px solid var(--border);border-radius:var(--rad);overflow:hidden}
+        .stage-bar{display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg2);cursor:pointer;user-select:none}
+        .stage-bar:hover{background:var(--bg3)}
+        .stage-bar-title{font-size:.6875rem;font-weight:700;color:var(--text)}
+        .stage-bar-pct{font-size:.5625rem;font-family:var(--mono);margin-left:auto}
+        .stage-bar-chevron{font-size:.6rem;color:var(--text-m);transition:transform .2s}
+        .stage-bar-chevron.open{transform:rotate(180deg)}
+        .stage-bar-progress{height:3px;background:var(--bg);border-radius:2px;overflow:hidden}
+        .stage-bar-fill{height:100%;border-radius:2px;transition:width .3s;background:var(--green)}
+        .stage-body{display:none;padding:6px 8px 8px}
+        .stage-body.open{display:block}
+        /* Phase mini card row */
+        .stg-phase-row{display:flex;gap:4px;margin-bottom:6px;flex-wrap:wrap}
+        .stg-mini{flex:1;min-width:60px;border-radius:var(--rad);padding:6px 6px 4px;cursor:pointer;transition:all .15s;border:1px solid transparent;text-align:center;position:relative}
+        .stg-mini:hover{filter:brightness(1.2);transform:translateY(-1px)}
+        .stg-mini .stg-mini-icon{font-size:.875rem;line-height:1}
+        .stg-mini .stg-mini-label{font-size:.4375rem;font-weight:700;text-transform:uppercase;letter-spacing:.3px;margin-top:2px}
+        .stg-mini .stg-mini-pct{font-size:.5rem;font-family:var(--mono);margin-top:1px}
+        .stg-mini.active{border-color:rgba(255,255,255,.4);box-shadow:0 0 8px rgba(255,255,255,.1)}
+        /* Detail cards inside phase */
+        .stg-detail{margin-top:4px}
+        .stg-dcard{border-radius:4px;padding:4px 6px;cursor:pointer;transition:all .12s;border:1px solid transparent;margin-bottom:2px;display:flex;align-items:center;gap:6px;font-size:.5625rem}
+        .stg-dcard:hover{filter:brightness(1.15)}
+        .stg-dcard.done{opacity:.5}
+        .stg-dcard .stg-dcheck{width:12px;height:12px;border-radius:3px;border:1px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:.45rem;flex-shrink:0}
+        .stg-dcard.done .stg-dcheck{background:rgba(255,255,255,.3);border-color:rgba(255,255,255,.5)}
+        .stg-dcard.done .stg-dlabel{text-decoration:line-through;opacity:.65}
+        .stg-dcard .stg-dinfo{font-size:.45rem;color:rgba(255,255,255,.4);margin-left:auto;display:none;font-family:var(--mono)}
+        .stg-dcard.expanded .stg-dinfo{display:inline}
+        .stg-clear-btn{padding:2px 6px;font-size:.45rem;border:1px solid var(--border);border-radius:3px;background:var(--bg3);color:var(--text-m);cursor:pointer}
+        .stg-clear-btn:hover{color:var(--red);border-color:var(--red)}
+        /* Hex stream viewer in parts */
+        .hex-stream-wrap{background:#0a0e14;border:1px solid var(--border);border-radius:var(--rad);overflow:hidden;margin:6px 10px}
+        .hex-stream-wrap canvas{width:100%;height:80px;display:block}
+        /* Equipment nav arrows */
+        .equip-nav{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+        .equip-nav .eq-arrow{width:28px;height:28px;border-radius:var(--rad);border:1px solid var(--border);background:var(--bg3);color:var(--text-m);cursor:pointer;font-size:.875rem;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+        .equip-nav .eq-arrow:hover{color:var(--accent);border-color:var(--accent)}
+        .equip-nav .eq-label{font-size:.6875rem;font-weight:700;flex:1;text-align:center}
+        .equip-nav .eq-dots{display:flex;gap:3px;align-items:center}
+        .equip-nav .eq-dot{width:6px;height:6px;border-radius:50%;background:var(--border);transition:all .15s}
+        .equip-nav .eq-dot.active{background:var(--yellow);box-shadow:0 0 4px rgba(255,225,56,.4)}
+        /* Live readout bar */
+        .live-readout{background:var(--bg);border:1px solid var(--border);border-radius:var(--rad);padding:6px 10px;margin-top:6px;font-family:var(--mono);font-size:.625rem;color:var(--text-m);display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+        .live-readout .lr-val{color:var(--green)}
+        .live-readout .lr-label{color:var(--text-m);opacity:.7}
+        .live-readout .lr-status{display:inline-flex;align-items:center;gap:3px}
+        .live-readout .lr-dot{width:5px;height:5px;border-radius:50%;background:var(--red)}
+        .live-readout .lr-dot.connected{background:var(--green);animation:pulse-dot 2s ease infinite}
+        @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:.4}}
+        /* Parts toolbar */
+        .parts-toolbar{display:flex;align-items:center;gap:4px;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg2);flex-wrap:wrap}
+        .parts-toolbar button{padding:3px 8px;font-size:.5625rem;font-weight:600;border:1px solid var(--border);border-radius:var(--rad);background:var(--bg3);color:var(--text-m);cursor:pointer;transition:all .15s}
+        .parts-toolbar button:hover{color:var(--accent);border-color:var(--accent)}
+        .parts-filters{display:flex;gap:3px;padding:4px 10px;border-bottom:1px solid var(--border);background:var(--bg);flex-wrap:wrap}
+        .parts-filters .pf-chip{padding:2px 6px;font-size:.5rem;font-weight:600;border:1px solid var(--border);border-radius:3px;background:var(--bg3);color:var(--text-m);cursor:pointer;transition:all .12s}
+        .parts-filters .pf-chip:hover,.parts-filters .pf-chip.active{color:var(--accent);border-color:var(--accent);background:var(--accent-s)}
+        .part-card{display:flex;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rad);padding:8px;margin-bottom:6px;cursor:pointer;transition:all .15s}
+        .part-card:hover{border-color:var(--accent);background:var(--bg3)}
+        .part-img{width:48px;height:48px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0;overflow:hidden}
+        .part-img img{width:100%;height:100%;object-fit:cover}
+        .part-info{flex:1;min-width:0}
+        /* Code sync panel */
+        .code-sync-panel{border-top:1px solid var(--border);background:var(--bg);overflow-y:auto;max-height:160px;display:none}
+        .code-sync-panel.active{display:block}
+        .code-progress{height:3px;background:var(--border);border-radius:2px;overflow:hidden;margin:0 10px}
+        .code-progress-bar{height:100%;background:linear-gradient(90deg,var(--green),var(--cyan));width:0%;transition:width .3s}
+        .code-stats{display:flex;gap:8px;padding:4px 10px;font-family:var(--mono);font-size:.5625rem;color:var(--text-m);flex-wrap:wrap}
+        .code-stats span{display:flex;align-items:center;gap:3px}
+        /* Template tabs */
+        .tmpl-tabs{display:flex;gap:2px;padding:4px 10px;border-top:1px solid var(--border);background:var(--bg2);overflow-x:auto;flex-shrink:0}
+        .tmpl-tabs::-webkit-scrollbar{height:3px}
+        .tmpl-tab{padding:3px 8px;font-size:.5rem;font-weight:600;border:1px solid var(--border);border-radius:3px 3px 0 0;background:var(--bg3);color:var(--text-m);cursor:pointer;transition:all .12s;white-space:nowrap;flex-shrink:0}
+        .tmpl-tab:hover{color:var(--text)}
+        .tmpl-tab.active{color:var(--green);border-color:var(--green);background:rgba(63,185,80,.08);border-bottom-color:var(--bg)}
+
+        /* Bottom: Console */
+        .console-panel{height:140px;min-height:80px;border-top:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;flex-shrink:0}
+        .console-resize{height:4px;background:var(--border);cursor:row-resize;flex-shrink:0;transition:background .15s}
+        .console-resize:hover,.console-resize.active{background:var(--accent)}
+        .console-log{flex:1;overflow-y:auto;padding:6px 12px;font-family:var(--mono);font-size:.6875rem;line-height:1.5}
+        .console-log .log-line{display:flex;gap:8px;padding:1px 0}
+        .console-log .log-ts{color:var(--text-m);flex-shrink:0;min-width:60px;font-size:.5625rem}
+        .console-log .log-tag{font-weight:700;flex-shrink:0;min-width:50px;font-size:.5625rem}
+        .console-log .log-msg{color:var(--text-s);word-break:break-word}
+        .console-input{display:flex;border-top:1px solid var(--border);flex-shrink:0}
+        .console-input input{flex:1;background:var(--bg);border:none;padding:6px 12px;color:var(--text);font-family:var(--mono);font-size:.75rem;outline:none}
+        .console-input button{padding:6px 14px;background:var(--yellow);border:none;color:var(--bg);font-size:.6875rem;font-weight:600;cursor:pointer}
+
+        /* Footer */
+        .ftr{background:var(--bg2);border-top:1px solid var(--border);padding:3px var(--sp-lg);display:flex;align-items:center;gap:8px;font-size:.5625rem;color:var(--text-m);flex-shrink:0}
+        .rainbow-bottom{display:flex;height:2px;width:100%;flex-shrink:0}
+        .rainbow-bottom span{flex:1}
+
+        @media(max-width:900px){.doc-panel{width:35%;min-width:220px}}
+        @media(max-width:600px){
+            .main{flex-direction:column}
+            .doc-panel{width:100%;height:40%}
+            .panel-resize{display:none}
+            .canvas-area{min-height:200px}
+            .pb-panel{min-height:160px}
+        }
+    </style>
+</head>
+<body>
+<div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+<div class="app">
+    <!-- Header -->
+    <div class="hdr">
+        <div class="hdr-title">
+            <img src="../icons/hexterm-192.png" alt="hexbench" class="hdr-logo">
+            hexbench
+            <span class="hdr-badge">Voltage Lab</span>
+        </div>
+        <div class="hdr-nav">
+            <a href="quantum-notepad.html">Notepad</a>
+            <a href="research-lab.html">Research</a>
+            <a href="terminal.html">hexterm</a>
+            <a href="hexcast.html">hexcast</a>
+            <a href="archflow.html">archflow</a>
+            <a href="github-dashboard.html">Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Main: Doc/Parts/Code + Workbench Canvas -->
+    <div class="main">
+        <!-- Left Panel -->
+        <div class="doc-panel" id="doc-panel">
+            <div class="doc-toolbar">
+                <button class="doc-tab active" data-view="bench" id="tab-bench">Bench</button>
+                <button class="doc-tab" data-view="parts" id="tab-parts">Parts</button>
+                <button class="doc-tab" data-view="code" id="tab-code">Code</button>
+                <button class="doc-tab" data-view="suppliers" id="tab-suppliers">Suppliers</button>
+                <span style="flex:1"></span>
+                <button class="doc-tab" id="doc-save" style="color:var(--green);border-color:var(--green)">Save</button>
+                <button class="doc-tab" id="doc-export">Export</button>
+            </div>
+
+            <!-- Bench View (default) -->
+            <div class="doc-edit-wrap" id="view-bench">
+                <!-- Persistent: Thermal Map (not wiped by renderBench) -->
+                <div id="bench-thermal-wrap"></div>
+                <!-- Persistent: Freya Calcs (not wiped by renderBench) -->
+                <div id="bench-freya-wrap"></div>
+                <!-- Persistent: Stage Cards (not wiped by renderBench) -->
+                <div id="bench-stage-wrap"></div>
+                <!-- Dynamic: Equipment + PSU (rebuilt on cycle) -->
+                <div class="doc-rendered" id="bench-rendered" style="display:block"></div>
+            </div>
+
+            <!-- Parts List -->
+            <div class="supplier-panel" id="view-parts" style="padding:0">
+                <div class="parts-toolbar">
+                    <button id="parts-copy" title="Copy selected part info">Copy</button>
+                    <button id="parts-paste" title="Paste part URL/info">Paste</button>
+                    <button id="parts-img-search" title="Search by image">Image Search</button>
+                    <button id="parts-video" title="Live video from makers">Live Stream</button>
+                    <span style="flex:1"></span>
+                    <input class="supplier-search" id="parts-search" placeholder="Search parts..." style="margin:0;flex:1;min-width:120px;font-size:.625rem;padding:4px 8px">
+                </div>
+                <div class="parts-filters" id="parts-filters"></div>
+                <div id="parts-list" style="padding:8px;overflow-y:auto;flex:1"></div>
+            </div>
+
+            <!-- Code Editor -->
+            <div class="code-panel" id="view-code">
+                <div class="code-toolbar">
+                    <span style="font-size:.625rem;font-weight:700;color:var(--green)">Arduino / C++</span>
+                    <span style="flex:1"></span>
+                    <button id="code-run" style="color:var(--green);border-color:var(--green)">Run</button>
+                    <button id="code-test" style="color:var(--cyan);border-color:var(--cyan)">Test</button>
+                    <button id="code-verify">Verify</button>
+                    <button id="code-upload">Upload</button>
+                    <button id="code-stream">Stream to hexterm</button>
+                </div>
+                <textarea class="code-editor" id="code-editor" spellcheck="false"></textarea>
+                <div class="tmpl-tabs" id="tmpl-tabs"></div>
+                <div class="code-sync-panel" id="code-sync">
+                    <div class="code-progress"><div class="code-progress-bar" id="code-progress-bar"></div></div>
+                    <div class="code-stats" id="code-stats"></div>
+                    <div id="code-readout" style="padding:4px 10px;font-family:var(--mono);font-size:.625rem;color:var(--text-s);max-height:80px;overflow-y:auto"></div>
+                </div>
+                <div class="code-output" id="code-output"></div>
+            </div>
+
+            <!-- Suppliers -->
+            <div class="supplier-panel" id="view-suppliers">
+                <input class="supplier-search" id="supplier-search" placeholder="Search suppliers, components, datasheets...">
+                <div id="supplier-list"></div>
+            </div>
+
+            <div class="doc-status">
+                <span id="doc-status-text">hexbench ready</span>
+                <span style="flex:1"></span>
+                <span style="color:var(--yellow)">AT6301 60V/10A/300W</span>
+            </div>
+        </div>
+
+        <!-- Resize Handle -->
+        <div class="panel-resize" id="panel-resize"></div>
+
+        <!-- Right: Workbench Canvas -->
+        <div class="canvas-panel" id="canvas-panel">
+            <div class="canvas-toolbar">
+                <span style="font-size:.625rem;font-weight:700;color:var(--yellow);margin-right:4px">WORKBENCH</span>
+                <span class="pal-chip" data-type="psu">PSU</span>
+                <span class="pal-chip" data-type="multimeter">Multimeter</span>
+                <span class="pal-chip" data-type="oscilloscope">Scope</span>
+                <span class="pal-chip" data-type="arduino">Arduino</span>
+                <span class="pal-chip" data-type="esp32">ESP32</span>
+                <span class="pal-chip" data-type="raspberry">RPi</span>
+                <span class="pal-chip" data-type="sensor">Sensor</span>
+                <span class="pal-chip" data-type="led">LED</span>
+                <span class="pal-chip" data-type="motor">Motor</span>
+                <span class="pal-chip" data-type="relay">Relay</span>
+                <span class="pal-chip" data-type="pybricks" style="color:#f5cd00">Pybricks</span>
+                <span class="pal-chip" data-type="lego_motor">LEGO Motor</span>
+                <span class="pal-chip" data-type="lego_sensor">LEGO Sensor</span>
+                <span style="opacity:.3;margin:0 2px">|</span>
+                <span class="pal-chip action" data-type="measure">Measure</span>
+                <span class="pal-chip action" data-type="calculate">Calculate</span>
+                <span class="pal-chip action" data-type="stream">Stream</span>
+                <span style="flex:1"></span>
+                <span class="pal-chip" id="preset-at6301" style="color:var(--yellow);border-color:var(--yellow)">AT6301 Setup</span>
+                <span class="pal-chip" id="preset-arduino" style="color:var(--green);border-color:var(--green)">Arduino Lab</span>
+                <span class="pal-chip" id="preset-pybricks" style="color:#f5cd00;border-color:#f5cd00">Pybricks</span>
+                <span class="pal-chip" id="preset-clear" style="color:var(--red);border-color:var(--red)">Clear</span>
+            </div>
+            <div class="canvas-split" id="canvas-split">
+                <!-- Top: Node Canvas -->
+                <div class="canvas-area" id="canvas-area-top">
+                    <div class="canvas-grid" id="canvas-grid"></div>
+                    <div class="canvas-scroll" id="canvas-scroll">
+                        <div class="canvas-inner" id="canvas-inner">
+                            <svg class="connections-svg" id="connections-svg"></svg>
+                        </div>
+                    </div>
+                    <div class="zoom-controls">
+                        <button id="zoom-in" title="Zoom in">+</button>
+                        <span class="zoom-label" id="zoom-label">100%</span>
+                        <button id="zoom-out" title="Zoom out">−</button>
+                        <button id="zoom-fit" title="Fit all">⊙</button>
+                        <button id="zoom-reset" title="Reset">1:1</button>
+                    </div>
+                </div>
+
+                <!-- Horizontal split handle -->
+                <div class="hsplit-resize" id="hsplit-resize" title="Drag to resize"></div>
+
+                <!-- Bottom: Pybricks Block Builder -->
+                <div class="pb-panel" id="pb-panel">
+                    <div class="pb-toolbar" id="pb-toolbar">
+                        <span class="pb-title">🧱 PYBRICKS BUILDER</span>
+                        <span class="pb-chip cat-hub" data-pb="hub_init">Hub Init</span>
+                        <span class="pb-chip cat-motion" data-pb="motor_run">Motor Run</span>
+                        <span class="pb-chip cat-motion" data-pb="motor_stop">Motor Stop</span>
+                        <span class="pb-chip cat-motion" data-pb="motor_angle">Run Angle</span>
+                        <span class="pb-chip cat-sensor" data-pb="color_read">Color Read</span>
+                        <span class="pb-chip cat-sensor" data-pb="distance_read">Distance</span>
+                        <span class="pb-chip cat-sensor" data-pb="force_read">Force</span>
+                        <span class="pb-chip cat-logic" data-pb="if_then">If / Then</span>
+                        <span class="pb-chip cat-logic" data-pb="compare">Compare</span>
+                        <span class="pb-chip cat-loop" data-pb="loop_forever">Loop ∞</span>
+                        <span class="pb-chip cat-loop" data-pb="wait_ms">Wait</span>
+                        <span class="pb-chip cat-var" data-pb="set_var">Set Var</span>
+                        <span class="pb-chip cat-stream" data-pb="print_val">Print</span>
+                        <span class="pb-chip cat-hub" data-pb="hub_light">Hub Light</span>
+                        <span class="pb-chip cat-hub" data-pb="hub_beep">Beep</span>
+                        <span style="flex:1"></span>
+                        <span class="pb-chip cat-hub" id="pb-preset-drive" style="font-weight:700">Drive Bot</span>
+                        <span class="pb-chip cat-hub" id="pb-preset-sorter" style="font-weight:700">Color Sorter</span>
+                        <span class="pb-chip" id="pb-export" style="color:var(--green);border-color:var(--green)">Export .py</span>
+                        <span class="pb-chip" id="pb-clear" style="color:var(--red);border-color:var(--red)">Clear</span>
+                    </div>
+                    <div class="pb-canvas-wrap" id="pb-canvas-wrap">
+                        <div class="pb-canvas" id="pb-canvas">
+                            <div class="pb-grid"></div>
+                            <svg class="connections-svg" id="pb-connections-svg" style="position:absolute;inset:0;pointer-events:none;z-index:0"></svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Console Resize -->
+    <div class="console-resize" id="console-resize"></div>
+
+    <!-- Bottom: Console -->
+    <div class="console-panel" id="console-panel">
+        <div class="console-log" id="console-log"></div>
+        <div class="console-input">
+            <input type="text" id="console-input" placeholder="hexbench console — /help for commands" autocomplete="off">
+            <button id="console-send">Send</button>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="ftr">
+        <span style="color:var(--yellow)">hexbench</span><span style="opacity:.3">|</span>
+        <span style="font-family:var(--mono)" id="ftr-nodes">0 nodes</span><span style="opacity:.3">|</span>
+        <span style="font-family:var(--mono)" id="ftr-conns">0 connections</span><span style="opacity:.3">|</span>
+        <span style="font-family:var(--mono)">{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</span>
+        <span style="flex:1"></span>
+        <a href="quantum-notepad.html" style="font-size:.5625rem">Notepad</a>
+        <span style="color:var(--purple);font-family:var(--mono)">beyondBINARY</span>
+    </div>
+</div>
+<div class="rainbow-bottom"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+
+<script>
+(function(){
+'use strict';
+const $=id=>document.getElementById(id);
+
+// ===== VIEW SWITCHING =====
+let activeView = 'bench';
+const views = { bench: $('view-bench'), parts: $('view-parts'), code: $('view-code'), suppliers: $('view-suppliers') };
+
+function switchView(name) {
+    activeView = name;
+    Object.entries(views).forEach(([k, el]) => {
+        if (el) { el.style.display = k === name ? (k === 'code' ? 'flex' : (k === 'bench' ? 'flex' : 'block')) : 'none'; }
+        if (k === 'bench' && el) el.style.flexDirection = 'column';
+    });
+    document.querySelectorAll('.doc-tab[data-view]').forEach(t => {
+        t.classList.toggle('active', t.dataset.view === name);
+    });
+}
+
+document.querySelectorAll('.doc-tab[data-view]').forEach(t => {
+    t.addEventListener('click', () => switchView(t.dataset.view));
+});
+
+// ===== BENCH VIEW (Freya Calculator + PSU Monitor + Equipment Toggle) =====
+const AT6301 = {
+    name: 'Abestop AT6301',
+    maxV: 60, maxA: 10, maxW: 300,
+    resolution: { v: 0.01, a: 0.001 },
+    usb: '5V/1A',
+    memories: 4,
+    features: ['OVP','OCP','CV/CC','Waveform Output','SCPI USB','Temperature Fan Control','4-digit LCD'],
+    url: 'https://abestop.com/products/abestop-at6301'
+};
+
+const equipmentList = [
+    { id:'psu', name:'AT6301 Power Supply', icon:'⚡', color:'var(--yellow)', status:'active' },
+    { id:'scope', name:'Oscilloscope', icon:'📈', color:'var(--accent)', status:'idle' },
+    { id:'meter', name:'Digital Multimeter', icon:'📊', color:'var(--green)', status:'idle' },
+    { id:'microscope', name:'USB Microscope', icon:'🔬', color:'var(--purple)', status:'idle' },
+    { id:'logic', name:'Logic Analyzer', icon:'📟', color:'var(--cyan)', status:'idle' },
+    { id:'siggen', name:'Signal Generator', icon:'〰', color:'var(--orange)', status:'idle' },
+];
+let equipIdx = 0;
+let psuVoltage = 5.00, psuCurrent = 1.000, psuOutput = false;
+let usbConnected = false;
+
+// Simulated live readout
+let liveInterval = null;
+function startLiveReadout() {
+    if (liveInterval) return;
+    usbConnected = true;
+    liveInterval = setInterval(() => {
+        if (!usbConnected) return;
+        const noise = () => (Math.random() - 0.5) * 0.005;
+        const liveV = psuOutput ? psuVoltage + noise() : 0;
+        const liveA = psuOutput ? psuCurrent + noise() * 10 : 0;
+        const lr = $('live-readout-data');
+        if (lr) lr.innerHTML = `<span class="lr-label">V:</span><span class="lr-val">${liveV.toFixed(4)}</span> <span class="lr-label">A:</span><span class="lr-val">${(liveA*1000).toFixed(2)}mA</span> <span class="lr-label">W:</span><span class="lr-val">${(liveV*liveA).toFixed(4)}</span> <span class="lr-label">T:</span><span class="lr-val">${(28 + Math.random()*3).toFixed(1)}°C</span>`;
+    }, 500);
+}
+
+// ===== PERSISTENT: THERMAL MAP (rendered once) =====
+function initThermalPanel() {
+    $('bench-thermal-wrap').innerHTML = `
+    <div class="bench-thermal" id="bench-thermal-box">
+        <div style="font-size:.625rem;font-weight:700;color:var(--text-m);margin-bottom:3px;display:flex;align-items:center;gap:4px">
+            <span style="color:var(--orange)">📊</span> Layer Thermal Map
+            <span style="margin-left:auto;font-size:.5rem;color:var(--text-m)" id="bt-chartgpu-label">ChartGPU offline</span>
+        </div>
+        <div class="bt-tabs" id="bt-tabs"></div>
+        <canvas id="bench-thermal-canvas" width="600" height="60"></canvas>
+        <div class="bench-thermal-stats" id="bt-stats-row">
+            <span>CPU: <span class="bt-val bt-cpu" id="bt-cpu">—</span></span>
+            <span>Memory: <span class="bt-val bt-mem" id="bt-mem">—</span></span>
+            <span>GPU: <span class="bt-val bt-gpu" id="bt-gpu">offline</span></span>
+            <span>Temp: <span class="bt-val" style="color:var(--red)" id="bt-temp">—</span></span>
+            <span>Load: <span class="bt-val" style="color:var(--cyan)" id="bt-load">—</span></span>
+        </div>
+    </div>`;
+}
+initThermalPanel();
+
+// ===== PERSISTENT: FREYA CALCS — FULL DEV TOOLKIT =====
+let freyaActiveTab = 'ohm';
+const freyaToolTabs = [
+    { id:'ohm',      label:'Ohm/Power',    icon:'⚡', color:'var(--yellow)' },
+    { id:'divider',   label:'V-Divider',    icon:'🔀', color:'var(--cyan)' },
+    { id:'rc',        label:'RC/LC',        icon:'〰', color:'var(--purple)' },
+    { id:'led',       label:'LED',          icon:'💡', color:'var(--green)' },
+    { id:'regulator', label:'Regulator',    icon:'🔋', color:'var(--orange)' },
+    { id:'pcb',       label:'PCB Trace',    icon:'📐', color:'#f0883e' },
+    { id:'adc',       label:'ADC/DAC',      icon:'📊', color:'var(--accent)' },
+    { id:'freq',      label:'Freq/Timer',   icon:'🕐', color:'#d2a8ff' },
+    { id:'battery',   label:'Battery',      icon:'🔌', color:'var(--green)' },
+    { id:'units',     label:'FreyaUnits',   icon:'🔬', color:'#a78bfa' },
+    { id:'wire',      label:'Wire AWG',     icon:'〰', color:'var(--text-m)' },
+    { id:'thermal',   label:'Thermal',      icon:'🌡', color:'var(--red)' },
+    { id:'suggest',   label:'Suggest',      icon:'🧠', color:'#f5cd00' },
+];
+
+function freyaInput(id, ph, color) {
+    return `<input id="${id}" placeholder="${ph}" style="flex:1;min-width:0;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:${color||'var(--text)'};font-family:var(--mono);font-size:.75rem">`;
+}
+function freyaBtn(onclick, label) {
+    return `<button onclick="${onclick}" style="margin-top:4px;padding:3px 8px;font-size:.5625rem;border:1px solid var(--accent);border-radius:4px;background:var(--accent-s);color:var(--accent);cursor:pointer;width:100%">${label}</button>`;
+}
+function freyaSelect(id, opts, color) {
+    return `<select id="${id}" style="flex:1;min-width:0;padding:4px;background:var(--bg);border:1px solid var(--border);border-radius:4px;color:${color||'var(--text)'};font-family:var(--mono);font-size:.7rem">${opts.map(o=>`<option value="${o.v}">${o.l}</option>`).join('')}</select>`;
+}
+
+function renderFreyaCalcs() {
+    const t = freyaActiveTab;
+    let body = '';
+    switch (t) {
+    case 'ohm':
+        body = `<div class="psu-monitor" style="margin:0 0 4px"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">Ohm's Law: V = I × R</div>
+        <div style="display:flex;gap:4px">${freyaInput('calc-v','V','var(--yellow)')}${freyaInput('calc-i','A','var(--green)')}${freyaInput('calc-r','Ω','var(--cyan)')}</div>
+        ${freyaBtn('calcOhm()','Calculate')}<div id="calc-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>
+        <div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">Power: P = V × I</div>
+        <div style="display:flex;gap:4px">${freyaInput('calc-pv','V','var(--yellow)')}${freyaInput('calc-pi','A','var(--green)')}${freyaInput('calc-pp','W','var(--orange)')}</div>
+        ${freyaBtn('calcPower()','Calculate')}<div id="calc-presult" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>`;
+        break;
+    case 'divider':
+        body = `<div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">Voltage Divider: Vout = Vin × R2 / (R1+R2)</div>
+        <div style="display:flex;gap:4px">${freyaInput('vd-vin','Vin (V)','var(--yellow)')}${freyaInput('vd-r1','R1 (Ω)','var(--cyan)')}${freyaInput('vd-r2','R2 (Ω)','var(--green)')}</div>
+        ${freyaBtn('calcDivider()','Calculate')}<div id="vd-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div>
+        <div style="font-size:.5rem;color:var(--text-m);margin-top:4px">Tip: For 3.3V from 5V use R1=1.8kΩ R2=3.3kΩ</div></div>`;
+        break;
+    case 'rc':
+        body = `<div class="psu-monitor" style="margin:0 0 4px"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">RC Time Constant: τ = R × C | f = 1/(2π·R·C)</div>
+        <div style="display:flex;gap:4px">${freyaInput('rc-r','R (Ω)','var(--cyan)')}${freyaInput('rc-c','C (F)','var(--green)')}</div>
+        ${freyaBtn('calcRC()','Calculate RC')}<div id="rc-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>
+        <div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">LC Resonance: f = 1/(2π·√(L·C))</div>
+        <div style="display:flex;gap:4px">${freyaInput('lc-l','L (H)','var(--orange)')}${freyaInput('lc-c','C (F)','var(--green)')}</div>
+        ${freyaBtn('calcLC()','Calculate LC')}<div id="lc-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>`;
+        break;
+    case 'led':
+        body = `<div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">LED Resistor: R = (Vs − Vf) / If</div>
+        <div style="display:flex;gap:4px">${freyaInput('led-vs','Vs (V)','var(--yellow)')}${freyaInput('led-vf','Vf (V)','var(--green)')}${freyaInput('led-if','If (mA)','var(--cyan)')}</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px">
+            <span class="bt-tab" onclick="$('led-vf').value='1.8';$('led-if').value='20'" style="font-size:.5rem;cursor:pointer;background:rgba(255,60,60,.15);border-color:#f66;color:#f66">Red 1.8V</span>
+            <span class="bt-tab" onclick="$('led-vf').value='2.1';$('led-if').value='20'" style="font-size:.5rem;cursor:pointer;background:rgba(255,200,0,.12);border-color:#fc0;color:#fc0">Yellow 2.1V</span>
+            <span class="bt-tab" onclick="$('led-vf').value='3.0';$('led-if').value='20'" style="font-size:.5rem;cursor:pointer;background:rgba(0,200,60,.12);border-color:#0c8;color:#0c8">Green 3.0V</span>
+            <span class="bt-tab" onclick="$('led-vf').value='3.2';$('led-if').value='20'" style="font-size:.5rem;cursor:pointer;background:rgba(0,120,255,.12);border-color:#38f;color:#38f">Blue 3.2V</span>
+            <span class="bt-tab" onclick="$('led-vf').value='3.4';$('led-if').value='20'" style="font-size:.5rem;cursor:pointer;background:rgba(200,200,255,.12);border-color:#ccf;color:#ccf">White 3.4V</span>
+        </div>
+        ${freyaBtn('calcLED()','Calculate')}<div id="led-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>`;
+        break;
+    case 'regulator':
+        body = `<div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">Linear Regulator: Heat = (Vin−Vout) × Iout</div>
+        <div style="display:flex;gap:4px">${freyaInput('reg-vin','Vin','var(--yellow)')}${freyaInput('reg-vout','Vout','var(--green)')}${freyaInput('reg-i','Iout (A)','var(--cyan)')}</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px">
+            <span class="bt-tab" onclick="$('reg-vin').value='5';$('reg-vout').value='3.3';$('reg-i').value='0.5'" style="font-size:.5rem;cursor:pointer">5V→3.3V/500mA</span>
+            <span class="bt-tab" onclick="$('reg-vin').value='12';$('reg-vout').value='5';$('reg-i').value='1'" style="font-size:.5rem;cursor:pointer">12V→5V/1A</span>
+            <span class="bt-tab" onclick="$('reg-vin').value='9';$('reg-vout').value='3.3';$('reg-i').value='0.15'" style="font-size:.5rem;cursor:pointer">9V→3.3V/150mA</span>
+        </div>
+        ${freyaBtn('calcRegulator()','Calculate')}<div id="reg-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div>
+        <div class="psu-monitor" style="margin:4px 0 0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">Buck/Boost Efficiency: Pout = η × Pin</div>
+        <div style="display:flex;gap:4px">${freyaInput('buck-pin','Pin (W)','var(--yellow)')}${freyaInput('buck-eff','η (0-1)','var(--green)')}${freyaInput('buck-vout','Vout','var(--cyan)')}</div>
+        ${freyaBtn('calcBuck()','Calculate')}<div id="buck-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div></div>`;
+        break;
+    case 'pcb':
+        body = `<div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">PCB Trace Width (IPC-2221): external copper 1oz</div>
+        <div style="display:flex;gap:4px">${freyaInput('pcb-i','Current (A)','var(--yellow)')}${freyaInput('pcb-rise','Temp Rise °C','var(--orange)')}${freyaInput('pcb-thick','Cu oz','var(--cyan)')}</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px">
+            <span class="bt-tab" onclick="$('pcb-i').value='1';$('pcb-rise').value='10';$('pcb-thick').value='1'" style="font-size:.5rem;cursor:pointer">1A/10°C/1oz</span>
+            <span class="bt-tab" onclick="$('pcb-i').value='3';$('pcb-rise').value='20';$('pcb-thick').value='2'" style="font-size:.5rem;cursor:pointer">3A/20°C/2oz</span>
+        </div>
+        ${freyaBtn('calcPCBTrace()','Calculate')}<div id="pcb-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div>
+        <div style="font-size:.5rem;color:var(--text-m);margin-top:4px">IPC-2221 external: W = (I/(k×ΔT^b))^(1/c) / (t×1.378)</div></div>`;
+        break;
+    case 'adc':
+        body = `<div class="psu-monitor" style="margin:0 0 4px"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">ADC Resolution & LSB</div>
+        <div style="display:flex;gap:4px">${freyaInput('adc-bits','Bits','var(--cyan)')}${freyaInput('adc-vref','Vref (V)','var(--yellow)')}</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px">
+            <span class="bt-tab" onclick="$('adc-bits').value='10';$('adc-vref').value='3.3'" style="font-size:.5rem;cursor:pointer">Arduino 10b/3.3V</span>
+            <span class="bt-tab" onclick="$('adc-bits').value='12';$('adc-vref').value='3.3'" style="font-size:.5rem;cursor:pointer">ESP32 12b/3.3V</span>
+            <span class="bt-tab" onclick="$('adc-bits').value='16';$('adc-vref').value='5'" style="font-size:.5rem;cursor:pointer">ADS1115 16b/5V</span>
+            <span class="bt-tab" onclick="$('adc-bits').value='24';$('adc-vref').value='2.5'" style="font-size:.5rem;cursor:pointer">HX711 24b/2.5V</span>
+        </div>
+        ${freyaBtn('calcADC()','Calculate')}<div id="adc-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>
+        <div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">DAC Output: Vout = (code / 2^bits) × Vref</div>
+        <div style="display:flex;gap:4px">${freyaInput('dac-code','Code','var(--green)')}${freyaInput('dac-bits','Bits','var(--cyan)')}${freyaInput('dac-vref','Vref','var(--yellow)')}</div>
+        ${freyaBtn('calcDAC()','Calculate')}<div id="dac-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>`;
+        break;
+    case 'freq':
+        body = `<div class="psu-monitor" style="margin:0 0 4px"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">Frequency ↔ Period: f = 1/T</div>
+        <div style="display:flex;gap:4px">${freyaInput('freq-f','Freq (Hz)','var(--cyan)')}${freyaInput('freq-t','Period','var(--green)')}
+        ${freyaSelect('freq-unit',[{v:'s',l:'s'},{v:'ms',l:'ms'},{v:'µs',l:'µs'},{v:'ns',l:'ns'}],'var(--text-m)')}</div>
+        ${freyaBtn('calcFreq()','Calculate')}<div id="freq-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>
+        <div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">Timer Prescaler: OCR = (f_cpu / (prescaler × f_target)) − 1</div>
+        <div style="display:flex;gap:4px">${freyaInput('tmr-cpu','f_cpu (Hz)','var(--yellow)')}${freyaInput('tmr-pre','Prescaler','var(--orange)')}${freyaInput('tmr-target','f_target (Hz)','var(--cyan)')}</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px">
+            <span class="bt-tab" onclick="$('tmr-cpu').value='16000000';$('tmr-pre').value='64'" style="font-size:.5rem;cursor:pointer">ATmega 16MHz/64</span>
+            <span class="bt-tab" onclick="$('tmr-cpu').value='240000000';$('tmr-pre').value='80'" style="font-size:.5rem;cursor:pointer">ESP32 240MHz/80</span>
+            <span class="bt-tab" onclick="$('tmr-cpu').value='133000000';$('tmr-pre').value='1'" style="font-size:.5rem;cursor:pointer">RP2040 133MHz</span>
+        </div>
+        ${freyaBtn('calcTimer()','Calculate')}<div id="tmr-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>`;
+        break;
+    case 'battery':
+        body = `<div class="psu-monitor" style="margin:0 0 4px"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">Battery Life: hours = capacity(mAh) / current(mA)</div>
+        <div style="display:flex;gap:4px">${freyaInput('bat-cap','Capacity (mAh)','var(--green)')}${freyaInput('bat-i','Avg Draw (mA)','var(--yellow)')}</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px">
+            <span class="bt-tab" onclick="$('bat-cap').value='3000'" style="font-size:.5rem;cursor:pointer">18650 3Ah</span>
+            <span class="bt-tab" onclick="$('bat-cap').value='1200'" style="font-size:.5rem;cursor:pointer">LiPo 1.2Ah</span>
+            <span class="bt-tab" onclick="$('bat-cap').value='9000'" style="font-size:.5rem;cursor:pointer">6×AA NiMH</span>
+            <span class="bt-tab" onclick="$('bat-cap').value='250'" style="font-size:.5rem;cursor:pointer">CR2032</span>
+        </div>
+        ${freyaBtn('calcBattery()','Calculate')}<div id="bat-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>
+        <div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">Energy: Wh = V × Ah | Joules = Wh × 3600</div>
+        <div style="display:flex;gap:4px">${freyaInput('en-v','Voltage','var(--yellow)')}${freyaInput('en-ah','Capacity (Ah)','var(--green)')}</div>
+        ${freyaBtn('calcEnergy()','Calculate')}<div id="en-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>`;
+        break;
+    case 'units':
+        body = `<div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">FreyaUnits — Planck to Parsec (27 units)</div>
+        <div style="display:flex;gap:4px">
+        ${freyaInput('fu-val','Value','#a78bfa')}
+        ${freyaSelect('fu-from',[{v:'m',l:'m — Meter'},{v:'mm',l:'mm — Millimeter'},{v:'cm',l:'cm — Centimeter'},{v:'km',l:'km — Kilometer'},{v:'in',l:'in — Inch'},{v:'ft',l:'ft — Foot'},{v:'yd',l:'yd — Yard'},{v:'mi',l:'mi — Mile'},{v:'nm',l:'nm — Nanometer'},{v:'µm',l:'µm — Micrometer'},{v:'Å',l:'Å — Angstrom'},{v:'pm',l:'pm — Picometer'},{v:'fm',l:'fm — Femtometer'},{v:'am',l:'am — Attometer'},{v:'ℓp',l:'ℓp — Planck'},{v:'AU',l:'AU — Astro Unit'},{v:'ly',l:'ly — Light Year'},{v:'pc',l:'pc — Parsec'},{v:'mil',l:'mil — Mil/Thou'},{v:'NM',l:'NM — Nautical Mi'},{v:'µin',l:'µin — Microinch'}],'#a78bfa')}
+        </div>
+        ${freyaBtn('calcFreyaUnits()','Convert All')}<div id="fu-result" style="font-family:var(--mono);font-size:.6rem;color:var(--text-s);margin-top:4px;max-height:140px;overflow-y:auto"></div></div>`;
+        break;
+    case 'wire':
+        body = `<div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">Wire Gauge (AWG) — diameter, resistance, max current</div>
+        <div style="display:flex;gap:4px">${freyaSelect('wire-awg',[{v:'10',l:'10 AWG'},{v:'12',l:'12 AWG'},{v:'14',l:'14 AWG'},{v:'16',l:'16 AWG'},{v:'18',l:'18 AWG'},{v:'20',l:'20 AWG'},{v:'22',l:'22 AWG'},{v:'24',l:'24 AWG'},{v:'26',l:'26 AWG'},{v:'28',l:'28 AWG'},{v:'30',l:'30 AWG'}],'var(--text)')}
+        ${freyaInput('wire-len','Length (m)','var(--cyan)')}${freyaInput('wire-i','Current (A)','var(--yellow)')}</div>
+        ${freyaBtn('calcWire()','Calculate')}<div id="wire-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>`;
+        break;
+    case 'thermal':
+        body = `<div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:var(--text-m);margin-bottom:4px">Thermal: Tj = Ta + (Pd × Rθja)</div>
+        <div style="display:flex;gap:4px">${freyaInput('th-ta','Ambient °C','var(--yellow)')}${freyaInput('th-pd','Power (W)','var(--orange)')}${freyaInput('th-rth','Rθja (°C/W)','var(--cyan)')}</div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;margin-top:4px">
+            <span class="bt-tab" onclick="$('th-rth').value='65'" style="font-size:.5rem;cursor:pointer">TO-220 65°C/W</span>
+            <span class="bt-tab" onclick="$('th-rth').value='160'" style="font-size:.5rem;cursor:pointer">SOT-23 160°C/W</span>
+            <span class="bt-tab" onclick="$('th-rth').value='40'" style="font-size:.5rem;cursor:pointer">w/heatsink 40°C/W</span>
+        </div>
+        ${freyaBtn('calcThermal()','Calculate')}<div id="th-result" style="font-family:var(--mono);font-size:.6875rem;color:var(--text-s);margin-top:4px"></div></div>`;
+        break;
+    case 'suggest':
+        body = `<div class="psu-monitor" style="margin:0"><div style="font-size:.625rem;color:#f5cd00;margin-bottom:4px;font-weight:700">🧠 Smart Suggestions (based on live monitoring + build path)</div>
+        <div id="suggest-box" style="font-family:var(--mono);font-size:.625rem;color:var(--text-s);line-height:1.7"></div>
+        ${freyaBtn('generateSuggestions()','Analyze Build & Suggest')}
+        <div style="font-size:.5rem;color:var(--text-m);margin-top:6px">Reads: PSU settings, stage progress, parts list, thermal data, code templates. Future: auto-suggest components, detect issues, recommend settings.</div></div>`;
+        break;
+    }
+    $('bench-freya-wrap').innerHTML = `
+    <div style="padding:0 10px"><div style="display:flex;align-items:center;gap:4px;margin-bottom:4px"><h3 style="color:var(--cyan);font-size:.75rem;margin:0;white-space:nowrap">⚡ Freya Dev Toolkit</h3><span style="font-size:.5rem;color:var(--text-m);margin-left:auto">${freyaToolTabs.length} tools</span></div>
+    <div class="bt-tabs" id="freya-tabs" style="margin-bottom:6px">${freyaToolTabs.map(ft => `<span class="bt-tab${ft.id===t?' active':''}" data-ftab="${ft.id}" style="${ft.id===t?'border-color:'+ft.color+';color:'+ft.color:''}" title="${ft.label}">${ft.icon}</span>`).join('')}</div>
+    ${body}</div>`;
+    document.querySelectorAll('#freya-tabs .bt-tab').forEach(b => {
+        b.addEventListener('click', () => { freyaActiveTab = b.dataset.ftab; renderFreyaCalcs(); });
+    });
+}
+renderFreyaCalcs();
+
+// ===== DYNAMIC: EQUIPMENT + PSU (rebuilt on cycle) =====
+function renderBench() {
+    const power = (psuVoltage * psuCurrent).toFixed(2);
+    const resistance = psuCurrent > 0 ? (psuVoltage / psuCurrent).toFixed(2) : '∞';
+    const eq = equipmentList[equipIdx];
+    $('bench-rendered').innerHTML = `
+        <div class="equip-nav" style="margin-top:6px">
+            <button class="eq-arrow" onclick="cycleEquip(-1)">◀</button>
+            <div style="flex:1;text-align:center">
+                <div class="eq-label" style="color:${eq.color}">${eq.icon} ${eq.name}</div>
+                <div class="eq-dots" style="justify-content:center;margin-top:3px">
+                    ${equipmentList.map((e,i) => `<span class="eq-dot${i===equipIdx?' active':''}" title="${e.name}" onclick="setEquip(${i})" style="cursor:pointer;${i===equipIdx?'background:'+e.color:''}"></span>`).join('')}
+                </div>
+            </div>
+            <button class="eq-arrow" onclick="cycleEquip(1)">▶</button>
+        </div>
+
+        <div class="psu-monitor">
+            <div class="psu-title">${eq.icon} ${eq.id === 'psu' ? AT6301.name + ' — DC Power Supply' : eq.name} <span style="font-size:.5rem;color:var(--text-m);font-weight:400">${eq.id === 'psu' ? AT6301.maxV+'V/'+AT6301.maxA+'A/'+AT6301.maxW+'W' : eq.status}</span></div>
+            ${eq.id === 'psu' ? `
+            <div class="psu-row">
+                <div class="psu-val"><div class="psu-num" style="color:var(--yellow)">${psuVoltage.toFixed(2)}</div><div class="psu-unit">V</div><div class="psu-label">Voltage</div></div>
+                <div class="psu-val"><div class="psu-num" style="color:var(--green)">${psuCurrent.toFixed(3)}</div><div class="psu-unit">A</div><div class="psu-label">Current</div></div>
+                <div class="psu-val"><div class="psu-num" style="color:var(--orange)">${power}</div><div class="psu-unit">W</div><div class="psu-label">Power</div></div>
+                <div class="psu-val"><div class="psu-num" style="color:var(--cyan)">${resistance}</div><div class="psu-unit">Ω</div><div class="psu-label">Load R</div></div>
+            </div>
+            <div style="margin-top:8px;display:flex;align-items:center;gap:8px">
+                <span style="font-size:.625rem;color:var(--text-m);min-width:55px">Voltage:</span>
+                <input type="range" class="psu-slider" id="psu-v-slider" min="0" max="${AT6301.maxV}" step="0.01" value="${psuVoltage}" style="flex:1">
+                <input type="number" id="psu-v-input" value="${psuVoltage}" min="0" max="${AT6301.maxV}" step="0.01" style="width:60px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--yellow);font-family:var(--mono);font-size:.75rem;text-align:right">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+                <span style="font-size:.625rem;color:var(--text-m);min-width:55px">Current:</span>
+                <input type="range" class="psu-slider" id="psu-a-slider" min="0" max="${AT6301.maxA}" step="0.001" value="${psuCurrent}" style="flex:1">
+                <input type="number" id="psu-a-input" value="${psuCurrent}" min="0" max="${AT6301.maxA}" step="0.001" style="width:60px;background:var(--bg);border:1px solid var(--border);border-radius:4px;padding:2px 4px;color:var(--green);font-family:var(--mono);font-size:.75rem;text-align:right">
+            </div>
+            <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+                <button onclick="togglePSU()" id="psu-toggle" style="padding:4px 16px;border-radius:4px;font-size:.6875rem;font-weight:700;border:1px solid ${psuOutput?'var(--red)':'var(--green)'};background:${psuOutput?'rgba(248,81,73,.1)':'rgba(63,185,80,.1)'};color:${psuOutput?'var(--red)':'var(--green)'};cursor:pointer">${psuOutput?'OUTPUT OFF':'OUTPUT ON'}</button>
+                <button onclick="setPSUPreset(3.3,0.5)" style="padding:4px 8px;border-radius:4px;font-size:.5625rem;border:1px solid var(--border);background:var(--bg3);color:var(--text-m);cursor:pointer">3.3V</button>
+                <button onclick="setPSUPreset(5,1)" style="padding:4px 8px;border-radius:4px;font-size:.5625rem;border:1px solid var(--border);background:var(--bg3);color:var(--text-m);cursor:pointer">5V/1A</button>
+                <button onclick="setPSUPreset(12,2)" style="padding:4px 8px;border-radius:4px;font-size:.5625rem;border:1px solid var(--border);background:var(--bg3);color:var(--text-m);cursor:pointer">12V/2A</button>
+                <button onclick="setPSUPreset(24,5)" style="padding:4px 8px;border-radius:4px;font-size:.5625rem;border:1px solid var(--border);background:var(--bg3);color:var(--text-m);cursor:pointer">24V/5A</button>
+                <button onclick="setPSUPreset(48,3)" style="padding:4px 8px;border-radius:4px;font-size:.5625rem;border:1px solid var(--border);background:var(--bg3);color:var(--text-m);cursor:pointer">48V/3A</button>
+                <a href="${AT6301.url}" target="_blank" style="padding:4px 8px;border-radius:4px;font-size:.5625rem;border:1px solid var(--yellow);background:rgba(255,225,56,.08);color:var(--yellow);text-decoration:none;cursor:pointer">Product Page ↗</a>
+            </div>` : `
+            <div style="text-align:center;padding:20px;color:var(--text-m);font-size:.75rem">
+                <div style="font-size:2rem;margin-bottom:8px">${eq.icon}</div>
+                <div style="font-weight:600;color:var(--text)">${eq.name}</div>
+                <div style="margin-top:4px;font-size:.625rem">Status: <span style="color:${eq.status==='active'?'var(--green)':'var(--text-m)'}">${eq.status}</span></div>
+                <button onclick="linkEquip(${equipIdx})" style="margin-top:8px;padding:4px 16px;border-radius:4px;font-size:.625rem;font-weight:600;border:1px solid var(--accent);background:var(--accent-s);color:var(--accent);cursor:pointer">${eq.status==='active'?'Unlink':'Link Device'}</button>
+            </div>`}
+        </div>
+
+        <h3 style="color:var(--text-m);font-size:.75rem;margin:8px 0 4px">Device Specs</h3>
+        <div style="font-size:.6875rem;color:var(--text-s);line-height:1.7;font-family:var(--mono)">
+            <div>Model: <span style="color:var(--yellow)">${AT6301.name}</span></div>
+            <div>Output: <span style="color:var(--text)">0~${AT6301.maxV}V / 0~${AT6301.maxA}A</span></div>
+            <div>Power: <span style="color:var(--orange)">${AT6301.maxW}W</span> (constant power)</div>
+            <div>Resolution: <span style="color:var(--cyan)">${AT6301.resolution.v}V / ${AT6301.resolution.a}A</span></div>
+            <div>Interface: <span style="color:var(--accent)">USB (SCPI)</span> | USB: ${AT6301.usb}</div>
+            <div>Memory: ${AT6301.memories} groups | Waveform: 10 pts/wave</div>
+            <div>Features: ${AT6301.features.map(f => `<span style="display:inline-block;padding:1px 5px;background:var(--bg3);border-radius:3px;margin:1px;font-size:.5625rem">${f}</span>`).join('')}</div>
+        </div>
+        <div class="live-readout" style="margin-top:6px">
+            <span class="lr-status"><span class="lr-dot${usbConnected?' connected':''}"></span> ${usbConnected?'USB Connected':'Disconnected'}</span>
+            <span id="live-readout-data">${usbConnected?'Reading...':'<button onclick="startLiveReadout();renderBench()" style="padding:2px 8px;border:1px solid var(--accent);border-radius:3px;background:var(--accent-s);color:var(--accent);font-size:.5625rem;cursor:pointer">Connect USB</button>'}</span>
+        </div>
+    `;
+    // Bind PSU slider events
+    const vs = $('psu-v-slider'), vi = $('psu-v-input'), as = $('psu-a-slider'), ai = $('psu-a-input');
+    if (vs) { vs.oninput = () => { psuVoltage = parseFloat(vs.value); renderBench(); }; }
+    if (vi) { vi.onchange = () => { psuVoltage = Math.min(AT6301.maxV, Math.max(0, parseFloat(vi.value)||0)); renderBench(); }; }
+    if (as) { as.oninput = () => { psuCurrent = parseFloat(as.value); renderBench(); }; }
+    if (ai) { ai.onchange = () => { psuCurrent = Math.min(AT6301.maxA, Math.max(0, parseFloat(ai.value)||0)); renderBench(); }; }
+}
+
+window.cycleEquip = function(dir) { equipIdx = (equipIdx + dir + equipmentList.length) % equipmentList.length; renderBench(); };
+window.setEquip = function(i) { equipIdx = i; renderBench(); };
+window.linkEquip = function(i) {
+    equipmentList[i].status = equipmentList[i].status === 'active' ? 'idle' : 'active';
+    logConsole('equip', `${equipmentList[i].name}: ${equipmentList[i].status}`);
+    renderBench();
+};
+
+// ===== STAGE CHECKLIST — colored cards, persistent =====
+const phaseColors = {
+    Design: { bg:'rgba(88,166,255,.1)', border:'#58a6ff', text:'#58a6ff' },
+    Build:  { bg:'rgba(255,225,56,.1)',  border:'#ffe138', text:'#ffe138' },
+    Test:   { bg:'rgba(240,136,62,.1)',  border:'#f0883e', text:'#f0883e' },
+    Ship:   { bg:'rgba(63,185,80,.1)',   border:'#3fb950', text:'#3fb950' },
+};
+const stageItems = [
+    { id:'s-spec',      label:'Specifications defined',         phase:'Design', data:'Define voltage/current requirements, input/output specs, signal types, MCU choice' },
+    { id:'s-schematic', label:'Schematic drawn',                phase:'Design', data:'KiCad/EasyEDA schematic with component values, net labels, power rails identified' },
+    { id:'s-bom',       label:'BOM / parts sourced',            phase:'Design', data:'Bill of materials finalized — all parts ordered or in stock, lead times checked' },
+    { id:'s-proto',     label:'Breadboard prototype',           phase:'Build',  data:'Circuit assembled on breadboard, component placement verified, wiring checked' },
+    { id:'s-power',     label:'Power supply tested',            phase:'Build',  data:'AT6301 output verified, OVP/OCP set, voltage drop measured across load' },
+    { id:'s-firmware',  label:'Firmware uploaded',              phase:'Build',  data:'Arduino/ESP32 sketch compiled and flashed, serial output verified' },
+    { id:'s-sensor',    label:'Sensor readings verified',       phase:'Test',   data:'INA219/ADC readings match multimeter, calibration offsets applied' },
+    { id:'s-stress',    label:'Stress / thermal test',          phase:'Test',   data:'Run at max load 30+ min, monitor temperature, check for thermal throttling' },
+    { id:'s-comm',      label:'Communication link (serial/WiFi)', phase:'Test', data:'Serial/WebSocket/BLE confirmed working, data format validated' },
+    { id:'s-pcb',       label:'PCB layout / order',             phase:'Ship',   data:'PCB routed in KiCad, DRC passed, Gerbers exported, ordered from JLCPCB' },
+    { id:'s-enclosure', label:'Enclosure / mounting',           phase:'Ship',   data:'3D printed or off-the-shelf enclosure, mounting holes aligned, labels printed' },
+    { id:'s-deploy',    label:'Deployed / documented',          phase:'Ship',   data:'README written, pinout diagram saved, firmware versioned, photos taken' },
+];
+let stageState = JSON.parse(localStorage.getItem('hexbench-stages') || '{}');
+let stageOpen = JSON.parse(localStorage.getItem('hexbench-stages-open') || 'true');
+let activePhase = localStorage.getItem('hexbench-active-phase') || '';
+let expandedStage = null;
+
+const phaseIcons = { Design:'📐', Build:'🔨', Test:'🧪', Ship:'🚀' };
+
+function renderStages() {
+    const wrap = $('bench-stage-wrap');
+    if (!wrap) return;
+    const phases = [...new Set(stageItems.map(s => s.phase))];
+    const total = stageItems.length, totalDone = stageItems.filter(s => stageState[s.id]).length;
+    const totalPct = Math.round(totalDone / total * 100);
+
+    let html = `<div class="stage-wrap">
+        <div class="stage-bar" onclick="toggleStageOpen()">
+            <span class="stage-bar-title">📋 Stages</span>
+            <span class="stage-bar-pct" style="color:${totalPct===100?'var(--green)':'var(--text-m)'}">${totalDone}/${total} (${totalPct}%)</span>
+            <span class="stage-bar-chevron${stageOpen?' open':''}">▾</span>
+        </div>
+        <div style="padding:0 8px 2px"><div class="stage-bar-progress"><div class="stage-bar-fill" style="width:${totalPct}%"></div></div></div>
+        <div class="stage-body${stageOpen?' open':''}">
+            <div class="stg-phase-row">`;
+
+    phases.forEach(phase => {
+        const pc = phaseColors[phase];
+        const items = stageItems.filter(s => s.phase === phase);
+        const done = items.filter(s => stageState[s.id]).length;
+        const pct = Math.round(done / items.length * 100);
+        const isActive = activePhase === phase;
+        html += `<div class="stg-mini${isActive?' active':''}" style="background:${pc.bg};border-color:${isActive?pc.border:'transparent'}" onclick="setActivePhase('${phase}')">
+            <div class="stg-mini-icon">${phaseIcons[phase]||'📦'}</div>
+            <div class="stg-mini-label" style="color:${pc.text}">${phase}</div>
+            <div class="stg-mini-pct" style="color:${pct===100?pc.text:'var(--text-m)'}">${done}/${items.length}</div>
+            <div style="height:2px;background:rgba(0,0,0,.3);border-radius:1px;margin-top:2px"><div style="height:100%;width:${pct}%;background:${pc.border};border-radius:1px"></div></div>
+        </div>`;
+    });
+    html += `</div>`;
+
+    // Show detail cards for active phase (or all if none selected)
+    const showPhases = activePhase ? [activePhase] : phases;
+    showPhases.forEach(phase => {
+        const pc = phaseColors[phase];
+        const items = stageItems.filter(s => s.phase === phase);
+        if (activePhase) {
+            html += `<div style="font-size:.5rem;font-weight:700;text-transform:uppercase;color:${pc.text};letter-spacing:.4px;margin:2px 0 3px">${phase}</div>`;
+        }
+        html += `<div class="stg-detail">`;
+        items.forEach(s => {
+            const isDone = !!stageState[s.id];
+            const isExp = expandedStage === s.id;
+            html += `<div class="stg-dcard${isDone?' done':''}${isExp?' expanded':''}" style="background:${pc.bg}" onclick="toggleStage('${s.id}')">
+                <div class="stg-dcheck" style="border-color:${pc.border}">${isDone?'✓':''}</div>
+                <span class="stg-dlabel" style="color:${pc.text}">${s.label}</span>
+                <span class="stg-dinfo">${s.data}</span>
+                <span style="font-size:.45rem;color:var(--text-m);cursor:pointer;flex-shrink:0" onclick="event.stopPropagation();expandStage('${s.id}')">${isExp?'▴':'▸'}</span>
+            </div>`;
+        });
+        html += `</div>`;
+    });
+    html += `<div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+        <button class="stg-clear-btn" onclick="clearStages()">Clear All</button>
+        ${activePhase ? `<button class="stg-clear-btn" onclick="setActivePhase('')">Show All Phases</button>` : ''}
+    </div></div></div>`;
+    wrap.innerHTML = html;
+}
+
+window.toggleStageOpen = function() {
+    stageOpen = !stageOpen;
+    localStorage.setItem('hexbench-stages-open', JSON.stringify(stageOpen));
+    renderStages();
+};
+window.setActivePhase = function(p) {
+    activePhase = activePhase === p ? '' : p;
+    localStorage.setItem('hexbench-active-phase', activePhase);
+    renderStages();
+};
+window.toggleStage = function(id) {
+    stageState[id] = !stageState[id];
+    localStorage.setItem('hexbench-stages', JSON.stringify(stageState));
+    renderStages();
+};
+window.expandStage = function(id) {
+    expandedStage = expandedStage === id ? null : id;
+    renderStages();
+};
+window.clearStages = function() {
+    stageState = {};
+    localStorage.setItem('hexbench-stages', '{}');
+    renderStages();
+    logConsole('sys', 'Stage checklist cleared');
+};
+renderStages();
+
+// ===== BENCH THERMAL CANVAS — multi-tab monitoring =====
+const thermalChannels = [
+    { id:'cpu',     label:'CPU / Memory',  icon:'🖥',  color:'#58a6ff', desc:'System CPU + heap metrics' },
+    { id:'voltage', label:'Voltage',       icon:'⚡',  color:'#ffe138', desc:'PSU voltage rail monitoring' },
+    { id:'current', label:'Current',       icon:'🔌',  color:'#3fb950', desc:'Current draw + power' },
+    { id:'cooling', label:'Cooling',       icon:'❄️',  color:'#00bfff', desc:'Thermal + fan RPM' },
+    { id:'errors',  label:'Errors',        icon:'⚠',   color:'#f85149', desc:'Fault detection + alerts' },
+    { id:'data',    label:'Data Flow',     icon:'📡',  color:'#d2a8ff', desc:'Serial / WebSocket traffic' },
+    { id:'map',     label:'Signal Map',    icon:'🗺',  color:'#f0883e', desc:'Multi-signal overlay' },
+];
+let activeThermalChannel = 'cpu';
+const thermalStreams = {};
+thermalChannels.forEach(ch => { thermalStreams[ch.id] = new Array(600).fill(0); });
+let thermalRAF = null;
+
+function renderThermalTabs() {
+    const tabsEl = $('bt-tabs');
+    if (!tabsEl) return;
+    tabsEl.innerHTML = thermalChannels.map(ch =>
+        `<span class="bt-tab${ch.id===activeThermalChannel?' active':''}" data-ch="${ch.id}" style="${ch.id===activeThermalChannel?'border-color:'+ch.color+';color:'+ch.color:''}">${ch.icon} ${ch.label}</span>`
+    ).join('');
+    tabsEl.querySelectorAll('.bt-tab').forEach(t => {
+        t.addEventListener('click', () => { activeThermalChannel = t.dataset.ch; renderThermalTabs(); updateThermalStats(); });
+    });
+}
+renderThermalTabs();
+
+function updateThermalStats() {
+    const ch = thermalChannels.find(c => c.id === activeThermalChannel);
+    if (!ch) return;
+    const row = $('bt-stats-row');
+    if (!row) return;
+    const statSets = {
+        cpu:     () => `<span>CPU: <span class="bt-val bt-cpu" id="bt-cpu">—</span></span><span>Memory: <span class="bt-val bt-mem" id="bt-mem">—</span></span><span>GPU: <span class="bt-val bt-gpu" id="bt-gpu">offline</span></span><span>Temp: <span class="bt-val" style="color:var(--red)" id="bt-temp">—</span></span><span>Load: <span class="bt-val" style="color:var(--cyan)" id="bt-load">—</span></span>`,
+        voltage: () => `<span>Vset: <span class="bt-val" style="color:#ffe138" id="bt-vset">${psuVoltage.toFixed(2)}V</span></span><span>Vact: <span class="bt-val" style="color:#ffe138" id="bt-vact">—</span></span><span>Ripple: <span class="bt-val" style="color:var(--text-m)" id="bt-ripple">—</span></span><span>Mode: <span class="bt-val" style="color:var(--cyan)" id="bt-mode">${psuOutput?'CV':'OFF'}</span></span>`,
+        current: () => `<span>Iset: <span class="bt-val" style="color:#3fb950" id="bt-iset">${(psuCurrent*1000).toFixed(0)}mA</span></span><span>Iact: <span class="bt-val" style="color:#3fb950" id="bt-iact">—</span></span><span>Power: <span class="bt-val" style="color:var(--orange)" id="bt-pwr">—</span></span><span>Peak: <span class="bt-val" style="color:var(--red)" id="bt-peak">—</span></span>`,
+        cooling: () => `<span>Board: <span class="bt-val" style="color:#f0883e" id="bt-board">—</span></span><span>MOSFET: <span class="bt-val" style="color:var(--red)" id="bt-mos">—</span></span><span>Fan: <span class="bt-val" style="color:#00bfff" id="bt-fan">—</span></span><span>Ambient: <span class="bt-val" style="color:var(--text-m)" id="bt-ambient">—</span></span>`,
+        errors:  () => `<span>Faults: <span class="bt-val" style="color:#f85149" id="bt-faults">0</span></span><span>Warnings: <span class="bt-val" style="color:var(--orange)" id="bt-warns">0</span></span><span>OVP: <span class="bt-val" style="color:var(--green)" id="bt-ovp">OK</span></span><span>OCP: <span class="bt-val" style="color:var(--green)" id="bt-ocp">OK</span></span>`,
+        data:    () => `<span>TX: <span class="bt-val" style="color:#d2a8ff" id="bt-tx">0B</span></span><span>RX: <span class="bt-val" style="color:#d2a8ff" id="bt-rx">0B</span></span><span>Pkt/s: <span class="bt-val" style="color:var(--cyan)" id="bt-pps">0</span></span><span>Latency: <span class="bt-val" style="color:var(--text-m)" id="bt-lat">—</span></span>`,
+        map:     () => `<span>Signals: <span class="bt-val" style="color:#f0883e" id="bt-sigs">3</span></span><span>Overlaid: <span class="bt-val" style="color:var(--text-m)" id="bt-ovl">V+I+T</span></span><span>Range: <span class="bt-val" style="color:var(--cyan)" id="bt-rng">auto</span></span>`,
+    };
+    row.innerHTML = (statSets[activeThermalChannel] || statSets.cpu)();
+    const lbl = $('bt-chartgpu-label');
+    if (lbl) lbl.textContent = ch.desc;
+}
+updateThermalStats();
+
+function initBenchThermal() {
+    const cvs = $('bench-thermal-canvas');
+    if (!cvs) return;
+    const ctx = cvs.getContext('2d');
+    const W = cvs.width, H = cvs.height;
+
+    function sampleChannel(ch) {
+        const noise = () => (Math.random() - 0.5) * 2;
+        switch (ch) {
+            case 'cpu':     return Math.min(100, Math.max(0, Math.random() * 20 + 12 + noise() * 5));
+            case 'voltage': return psuOutput ? Math.min(100, (psuVoltage / 60) * 100 + noise() * 1.5) : noise() * 0.5 + 2;
+            case 'current': return psuOutput ? Math.min(100, (psuCurrent / 10) * 100 + noise() * 3) : Math.abs(noise());
+            case 'cooling': return Math.min(100, 30 + Math.random() * 15 + (psuOutput ? psuVoltage * psuCurrent / 5 : 0));
+            case 'errors':  return Math.random() > 0.97 ? 60 + Math.random() * 40 : Math.random() * 5;
+            case 'data':    return Math.min(100, Math.abs(Math.sin(Date.now()/800) * 50 + noise() * 20 + 30));
+            case 'map':     return Math.min(100, Math.random() * 40 + 30 + Math.sin(Date.now()/500) * 20);
+            default: return Math.random() * 50;
+        }
+    }
+
+    function updateLiveStats() {
+        const ch = activeThermalChannel;
+        const n = () => (Math.random() - 0.5) * 0.01;
+        if (ch === 'cpu') {
+            const c = sampleChannel('cpu');
+            if ($('bt-cpu')) $('bt-cpu').textContent = c.toFixed(0) + '%';
+            if ($('bt-mem')) $('bt-mem').textContent = (30 + Math.random() * 25).toFixed(1) + '%';
+            if ($('bt-temp')) $('bt-temp').textContent = (35 + c * 0.3 + Math.random() * 5).toFixed(1) + '°C';
+            if ($('bt-load')) $('bt-load').textContent = (c * 0.7 + Math.random() * 10).toFixed(0) + '%';
+        } else if (ch === 'voltage') {
+            const v = psuOutput ? psuVoltage + n() : 0;
+            if ($('bt-vact')) $('bt-vact').textContent = v.toFixed(3) + 'V';
+            if ($('bt-ripple')) $('bt-ripple').textContent = (Math.random() * 8 + 1).toFixed(1) + 'mV';
+        } else if (ch === 'current') {
+            const i = psuOutput ? psuCurrent + n() * 10 : 0;
+            if ($('bt-iact')) $('bt-iact').textContent = (i * 1000).toFixed(1) + 'mA';
+            if ($('bt-pwr')) $('bt-pwr').textContent = (psuVoltage * i).toFixed(3) + 'W';
+            if ($('bt-peak')) $('bt-peak').textContent = (psuCurrent * 1000 * 1.02).toFixed(0) + 'mA';
+        } else if (ch === 'cooling') {
+            if ($('bt-board')) $('bt-board').textContent = (32 + Math.random() * 8).toFixed(1) + '°C';
+            if ($('bt-mos')) $('bt-mos').textContent = (40 + Math.random() * 15).toFixed(1) + '°C';
+            if ($('bt-fan')) $('bt-fan').textContent = Math.round(1200 + Math.random() * 600) + ' RPM';
+            if ($('bt-ambient')) $('bt-ambient').textContent = (22 + Math.random() * 3).toFixed(1) + '°C';
+        } else if (ch === 'data') {
+            if ($('bt-tx')) $('bt-tx').textContent = Math.round(Math.random() * 512) + 'B';
+            if ($('bt-rx')) $('bt-rx').textContent = Math.round(Math.random() * 256) + 'B';
+            if ($('bt-pps')) $('bt-pps').textContent = Math.round(2 + Math.random() * 10);
+            if ($('bt-lat')) $('bt-lat').textContent = (Math.random() * 12 + 1).toFixed(1) + 'ms';
+        }
+    }
+
+    function drawThermal() {
+        // Sample ALL channels (for map mode multi-overlay)
+        thermalChannels.forEach(ch => {
+            const d = thermalStreams[ch.id];
+            d.push(sampleChannel(ch.id));
+            if (d.length > W) d.shift();
+        });
+
+        const ch = thermalChannels.find(c => c.id === activeThermalChannel);
+        const data = thermalStreams[activeThermalChannel];
+        const lineColor = ch ? ch.color : '#58a6ff';
+
+        ctx.fillStyle = '#0a0e14';
+        ctx.fillRect(0, 0, W, H);
+
+        // Grid
+        ctx.strokeStyle = 'rgba(48,54,61,0.4)';
+        ctx.lineWidth = 0.5;
+        for (let y = 0; y < H; y += 15) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+        if (activeThermalChannel === 'map') {
+            // Multi-signal overlay
+            ['voltage','current','cooling'].forEach((sig, idx) => {
+                const sd = thermalStreams[sig];
+                const sc = thermalChannels.find(c => c.id === sig)?.color || '#888';
+                ctx.strokeStyle = sc;
+                ctx.lineWidth = 1.2;
+                ctx.globalAlpha = 0.7;
+                ctx.beginPath();
+                for (let x = 0; x < sd.length; x++) {
+                    const y = H - (sd[x] / 100) * H * 0.85;
+                    x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            });
+            ctx.globalAlpha = 1;
+        } else {
+            // Heatmap fill
+            for (let x = 0; x < data.length; x++) {
+                const v = data[x] / 100;
+                const r = Math.floor(v * 255);
+                const g = Math.floor((1 - Math.abs(v - 0.5) * 2) * 180);
+                const b = Math.floor((1 - v) * 200);
+                ctx.fillStyle = `rgb(${r},${g},${b})`;
+                const h = Math.max(2, v * H * 0.85);
+                ctx.fillRect(x, H - h, 1, h);
+            }
+            // Line overlay
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = 1;
+            ctx.globalAlpha = 0.5;
+            ctx.beginPath();
+            for (let x = 0; x < data.length; x++) {
+                const y = H - (data[x] / 100) * H * 0.85;
+                x === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+
+        updateLiveStats();
+        thermalRAF = requestAnimationFrame(drawThermal);
+    }
+    drawThermal();
+}
+
+setTimeout(initBenchThermal, 100);
+
+window.togglePSU = function() {
+    psuOutput = !psuOutput;
+    logConsole('psu', psuOutput ? `OUTPUT ON: ${psuVoltage.toFixed(2)}V / ${psuCurrent.toFixed(3)}A` : 'OUTPUT OFF');
+    renderBench();
+};
+
+window.setPSUPreset = function(v, a) {
+    psuVoltage = v; psuCurrent = a;
+    logConsole('psu', `Preset: ${v}V / ${a}A`);
+    renderBench();
+};
+
+window.calcOhm = function() {
+    const v = parseFloat($('calc-v')?.value), i = parseFloat($('calc-i')?.value), r = parseFloat($('calc-r')?.value);
+    const el = $('calc-result'); if (!el) return;
+    if (!isNaN(v) && !isNaN(i)) el.textContent = `R = ${(v/i).toFixed(4)} Ω, P = ${(v*i).toFixed(4)} W`;
+    else if (!isNaN(v) && !isNaN(r)) el.textContent = `I = ${(v/r).toFixed(4)} A, P = ${(v*v/r).toFixed(4)} W`;
+    else if (!isNaN(i) && !isNaN(r)) el.textContent = `V = ${(i*r).toFixed(4)} V, P = ${(i*i*r).toFixed(4)} W`;
+    else el.textContent = 'Enter any two values';
+};
+window.calcPower = function() {
+    const v = parseFloat($('calc-pv')?.value), i = parseFloat($('calc-pi')?.value), p = parseFloat($('calc-pp')?.value);
+    const el = $('calc-presult'); if (!el) return;
+    if (!isNaN(v) && !isNaN(i)) el.textContent = `P = ${(v*i).toFixed(4)} W, R = ${(v/i).toFixed(4)} Ω`;
+    else if (!isNaN(v) && !isNaN(p)) el.textContent = `I = ${(p/v).toFixed(4)} A, R = ${(v*v/p).toFixed(4)} Ω`;
+    else if (!isNaN(i) && !isNaN(p)) el.textContent = `V = ${(p/i).toFixed(4)} V, R = ${(p/(i*i)).toFixed(4)} Ω`;
+    else el.textContent = 'Enter any two values';
+};
+// Voltage Divider
+window.calcDivider = function() {
+    const vin = parseFloat($('vd-vin')?.value), r1 = parseFloat($('vd-r1')?.value), r2 = parseFloat($('vd-r2')?.value);
+    const el = $('vd-result'); if (!el) return;
+    if (isNaN(vin) || isNaN(r1) || isNaN(r2)) { el.textContent = 'Enter Vin, R1, R2'; return; }
+    const vout = vin * r2 / (r1 + r2);
+    const ratio = r2 / (r1 + r2);
+    const iTotal = vin / (r1 + r2);
+    el.innerHTML = `Vout = <span style="color:var(--green)">${vout.toFixed(4)}V</span> | Ratio = ${(ratio*100).toFixed(2)}% | I = ${(iTotal*1000).toFixed(3)}mA | P_r1 = ${(iTotal*iTotal*r1*1000).toFixed(2)}mW`;
+};
+// RC / LC
+window.calcRC = function() {
+    const r = parseFloat($('rc-r')?.value), c = parseFloat($('rc-c')?.value);
+    const el = $('rc-result'); if (!el) return;
+    if (isNaN(r) || isNaN(c)) { el.textContent = 'Enter R and C'; return; }
+    const tau = r * c;
+    const f = 1 / (2 * Math.PI * r * c);
+    const t5 = tau * 5;
+    el.innerHTML = `τ = <span style="color:var(--cyan)">${tau < 0.001 ? (tau*1e6).toFixed(2)+'µs' : tau < 1 ? (tau*1000).toFixed(3)+'ms' : tau.toFixed(4)+'s'}</span> | f₃dB = ${f > 1e6 ? (f/1e6).toFixed(2)+'MHz' : f > 1e3 ? (f/1e3).toFixed(2)+'kHz' : f.toFixed(2)+'Hz'} | 5τ(99%) = ${t5 < 1 ? (t5*1000).toFixed(2)+'ms' : t5.toFixed(3)+'s'}`;
+};
+window.calcLC = function() {
+    const l = parseFloat($('lc-l')?.value), c = parseFloat($('lc-c')?.value);
+    const el = $('lc-result'); if (!el) return;
+    if (isNaN(l) || isNaN(c)) { el.textContent = 'Enter L and C'; return; }
+    const f = 1 / (2 * Math.PI * Math.sqrt(l * c));
+    const z = Math.sqrt(l / c);
+    el.innerHTML = `f₀ = <span style="color:var(--orange)">${f > 1e6 ? (f/1e6).toFixed(3)+'MHz' : f > 1e3 ? (f/1e3).toFixed(3)+'kHz' : f.toFixed(3)+'Hz'}</span> | Z₀ = ${z.toFixed(2)}Ω | λ = ${(3e8/f).toFixed(4)}m`;
+};
+// LED Resistor
+window.calcLED = function() {
+    const vs = parseFloat($('led-vs')?.value), vf = parseFloat($('led-vf')?.value), ifmA = parseFloat($('led-if')?.value);
+    const el = $('led-result'); if (!el) return;
+    if (isNaN(vs) || isNaN(vf) || isNaN(ifmA)) { el.textContent = 'Enter Vs, Vf, If'; return; }
+    const ifA = ifmA / 1000;
+    const r = (vs - vf) / ifA;
+    const p = (vs - vf) * ifA;
+    // Find standard resistor (E24 series)
+    const e24 = [1,1.1,1.2,1.3,1.5,1.6,1.8,2,2.2,2.4,2.7,3,3.3,3.6,3.9,4.3,4.7,5.1,5.6,6.2,6.8,7.5,8.2,9.1];
+    const decade = Math.pow(10, Math.floor(Math.log10(r)));
+    const norm = r / decade;
+    const nearest = e24.reduce((a,b) => Math.abs(b-norm) < Math.abs(a-norm) ? b : a);
+    const stdR = nearest * decade;
+    el.innerHTML = `R = <span style="color:var(--cyan)">${r.toFixed(1)}Ω</span> → standard <span style="color:var(--green)">${stdR >= 1000 ? (stdR/1000).toFixed(1)+'kΩ' : stdR.toFixed(0)+'Ω'}</span> | P = ${(p*1000).toFixed(1)}mW (use ¼W)`;
+};
+// Regulator
+window.calcRegulator = function() {
+    const vin = parseFloat($('reg-vin')?.value), vout = parseFloat($('reg-vout')?.value), i = parseFloat($('reg-i')?.value);
+    const el = $('reg-result'); if (!el) return;
+    if (isNaN(vin) || isNaN(vout) || isNaN(i)) { el.textContent = 'Enter Vin, Vout, I'; return; }
+    const pd = (vin - vout) * i;
+    const eff = (vout * i) / (vin * i) * 100;
+    const rthMax = 150;
+    const taDeg = 25;
+    const okMsg = pd < 1.5 ? '✓ OK for TO-220' : pd < 0.5 ? '✓ OK for SOT-223' : '⚠ needs heatsink';
+    el.innerHTML = `Heat = <span style="color:var(--red)">${pd.toFixed(3)}W</span> | η = ${eff.toFixed(1)}% | Tj(no sink) ≈ ${(taDeg + pd * 65).toFixed(0)}°C | ${okMsg}`;
+};
+window.calcBuck = function() {
+    const pin = parseFloat($('buck-pin')?.value), eff = parseFloat($('buck-eff')?.value), vout = parseFloat($('buck-vout')?.value);
+    const el = $('buck-result'); if (!el) return;
+    if (isNaN(pin) || isNaN(eff) || isNaN(vout)) { el.textContent = 'Enter Pin, η, Vout'; return; }
+    const pout = pin * eff;
+    const ploss = pin - pout;
+    const iout = pout / vout;
+    el.innerHTML = `Pout = <span style="color:var(--green)">${pout.toFixed(3)}W</span> | Ploss = ${ploss.toFixed(3)}W | Iout = ${iout > 1 ? iout.toFixed(2)+'A' : (iout*1000).toFixed(1)+'mA'}`;
+};
+// PCB Trace
+window.calcPCBTrace = function() {
+    const i = parseFloat($('pcb-i')?.value), rise = parseFloat($('pcb-rise')?.value), oz = parseFloat($('pcb-thick')?.value);
+    const el = $('pcb-result'); if (!el) return;
+    if (isNaN(i) || isNaN(rise) || isNaN(oz)) { el.textContent = 'Enter current, temp rise, Cu thickness'; return; }
+    const t = oz * 1.378;   // mils (1oz = 1.378 mils)
+    const k = 0.048, b = 0.44, c = 0.725; // IPC-2221 external
+    const area = Math.pow(i / (k * Math.pow(rise, b)), 1/c);
+    const w = area / t;
+    el.innerHTML = `Width = <span style="color:var(--green)">${w.toFixed(1)} mil</span> (${(w*0.0254).toFixed(2)} mm) | Area = ${area.toFixed(1)} mil² | Cu = ${t.toFixed(2)} mil`;
+};
+// ADC / DAC
+window.calcADC = function() {
+    const bits = parseInt($('adc-bits')?.value), vref = parseFloat($('adc-vref')?.value);
+    const el = $('adc-result'); if (!el) return;
+    if (isNaN(bits) || isNaN(vref)) { el.textContent = 'Enter bits and Vref'; return; }
+    const levels = Math.pow(2, bits);
+    const lsb = vref / levels;
+    const snr = 6.02 * bits + 1.76;
+    el.innerHTML = `Levels = ${levels.toLocaleString()} | LSB = <span style="color:var(--cyan)">${lsb > 0.001 ? lsb.toFixed(4)+'V' : (lsb*1e6).toFixed(2)+'µV'}</span> | SNR = ${snr.toFixed(1)} dB | ENOB ≈ ${((snr-1.76)/6.02).toFixed(1)} bits`;
+};
+window.calcDAC = function() {
+    const code = parseInt($('dac-code')?.value), bits = parseInt($('dac-bits')?.value), vref = parseFloat($('dac-vref')?.value);
+    const el = $('dac-result'); if (!el) return;
+    if (isNaN(code) || isNaN(bits) || isNaN(vref)) { el.textContent = 'Enter code, bits, Vref'; return; }
+    const vout = (code / Math.pow(2, bits)) * vref;
+    el.innerHTML = `Vout = <span style="color:var(--green)">${vout.toFixed(4)}V</span> | ${(code/Math.pow(2,bits)*100).toFixed(2)}% of Vref | Step = ${(vref/Math.pow(2,bits)*1000).toFixed(3)}mV`;
+};
+// Frequency / Timer
+window.calcFreq = function() {
+    const f = parseFloat($('freq-f')?.value), t = parseFloat($('freq-t')?.value), u = $('freq-unit')?.value || 's';
+    const el = $('freq-result'); if (!el) return;
+    const mult = {s:1,ms:1e-3,'µs':1e-6,ns:1e-9}[u] || 1;
+    if (!isNaN(f)) {
+        const per = 1 / f;
+        el.innerHTML = `Period = <span style="color:var(--green)">${per > 1 ? per.toFixed(4)+'s' : per > 1e-3 ? (per*1e3).toFixed(3)+'ms' : per > 1e-6 ? (per*1e6).toFixed(3)+'µs' : (per*1e9).toFixed(2)+'ns'}</span> | λ(air) = ${(3e8/f).toFixed(4)}m | ω = ${(2*Math.PI*f).toFixed(2)} rad/s`;
+    } else if (!isNaN(t)) {
+        const per = t * mult;
+        const freq = 1 / per;
+        el.innerHTML = `Freq = <span style="color:var(--cyan)">${freq > 1e6 ? (freq/1e6).toFixed(3)+'MHz' : freq > 1e3 ? (freq/1e3).toFixed(3)+'kHz' : freq.toFixed(3)+'Hz'}</span> | ω = ${(2*Math.PI*freq).toFixed(2)} rad/s`;
+    } else { el.textContent = 'Enter frequency or period'; }
+};
+window.calcTimer = function() {
+    const cpu = parseFloat($('tmr-cpu')?.value), pre = parseFloat($('tmr-pre')?.value), target = parseFloat($('tmr-target')?.value);
+    const el = $('tmr-result'); if (!el) return;
+    if (isNaN(cpu) || isNaN(pre) || isNaN(target)) { el.textContent = 'Enter f_cpu, prescaler, f_target'; return; }
+    const ocr = (cpu / (pre * target)) - 1;
+    const actual = cpu / (pre * (Math.round(ocr) + 1));
+    const err = ((actual - target) / target * 100);
+    el.innerHTML = `OCR = <span style="color:var(--cyan)">${Math.round(ocr)}</span> (${ocr.toFixed(2)}) | Actual = ${actual.toFixed(2)}Hz | Error = ${err.toFixed(4)}% | ${ocr > 65535 ? '<span style="color:var(--red)">⚠ overflow 16-bit</span>' : ocr > 255 ? '16-bit timer' : '8-bit OK'}`;
+};
+// Battery
+window.calcBattery = function() {
+    const cap = parseFloat($('bat-cap')?.value), i = parseFloat($('bat-i')?.value);
+    const el = $('bat-result'); if (!el) return;
+    if (isNaN(cap) || isNaN(i) || i === 0) { el.textContent = 'Enter capacity and current draw'; return; }
+    const hrs = cap / i;
+    const days = hrs / 24;
+    el.innerHTML = `Life = <span style="color:var(--green)">${hrs.toFixed(1)} hours</span> (${days.toFixed(2)} days) | ${(hrs*60).toFixed(0)} min | Eff ~80% → ${(hrs*0.8).toFixed(1)}h real`;
+};
+window.calcEnergy = function() {
+    const v = parseFloat($('en-v')?.value), ah = parseFloat($('en-ah')?.value);
+    const el = $('en-result'); if (!el) return;
+    if (isNaN(v) || isNaN(ah)) { el.textContent = 'Enter voltage and Ah'; return; }
+    const wh = v * ah;
+    const j = wh * 3600;
+    el.innerHTML = `Energy = <span style="color:var(--green)">${wh.toFixed(2)} Wh</span> = ${j > 1e3 ? (j/1e3).toFixed(1)+'kJ' : j.toFixed(1)+'J'} | ${(wh/1000).toFixed(3)} kWh | Cost ≈ $${(wh/1000*0.12).toFixed(4)} (@$0.12/kWh)`;
+};
+// FreyaUnits
+const FREYA_UNITS_TABLE = [
+    { sym:'ℓp', name:'Planck', m:1.616255e-35 },{ sym:'am', name:'Attometer', m:1e-18 },
+    { sym:'fm', name:'Femtometer', m:1e-15 },{ sym:'pm', name:'Picometer', m:1e-12 },
+    { sym:'Å', name:'Angstrom', m:1e-10 },{ sym:'nm', name:'Nanometer', m:1e-9 },
+    { sym:'µin', name:'Microinch', m:2.54e-8 },{ sym:'µm', name:'Micrometer', m:1e-6 },
+    { sym:'mil', name:'Mil', m:2.54e-5 },{ sym:'mm', name:'Millimeter', m:1e-3 },
+    { sym:'cm', name:'Centimeter', m:1e-2 },{ sym:'in', name:'Inch', m:0.0254 },
+    { sym:'ft', name:'Foot', m:0.3048 },{ sym:'yd', name:'Yard', m:0.9144 },
+    { sym:'m', name:'Meter', m:1 },{ sym:'km', name:'Kilometer', m:1e3 },
+    { sym:'mi', name:'Mile', m:1609.34 },{ sym:'NM', name:'Nautical Mi', m:1852 },
+    { sym:'AU', name:'Astro Unit', m:1.496e11 },{ sym:'ly', name:'Light Year', m:9.461e15 },
+    { sym:'pc', name:'Parsec', m:3.086e16 },
+];
+window.calcFreyaUnits = function() {
+    const val = parseFloat($('fu-val')?.value), from = $('fu-from')?.value;
+    const el = $('fu-result'); if (!el) return;
+    if (isNaN(val)) { el.textContent = 'Enter a value'; return; }
+    const src = FREYA_UNITS_TABLE.find(u => u.sym === from);
+    if (!src) { el.textContent = 'Select unit'; return; }
+    const meters = val * src.m;
+    const c = 299792458;
+    const h = 6.62607e-34;
+    const freq = c / meters;
+    const energy = h * freq;
+    let html = FREYA_UNITS_TABLE.map(u => {
+        const v = meters / u.m;
+        const vStr = v > 1e12 || v < 1e-6 ? v.toExponential(4) : v.toFixed(6);
+        const hl = u.sym === from ? 'color:#a78bfa;font-weight:700' : 'color:var(--text-s)';
+        return `<div style="${hl}"><span style="display:inline-block;width:28px;color:var(--cyan)">${u.sym}</span>${vStr} <span style="color:var(--text-m)">${u.name}</span></div>`;
+    }).join('');
+    html += `<div style="margin-top:4px;border-top:1px solid var(--border);padding-top:4px;color:var(--text-m)">Quantum: λ=${meters.toExponential(3)}m | f=${freq.toExponential(3)}Hz | E=${energy.toExponential(3)}J (${(energy/1.602e-19).toExponential(3)}eV)</div>`;
+    el.innerHTML = html;
+};
+// Wire AWG
+const AWG_DATA = {
+    10:{d:2.588,r:3.277}, 12:{d:2.053,r:5.211}, 14:{d:1.628,r:8.282},
+    16:{d:1.291,r:13.17}, 18:{d:1.024,r:20.95}, 20:{d:0.812,r:33.31},
+    22:{d:0.644,r:52.96}, 24:{d:0.511,r:84.22}, 26:{d:0.405,r:133.9},
+    28:{d:0.321,r:212.9}, 30:{d:0.255,r:338.6},
+};
+window.calcWire = function() {
+    const awg = $('wire-awg')?.value, len = parseFloat($('wire-len')?.value), i = parseFloat($('wire-i')?.value);
+    const el = $('wire-result'); if (!el) return;
+    const d = AWG_DATA[awg]; if (!d) { el.textContent = 'Select AWG'; return; }
+    let html = `<span style="color:var(--cyan)">${awg} AWG</span>: ⌀${d.d.toFixed(3)}mm | ${d.r.toFixed(1)} Ω/km`;
+    if (!isNaN(len)) {
+        const rTotal = d.r * len / 1000;
+        html += ` | R(${len}m) = ${rTotal.toFixed(3)}Ω`;
+        if (!isNaN(i)) {
+            const vDrop = i * rTotal;
+            const pLoss = i * i * rTotal;
+            html += ` | Vdrop = <span style="color:var(--orange)">${(vDrop*1000).toFixed(1)}mV</span> | Ploss = ${(pLoss*1000).toFixed(1)}mW`;
+        }
+    }
+    const maxA = [null,null,null,null,null,null,null,null,null,null,30,null,20,null,15,null,10,null,7,null,5,null,3,null,2.1,null,1.3,null,0.83,null,0.52][parseInt(awg)];
+    if (maxA) html += ` | Max ≈ ${maxA}A`;
+    el.innerHTML = html;
+};
+// Thermal
+window.calcThermal = function() {
+    const ta = parseFloat($('th-ta')?.value), pd = parseFloat($('th-pd')?.value), rth = parseFloat($('th-rth')?.value);
+    const el = $('th-result'); if (!el) return;
+    if (isNaN(ta) || isNaN(pd) || isNaN(rth)) { el.textContent = 'Enter ambient temp, power, Rθja'; return; }
+    const tj = ta + pd * rth;
+    const ok = tj < 125;
+    el.innerHTML = `Tj = <span style="color:${ok?'var(--green)':'var(--red)'}">${tj.toFixed(1)}°C</span> ${ok ? '✓ safe (<125°C)' : '⚠ exceeds 125°C!'} | Margin = ${(125 - tj).toFixed(1)}°C | Max Pd @ ${ta}°C = ${((125 - ta) / rth).toFixed(3)}W`;
+};
+// Smart Suggestions
+window.generateSuggestions = function() {
+    const el = $('suggest-box'); if (!el) return;
+    const stageDone = stageItems.filter(s => stageState[s.id]).map(s => s.label);
+    const stageRemaining = stageItems.filter(s => !stageState[s.id]).map(s => s.label);
+    const pct = Math.round(stageDone.length / stageItems.length * 100);
+    const eq = equipmentList[equipIdx];
+    let tips = [];
+    // PSU analysis
+    const pw = psuVoltage * psuCurrent;
+    if (psuVoltage > 0 && psuCurrent > 0) {
+        tips.push(`<span style="color:var(--yellow)">⚡ PSU:</span> ${psuVoltage}V × ${psuCurrent}A = ${pw.toFixed(2)}W load`);
+        if (pw > AT6301.maxW * 0.8) tips.push(`<span style="color:var(--red)">⚠ Warning:</span> Load at ${(pw/AT6301.maxW*100).toFixed(0)}% of ${AT6301.maxW}W max — reduce or add cooling`);
+        if (psuVoltage === 5 && psuCurrent <= 0.5) tips.push(`<span style="color:var(--green)">💡 Tip:</span> 5V/500mA is USB standard — consider powering from USB directly`);
+        if (psuVoltage > 24) tips.push(`<span style="color:var(--orange)">🔌 Note:</span> >24V — ensure all components rated for this voltage. Use fuses.`);
+        if (psuVoltage === 3.3 || psuVoltage === 5 || psuVoltage === 12) tips.push(`<span style="color:var(--green)">✓</span> Standard rail: ${psuVoltage}V — good component compatibility`);
+    }
+    // Stage analysis
+    if (pct === 0) tips.push(`<span style="color:var(--cyan)">📋 Stage:</span> No milestones checked — start with "Specifications defined"`);
+    else if (pct < 50) tips.push(`<span style="color:var(--cyan)">📋 Stage:</span> ${pct}% complete — ${stageRemaining[0]} is next`);
+    else if (pct < 100) tips.push(`<span style="color:var(--green)">📋 Stage:</span> ${pct}% complete — almost there! Remaining: ${stageRemaining.join(', ')}`);
+    else tips.push(`<span style="color:var(--green)">🎉 Stage:</span> All milestones complete! Ready for production.`);
+    // Equipment
+    const linked = equipmentList.filter(e => e.status === 'active');
+    if (linked.length > 0) tips.push(`<span style="color:var(--accent)">🔗 Linked:</span> ${linked.map(e => e.name).join(', ')}`);
+    // Parts suggestions based on stage
+    if (!stageState['s-bom']) tips.push(`<span style="color:var(--purple)">📦 Parts:</span> BOM not finalized — check Parts tab for component catalog`);
+    if (!stageState['s-power'] && psuVoltage > 0) tips.push(`<span style="color:var(--yellow)">⚡ Power:</span> PSU set but not tested — verify with multimeter at load`);
+    if (!stageState['s-firmware']) tips.push(`<span style="color:var(--green)">💻 Code:</span> Firmware not uploaded — check Code tab for templates`);
+    if (stageState['s-proto'] && !stageState['s-stress']) tips.push(`<span style="color:var(--orange)">🌡 Thermal:</span> Prototype built but no stress test — run thermal analysis`);
+    if (stageState['s-stress'] && !stageState['s-pcb']) tips.push(`<span style="color:var(--accent)">🏭 Next:</span> Stress test passed — ready for PCB layout (JLCPCB / KiCad)`);
+    // Regulator suggestion
+    if (psuVoltage > 5) tips.push(`<span style="color:var(--text-m)">💡 Consider:</span> LDO or buck converter for ${psuVoltage}V → 3.3V/5V MCU rail`);
+    // Battery estimate
+    if (psuCurrent > 0 && psuCurrent < 1) tips.push(`<span style="color:var(--green)">🔋 Battery:</span> At ${(psuCurrent*1000).toFixed(0)}mA, an 18650 (3Ah) lasts ~${(3000/(psuCurrent*1000)).toFixed(1)}h`);
+    // Generic
+    tips.push(`<span style="color:var(--text-m)">🧠 Future:</span> Auto-detect connected devices via WebUSB, suggest schematics from parts list, predict thermal issues from power budget`);
+    el.innerHTML = tips.map(t => `<div style="padding:2px 0;border-bottom:1px solid var(--border)">${t}</div>`).join('');
+    logConsole('sys', `Suggestions generated: ${tips.length} tips based on build state (${pct}% complete)`);
+};
+
+renderBench();
+
+// ===== PARTS LIST =====
+const parts = [
+    { name:'Abestop AT6301', cat:'PSU', desc:'60V/10A/300W DC bench supply, SCPI USB, 4-digit LCD', url:'https://abestop.com/products/abestop-at6301', price:'$129' },
+    { name:'Arduino Uno R4', cat:'MCU', desc:'Renesas RA4M1 + ESP32-S3, USB-C, 48MHz ARM Cortex-M4', url:'https://store.arduino.cc/products/uno-r4-wifi', price:'$27.50' },
+    { name:'Arduino Nano ESP32', cat:'MCU', desc:'ESP32-S3, WiFi/BLE, USB-C, Arduino Cloud ready', url:'https://store.arduino.cc/products/nano-esp32', price:'$20' },
+    { name:'ESP32-S3 DevKit', cat:'MCU', desc:'Dual-core 240MHz, WiFi/BLE, USB OTG, 512KB SRAM', url:'https://www.adafruit.com/product/5364', price:'$10' },
+    { name:'Raspberry Pi 5', cat:'SBC', desc:'Broadcom BCM2712, 2.4GHz quad-core, 4/8GB RAM', url:'https://www.adafruit.com/product/5812', price:'$60' },
+    { name:'Raspberry Pi Pico 2', cat:'MCU', desc:'RP2350, dual ARM Cortex-M33 / RISC-V, 520KB SRAM', url:'https://www.adafruit.com/product/6008', price:'$5' },
+    { name:'Adafruit INA219 Breakout', cat:'Sensor', desc:'High-side DC current/voltage sensor, I2C, 26V/3.2A max', url:'https://www.adafruit.com/product/904', price:'$9.95' },
+    { name:'ADS1115 16-bit ADC', cat:'ADC', desc:'4-channel 16-bit ADC, I2C, programmable gain amp', url:'https://www.adafruit.com/product/1085', price:'$14.95' },
+    { name:'SparkFun Qwiic Multimeter', cat:'Meter', desc:'Digital multimeter with Qwiic/I2C interface, auto-ranging', url:'https://www.sparkfun.com/products/retired/18290', price:'$39.95' },
+    { name:'DPS5005 Buck Module', cat:'PSU', desc:'50V/5A programmable step-down, color LCD, USB comm', url:'https://www.digikey.com', price:'$30' },
+    { name:'MOSFET IRF520 Module', cat:'Switch', desc:'N-channel MOSFET driver module, 0-24V, PWM capable', url:'https://www.sparkfun.com', price:'$2' },
+    { name:'Relay Module 4-ch', cat:'Switch', desc:'4-channel 5V relay module, optocoupler isolation', url:'https://www.adafruit.com', price:'$7.95' },
+    { name:'Logic Level Converter', cat:'Interface', desc:'Bi-directional 3.3V↔5V, 4 channels, I2C/SPI safe', url:'https://www.sparkfun.com/products/12009', price:'$3.50' },
+    { name:'USB-UART CP2102', cat:'Interface', desc:'USB to UART bridge, 3.3V/5V, auto-reset for Arduino', url:'https://www.sparkfun.com', price:'$5' },
+    { name:'Banana to Alligator Leads', cat:'Cable', desc:'Test lead set, banana plug to alligator clip, 4 colors', url:'https://www.adafruit.com/product/3290', price:'$4.95' },
+    { name:'Breadboard 830-point', cat:'Proto', desc:'Full-size solderless breadboard, 830 tie points', url:'https://www.adafruit.com/product/239', price:'$5.95' },
+];
+
+// Part category icons for image placeholders
+const catIcons = { PSU:'⚡', MCU:'🔌', SBC:'🍓', Sensor:'🌡', ADC:'📊', Meter:'📏', Switch:'🔀', Interface:'🔗', Cable:'〰', Proto:'🧩' };
+let partsFilterCat = '';
+
+function renderPartsFilters() {
+    const cats = [...new Set(parts.map(p => p.cat))];
+    $('parts-filters').innerHTML = `<span class="pf-chip${!partsFilterCat?' active':''}" onclick="partsFilterCat='';renderPartsFilters();renderParts()">All</span>` +
+        cats.map(c => `<span class="pf-chip${partsFilterCat===c?' active':''}" onclick="partsFilterCat='${c}';renderPartsFilters();renderParts()">${catIcons[c]||'📦'} ${c}</span>`).join('');
+}
+
+function renderParts(filter) {
+    const f = (filter || $('parts-search')?.value || '').toLowerCase();
+    const list = parts.filter(p => {
+        if (partsFilterCat && p.cat !== partsFilterCat) return false;
+        return !f || p.name.toLowerCase().includes(f) || p.cat.toLowerCase().includes(f) || p.desc.toLowerCase().includes(f);
+    });
+    $('parts-list').innerHTML = list.map(p => `
+        <div class="part-card" onclick="window.open('${p.url}','_blank')">
+            <div class="part-img"><span title="${p.cat}">${catIcons[p.cat]||'📦'}</span></div>
+            <div class="part-info">
+                <div style="display:flex;align-items:center;gap:4px">
+                    <span style="background:var(--bg3);padding:1px 6px;border-radius:3px;font-size:.5rem;color:var(--accent)">${p.cat}</span>
+                    <span style="font-weight:700;font-size:.75rem">${p.name}</span>
+                    <span style="color:var(--green);font-size:.625rem;margin-left:auto">${p.price}</span>
+                </div>
+                <div style="font-size:.625rem;color:var(--text-m);margin-top:2px">${p.desc}</div>
+                <div style="font-size:.5rem;color:var(--accent);font-family:var(--mono);margin-top:1px">${p.url}</div>
+            </div>
+        </div>`).join('') || '<div style="color:var(--text-m);text-align:center;padding:20px">No parts matching filter</div>';
+}
+
+// Parts toolbar actions
+$('parts-copy').addEventListener('click', () => {
+    const sel = parts.map(p => `${p.name} | ${p.cat} | ${p.price} | ${p.url}`).join('\n');
+    navigator.clipboard.writeText(sel).then(() => logConsole('parts', 'Copied all parts to clipboard'));
+});
+$('parts-paste').addEventListener('click', async () => {
+    try {
+        const text = await navigator.clipboard.readText();
+        if (text.startsWith('http')) {
+            logConsole('parts', 'Pasted URL: ' + text);
+            window.open(text, '_blank');
+        } else {
+            $('parts-search').value = text;
+            renderParts(text);
+            logConsole('parts', 'Pasted search: ' + text);
+        }
+    } catch (e) { logConsole('error', 'Clipboard access denied'); }
+});
+$('parts-img-search').addEventListener('click', () => {
+    window.open('https://lens.google.com', '_blank');
+    logConsole('parts', 'Opening Google Lens for image search');
+});
+// Live Stream — HF Fax / Hex Stream viewer
+let hexStreamActive = false, hexStreamRAF = null;
+$('parts-video').addEventListener('click', () => {
+    const existing = document.getElementById('parts-hex-stream');
+    if (existing) { existing.remove(); hexStreamActive = false; if (hexStreamRAF) cancelAnimationFrame(hexStreamRAF); logConsole('parts', 'Hex stream closed'); return; }
+    hexStreamActive = true;
+    const wrap = document.createElement('div');
+    wrap.id = 'parts-hex-stream';
+    wrap.className = 'hex-stream-wrap';
+    wrap.innerHTML = `<div style="display:flex;align-items:center;gap:4px;padding:4px 8px;background:var(--bg2);border-bottom:1px solid var(--border)">
+        <span style="font-size:.5625rem;font-weight:700;color:var(--cyan)">HF Fax / Hex Stream</span>
+        <span style="flex:1"></span>
+        <span style="font-size:.5rem;color:var(--text-m)" id="hex-stream-info">scanning...</span>
+    </div><canvas id="hex-stream-cvs" width="400" height="80"></canvas>`;
+    $('parts-list').parentElement.insertBefore(wrap, $('parts-list'));
+    logConsole('parts', 'Hex stream viewer opened');
+
+    const cvs = $('hex-stream-cvs');
+    const ctx = cvs.getContext('2d');
+    const W = cvs.width, H = cvs.height;
+    let hexFrame = 0;
+    const hexData = new Uint8Array(W * H);
+    for (let i = 0; i < hexData.length; i++) hexData[i] = Math.floor(Math.random() * 256);
+
+    function drawHexStream() {
+        if (!hexStreamActive) return;
+        hexFrame++;
+        // Shift data like a fax scanner
+        for (let y = H - 1; y > 0; y--) {
+            for (let x = 0; x < W; x++) hexData[y * W + x] = hexData[(y-1) * W + x];
+        }
+        // New scanline with signal-like pattern
+        for (let x = 0; x < W; x++) {
+            const sig = Math.sin(x * 0.05 + hexFrame * 0.1) * 80 + Math.sin(x * 0.2 + hexFrame * 0.3) * 40 + Math.random() * 30 + 80;
+            hexData[x] = Math.max(0, Math.min(255, sig));
+        }
+        // Draw
+        const img = ctx.createImageData(W, H);
+        for (let i = 0; i < hexData.length; i++) {
+            const v = hexData[i];
+            // Thermal palette: cold=blue, mid=green, hot=red
+            const t = v / 255;
+            img.data[i*4]   = Math.floor(t * 255);
+            img.data[i*4+1] = Math.floor((1 - Math.abs(t - 0.5) * 2) * 200);
+            img.data[i*4+2] = Math.floor((1 - t) * 220);
+            img.data[i*4+3] = 255;
+        }
+        ctx.putImageData(img, 0, 0);
+        const info = $('hex-stream-info');
+        if (info) info.textContent = `frame ${hexFrame} | ${W}x${H} | ${(hexFrame*W/1024).toFixed(1)}KB`;
+        hexStreamRAF = requestAnimationFrame(drawHexStream);
+    }
+    drawHexStream();
+});
+
+$('parts-search').addEventListener('input', e => renderParts(e.target.value));
+renderPartsFilters();
+renderParts();
+
+// ===== SUPPLIERS =====
+const suppliers = [
+    { name:'Adafruit', icon:'🌿', url:'https://www.adafruit.com', desc:'Open-source electronics, breakout boards, sensors, Feather/QT Py ecosystem. Excellent tutorials and learning guides.', search:'https://www.adafruit.com/?q=' },
+    { name:'SparkFun', icon:'🔴', url:'https://www.sparkfun.com', desc:'Qwiic ecosystem, breakout boards, development kits, tutorials. Great for prototyping and IoT.', search:'https://www.sparkfun.com/search#q=' },
+    { name:'DigiKey', icon:'🔑', url:'https://www.digikey.com', desc:'Massive component catalog (13M+ parts), datasheets, reference designs, parametric search. Professional supply chain.', search:'https://www.digikey.com/en/products/result?keywords=' },
+    { name:'Mouser', icon:'🐭', url:'https://www.mouser.com', desc:'1.1M+ parts in stock, new product introductions, technical resources. Professional component distribution.', search:'https://www.mouser.com/Search/Refine?Keyword=' },
+    { name:'Arduino Store', icon:'🟢', url:'https://store.arduino.cc', desc:'Official Arduino boards, shields, kits. Arduino Cloud subscriptions and IoT plans.', search:'https://store.arduino.cc/search?q=' },
+    { name:'JLCPCB', icon:'🏭', url:'https://jlcpcb.com', desc:'PCB manufacturing from $2, SMT assembly, 3D printing. Fast turnaround for prototypes.', search:'https://jlcpcb.com/partdetail/' },
+    { name:'LCSC', icon:'🔧', url:'https://www.lcsc.com', desc:'Component supplier paired with JLCPCB. Large inventory of passives, ICs, connectors.', search:'https://www.lcsc.com/search?q=' },
+    { name:'Abestop', icon:'⚡', url:'https://abestop.com', desc:'Bench power supplies (AT series), lab equipment. Affordable DC PSUs with SCPI support.', search:'https://abestop.com/search?q=' },
+    { name:'Seeed Studio', icon:'🌱', url:'https://www.seeedstudio.com', desc:'XIAO MCUs, Grove ecosystem, industrial IoT, reComputer. Fusion PCB service.', search:'https://www.seeedstudio.com/catalogsearch/result/?q=' },
+    { name:'Pimoroni', icon:'🏴‍☠️', url:'https://shop.pimoroni.com', desc:'Raspberry Pi accessories, Pico add-ons, Enviro boards. UK-based with global shipping.', search:'https://shop.pimoroni.com/search?q=' },
+];
+
+function renderSuppliers(filter) {
+    const f = (filter || '').toLowerCase();
+    const list = suppliers.filter(s => !f || s.name.toLowerCase().includes(f) || s.desc.toLowerCase().includes(f));
+    $('supplier-list').innerHTML = list.map(s => `
+        <div class="supplier-card">
+            <div class="s-name">${s.icon} ${s.name} <a href="${s.url}" target="_blank" style="margin-left:auto;font-size:.5625rem">Visit ↗</a></div>
+            <div class="s-desc">${s.desc}</div>
+            <div style="margin-top:6px;display:flex;gap:4px">
+                <input class="supplier-search" style="margin:0;flex:1;font-size:.625rem;padding:4px 8px" placeholder="Search ${s.name}..." data-search-url="${s.search}" onkeydown="if(event.key==='Enter')window.open(this.dataset.searchUrl+encodeURIComponent(this.value),'_blank')">
+                <button onclick="this.previousElementSibling.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}))" style="padding:4px 8px;font-size:.5625rem;border:1px solid var(--border);border-radius:4px;background:var(--bg3);color:var(--accent);cursor:pointer">Go</button>
+            </div>
+        </div>`).join('');
+}
+
+$('supplier-search').addEventListener('input', e => renderSuppliers(e.target.value));
+renderSuppliers();
+
+// ===== ARDUINO CODE EDITOR =====
+const DEFAULT_CODE = `// hexbench — Arduino Sketch
+// Power Supply Monitor with AT6301 + INA219
+// Stream data to hexterm via Serial/WebSocket
+
+#include <Wire.h>
+#include <Adafruit_INA219.h>
+
+Adafruit_INA219 ina219;
+
+// AT6301 SCPI commands (via USB serial)
+// Example: "MEAS:VOLT?", "MEAS:CURR?", "OUTP ON"
+
+float voltage_V = 0;
+float current_mA = 0;
+float power_mW = 0;
+
+void setup() {
+    Serial.begin(115200);
+    while (!Serial) delay(10);
+
+    Serial.println("hexbench — PSU Monitor v1.0");
+    Serial.println("Initializing INA219...");
+
+    if (!ina219.begin()) {
+        Serial.println("ERROR: INA219 not found!");
+        while (1) delay(10);
+    }
+    Serial.println("INA219 ready");
+    Serial.println("---");
+}
+
+void loop() {
+    voltage_V = ina219.getBusVoltage_V();
+    current_mA = ina219.getCurrent_mA();
+    power_mW = ina219.getPower_mW();
+
+    // JSON output for hexterm stream parsing
+    Serial.print("{");
+    Serial.print("\\"v\\":");  Serial.print(voltage_V, 3);
+    Serial.print(",\\"i\\":"); Serial.print(current_mA, 2);
+    Serial.print(",\\"p\\":"); Serial.print(power_mW, 2);
+    Serial.print(",\\"t\\":"); Serial.print(millis());
+    Serial.println("}");
+
+    delay(500);
+}
+`;
+
+const codeTemplates = {
+    'PSU Monitor': DEFAULT_CODE,
+    'Blink LED': `// hexbench — Blink
+void setup() { pinMode(LED_BUILTIN, OUTPUT); }
+void loop() { digitalWrite(LED_BUILTIN, HIGH); delay(1000); digitalWrite(LED_BUILTIN, LOW); delay(1000); }`,
+    'Serial Logger': `// hexbench — Serial Data Logger
+void setup() {
+    Serial.begin(115200);
+    Serial.println("hexbench logger ready");
+}
+void loop() {
+    int adc = analogRead(A0);
+    float voltage = adc * (5.0 / 1023.0);
+    Serial.print("{"v":"); Serial.print(voltage, 3);
+    Serial.print(",\\"raw\\":"); Serial.print(adc);
+    Serial.println("}");
+    delay(100);
+}`,
+    'ESP32 WiFi Stream': `// hexbench — ESP32 WiFi → hexterm WebSocket
+#include <WiFi.h>
+#include <WebSocketsClient.h>
+
+const char* ssid = "YOUR_SSID";
+const char* password = "YOUR_PASS";
+const char* wsHost = "192.168.0.44";
+const int wsPort = 9877;
+
+WebSocketsClient ws;
+
+void setup() {
+    Serial.begin(115200);
+    WiFi.begin(ssid, password);
+    while (WiFi.status() != WL_CONNECTED) { delay(500); Serial.print("."); }
+    Serial.println("\\nWiFi connected: " + WiFi.localIP().toString());
+    ws.begin(wsHost, wsPort, "/");
+}
+
+void loop() {
+    ws.loop();
+    float v = analogRead(A0) * (3.3 / 4095.0);
+    String json = "{"v":" + String(v, 3) + ",\\"t\\":" + String(millis()) + "}";
+    ws.sendTXT(json);
+    delay(200);
+}`,
+    'Pybricks EV3': `# hexbench — Pybricks: LEGO EV3/Spike/City Hub
+# Install: pip install pybricks
+# Docs: https://pybricks.com/ev3-micropython/
+from pybricks.hubs import EV3Brick       # or PrimeHub, CityHub, TechnicHub
+from pybricks.pupdevices import Motor, ColorSensor
+from pybricks.parameters import Port, Stop, Color
+from pybricks.tools import wait
+
+# Initialize hub + devices
+ev3 = EV3Brick()
+motor_a = Motor(Port.A)
+color = ColorSensor(Port.S1)
+
+ev3.speaker.beep()
+ev3.screen.print("hexbench ready")
+
+# Motor control: run at 200 deg/s for 3 seconds
+motor_a.run_time(200, 3000)
+
+# Read color sensor
+while True:
+    c = color.color()
+    ev3.screen.clear()
+    ev3.screen.print("Color:", c)
+    # Stream to hexterm via serial bridge
+    print('{"color":"' + str(c) + '","angle":' + str(motor_a.angle()) + '}')
+    wait(200)
+`,
+    'Pybricks Spike': `# hexbench — Pybricks: SPIKE Prime / Robot Inventor
+from pybricks.hubs import PrimeHub
+from pybricks.pupdevices import Motor, ForceSensor, UltrasonicSensor
+from pybricks.parameters import Port, Icon
+from pybricks.tools import wait
+
+hub = PrimeHub()
+hub.display.icon(Icon.HAPPY)
+hub.speaker.beep()
+
+drive = Motor(Port.A)
+steer = Motor(Port.B)
+force = ForceSensor(Port.C)
+dist  = UltrasonicSensor(Port.D)
+
+# Simple obstacle avoidance
+while True:
+    d = dist.distance()
+    f = force.force()
+    if d < 100:
+        steer.run_angle(300, 90)
+        drive.run_time(-200, 500)
+    else:
+        drive.run(300)
+    print('{"dist":' + str(d) + ',"force":' + str(f) + ',"angle":' + str(drive.angle()) + '}')
+    wait(100)
+`,
+    'SCPI AT6301': `// hexbench — SCPI control for Abestop AT6301
+// Connect AT6301 USB to computer, use serial bridge
+// SCPI commands reference:
+//   *IDN?          — Device identification
+//   MEAS:VOLT?     — Measure actual voltage
+//   MEAS:CURR?     — Measure actual current
+//   VOLT <value>   — Set voltage (e.g. VOLT 5.00)
+//   CURR <value>   — Set current limit
+//   OUTP ON|OFF    — Enable/disable output
+//   *SAV <1-4>     — Save to memory slot
+//   *RCL <1-4>     — Recall memory slot
+
+void setup() {
+    Serial.begin(9600);   // AT6301 USB baud
+    Serial1.begin(115200); // Debug output
+
+    Serial1.println("AT6301 SCPI Controller");
+
+    // Query device
+    Serial.println("*IDN?");
+    delay(200);
+    while (Serial.available()) Serial1.write(Serial.read());
+
+    // Set 5V / 1A
+    Serial.println("VOLT 5.00");
+    Serial.println("CURR 1.000");
+    Serial.println("OUTP ON");
+    Serial1.println("Output: 5V / 1A ON");
+}
+
+void loop() {
+    Serial.println("MEAS:VOLT?");
+    delay(100);
+    String v = "";
+    while (Serial.available()) v += (char)Serial.read();
+
+    Serial.println("MEAS:CURR?");
+    delay(100);
+    String i = "";
+    while (Serial.available()) i += (char)Serial.read();
+
+    Serial1.println("V=" + v.trim() + " A=" + i.trim());
+    delay(1000);
+}`,
+};
+
+const codeEditor = $('code-editor');
+const codeOutput = $('code-output');
+codeEditor.value = DEFAULT_CODE;
+
+$('code-verify').addEventListener('click', () => {
+    codeOutput.innerHTML = '';
+    codeLog('info', 'Verifying sketch...');
+    // Basic syntax checks
+    const code = codeEditor.value;
+    const hasSetup = code.includes('void setup()');
+    const hasLoop = code.includes('void loop()');
+    const errors = [];
+    if (!hasSetup) errors.push('Missing void setup()');
+    if (!hasLoop) errors.push('Missing void loop()');
+    // Check brace matching
+    let braces = 0;
+    for (const ch of code) { if (ch === '{') braces++; if (ch === '}') braces--; }
+    if (braces !== 0) errors.push(`Mismatched braces (${braces > 0 ? braces + ' unclosed' : Math.abs(braces) + ' extra'})`);
+
+    if (errors.length) {
+        errors.forEach(e => codeLog('error', e));
+    } else {
+        const lines = code.split('\n').length;
+        codeLog('success', `Sketch OK — ${lines} lines, ${code.length} bytes`);
+        if (code.includes('#include')) {
+            const libs = [...code.matchAll(/#include\s*[<"](.+?)[>"]/g)].map(m => m[1]);
+            codeLog('info', `Libraries: ${libs.join(', ')}`);
+        }
+    }
+});
+
+$('code-upload').addEventListener('click', () => {
+    codeLog('info', 'Upload requires Arduino CLI or Arduino Cloud connection');
+    codeLog('info', 'Install: brew install arduino-cli');
+    codeLog('info', 'Or use: Arduino Cloud Editor → https://create.arduino.cc/editor');
+    codeLog('info', 'Or use: Codebender → https://codebender.cc');
+});
+
+$('code-stream').addEventListener('click', () => {
+    codeLog('info', 'Streaming sketch to hexterm...');
+    // Send via BroadcastChannel if available
+    try {
+        const bc = new BroadcastChannel('hexterm');
+        bc.postMessage({ type: 'code', language: 'arduino', content: codeEditor.value, from: 'hexbench' });
+        codeLog('success', 'Sent to hexterm via BroadcastChannel');
+        bc.close();
+    } catch (e) {
+        codeLog('error', 'hexterm not connected — open terminal.html first');
+    }
+});
+
+// Template tabs (inline, not popup)
+let activeTemplate = 'PSU Monitor';
+function renderTemplateTabs() {
+    const names = Object.keys(codeTemplates);
+    $('tmpl-tabs').innerHTML = names.map(n =>
+        `<span class="tmpl-tab${n===activeTemplate?' active':''}" data-tmpl="${n}">${n}</span>`
+    ).join('');
+    $('tmpl-tabs').querySelectorAll('.tmpl-tab').forEach(t => {
+        t.addEventListener('click', () => {
+            activeTemplate = t.dataset.tmpl;
+            codeEditor.value = codeTemplates[activeTemplate];
+            codeLog('info', `Loaded template: ${activeTemplate}`);
+            renderTemplateTabs();
+            updateCodeStats();
+        });
+    });
+}
+renderTemplateTabs();
+
+// Run button — simulate execution with progress
+$('code-run').addEventListener('click', () => {
+    codeLog('info', 'Running sketch simulation...');
+    const syncPanel = $('code-sync');
+    syncPanel.classList.add('active');
+    const bar = $('code-progress-bar');
+    bar.style.width = '0%';
+    let pct = 0;
+    const sim = setInterval(() => {
+        pct += Math.random() * 15 + 5;
+        if (pct >= 100) { pct = 100; clearInterval(sim); codeLog('success', 'Simulation complete'); }
+        bar.style.width = pct + '%';
+        $('code-stats').innerHTML = `<span>Progress: <span style="color:var(--green)">${Math.round(pct)}%</span></span><span>Cycles: <span style="color:var(--cyan)">${Math.round(pct*12)}</span></span><span>Memory: <span style="color:var(--orange)">${(codeEditor.value.length*0.8).toFixed(0)}B</span></span>`;
+    }, 200);
+    // Simulated readout
+    $('code-readout').innerHTML = '';
+    let readCount = 0;
+    const readSim = setInterval(() => {
+        if (readCount++ > 8) { clearInterval(readSim); return; }
+        const v = (psuVoltage + (Math.random()-.5)*.01).toFixed(4);
+        const i = (psuCurrent*1000 + (Math.random()-.5)*.1).toFixed(2);
+        $('code-readout').innerHTML += `<div style="color:var(--green)">{"v":${v},"i":${i},"p":${(v*i/1000).toFixed(4)},"t":${Date.now()}}</div>`;
+        $('code-readout').scrollTop = $('code-readout').scrollHeight;
+    }, 400);
+});
+
+// Test button — run checks
+$('code-test').addEventListener('click', () => {
+    codeLog('info', 'Running tests...');
+    const syncPanel = $('code-sync');
+    syncPanel.classList.add('active');
+    const code = codeEditor.value;
+    const tests = [
+        { name: 'setup() exists', pass: code.includes('void setup()') },
+        { name: 'loop() exists', pass: code.includes('void loop()') },
+        { name: 'Serial initialized', pass: code.includes('Serial.begin') },
+        { name: 'No infinite blocking', pass: !code.match(/while\s*\(\s*1\s*\)\s*;/) },
+        { name: 'Brace balance', pass: (() => { let b=0; for(const c of code){if(c==='{')b++;if(c==='}')b--;} return b===0; })() },
+        { name: 'No delay > 5s', pass: !code.match(/delay\s*\(\s*[5-9]\d{3,}/) },
+    ];
+    const bar = $('code-progress-bar');
+    bar.style.width = '100%';
+    const passed = tests.filter(t => t.pass).length;
+    tests.forEach(t => codeLog(t.pass ? 'success' : 'error', `${t.pass ? 'PASS' : 'FAIL'}: ${t.name}`));
+    codeLog('info', `${passed}/${tests.length} tests passed`);
+    $('code-stats').innerHTML = `<span>Tests: <span style="color:${passed===tests.length?'var(--green)':'var(--orange)'}">${passed}/${tests.length}</span></span><span>Lines: <span style="color:var(--cyan)">${code.split('\n').length}</span></span><span>Size: <span style="color:var(--text-m)">${code.length}B</span></span>`;
+});
+
+// hexterm sync — listen for incoming data
+let hextermSynced = false;
+try {
+    const syncBC = new BroadcastChannel('hexterm');
+    syncBC.addEventListener('message', e => {
+        if (e.data?.type === 'bench-data' || e.data?.type === 'serial-data') {
+            hextermSynced = true;
+            const syncPanel = $('code-sync');
+            syncPanel.classList.add('active');
+            const d = e.data;
+            $('code-readout').innerHTML += `<div style="color:var(--green)">${JSON.stringify(d)}</div>`;
+            $('code-readout').scrollTop = $('code-readout').scrollHeight;
+            $('code-stats').innerHTML = `<span class="lr-status"><span class="lr-dot connected"></span> hexterm synced</span><span>Last: <span style="color:var(--cyan)">${new Date().toLocaleTimeString()}</span></span>`;
+        }
+    });
+} catch (e) {}
+
+function codeLog(level, msg) {
+    const colors = { info: 'var(--accent)', error: 'var(--red)', success: 'var(--green)', warn: 'var(--orange)' };
+    codeOutput.innerHTML += `<div style="color:${colors[level] || 'var(--text-m)'}"><span style="color:var(--text-m);font-size:.5625rem">${new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span> ${msg}</div>`;
+    codeOutput.scrollTop = codeOutput.scrollHeight;
+}
+
+function updateCodeStats() {
+    const code = codeEditor.value;
+    const lines = code.split('\n').length;
+    const libs = [...code.matchAll(/#include\s*[<"](.+?)[>"]/g)].map(m => m[1]);
+    $('doc-status-text').textContent = `${lines} lines | ${code.length}B${libs.length ? ' | libs: '+libs.join(', ') : ''}`;
+}
+codeEditor.addEventListener('input', updateCodeStats);
+
+// ===== PANEL RESIZE =====
+const panelResize = $('panel-resize');
+let panelDragging = false;
+panelResize.addEventListener('mousedown', () => { panelDragging = true; panelResize.classList.add('active'); });
+document.addEventListener('mousemove', e => {
+    if (!panelDragging) return;
+    const main = document.querySelector('.main');
+    const pct = (e.clientX / main.offsetWidth) * 100;
+    $('doc-panel').style.width = Math.max(20, Math.min(70, pct)) + '%';
+});
+document.addEventListener('mouseup', () => { panelDragging = false; panelResize.classList.remove('active'); });
+
+const consoleResize = $('console-resize');
+let consoleDragging = false;
+consoleResize.addEventListener('mousedown', () => { consoleDragging = true; consoleResize.classList.add('active'); });
+document.addEventListener('mousemove', e => {
+    if (!consoleDragging) return;
+    const appH = document.querySelector('.app').offsetHeight;
+    const h = appH - e.clientY;
+    $('console-panel').style.height = Math.max(60, Math.min(400, h)) + 'px';
+});
+document.addEventListener('mouseup', () => { consoleDragging = false; consoleResize.classList.remove('active'); });
+
+// ===== NODE ENGINE =====
+const nodesData = [];
+const connections = [];
+let nodeIdCounter = 0;
+const inner = $('canvas-inner');
+const svgEl = $('connections-svg');
+
+const nodeTypes = {
+    psu:         { icon:'⚡', color:'#ffe138', label:'Power Supply', action:true },
+    multimeter:  { icon:'📊', color:'#3fb950', label:'Multimeter',   action:true },
+    oscilloscope:{ icon:'📈', color:'#58a6ff', label:'Oscilloscope', action:true },
+    arduino:     { icon:'🟢', color:'#00979D', label:'Arduino',      action:true },
+    esp32:       { icon:'📡', color:'#f0883e', label:'ESP32',        action:true },
+    raspberry:   { icon:'🍓', color:'#c51a4a', label:'Raspberry Pi', action:true },
+    sensor:      { icon:'🌡', color:'#56d4dd', label:'Sensor' },
+    led:         { icon:'💡', color:'#ffe138', label:'LED' },
+    motor:       { icon:'⚙', color:'#8b949e', label:'Motor' },
+    relay:       { icon:'🔌', color:'#f0883e', label:'Relay' },
+    measure:     { icon:'📏', color:'#a78bfa', label:'Measure',  action:true },
+    calculate:   { icon:'🧮', color:'#56d4dd', label:'Calculate', action:true },
+    stream:      { icon:'📡', color:'#f85149', label:'Stream',    action:true },
+    resistor:    { icon:'Ω',  color:'#8b949e', label:'Resistor' },
+    capacitor:   { icon:'⏸', color:'#58a6ff', label:'Capacitor' },
+    usb:         { icon:'🔌', color:'#e6edf3', label:'USB' },
+    wire:        { icon:'〰', color:'#3fb950', label:'Wire' },
+    pybricks:    { icon:'🧱', color:'#f5cd00', label:'Pybricks Hub', action:true },
+    lego_motor:  { icon:'⚙️', color:'#f0883e', label:'LEGO Motor' },
+    lego_sensor: { icon:'👁', color:'#58a6ff', label:'LEGO Sensor' },
+};
+
+function createNode(type, x, y, name, ports) {
+    const id = nodeIdCounter++;
+    const t = nodeTypes[type] || { icon:'🔧', color:'#8b949e', label:'Component' };
+    const n = { id, type, x, y, name: name || t.label, ports: ports || ['in','out'], status:'idle' };
+    nodesData.push(n);
+    const el = document.createElement('div');
+    el.className = 'node' + (t.action ? ' action-node' : '');
+    el.id = 'node-' + id;
+    el.style.left = x + 'px'; el.style.top = y + 'px';
+    el.innerHTML = `
+        <div class="node-hdr">
+            <div class="node-icon" style="background:${t.color}22;border:1px solid ${t.color}">${t.icon}</div>
+            <div><div class="node-name">${n.name}</div><div class="node-sub">${type}</div></div>
+        </div>
+        <div class="node-body"><div class="node-ports">
+            ${n.ports.map(p => `<div class="node-port"><span class="port-dot${p==='out'?' out':''} connected" data-node="${id}" data-port="${p}"></span>${p}</div>`).join('')}
+        </div></div>
+        ${t.action ? `<div class="node-action-bar"><button class="node-run-btn" data-node-id="${id}">▶ Run</button></div>` : ''}`;
+    inner.appendChild(el);
+    makeDraggable(el, n);
+    updateStats();
+    return n;
+}
+
+function makeDraggable(el, nd) {
+    let dragging = false, ox, oy;
+    el.addEventListener('mousedown', e => {
+        if (e.target.classList.contains('port-dot') || e.target.classList.contains('node-run-btn')) return;
+        dragging = true;
+        const r = el.getBoundingClientRect();
+        ox = e.clientX - r.left; oy = e.clientY - r.top;
+        el.style.zIndex = '10';
+        document.querySelectorAll('.node').forEach(n => n.classList.remove('selected'));
+        el.classList.add('selected');
+    });
+    document.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        const s = $('canvas-scroll'), sr = s.getBoundingClientRect();
+        nd.x = Math.max(0, e.clientX - sr.left + s.scrollLeft - ox);
+        nd.y = Math.max(0, e.clientY - sr.top + s.scrollTop - oy);
+        el.style.left = nd.x + 'px'; el.style.top = nd.y + 'px';
+        drawConnections();
+    });
+    document.addEventListener('mouseup', () => { if (dragging) { dragging = false; el.style.zIndex = ''; } });
+    el.addEventListener('touchstart', e => {
+        if (e.target.classList.contains('port-dot') || e.target.classList.contains('node-run-btn')) return;
+        dragging = true;
+        const r = el.getBoundingClientRect();
+        ox = e.touches[0].clientX - r.left; oy = e.touches[0].clientY - r.top;
+    }, { passive: true });
+    el.addEventListener('touchmove', e => {
+        if (!dragging) return;
+        const s = $('canvas-scroll'), sr = s.getBoundingClientRect();
+        nd.x = Math.max(0, e.touches[0].clientX - sr.left + s.scrollLeft - ox);
+        nd.y = Math.max(0, e.touches[0].clientY - sr.top + s.scrollTop - oy);
+        el.style.left = nd.x + 'px'; el.style.top = nd.y + 'px';
+        drawConnections();
+        e.preventDefault();
+    }, { passive: false });
+    el.addEventListener('touchend', () => { dragging = false; }, { passive: true });
+}
+
+function addConnection(fromId, toId) {
+    connections.push({ from: fromId, to: toId });
+    drawConnections(); updateStats();
+}
+
+function drawConnections() {
+    let svg = '';
+    connections.forEach(c => {
+        const fe = document.getElementById('node-' + c.from);
+        const te = document.getElementById('node-' + c.to);
+        if (!fe || !te) return;
+        const fn = nodesData.find(n => n.id === c.from), tn = nodesData.find(n => n.id === c.to);
+        if (!fn || !tn) return;
+        const x1 = fn.x + fe.offsetWidth, y1 = fn.y + fe.offsetHeight / 2;
+        const x2 = tn.x, y2 = tn.y + te.offsetHeight / 2;
+        const dx = Math.abs(x2 - x1) * .5;
+        svg += `<path class="conn-path active" d="M${x1},${y1} C${x1+dx},${y1} ${x2-dx},${y2} ${x2},${y2}"/>`;
+    });
+    svgEl.innerHTML = svg;
+}
+
+// ── Zoom / Pan ──
+let canvasZoom = 1, panX = 0, panY = 0, isPanning = false, panStartX, panStartY;
+const scrollEl = $('canvas-scroll'), gridEl = $('canvas-grid');
+
+function applyTransform() {
+    inner.style.transform = `translate(${panX}px,${panY}px) scale(${canvasZoom})`;
+    if (gridEl) gridEl.style.backgroundSize = `${24*canvasZoom}px ${24*canvasZoom}px`;
+    $('zoom-label').textContent = Math.round(canvasZoom * 100) + '%';
+    drawConnections();
+}
+
+function setZoom(z, cx, cy) {
+    const oldZ = canvasZoom;
+    canvasZoom = Math.min(3, Math.max(0.2, z));
+    if (cx !== undefined) {
+        panX = cx - (cx - panX) * (canvasZoom / oldZ);
+        panY = cy - (cy - panY) * (canvasZoom / oldZ);
+    }
+    applyTransform();
+}
+
+scrollEl.addEventListener('wheel', e => {
+    e.preventDefault();
+    const rect = scrollEl.getBoundingClientRect();
+    setZoom(canvasZoom * (e.deltaY > 0 ? 0.9 : 1.1), e.clientX - rect.left, e.clientY - rect.top);
+}, { passive: false });
+
+scrollEl.addEventListener('mousedown', e => {
+    if (e.target.closest('.node') || e.target.closest('.zoom-controls')) return;
+    isPanning = true;
+    panStartX = e.clientX - panX; panStartY = e.clientY - panY;
+    scrollEl.style.cursor = 'grabbing';
+});
+document.addEventListener('mousemove', e => { if (!isPanning) return; panX = e.clientX - panStartX; panY = e.clientY - panStartY; applyTransform(); });
+document.addEventListener('mouseup', () => { if (isPanning) { isPanning = false; scrollEl.style.cursor = 'grab'; } });
+
+let lastTouchDist = 0;
+scrollEl.addEventListener('touchstart', e => {
+    if (e.target.closest('.node')) return;
+    if (e.touches.length === 1) { isPanning = true; panStartX = e.touches[0].clientX - panX; panStartY = e.touches[0].clientY - panY; }
+    if (e.touches.length === 2) { lastTouchDist = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY); }
+}, { passive: true });
+scrollEl.addEventListener('touchmove', e => {
+    if (e.target.closest('.node')) return;
+    if (e.touches.length === 1 && isPanning) { panX = e.touches[0].clientX - panStartX; panY = e.touches[0].clientY - panStartY; applyTransform(); e.preventDefault(); }
+    if (e.touches.length === 2) {
+        const d = Math.hypot(e.touches[1].clientX - e.touches[0].clientX, e.touches[1].clientY - e.touches[0].clientY);
+        if (lastTouchDist) { const rect = scrollEl.getBoundingClientRect(); setZoom(canvasZoom * (d / lastTouchDist), (e.touches[0].clientX + e.touches[1].clientX) / 2 - rect.left, (e.touches[0].clientY + e.touches[1].clientY) / 2 - rect.top); }
+        lastTouchDist = d; e.preventDefault();
+    }
+}, { passive: false });
+scrollEl.addEventListener('touchend', () => { isPanning = false; lastTouchDist = 0; }, { passive: true });
+
+$('zoom-in')?.addEventListener('click', () => setZoom(canvasZoom * 1.2));
+$('zoom-out')?.addEventListener('click', () => setZoom(canvasZoom / 1.2));
+$('zoom-reset')?.addEventListener('click', () => { canvasZoom = 1; panX = 0; panY = 0; applyTransform(); });
+$('zoom-fit')?.addEventListener('click', () => {
+    if (!nodesData.length) return;
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    nodesData.forEach(n => { minX = Math.min(minX, n.x); minY = Math.min(minY, n.y); maxX = Math.max(maxX, n.x + 200); maxY = Math.max(maxY, n.y + 120); });
+    const rect = scrollEl.getBoundingClientRect();
+    canvasZoom = Math.min(2, Math.max(0.2, Math.min(rect.width / (maxX - minX + 80), rect.height / (maxY - minY + 80))));
+    panX = (rect.width - (maxX - minX) * canvasZoom) / 2 - minX * canvasZoom;
+    panY = (rect.height - (maxY - minY) * canvasZoom) / 2 - minY * canvasZoom;
+    applyTransform();
+});
+
+function updateStats() {
+    $('ftr-nodes').textContent = nodesData.length + ' nodes';
+    $('ftr-conns').textContent = connections.length + ' connections';
+}
+
+function clearCanvas() {
+    nodesData.length = 0; connections.length = 0; nodeIdCounter = 0;
+    inner.querySelectorAll('.node').forEach(n => n.remove());
+    svgEl.innerHTML = ''; updateStats();
+}
+
+// ===== ACTION NODE EXECUTION =====
+async function executeNode(nodeId) {
+    const nd = nodesData.find(n => n.id === nodeId);
+    if (!nd) return;
+    const el = document.getElementById('node-' + nodeId);
+    el?.classList.add('running'); nd.status = 'running';
+    logConsole(nd.type, `Running ${nd.name}...`);
+    try {
+        switch (nd.type) {
+            case 'psu':
+                logConsole('psu', `AT6301: ${psuVoltage.toFixed(2)}V / ${psuCurrent.toFixed(3)}A = ${(psuVoltage*psuCurrent).toFixed(2)}W`);
+                logConsole('psu', `Output: ${psuOutput ? 'ON' : 'OFF'} | Mode: ${psuVoltage*psuCurrent > AT6301.maxW ? 'OVER POWER!' : 'OK'}`);
+                break;
+            case 'multimeter':
+                logConsole('meter', `V: ${(psuVoltage + (Math.random()-.5)*.01).toFixed(4)}V | I: ${(psuCurrent*1000 + (Math.random()-.5)*0.1).toFixed(2)}mA`);
+                logConsole('meter', `R: ${psuCurrent > 0 ? (psuVoltage/psuCurrent).toFixed(2) : '∞'} Ω | Freq: 60.00 Hz`);
+                break;
+            case 'oscilloscope':
+                logConsole('scope', 'Waveform: DC steady state');
+                logConsole('scope', `Vpp: ${(Math.random()*0.02).toFixed(4)}V ripple | Freq: ${psuOutput ? '60Hz mains' : 'no signal'}`);
+                break;
+            case 'arduino':
+                logConsole('arduino', 'Board: Arduino Uno R4 WiFi | Port: /dev/cu.usbmodem*');
+                logConsole('arduino', 'Upload sketch from Code tab, or use: arduino-cli upload -b arduino:renesas_uno:unor4wifi');
+                break;
+            case 'esp32':
+                logConsole('esp32', 'Board: ESP32-S3 | WiFi: scanning...');
+                logConsole('esp32', 'Flash: esptool.py or Arduino IDE | Stream: WebSocket on port 9877');
+                break;
+            case 'raspberry':
+                logConsole('rpi', 'Raspberry Pi 5 | SSH: ssh pi@raspberrypi.local');
+                logConsole('rpi', 'GPIO: python3 -c "from gpiozero import LED; LED(17).on()"');
+                break;
+            case 'measure':
+                logConsole('measure', `Voltage: ${psuVoltage.toFixed(4)}V | Current: ${(psuCurrent*1000).toFixed(2)}mA | Power: ${(psuVoltage*psuCurrent).toFixed(4)}W`);
+                break;
+            case 'calculate':
+                logConsole('calc', `V=${psuVoltage}V I=${psuCurrent}A → P=${(psuVoltage*psuCurrent).toFixed(3)}W R=${psuCurrent>0?(psuVoltage/psuCurrent).toFixed(3):'∞'}Ω`);
+                break;
+            case 'stream':
+                logConsole('stream', 'Streaming to hexterm via BroadcastChannel...');
+                try {
+                    const bc = new BroadcastChannel('hexterm');
+                    bc.postMessage({ type: 'bench-data', v: psuVoltage, a: psuCurrent, w: psuVoltage * psuCurrent, t: Date.now(), from: 'hexbench' });
+                    logConsole('stream', 'Data sent to hexterm');
+                    bc.close();
+                } catch(e) { logConsole('error', 'hexterm not connected'); }
+                break;
+            default:
+                logConsole(nd.type, `${nd.name} — component node (passive)`);
+        }
+        nd.status = 'done'; el?.classList.remove('running'); el?.classList.add('done');
+        setTimeout(() => el?.classList.remove('done'), 3000);
+    } catch (e) {
+        nd.status = 'error'; el?.classList.remove('running'); el?.classList.add('error');
+        logConsole('error', e.message);
+        setTimeout(() => el?.classList.remove('error'), 3000);
+    }
+}
+
+document.addEventListener('click', e => {
+    if (e.target.classList.contains('node-run-btn')) executeNode(parseInt(e.target.dataset.nodeId));
+});
+
+// ===== PRESETS =====
+function loadAT6301Setup() {
+    clearCanvas();
+    const psu   = createNode('psu',         60,  60,  'AT6301 PSU',    ['V+','V-','USB','out']);
+    const meter = createNode('multimeter',  340, 60,  'Multimeter',    ['in','probe+','probe-']);
+    const ina   = createNode('sensor',      340, 240, 'INA219 Sensor', ['SDA','SCL','V+','V-']);
+    const uno   = createNode('arduino',     620, 60,  'Arduino Uno R4',['A0','SDA','SCL','5V','GND','USB']);
+    const load  = createNode('resistor',    60,  240, 'Test Load',     ['in','out']);
+    const usb   = createNode('usb',         620, 240, 'USB to PC',     ['in']);
+    const strm  = createNode('stream',      880, 60,  'hexterm Stream',['in']);
+
+    addConnection(psu.id, meter.id);
+    addConnection(psu.id, load.id);
+    addConnection(meter.id, ina.id);
+    addConnection(ina.id, uno.id);
+    addConnection(uno.id, usb.id);
+    addConnection(uno.id, strm.id);
+    setTimeout(drawConnections, 50);
+    logConsole('sys', 'Loaded: AT6301 PSU → INA219 → Arduino → hexterm pipeline');
+}
+
+function loadArduinoLab() {
+    clearCanvas();
+    const uno   = createNode('arduino',    60,  60,  'Arduino Uno R4', ['5V','3.3V','GND','A0','D2','D3','SDA','SCL','USB']);
+    const led1  = createNode('led',        340, 60,  'LED (D2)',       ['in']);
+    const led2  = createNode('led',        340, 180, 'LED (D3)',       ['in']);
+    const temp  = createNode('sensor',     340, 300, 'Temp Sensor',    ['VCC','GND','out']);
+    const pot   = createNode('resistor',   60,  300, 'Potentiometer',  ['out']);
+    const esp   = createNode('esp32',      620, 60,  'ESP32-S3',      ['WiFi','BLE','SPI','I2C','USB']);
+    const rpi   = createNode('raspberry',  620, 240, 'RPi 5',         ['GPIO','I2C','SPI','USB','ETH']);
+    const strm  = createNode('stream',     880, 150, 'hexterm Stream', ['in']);
+
+    addConnection(uno.id, led1.id);
+    addConnection(uno.id, led2.id);
+    addConnection(temp.id, uno.id);
+    addConnection(pot.id, uno.id);
+    addConnection(uno.id, esp.id);
+    addConnection(esp.id, strm.id);
+    addConnection(rpi.id, strm.id);
+    setTimeout(drawConnections, 50);
+    logConsole('sys', 'Loaded: Arduino Lab — MCU + sensors + streaming');
+}
+
+function loadPybricksLab() {
+    clearCanvas();
+    const hub   = createNode('pybricks',    60,  60,  'Pybricks Hub (EV3/Spike)', ['PortA','PortB','PortC','PortD','BLE','USB']);
+    const mtrA  = createNode('lego_motor',  340, 40,  'Motor A — Drive',   ['in','encoder']);
+    const mtrB  = createNode('lego_motor',  340, 160, 'Motor B — Steer',   ['in','encoder']);
+    const color = createNode('lego_sensor', 340, 280, 'Color Sensor (C)',   ['out','RGB']);
+    const dist  = createNode('lego_sensor', 60,  280, 'Ultrasonic (D)',     ['out','cm']);
+    const force = createNode('sensor',      60,  400, 'Force Sensor',       ['out','N']);
+    const psu   = createNode('psu',         620, 280, 'USB Power (5V)',     ['V+','GND']);
+    const strm  = createNode('stream',      620, 60,  'hexterm Stream',     ['in']);
+    const calc  = createNode('calculate',   620, 160, 'PID Control',        ['in','out','Kp','Ki','Kd']);
+
+    addConnection(hub.id, mtrA.id);
+    addConnection(hub.id, mtrB.id);
+    addConnection(color.id, hub.id);
+    addConnection(dist.id, hub.id);
+    addConnection(force.id, hub.id);
+    addConnection(hub.id, strm.id);
+    addConnection(hub.id, calc.id);
+    addConnection(psu.id, hub.id);
+    setTimeout(drawConnections, 50);
+    logConsole('sys', 'Loaded: Pybricks Lab — LEGO Hub + Motors + Sensors → hexterm');
+}
+
+$('preset-at6301').addEventListener('click', loadAT6301Setup);
+$('preset-arduino').addEventListener('click', loadArduinoLab);
+$('preset-pybricks').addEventListener('click', loadPybricksLab);
+$('preset-clear').addEventListener('click', clearCanvas);
+
+document.querySelectorAll('.pal-chip[data-type]').forEach(chip => {
+    chip.addEventListener('click', () => {
+        createNode(chip.dataset.type, 100 + Math.random() * 300, 80 + Math.random() * 200);
+    });
+});
+
+// ===== CONSOLE =====
+function logConsole(tag, msg) {
+    const log = $('console-log');
+    const ts = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const colors = { sys:'#58a6ff', error:'#f85149', psu:'#ffe138', meter:'#3fb950', scope:'#58a6ff',
+                     arduino:'#00979D', esp32:'#f0883e', rpi:'#c51a4a', measure:'#a78bfa',
+                     calc:'#56d4dd', stream:'#f85149', chat:'#e6edf3', info:'#58a6ff' };
+    log.innerHTML += `<div class="log-line"><span class="log-ts">${ts}</span><span class="log-tag" style="color:${colors[tag]||'#8b949e'}">${tag}</span><span class="log-msg">${msg}</span></div>`;
+    log.scrollTop = log.scrollHeight;
+}
+
+const consoleInput = $('console-input');
+function handleConsoleInput() {
+    const val = consoleInput.value.trim();
+    if (!val) return;
+    consoleInput.value = '';
+    logConsole('chat', val);
+    if (val.startsWith('/')) {
+        const cmd = val.slice(1).split(' ')[0];
+        const arg = val.slice(cmd.length + 2).trim();
+        switch (cmd) {
+            case 'clear': $('console-log').innerHTML = ''; break;
+            case 'nodes': logConsole('sys', JSON.stringify(nodesData.map(n => n.name))); break;
+            case 'volt': case 'v': psuVoltage = parseFloat(arg) || psuVoltage; renderBench(); logConsole('psu', `Voltage → ${psuVoltage}V`); break;
+            case 'curr': case 'i': psuCurrent = parseFloat(arg) || psuCurrent; renderBench(); logConsole('psu', `Current → ${psuCurrent}A`); break;
+            case 'on': psuOutput = true; renderBench(); logConsole('psu', 'OUTPUT ON'); break;
+            case 'off': psuOutput = false; renderBench(); logConsole('psu', 'OUTPUT OFF'); break;
+            case 'preset': loadAT6301Setup(); break;
+            case 'arduino': loadArduinoLab(); break;
+            case 'pybricks': case 'lego': loadPybricksLab(); break;
+            case 'pb': case 'builder': {
+                if (arg === 'drive') loadPbDriveBot();
+                else if (arg === 'sorter' || arg === 'color') loadPbColorSorter();
+                else if (arg === 'export') exportPbPython();
+                else if (arg === 'clear') { clearPbCanvas(); logConsole('sys', 'Pybricks Builder cleared'); }
+                else logConsole('sys', 'Pybricks Builder: /pb drive | sorter | export | clear');
+                break;
+            }
+            case 'ohm': {
+                const [v, i] = arg.split(/[,\s]+/).map(Number);
+                if (v && i) logConsole('calc', `R = ${(v/i).toFixed(4)} Ω, P = ${(v*i).toFixed(4)} W`);
+                break;
+            }
+            case 'run': {
+                const nd = nodesData.find(n => n.name.toLowerCase().includes(arg.toLowerCase()));
+                if (nd) executeNode(nd.id); else logConsole('error', 'Node not found: ' + arg);
+                break;
+            }
+            case 'search': {
+                const s = suppliers.find(s => s.name.toLowerCase().includes(arg.toLowerCase()));
+                if (s) { window.open(s.search + encodeURIComponent(arg), '_blank'); logConsole('sys', `Searching ${s.name}...`); }
+                else { window.open('https://www.digikey.com/en/products/result?keywords=' + encodeURIComponent(arg), '_blank'); logConsole('sys', 'Searching DigiKey...'); }
+                break;
+            }
+            case 'help':
+                logConsole('sys', 'Commands: /v <volts> /i <amps> /on /off /ohm <V,I> /nodes /run <node> /search <term> /preset /arduino /pybricks /lego /pb <drive|sorter|export|clear> /clear /help');
+                break;
+            default: logConsole('sys', 'Unknown: /' + cmd + ' — /help');
+        }
+    }
+}
+
+consoleInput.addEventListener('keydown', e => { if (e.key === 'Enter') handleConsoleInput(); });
+$('console-send').addEventListener('click', handleConsoleInput);
+
+// ===== SAVE/EXPORT =====
+$('doc-save').addEventListener('click', () => {
+    localStorage.setItem('hexbench-psu-v', psuVoltage);
+    localStorage.setItem('hexbench-psu-a', psuCurrent);
+    localStorage.setItem('hexbench-code', codeEditor.value);
+    // Broadcast quantum prefix state on save
+    const QP = window.QuantumPrefixes;
+    if (QP) {
+        const meta = QP.prefixMetadata(codeEditor.value, 'arduino');
+        QP.broadcastState('hexbench', { coverage: meta.coverage, totalLines: meta.totalLines, classifiedLines: meta.classifiedLines, prefixCounts: meta.prefixCounts });
+    }
+    logConsole('sys', 'Settings saved');
+});
+
+$('doc-export').addEventListener('click', () => {
+    const QP = window.QuantumPrefixes;
+    const data = { psu: { v: psuVoltage, a: psuCurrent, output: psuOutput }, code: codeEditor.value, nodes: nodesData, connections };
+    // Wrap with quantum prefix metadata
+    const wrapped = QP ? QP.wrapJsonExport(data, [
+        { content: codeEditor.value, language: 'arduino' },
+        ...nodesData.filter(n => n.code).map(n => ({ content: n.code }))
+    ], 'hexbench') : data;
+    // Also include prefixed code
+    if (QP) wrapped.prefixedCode = QP.prefixContent(codeEditor.value, 'arduino');
+    const blob = new Blob([JSON.stringify(wrapped, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+    a.download = 'hexbench-' + Date.now() + '.json'; a.click();
+    // Broadcast state
+    if (QP) {
+        const meta = QP.prefixMetadata(codeEditor.value, 'arduino');
+        QP.broadcastState('hexbench', { coverage: meta.coverage, totalLines: meta.totalLines, classifiedLines: meta.classifiedLines, prefixCounts: meta.prefixCounts });
+    }
+    logConsole('sys', 'Exported hexbench state with quantum gutter');
+});
+
+// ===== HORIZONTAL SPLIT RESIZE =====
+const hsplitHandle = $('hsplit-resize');
+const canvasAreaTop = $('canvas-area-top');
+const pbPanel = $('pb-panel');
+const canvasSplit = $('canvas-split');
+let hsplitDragging = false;
+function hsplitStart() { hsplitDragging = true; hsplitHandle.classList.add('active'); document.body.style.cursor = 'row-resize'; }
+function hsplitMove(clientY) {
+    if (!hsplitDragging) return;
+    const rect = canvasSplit.getBoundingClientRect();
+    const topPct = Math.max(15, Math.min(85, ((clientY - rect.top) / rect.height) * 100));
+    canvasAreaTop.style.flex = 'none';
+    canvasAreaTop.style.height = topPct + '%';
+    pbPanel.style.flex = 'none';
+    pbPanel.style.height = (100 - topPct) + '%';
+}
+function hsplitEnd() { if (hsplitDragging) { hsplitDragging = false; hsplitHandle.classList.remove('active'); document.body.style.cursor = ''; }}
+hsplitHandle.addEventListener('mousedown', hsplitStart);
+hsplitHandle.addEventListener('touchstart', e => { e.preventDefault(); hsplitStart(); }, { passive: false });
+document.addEventListener('mousemove', e => hsplitMove(e.clientY));
+document.addEventListener('touchmove', e => { if (hsplitDragging) hsplitMove(e.touches[0].clientY); }, { passive: true });
+document.addEventListener('mouseup', hsplitEnd);
+document.addEventListener('touchend', hsplitEnd);
+
+// ===== PYBRICKS BLOCK BUILDER =====
+const pbCanvas = $('pb-canvas');
+const pbSvg = $('pb-connections-svg');
+const pbBlocks = [];
+let pbIdCounter = 0;
+const pbConnections = [];
+
+const PB_TYPES = {
+    hub_init:      { cat: 'hub',    color: '#d4a017', label: 'Hub Init',      rows: [{l:'Hub',sel:['EV3','PrimeHub','CityHub','TechnicHub']},{l:'Name',inp:'my_hub'}] },
+    motor_run:     { cat: 'motion', color: '#0077dc', label: 'Motor Run',     rows: [{l:'Port',sel:['A','B','C','D']},{l:'Speed',inp:'500'},{l:'°/s',ro:true}] },
+    motor_stop:    { cat: 'motion', color: '#0077dc', label: 'Motor Stop',    rows: [{l:'Port',sel:['A','B','C','D']},{l:'Then',sel:['hold','coast','brake']}] },
+    motor_angle:   { cat: 'motion', color: '#0077dc', label: 'Run Angle',     rows: [{l:'Port',sel:['A','B','C','D']},{l:'Angle',inp:'360'},{l:'Speed',inp:'500'}] },
+    color_read:    { cat: 'sensor', color: '#3fb950', label: 'Color Sensor',  rows: [{l:'Port',sel:['A','B','C','D']},{l:'Read',sel:['color','reflection','ambient']}] },
+    distance_read: { cat: 'sensor', color: '#3fb950', label: 'Distance',      rows: [{l:'Port',sel:['A','B','C','D']},{l:'Unit',sel:['mm','cm','in']}] },
+    force_read:    { cat: 'sensor', color: '#3fb950', label: 'Force Sensor',  rows: [{l:'Port',sel:['A','B','C','D']},{l:'Read',sel:['force','pressed','distance']}] },
+    if_then:       { cat: 'logic',  color: '#f0883e', label: 'If / Then',     rows: [{l:'Condition',inp:'True'},{l:'→ run block',ro:true}] },
+    compare:       { cat: 'logic',  color: '#f0883e', label: 'Compare',       rows: [{l:'A',inp:'0'},{l:'Op',sel:['==','!=','>','<','>=','<=']},{l:'B',inp:'0'}] },
+    loop_forever:  { cat: 'loop',   color: '#a980e6', label: 'Loop ∞',        rows: [{l:'body →',ro:true}] },
+    wait_ms:       { cat: 'loop',   color: '#a980e6', label: 'Wait',          rows: [{l:'ms',inp:'1000'}] },
+    set_var:       { cat: 'var',    color: '#ff5757', label: 'Set Variable',  rows: [{l:'Name',inp:'x'},{l:'Value',inp:'0'}] },
+    print_val:     { cat: 'stream', color: '#e2498a', label: 'Print',         rows: [{l:'Value',inp:'"Hello"'}] },
+    hub_light:     { cat: 'hub',    color: '#d4a017', label: 'Hub Light',     rows: [{l:'Color',sel:['RED','GREEN','BLUE','YELLOW','ORANGE','NONE']}] },
+    hub_beep:      { cat: 'hub',    color: '#d4a017', label: 'Beep',          rows: [{l:'Freq',inp:'440'},{l:'ms',inp:'200'}] },
+};
+
+function createPbBlock(type, x, y) {
+    const def = PB_TYPES[type];
+    if (!def) return null;
+    const id = 'pb-' + (pbIdCounter++);
+    const el = document.createElement('div');
+    el.className = 'pb-block';
+    el.id = id;
+    el.dataset.type = type;
+    el.style.left = x + 'px';
+    el.style.top = y + 'px';
+
+    const c = def.color;
+    const cDark = c + 'cc';
+    // Notch connectors (Pybricks-style snap tabs)
+    let html = `<div class="pb-notch-top" style="background:${c}"></div>`;
+    html += `<div class="pb-block-head" style="background:${c}"><span style="font-size:.75rem">⬢</span> ${def.label}</div>`;
+    html += `<div class="pb-block-body" style="background:${cDark}">`;
+    def.rows.forEach(r => {
+        html += `<div class="pb-block-row">`;
+        html += `<span>${r.l}</span>`;
+        if (r.sel) {
+            html += `<select class="pb-block-select">${r.sel.map(o => `<option>${o}</option>`).join('')}</select>`;
+        } else if (r.inp !== undefined) {
+            html += `<input class="pb-block-input" value="${r.inp}">`;
+        }
+        html += `</div>`;
+    });
+    html += `</div>`;
+    html += `<div class="pb-notch-bot" style="background:${c}"></div>`;
+    // Connectors for linking
+    html += `<div class="pb-block-connector in" data-dir="in" title="Connect input"></div>`;
+    html += `<div class="pb-block-connector out" data-dir="out" title="Connect output"></div>`;
+    el.innerHTML = html;
+
+    pbCanvas.appendChild(el);
+
+    const data = { id, type, el, x, y };
+    pbBlocks.push(data);
+
+    // Drag
+    let dx = 0, dy = 0, dragging = false;
+    el.addEventListener('mousedown', e => {
+        if (e.target.closest('.pb-block-input') || e.target.closest('.pb-block-select') || e.target.closest('.pb-block-connector')) return;
+        dragging = true;
+        dx = e.clientX - el.offsetLeft;
+        dy = e.clientY - el.offsetTop;
+        el.style.zIndex = 10;
+    });
+    document.addEventListener('mousemove', e => {
+        if (!dragging) return;
+        const nx = e.clientX - dx;
+        const ny = e.clientY - dy;
+        el.style.left = Math.max(0, nx) + 'px';
+        el.style.top = Math.max(0, ny) + 'px';
+        data.x = nx; data.y = ny;
+        drawPbConnections();
+    });
+    document.addEventListener('mouseup', () => { if (dragging) { dragging = false; el.style.zIndex = 1; }});
+
+    // Connection drag
+    let connFrom = null;
+    el.querySelectorAll('.pb-block-connector').forEach(dot => {
+        dot.addEventListener('mousedown', e => {
+            e.stopPropagation();
+            connFrom = { id, dir: dot.dataset.dir, dot };
+        });
+    });
+    el.addEventListener('mouseup', e => {
+        const tgt = e.target.closest('.pb-block-connector');
+        if (tgt && connFrom && connFrom.id !== id) {
+            const fromId = connFrom.dir === 'out' ? connFrom.id : id;
+            const toId = connFrom.dir === 'out' ? id : connFrom.id;
+            if (!pbConnections.find(c => c.from === fromId && c.to === toId)) {
+                pbConnections.push({ from: fromId, to: toId });
+                drawPbConnections();
+            }
+        }
+        connFrom = null;
+    });
+
+    drawPbConnections();
+    return data;
+}
+
+function drawPbConnections() {
+    let svg = '';
+    pbConnections.forEach(c => {
+        const fromEl = document.getElementById(c.from);
+        const toEl = document.getElementById(c.to);
+        if (!fromEl || !toEl) return;
+        const fRect = fromEl.getBoundingClientRect();
+        const tRect = toEl.getBoundingClientRect();
+        const pRect = pbCanvas.getBoundingClientRect();
+        const x1 = fRect.right - pRect.left;
+        const y1 = fRect.top + fRect.height / 2 - pRect.top;
+        const x2 = tRect.left - pRect.left;
+        const y2 = tRect.top + tRect.height / 2 - pRect.top;
+        const mx = (x1 + x2) / 2;
+        svg += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="rgba(245,205,0,.5)" stroke-width="2.5" stroke-linecap="round"/>`;
+    });
+    pbSvg.innerHTML = svg;
+}
+
+function clearPbCanvas() {
+    pbBlocks.forEach(b => b.el.remove());
+    pbBlocks.length = 0;
+    pbConnections.length = 0;
+    pbIdCounter = 0;
+    pbSvg.innerHTML = '';
+}
+
+function exportPbPython() {
+    let py = `# hexbench — Pybricks Builder Export\n# Auto-generated from block layout\n\n`;
+    // Build ordered list by connections
+    const ordered = [];
+    const placed = new Set();
+    // Find root (hub_init or first block)
+    const root = pbBlocks.find(b => b.type === 'hub_init') || pbBlocks[0];
+    if (!root) { logConsole('error', 'No blocks to export'); return; }
+
+    function traverse(id) {
+        if (placed.has(id)) return;
+        placed.add(id);
+        const b = pbBlocks.find(bl => bl.id === id);
+        if (b) ordered.push(b);
+        pbConnections.filter(c => c.from === id).forEach(c => traverse(c.to));
+    }
+    traverse(root.id);
+    // Any unvisited
+    pbBlocks.forEach(b => { if (!placed.has(b.id)) ordered.push(b); });
+
+    // Generate
+    const imports = new Set();
+    ordered.forEach(b => {
+        const el = b.el;
+        const def = PB_TYPES[b.type];
+        const vals = [...el.querySelectorAll('.pb-block-input,.pb-block-select')].map(i => i.value);
+        switch (b.type) {
+            case 'hub_init':
+                imports.add(`from pybricks.hubs import ${vals[0] || 'EV3Brick'}`);
+                imports.add('from pybricks.parameters import Port, Stop, Color');
+                py += `hub = ${vals[0] || 'EV3Brick'}()  # ${vals[1] || 'my_hub'}\n`;
+                break;
+            case 'motor_run':
+                imports.add('from pybricks.pupdevices import Motor');
+                py += `motor_${(vals[0]||'A').toLowerCase()} = Motor(Port.${vals[0]||'A'})\n`;
+                py += `motor_${(vals[0]||'A').toLowerCase()}.run(${vals[1]||'500'})\n`;
+                break;
+            case 'motor_stop':
+                py += `motor_${(vals[0]||'A').toLowerCase()}.stop()  # ${vals[1]||'hold'}\n`;
+                break;
+            case 'motor_angle':
+                imports.add('from pybricks.pupdevices import Motor');
+                py += `motor_${(vals[0]||'A').toLowerCase()}.run_angle(${vals[2]||'500'}, ${vals[1]||'360'})\n`;
+                break;
+            case 'color_read':
+                imports.add('from pybricks.pupdevices import ColorSensor');
+                py += `color_sensor = ColorSensor(Port.${vals[0]||'C'})\ncolor_val = color_sensor.${vals[1]||'color'}()\n`;
+                break;
+            case 'distance_read':
+                imports.add('from pybricks.pupdevices import UltrasonicSensor');
+                py += `dist_sensor = UltrasonicSensor(Port.${vals[0]||'D'})\ndistance = dist_sensor.distance()\n`;
+                break;
+            case 'force_read':
+                imports.add('from pybricks.pupdevices import ForceSensor');
+                py += `force_sensor = ForceSensor(Port.${vals[0]||'A'})\nforce_val = force_sensor.${vals[1]||'force'}()\n`;
+                break;
+            case 'if_then':
+                py += `if ${vals[0] || 'True'}:\n    pass  # → connect blocks\n`;
+                break;
+            case 'compare':
+                py += `result = (${vals[0]||'0'} ${vals[1]||'=='} ${vals[2]||'0'})\n`;
+                break;
+            case 'loop_forever':
+                imports.add('from pybricks.tools import wait');
+                py += `while True:\n    pass  # body\n    wait(10)\n`;
+                break;
+            case 'wait_ms':
+                imports.add('from pybricks.tools import wait');
+                py += `wait(${vals[0]||'1000'})\n`;
+                break;
+            case 'set_var':
+                py += `${vals[0]||'x'} = ${vals[1]||'0'}\n`;
+                break;
+            case 'print_val':
+                py += `print(${vals[0]||'"Hello"'})\n`;
+                break;
+            case 'hub_light':
+                py += `hub.light.on(Color.${vals[0]||'GREEN'})\n`;
+                break;
+            case 'hub_beep':
+                py += `hub.speaker.beep(${vals[0]||'440'}, ${vals[1]||'200'})\n`;
+                break;
+        }
+    });
+    const header = [...imports].join('\n') + '\n\n';
+    const full = header + py;
+
+    // Copy to code editor
+    codeEditor.value = full;
+    switchTab('code');
+    logConsole('sys', `Exported ${ordered.length} blocks → Code tab (.py)`);
+}
+
+// Presets
+function loadPbDriveBot() {
+    clearPbCanvas();
+    const hub  = createPbBlock('hub_init',    40,  30);
+    const mA   = createPbBlock('motor_run',   260, 20);
+    const mB   = createPbBlock('motor_run',   260, 130);
+    const loop = createPbBlock('loop_forever', 40,  160);
+    const wait = createPbBlock('wait_ms',     260, 250);
+    const stop = createPbBlock('motor_stop',  480, 130);
+    // Set port B for motor B
+    const mBsel = mB.el.querySelector('.pb-block-select');
+    if (mBsel) mBsel.value = 'B';
+    const sBsel = stop.el.querySelector('.pb-block-select');
+    if (sBsel) sBsel.value = 'B';
+
+    pbConnections.push({ from: hub.id, to: mA.id });
+    pbConnections.push({ from: hub.id, to: loop.id });
+    pbConnections.push({ from: loop.id, to: mA.id });
+    pbConnections.push({ from: mA.id, to: mB.id });
+    pbConnections.push({ from: mB.id, to: wait.id });
+    pbConnections.push({ from: wait.id, to: stop.id });
+    drawPbConnections();
+    logConsole('sys', 'Pybricks Builder: Loaded Drive Bot preset');
+}
+
+function loadPbColorSorter() {
+    clearPbCanvas();
+    const hub   = createPbBlock('hub_init',      40,  30);
+    const loop  = createPbBlock('loop_forever',  40,  160);
+    const color = createPbBlock('color_read',    260, 30);
+    const cmp   = createPbBlock('compare',       260, 140);
+    const iff   = createPbBlock('if_then',        480, 30);
+    const mtr   = createPbBlock('motor_angle',   480, 160);
+    const prn   = createPbBlock('print_val',     260, 260);
+    const wait  = createPbBlock('wait_ms',       480, 270);
+
+    // Configure
+    const iffInp = iff.el.querySelector('.pb-block-input');
+    if (iffInp) iffInp.value = 'color_val == Color.RED';
+    const prnInp = prn.el.querySelector('.pb-block-input');
+    if (prnInp) prnInp.value = 'color_val';
+
+    pbConnections.push({ from: hub.id, to: color.id });
+    pbConnections.push({ from: hub.id, to: loop.id });
+    pbConnections.push({ from: color.id, to: cmp.id });
+    pbConnections.push({ from: cmp.id, to: iff.id });
+    pbConnections.push({ from: iff.id, to: mtr.id });
+    pbConnections.push({ from: loop.id, to: prn.id });
+    pbConnections.push({ from: prn.id, to: wait.id });
+    drawPbConnections();
+    logConsole('sys', 'Pybricks Builder: Loaded Color Sorter preset');
+}
+
+// Palette click → add block
+document.querySelectorAll('.pb-chip[data-pb]').forEach(chip => {
+    chip.addEventListener('click', () => {
+        const scrollW = $('pb-canvas-wrap');
+        const sx = scrollW.scrollLeft + 40 + Math.random() * 200;
+        const sy = scrollW.scrollTop + 20 + Math.random() * 100;
+        createPbBlock(chip.dataset.pb, sx, sy);
+    });
+});
+
+$('pb-preset-drive').addEventListener('click', loadPbDriveBot);
+$('pb-preset-sorter').addEventListener('click', loadPbColorSorter);
+$('pb-export').addEventListener('click', exportPbPython);
+$('pb-clear').addEventListener('click', () => { clearPbCanvas(); logConsole('sys', 'Pybricks Builder cleared'); });
+
+// ===== INIT =====
+// Restore saved state
+const sv = localStorage.getItem('hexbench-psu-v');
+const sa = localStorage.getItem('hexbench-psu-a');
+const sc = localStorage.getItem('hexbench-code');
+if (sv) psuVoltage = parseFloat(sv);
+if (sa) psuCurrent = parseFloat(sa);
+if (sc) codeEditor.value = sc;
+renderBench();
+
+loadAT6301Setup();
+loadPbDriveBot();
+logConsole('sys', 'hexbench initialized — Voltage Lab');
+logConsole('sys', `Device: ${AT6301.name} (${AT6301.maxV}V/${AT6301.maxA}A/${AT6301.maxW}W)`);
+logConsole('sys', 'Left: Bench / Parts / Code / Suppliers | Right: Node Canvas (top) + Pybricks Builder (bottom)');
+logConsole('sys', 'Type /help for commands');
+
+window.hexbench = {
+    get nodes() { return [...nodesData]; },
+    get connections() { return [...connections]; },
+    addNode: createNode, connect: addConnection, execute: executeNode,
+    loadAT6301: loadAT6301Setup, loadArduino: loadArduinoLab, loadPybricks: loadPybricksLab, clear: clearCanvas,
+    log: logConsole, setPSU: (v, a) => { psuVoltage = v; psuCurrent = a; renderBench(); },
+    pb: { addBlock: createPbBlock, clear: clearPbCanvas, exportPy: exportPbPython, driveBot: loadPbDriveBot, colorSorter: loadPbColorSorter },
+};
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function initQPSync() {
+    const QP = window.QuantumPrefixes;
+    if (!QP) return;
+    // Broadcast state on code editor changes (debounced)
+    let _qpDebounce;
+    codeEditor.addEventListener('input', () => {
+        clearTimeout(_qpDebounce);
+        _qpDebounce = setTimeout(() => {
+            const meta = QP.prefixMetadata(codeEditor.value, 'arduino');
+            QP.broadcastState('hexbench', { coverage: meta.coverage, totalLines: meta.totalLines, classifiedLines: meta.classifiedLines, prefixCounts: meta.prefixCounts });
+        }, 1000);
+    });
+    // Listen for state from other apps
+    QP.onStateChange((source, state, global) => {
+        if (source === 'hexbench') return;
+        // Log cross-app sync events
+        if (state && state.coverage !== undefined) {
+            logConsole('sync', `${source}: ${state.coverage}% quantum coverage (${state.classifiedLines || 0}/${state.totalLines || 0} lines)`);
+        }
+    });
+    // Initial broadcast
+    const meta = QP.prefixMetadata(codeEditor.value, 'arduino');
+    QP.broadcastState('hexbench', { coverage: meta.coverage, totalLines: meta.totalLines, classifiedLines: meta.classifiedLines, prefixCounts: meta.prefixCounts });
+    // Request sync from all other open apps
+    QP.requestStateSync();
+})();
+
+// ===== TRAINING LOOP HOOK =====
+// Broadcasts HexBench context (code, PSU state, node graph) to HexTerm training pipeline
+(function() {
+    const trainBC = new BroadcastChannel('hexterm-training');
+
+    // Listen for snapshot requests from HexTerm dev mode
+    trainBC.onmessage = (evt) => {
+        const msg = evt.data;
+        if (!msg || msg.type !== 'request-snapshot') return;
+        // Send current hexbench state as context
+        const state = {
+            code: typeof codeEditor !== 'undefined' ? codeEditor.value : '',
+            language: 'arduino',
+            psu: typeof window.hexbench !== 'undefined' && window.hexbench.psu ? window.hexbench.psu() : null,
+            nodes: typeof window.hexbench !== 'undefined' && window.hexbench.nodes ? window.hexbench.nodes() : null,
+        };
+        trainBC.postMessage({
+            type: 'context-update',
+            source: 'hexbench',
+            data: state,
+        });
+    };
+
+    // Periodically broadcast state when code changes (debounced)
+    let _trainDebounce;
+    if (typeof codeEditor !== 'undefined') {
+        codeEditor.addEventListener('input', () => {
+            clearTimeout(_trainDebounce);
+            _trainDebounce = setTimeout(() => {
+                trainBC.postMessage({
+                    type: 'context-update',
+                    source: 'hexbench',
+                    data: {
+                        code: codeEditor.value,
+                        language: 'arduino',
+                        timestamp: Date.now(),
+                    },
+                });
+            }, 5000); // every 5s max
+        });
+    }
+})();
+
+console.log('⚡ hexbench — Voltage Lab | Power Supply + Electronics Workbench');
+console.log('API: window.hexbench');
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1147 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!-- Copyright (c) 2026 qbitOS / ugrad.ai. All rights reserved. -->
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Source: https://github.com/qbitOS/uvspeed -->
+<!-- Provenance: ai-created-control-envelope -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ugrad.ai — launcher</title>
+<style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        width: 100%; height: 100%;
+        background: var(--qp-bg, #0d1117); color: var(--qp-text, #e6edf3);
+        font-family: -apple-system, 'SF Pro', system-ui, sans-serif;
+        overflow: hidden;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none; user-select: none;
+        touch-action: manipulation;
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+    }
+    #app {
+        display: flex; flex-direction: column; width: 100%; height: 100%;
+    }
+
+    /* Title bar */
+    #titlebar {
+        display: flex; align-items: center;
+        flex-shrink: 0; height: 38px;
+        background: #0d1117; position: relative;
+        -webkit-app-region: drag;
+        overflow: hidden;
+        border-bottom: 1px solid #21262d;
+    }
+    #titlebar-stars { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+    #titlebar .traffic-spacer { width: 78px; flex-shrink: 0; }
+    #titlebar .title {
+        z-index: 1; flex: 1; text-align: center;
+        font-size: .6875rem; font-family: 'SF Mono', monospace;
+        color: #8b949e;
+        /* keep drag — title text is part of the drag region */
+    }
+    /* Extra drag bar below titlebar for easier grabbing */
+    #drag-strip {
+        -webkit-app-region: drag;
+        height: 6px; flex-shrink: 0;
+        background: transparent; cursor: default;
+    }
+
+    /* Rainbow */
+    .rainbow { display: flex; flex-shrink: 0; height: 2px; width: 100%; }
+    .rainbow span { flex: 1; }
+    .rainbow .r1 { background: #ff3838; }
+    .rainbow .r2 { background: #ff8c38; }
+    .rainbow .r3 { background: #ffe138; }
+    .rainbow .r4 { background: #3fb950; }
+    .rainbow .r5 { background: #38a5ff; }
+    .rainbow .r6 { background: #bc8cff; }
+
+    /* Main content */
+    #main {
+        flex: 1; display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 16px 24px; gap: 12px;
+        position: relative; overflow: hidden;
+    }
+    #main-stars { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+
+    /* Logo */
+    .logo {
+        font-family: 'SF Mono', 'Menlo', monospace;
+        font-size: 2.5rem; font-weight: 900; letter-spacing: -1px;
+        color: #e6edf3; z-index: 1; margin-bottom: 4px;
+    }
+    .logo .prefix { color: #58a6ff; font-size: .875rem; vertical-align: super; }
+    .subtitle {
+        font-family: 'SF Mono', monospace; font-size: .6875rem;
+        color: #484f58; z-index: 1; margin-bottom: 24px;
+    }
+    .hero-shell {
+        z-index: 1;
+        width: min(1200px, 96%);
+        border: 1px solid #21262d;
+        border-radius: 14px;
+        background: linear-gradient(180deg, rgba(22,27,34,0.82), rgba(13,17,23,0.78));
+        box-shadow: 0 24px 48px rgba(0,0,0,0.35);
+        display: grid;
+        grid-template-columns: 70px 1fr 70px;
+        gap: 12px;
+        padding: 18px 14px 16px;
+        margin-bottom: 8px;
+        position: relative;
+        overflow: hidden;
+    }
+    .hero-core { position: relative; }
+    .hero-logo {
+        font-family: 'SF Mono', 'Menlo', monospace;
+        text-align: center;
+        font-weight: 900;
+        font-size: 2.6rem;
+        color: #e6edf3;
+        letter-spacing: -1px;
+    }
+    .hero-logo .mu { color: #56d4dd; }
+    .hero-logo .la { color: #a78bfa; }
+    .hero-sub {
+        text-align: center;
+        font-family: 'SF Mono', monospace;
+        color: #8b949e;
+        font-size: .65rem;
+        letter-spacing: .8px;
+        margin-top: 2px;
+        margin-bottom: 14px;
+        text-transform: uppercase;
+    }
+    .hero-flap-wrap {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 62px;
+        margin-bottom: 12px;
+        border: 1px solid #30363d;
+        border-radius: 10px;
+        background: rgba(13,17,23,0.9);
+        box-shadow: inset 0 0 24px rgba(56,165,255,0.08);
+    }
+    .hero-flap-row {
+        display: flex;
+        gap: 3px;
+        justify-content: center;
+        flex-wrap: wrap;
+        max-width: 100%;
+        padding: 8px 10px;
+    }
+    .flap-cell {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 34px;
+        overflow: hidden;
+        position: relative;
+        border: 1px solid #30363d;
+        border-radius: 4px;
+        background: linear-gradient(180deg, #161b22, #0d1117);
+    }
+    .flap-cell .flap-inner {
+        display: block;
+        transform: translateY(0);
+        transition: transform .13s ease;
+        font-family: 'SF Mono', monospace;
+        font-size: .95rem;
+        font-weight: 700;
+        color: #e6edf3;
+        line-height: 1;
+    }
+    .flap-cell.flipping .flap-inner { transform: translateY(-100%); }
+    .flap-cell.space {
+        border-color: transparent;
+        background: transparent;
+        width: 12px;
+        box-shadow: none;
+    }
+    .flap-cell.resolved {
+        border-color: #388bfd60;
+        box-shadow: 0 0 0 1px rgba(56,139,253,0.15) inset;
+    }
+    .hero-prompt-row {
+        display: grid;
+        grid-template-columns: 1fr minmax(420px, 560px) 1fr;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 12px;
+    }
+    .hero-tab-lane {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: center;
+    }
+    .hero-tab {
+        border: 1px solid #30363d;
+        background: rgba(13,17,23,0.6);
+        color: #8b949e;
+        border-radius: 999px;
+        padding: 5px 10px;
+        font-size: .58rem;
+        font-family: 'SF Mono', monospace;
+        cursor: pointer;
+        -webkit-app-region: no-drag;
+    }
+    .hero-tab:hover { color: #e6edf3; border-color: #58a6ff60; background: rgba(22,27,34,0.9); }
+    .hero-tab.soon {
+        opacity: .6;
+        cursor: default;
+        border-style: dashed;
+    }
+    .hero-tab.soon:hover {
+        color: #8b949e;
+        border-color: #30363d;
+        background: rgba(13,17,23,0.6);
+    }
+    #hero-cmd {
+        display: flex;
+        align-items: center;
+        border: 1px solid #30363d;
+        border-radius: 9px;
+        background: #0d1117;
+        overflow: hidden;
+        box-shadow: 0 0 0 1px rgba(88,166,255,0.08) inset;
+    }
+    #hero-cmd .prompt {
+        color: #58a6ff;
+        padding: 7px 10px;
+        font-size: .74rem;
+        font-family: 'SF Mono', monospace;
+        border-right: 1px solid #21262d;
+    }
+    #hero-cmd input {
+        flex: 1;
+        border: 0;
+        outline: none;
+        background: transparent;
+        color: #e6edf3;
+        font-size: .72rem;
+        font-family: 'SF Mono', monospace;
+        padding: 8px 10px;
+    }
+    #hero-cmd input::placeholder { color: #484f58; }
+    .glyph-rail {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        opacity: 0.2;
+        pointer-events: none;
+        user-select: none;
+    }
+    .glyph-rail .glyph {
+        font-family: 'STIX Two Math', 'Cambria Math', serif;
+        color: #8b949e;
+        font-size: .95rem;
+        line-height: 1;
+        transform: translateY(0);
+        animation: glyphFloat 4s ease-in-out infinite;
+    }
+    .glyph-rail.right .glyph:nth-child(odd),
+    .glyph-rail.left .glyph:nth-child(even) { animation-delay: .6s; }
+    @keyframes glyphFloat {
+        0%,100% { transform: translateY(0); opacity: .35; }
+        50% { transform: translateY(-3px); opacity: .75; }
+    }
+
+    /* Mode cards */
+    .modes {
+        display: flex; gap: 14px; z-index: 1;
+        flex-wrap: wrap; justify-content: center;
+    }
+    .mode-card {
+        width: 160px; padding: 20px 16px; border-radius: 12px;
+        background: #161b22; border: 1px solid #21262d;
+        cursor: pointer; text-align: center;
+        transition: all 0.2s ease;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(56,165,255,0.2);
+        -webkit-app-region: no-drag;
+    }
+    .mode-card:hover {
+        border-color: #388bfd40; background: #1c2128;
+        transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+    .mode-card:active { transform: scale(0.97); }
+    .mode-card .icon {
+        font-size: 2rem; margin-bottom: 10px; display: block;
+    }
+    .mode-card .name {
+        font-family: 'SF Mono', monospace; font-size: .875rem;
+        font-weight: 600; color: #e6edf3; margin-bottom: 6px;
+    }
+    .mode-card .desc {
+        font-size: .625rem; color: #8b949e;
+        font-family: 'SF Mono', monospace; line-height: 1.4;
+    }
+    .mode-card.instance { border-color: #3fb95030; }
+    .mode-card.instance:hover { border-color: #3fb950; }
+    .mode-card.instance .icon { color: #3fb950; }
+    .mode-card.gridview { border-color: #58a6ff30; }
+    .mode-card.gridview:hover { border-color: #58a6ff; }
+    .mode-card.gridview .icon { color: #58a6ff; }
+    .mode-card.web { border-color: #bc8cff30; }
+    .mode-card.web:hover { border-color: #bc8cff; }
+    .mode-card.web .icon { color: #bc8cff; }
+
+    /* Dev launch button */
+    .dev-section {
+        z-index: 1; margin-top: 10px; text-align: center;
+    }
+    .dev-btn {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: none; border: 1px solid #30363d; color: #8b949e;
+        padding: 6px 16px; border-radius: 6px; cursor: pointer;
+        font-family: 'SF Mono', monospace; font-size: .625rem;
+        transition: all 0.15s ease;
+        touch-action: manipulation;
+        -webkit-app-region: no-drag;
+    }
+    .dev-btn:hover { color: #e6edf3; border-color: #484f58; background: #161b22; }
+    .dev-btn:active { transform: scale(0.97); }
+    .dev-btn .brace { color: #58a6ff; }
+
+    /* Mini console */
+    #console-panel {
+        flex-shrink: 0; display: flex; flex-direction: column;
+        background: #0d1117; border-top: 1px solid #21262d;
+        max-height: 160px; overflow: hidden;
+        -webkit-app-region: no-drag;
+    }
+    #console-header {
+        display: flex; align-items: center; padding: 3px 10px;
+        font-size: .5625rem; font-family: 'SF Mono', monospace; color: #484f58;
+        border-bottom: 1px solid #161b22; gap: 6px; cursor: pointer;
+    }
+    #console-header:hover { background: #161b22; }
+    #console-header .arrow { transition: transform 0.2s; }
+    #console-header.collapsed .arrow { transform: rotate(-90deg); }
+    #console-log {
+        flex: 1; overflow-y: auto; padding: 4px 10px;
+        font-size: .5625rem; font-family: 'SF Mono', monospace;
+        color: #8b949e; line-height: 1.5; max-height: 90px;
+    }
+    #console-log .ts { color: #484f58; }
+    #console-log .ok { color: #3fb950; }
+    #console-log .err { color: #da3633; }
+    #console-log .cmd { color: #58a6ff; }
+    #console-cmd {
+        display: flex; border-top: 1px solid #161b22;
+    }
+    #console-cmd .prompt {
+        color: #58a6ff; padding: 4px 6px;
+        font-size: .5625rem; font-family: 'SF Mono', monospace;
+        background: #0d1117;
+    }
+    #console-cmd input {
+        flex: 1; background: #0d1117; border: none; color: #e6edf3;
+        padding: 4px 6px; font-size: .5625rem; font-family: 'SF Mono', monospace;
+        outline: none;
+    }
+    #console-cmd input::placeholder { color: #30363d; }
+
+    /* Stats footer */
+    #footer {
+        flex-shrink: 0; display: flex; align-items: center;
+        padding: 4px 12px; gap: 8px; min-height: 20px;
+        background: #0d1117; border-top: 1px solid #21262d;
+        font-size: .5rem; font-family: 'SF Mono', monospace; color: #484f58;
+    }
+    #footer .val { color: #3fb950; }
+    #footer .spacer { flex: 1; }
+    #footer .version { color: #484f58; }
+
+    /* Mobile responsiveness */
+    @media (max-width: 600px) {
+        /* Logo and subtitle */
+        .logo { font-size: 2rem; margin-bottom: 2px; }
+        .subtitle { font-size: .625rem; margin-bottom: 16px; }
+        .hero-shell {
+            width: 100%;
+            grid-template-columns: 1fr;
+            padding: 12px 10px;
+            gap: 8px;
+        }
+        .glyph-rail { display: none; }
+        .hero-logo { font-size: 1.7rem; }
+        .hero-sub { font-size: .55rem; margin-bottom: 8px; }
+        .hero-flap-wrap { min-height: 52px; }
+        .flap-cell { width: 18px; height: 28px; }
+        .flap-cell .flap-inner { font-size: .74rem; }
+        .hero-prompt-row { grid-template-columns: 1fr; gap: 8px; }
+        .hero-tab-lane { justify-content: center; }
+        #hero-cmd .prompt { font-size: .62rem; padding: 6px 8px; }
+        #hero-cmd input { font-size: .62rem; padding: 7px 8px; }
+
+        /* Main content padding */
+        #main { padding: 12px 16px; gap: 8px; }
+
+        /* Mode cards - smaller on mobile */
+        .mode-card {
+            width: 90px !important;
+            padding: 12px 8px !important;
+            border-radius: 8px;
+        }
+        .mode-card .icon { font-size: 1.5rem !important; margin-bottom: 6px; }
+        .mode-card .name { font-size: .6875rem !important; margin-bottom: 4px; }
+        .mode-card .desc { font-size: .5625rem !important; line-height: 1.3; }
+
+        /* Modes container - ensure wrapping */
+        .modes { gap: 8px; justify-content: center; }
+
+        /* Dev button */
+        .dev-btn { padding: 5px 12px; font-size: .5625rem; }
+
+        /* Console panel - responsive */
+        #console-panel { max-height: 120px; }
+        #console-header { padding: 2px 8px; font-size: .5rem; }
+        #console-log { padding: 3px 8px; font-size: .5rem; max-height: 60px; }
+        #console-cmd .prompt { padding: 3px 5px; font-size: .5rem; }
+        #console-cmd input { padding: 3px 5px; font-size: .5rem; }
+
+        /* Footer */
+        #footer { padding: 3px 8px; font-size: .4375rem; min-height: 18px; }
+
+        /* Titlebar */
+        #titlebar { height: 32px; }
+        #titlebar .title { font-size: .625rem; }
+    }
+</style>
+</head>
+<body>
+<div id="app">
+    <div id="titlebar">
+        <canvas id="titlebar-stars"></canvas>
+        <div class="traffic-spacer"></div>
+        <div class="title">ugrad.ai launcher</div>
+        <div style="width:78px;flex-shrink:0"></div>
+    </div>
+    <div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+    <div id="drag-strip"></div>
+
+    <div id="main">
+        <canvas id="main-stars"></canvas>
+
+        <div class="hero-shell">
+            <div class="glyph-rail left" aria-hidden="true">
+                <span class="glyph">μ</span><span class="glyph">∇</span><span class="glyph">ℛ</span><span class="glyph">λ</span><span class="glyph">∂</span>
+                <span class="glyph">Γ</span><span class="glyph">⊗</span><span class="glyph">⊕</span><span class="glyph">⟨</span><span class="glyph">⟩</span>
+            </div>
+            <div class="hero-core">
+                <div class="hero-logo">ugrad.ai <span class="mu">μ</span>ɢr<span class="la">λ</span>d</div>
+                <div class="hero-sub">equation flipboard converging to | μɢrλd ⟩ · stable routes only</div>
+                <div class="hero-flap-wrap">
+                    <div id="hero-flap-row" class="hero-flap-row"></div>
+                </div>
+                <div class="hero-prompt-row">
+                    <div class="hero-tab-lane">
+                        <button class="hero-tab" onclick="launchMode('instance')">terminal</button>
+                        <button class="hero-tab" onclick="launchMode('grid')">grid</button>
+                        <button class="hero-tab" onclick="launchMode('web')">web</button>
+                    </div>
+                    <div id="hero-cmd">
+                        <span class="prompt">enter | μɢrλd ⟩</span>
+                        <input type="text" id="hero-cmd-input" placeholder="help | grid | terminal | feed &lt;ip&gt;" onkeydown="if(event.key==='Enter')runHeroCmd()">
+                    </div>
+                    <div class="hero-tab-lane">
+                        <button class="hero-tab soon" type="button">r0 soon</button>
+                        <button class="hero-tab soon" type="button">uvqbit fixing</button>
+                        <button class="hero-tab soon" type="button">history fixing</button>
+                    </div>
+                </div>
+            </div>
+            <div class="glyph-rail right" aria-hidden="true">
+                <span class="glyph">|μ⟩</span><span class="glyph">𝒟̂</span><span class="glyph">ℛ̂</span><span class="glyph">Γ̂</span><span class="glyph">λ</span>
+                <span class="glyph">ψ</span><span class="glyph">ℏ</span><span class="glyph">Δ</span><span class="glyph">ρ</span><span class="glyph">∑</span>
+            </div>
+        </div>
+
+        <div class="modes">
+            <div class="mode-card instance" onclick="launchMode('instance')" title="Full terminal with hexcast feeds">
+                <span class="icon">⬡</span>
+                <div class="name">instance</div>
+                <div class="desc">full terminal + feed windows<br>one stream per window</div>
+            </div>
+            <div class="mode-card gridview" onclick="launchMode('grid')" title="Single canvas multi-stream grid">
+                <span class="icon">⊞</span>
+                <div class="name">grid view</div>
+                <div class="desc">multi-stream grid canvas<br>swap to individual devices</div>
+            </div>
+            <div class="mode-card web" onclick="launchMode('web')" title="Open in browser for PWA/phone use">
+                <span class="icon">◎</span>
+                <div class="name">web</div>
+                <div class="desc">browser PWA mode<br>phone &amp; tablet ready</div>
+            </div>
+        </div>
+
+        <div class="modes" style="margin-top:8px;">
+            <div class="mode-card" style="border-color:#7c3aed30;width:120px;padding:14px 12px;" onclick="window.location.href='history.html'" title="Universal Timeline Knowledge Graph">
+                <span class="icon" style="color:#7c3aed;font-size:1.5rem;">⏳</span>
+                <div class="name" style="font-size:.75rem;">history</div>
+                <div class="desc">timeline knowledge graph</div>
+            </div>
+            <div class="mode-card" style="border-color:#06b6d430;width:120px;padding:14px 12px;" onclick="window.location.href='search.html'" title="Universal Search — 14 connectors">
+                <span class="icon" style="color:#06b6d4;font-size:1.5rem;">&#x1F50D;</span>
+                <div class="name" style="font-size:.75rem;">search</div>
+                <div class="desc">17 connectors · PWA</div>
+            </div>
+            <div class="mode-card" style="border-color:#06b6d430;width:120px;padding:14px 12px;" onclick="window.location.href='quantum-notepad.html'" title="Quantum Notepad">
+                <span class="icon" style="color:#06b6d4;font-size:1.5rem;">📝</span>
+                <div class="name" style="font-size:.75rem;">notepad</div>
+                <div class="desc">quantum notebook</div>
+            </div>
+            <div class="mode-card" style="border-color:#a78bfa30;width:120px;padding:14px 12px;" onclick="window.location.href='freya.html'" title="FreyaUnits Converter">
+                <span class="icon" style="color:#a78bfa;font-size:1.5rem;">🔬</span>
+                <div class="name" style="font-size:.75rem;">freya</div>
+                <div class="desc">galactic converter</div>
+            </div>
+            <div class="mode-card" style="border-color:#34d39930;width:120px;padding:14px 12px;" onclick="window.location.href='research-lab.html'" title="Research Lab">
+                <span class="icon" style="color:#34d399;font-size:1.5rem;">🔬</span>
+                <div class="name" style="font-size:.75rem;">research</div>
+                <div class="desc">markdown research</div>
+            </div>
+            <div class="mode-card" style="border-color:#f0883e30;width:120px;padding:14px 12px;" onclick="window.location.href='kbatch.html'" title="World Keyboard &amp; Quantum Analyzer — 15 layouts, IBM Quantum bridge">
+                <span class="icon" style="color:#f0883e;font-size:1.5rem;">&#x2328;</span>
+                <span class="name">kbatch</span>
+                <span class="desc">keyboards + quantum</span>
+            </div>
+            <div class="mode-card" style="border-color:#f9731630;width:120px;padding:14px 12px;" onclick="window.location.href='brothernumsy.html'" title="Brother Numsy">
+                <span class="icon" style="color:#f97316;font-size:1.5rem;">🎮</span>
+                <div class="name" style="font-size:.75rem;">numsy</div>
+                <div class="desc">game / emulator</div>
+            </div>
+        </div>
+
+        <div class="modes" style="margin-top:8px;">
+            <div class="mode-card" style="border-color:#58a6ff30;width:120px;padding:14px 12px;" onclick="window.location.href='terminal.html'" title="HexTerm — quantum gutter terminal">
+                <span class="icon" style="color:#58a6ff;font-size:1.5rem;">&#x2588;</span>
+                <div class="name" style="font-size:.75rem;">terminal</div>
+                <div class="desc">quantum terminal</div>
+            </div>
+            <div class="mode-card" style="border-color:#fb718530;width:120px;padding:14px 12px;" onclick="window.location.href='hexcast.html'" title="HexCast — video hex broadcast">
+                <span class="icon" style="color:#fb7185;font-size:1.5rem;">&#x1F4F9;</span>
+                <div class="name" style="font-size:.75rem;">hexcast</div>
+                <div class="desc">video broadcast</div>
+            </div>
+            <div class="mode-card" style="border-color:#fb718530;width:120px;padding:14px 12px;" onclick="window.location.href='hexcast-send.html'" title="HexCast Send — camera to terminal">
+                <span class="icon" style="color:#fb7185;font-size:1.5rem;">&#x1F4F7;</span>
+                <div class="name" style="font-size:.75rem;">cast send</div>
+                <div class="desc">camera stream</div>
+            </div>
+            <div class="mode-card" style="border-color:#8b5cf630;width:120px;padding:14px 12px;" onclick="window.location.href='quantum-gutter.html'" title="Quantum Gutter — prefix system showcase">
+                <span class="icon" style="color:#8b5cf6;font-size:1.5rem;">&#x269B;</span>
+                <div class="name" style="font-size:.75rem;">gutter</div>
+                <div class="desc">prefix showcase</div>
+            </div>
+            <div class="mode-card" style="border-color:#fbbf2430;width:120px;padding:14px 12px;" onclick="window.location.href='hexbench.html'" title="HexBench — voltage lab + code editor">
+                <span class="icon" style="color:#fbbf24;font-size:1.5rem;">&#x26A1;</span>
+                <div class="name" style="font-size:.75rem;">hexbench</div>
+                <div class="desc">voltage lab</div>
+            </div>
+            <div class="mode-card" style="border-color:#6366f130;width:120px;padding:14px 12px;" onclick="window.location.href='archflow.html'" title="ArchFlow — architecture node visualizer">
+                <span class="icon" style="color:#6366f1;font-size:1.5rem;">&#x1F4CA;</span>
+                <div class="name" style="font-size:.75rem;">archflow</div>
+                <div class="desc">node visualizer</div>
+            </div>
+            <div class="mode-card" style="border-color:#3b82f630;width:120px;padding:14px 12px;" onclick="window.location.href='github-dashboard.html'" title="GitHub Dashboard — repo tracker">
+                <span class="icon" style="color:#3b82f6;font-size:1.5rem;">&#x1F4C8;</span>
+                <div class="name" style="font-size:.75rem;">dashboard</div>
+                <div class="desc">github tracker</div>
+            </div>
+        </div>
+
+        <div class="modes" style="margin-top:8px;">
+            <div class="mode-card" style="border-color:#ef444430;width:120px;padding:14px 12px;" onclick="window.location.href='blackwell.html'" title="Blackwell — GPU architecture dashboard">
+                <span class="icon" style="color:#ef4444;font-size:1.5rem;">&#x1F9E0;</span>
+                <div class="name" style="font-size:.75rem;">blackwell</div>
+                <div class="desc">GPU dashboard</div>
+            </div>
+            <div class="mode-card" style="border-color:#d946ef30;width:120px;padding:14px 12px;" onclick="window.location.href='sponsor.html'" title="Sponsor — tiers + Rubik's cube">
+                <span class="icon" style="color:#d946ef;font-size:1.5rem;">&#x2764;</span>
+                <div class="name" style="font-size:.75rem;">sponsor</div>
+                <div class="desc">support tiers</div>
+            </div>
+            <div class="mode-card" style="border-color:#22d3ee30;width:120px;padding:14px 12px;" onclick="window.location.href='questcast.html'" title="QuestCast — Meta Quest broadcast">
+                <span class="icon" style="color:#22d3ee;font-size:1.5rem;">&#x1F3AE;</span>
+                <div class="name" style="font-size:.75rem;">questcast</div>
+                <div class="desc">quest broadcast</div>
+            </div>
+            <div class="mode-card" style="border-color:#84cc1630;width:120px;padding:14px 12px;" onclick="window.location.href='jawta-audio.html'" title="Jawta Audio — spatial audio + live code">
+                <span class="icon" style="color:#84cc16;font-size:1.5rem;">&#x1F3B5;</span>
+                <div class="name" style="font-size:.75rem;">jawta</div>
+                <div class="desc">spatial audio</div>
+            </div>
+            <div class="mode-card" style="border-color:#f59e0b30;width:120px;padding:14px 12px;" onclick="window.location.href='numsy.html'" title="Numsy — 1080x1080 visual">
+                <span class="icon" style="color:#f59e0b;font-size:1.5rem;">&#x1F4F1;</span>
+                <div class="name" style="font-size:.75rem;">numsy ig</div>
+                <div class="desc">1080x1080 visual</div>
+            </div>
+            <div class="mode-card" style="border-color:#a78bfa30;width:120px;padding:14px 12px;" onclick="window.location.href='freya-landing.html'" title="Freya Landing — showcase + roadmap">
+                <span class="icon" style="color:#a78bfa;font-size:1.5rem;">&#x1F30C;</span>
+                <div class="name" style="font-size:.75rem;">freya land</div>
+                <div class="desc">freya showcase</div>
+            </div>
+            <div class="mode-card" style="border-color:#06b6d430;width:120px;padding:14px 12px;" onclick="window.location.href='feed.html'" title="Camera feed viewer">
+                <span class="icon" style="color:#06b6d4;font-size:1.5rem;">&#x1F4F7;</span>
+                <div class="name" style="font-size:.75rem;">feed</div>
+                <div class="desc">camera feed</div>
+            </div>
+        </div>
+
+        <div class="modes" style="margin-top:8px;">
+            <div class="mode-card" style="border-color:#2dd4bf30;width:148px;padding:14px 12px;" onclick="window.location.href='digital_alphabet.html'" title="Digital alphabet — 6×6 BRITE_MAP · Braille · also glyph.ugrad.ai / glyph.qbitos.ai">
+                <span class="icon" style="color:#2dd4bf;font-size:1.5rem;">▦</span>
+                <div class="name" style="font-size:.75rem;">glyph</div>
+                <div class="desc">6×6 + Braille · <a href="https://glyph.ugrad.ai/" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">ugrad</a> · <a href="https://glyph.qbitos.ai/" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">qbitos</a></div>
+            </div>
+            <div class="mode-card" style="border-color:#64748b40;width:152px;padding:14px 12px;" onclick="window.location.href='games-ugrad-hub.html'" title="μgrad games — go · webgrid · chess · pong · … + *.ugrad.ai">
+                <span class="icon" style="color:#94a3b8;font-size:1.5rem;">⚫</span>
+                <div class="name" style="font-size:.75rem;">μgrad games</div>
+                <div class="desc">Go lab + arenas · <a href="https://go.ugrad.ai/" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">go</a></div>
+            </div>
+            <div class="mode-card" style="border-color:#2563eb30;width:140px;padding:14px 12px;" onclick="window.location.href='ugrad-model-lab.html'" title="Standalone ugrad model lab for model eval + dataset export">
+                <span class="icon" style="color:#2563eb;font-size:1.5rem;">🧪</span>
+                <div class="name" style="font-size:.75rem;">model lab</div>
+                <div class="desc">standalone model eval</div>
+            </div>
+            <div class="mode-card" style="border-color:#58a6ff30;width:120px;padding:14px 12px;" onclick="window.location.href='qa.html'" title="QA Walkthrough — test all apps, annotate, export change orders">
+                <span class="icon" style="color:#58a6ff;font-size:1.5rem;">&#x2705;</span>
+                <div class="name" style="font-size:.75rem;">QA</div>
+                <div class="desc">walkthrough + test</div>
+            </div>
+            <div class="mode-card" style="border-color:#e2b71430;width:180px;padding:14px 12px;" onclick="window.location.href='uvqbit.html'" title="uvQbit — Cinematic launch · Circuit Lab · Globe · QPU Fleet">
+                <span class="icon" style="color:#e2b714;font-size:1.5rem;">&#x269B;</span>
+                <div class="name" style="font-size:.75rem;">uvQbit</div>
+                <div class="desc">11 QPUs · circuit lab · globe · cinema</div>
+            </div>
+        </div>
+
+        <div class="dev-section">
+            <button class="dev-btn" onclick="launchDev()" title="Open dev terminal with console">
+                <span class="brace">{</span>dev<span class="brace">}</span> launch
+            </button>
+        </div>
+    </div>
+
+    <div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+
+    <div id="console-panel">
+        <div id="console-header" onclick="toggleConsole()">
+            <span class="arrow">▾</span>
+            <span>command console</span>
+            <span style="flex:1"></span>
+            <span id="console-count" style="color:#3fb950">0</span>
+        </div>
+        <div id="console-log"></div>
+        <div id="console-cmd">
+            <span class="prompt">▸</span>
+            <input type="text" id="cmd-input" placeholder="stop all | reload <id> | feed <ip> | grid | list | help" onkeydown="if(event.key==='Enter')runCmd()">
+        </div>
+    </div>
+
+    <div id="footer">
+        <span>devices:</span><span class="val" id="ft-devices">0</span>
+        <span>streams:</span><span class="val" id="ft-streams">0</span>
+        <span>uptime:</span><span class="val" id="ft-uptime">0s</span>
+        <span class="spacer"></span>
+        <span class="version">uvspeed v4.19</span>
+    </div>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script src="qbit-preflight.js"></script>
+<script src="history-search-engine.js"></script>
+<script>
+'use strict';
+
+const IS_TAURI = !!window.__TAURI__;
+const startTime = Date.now();
+
+// ── Starfield (titlebar + main) ──
+function initStarfield(cvs, count) {
+    if (!cvs) return;
+    const ctx = cvs.getContext('2d');
+    const stars = [];
+    function resize() {
+        cvs.width = cvs.parentElement.offsetWidth;
+        cvs.height = cvs.parentElement.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    for (let i = 0; i < count; i++) {
+        stars.push({
+            x: Math.random() * 2000, y: Math.random() * 800,
+            r: Math.random() * 1.2 + 0.2, a: Math.random() * 0.6 + 0.15,
+            tw: Math.random() * 2 + 0.5, ph: Math.random() * Math.PI * 2,
+        });
+    }
+    function draw() {
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+        const t = Date.now() / 1000;
+        for (const s of stars) {
+            const alpha = 0.15 + 0.85 * s.a * (0.5 + 0.5 * Math.sin(t * s.tw + s.ph));
+            ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+            ctx.beginPath();
+            ctx.arc(s.x % cvs.width, s.y % cvs.height, s.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        requestAnimationFrame(draw);
+    }
+    draw();
+}
+initStarfield(document.getElementById('titlebar-stars'), 40);
+initStarfield(document.getElementById('main-stars'), 100);
+
+// ── ugrad.ai split-flap hero equations ──
+const heroFlapRow = document.getElementById('hero-flap-row');
+const HERO_EQUATIONS = [
+    '[ μɢrλd ]',
+    '| μɢrλd ⟩',
+    'μ∇ℛλ∂',
+    'μΓℛλ𝒟',
+    '|μ_final⟩ = 𝒟̂ ℛ̂ Γ̂_λ |μ⟩',
+    '|μ_grλd⟩ := 𝒟̂ ℛ̂ Γ̂_λ |μ⟩',
+];
+const HERO_FINAL = '| μɢrλd ⟩';
+const HERO_FLAP_CHARS = Array.from(new Set(
+    ('ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 []|_:=+-./() ' +
+     'μɢℛλ𝒟∇∂Γ̂⟨⟩').split('')
+));
+let heroEquationIndex = 0;
+let heroInFinalLock = false;
+
+function heroRandomChar() {
+    return HERO_FLAP_CHARS[Math.floor(Math.random() * HERO_FLAP_CHARS.length)];
+}
+
+function buildHeroFlaps(targetLine) {
+    if (!heroFlapRow) return;
+    heroFlapRow.innerHTML = '';
+    for (let i = 0; i < targetLine.length; i++) {
+        const cell = document.createElement('div');
+        const ch = targetLine[i];
+        const isSpace = ch === ' ';
+        cell.className = 'flap-cell' + (isSpace ? ' space' : '');
+        const inner = document.createElement('span');
+        inner.className = 'flap-inner';
+        inner.textContent = isSpace ? ' ' : heroRandomChar();
+        cell.appendChild(inner);
+        cell.dataset.target = ch;
+        cell.dataset.idx = String(i);
+        cell.dataset.flips = isSpace ? '99' : '0';
+        if (isSpace) cell.classList.add('resolved');
+        heroFlapRow.appendChild(cell);
+    }
+}
+
+function tickHeroFlaps(onDone) {
+    if (!heroFlapRow) return;
+    const cells = heroFlapRow.querySelectorAll('.flap-cell:not(.space)');
+    let allDone = true;
+    cells.forEach((cell) => {
+        const inner = cell.querySelector('.flap-inner');
+        const flips = parseInt(cell.dataset.flips || '0', 10);
+        const target = cell.dataset.target || ' ';
+        const idx = parseInt(cell.dataset.idx || '0', 10);
+        if (inner && inner.textContent === target) {
+            cell.classList.add('resolved');
+            return;
+        }
+        allDone = false;
+        if (Math.random() > (0.14 + idx * 0.005)) return;
+        cell.classList.add('flipping');
+        setTimeout(() => {
+            if (!inner) return;
+            if (flips > 2 + Math.floor(idx * 0.25)) {
+                inner.textContent = target;
+            } else {
+                inner.textContent = heroRandomChar();
+            }
+            cell.dataset.flips = String(flips + 1);
+            cell.classList.remove('flipping');
+        }, 78);
+    });
+    if (!allDone) {
+        setTimeout(() => tickHeroFlaps(onDone), 62);
+    } else if (typeof onDone === 'function') {
+        onDone();
+    }
+}
+
+function startHeroEquationCycle() {
+    const target = heroInFinalLock ? HERO_FINAL : HERO_EQUATIONS[heroEquationIndex];
+    buildHeroFlaps(target);
+    tickHeroFlaps(() => {
+        if (heroInFinalLock) {
+            setTimeout(() => {
+                heroInFinalLock = false;
+                heroEquationIndex = 0;
+                startHeroEquationCycle();
+            }, 2400);
+            return;
+        }
+        if (heroEquationIndex >= HERO_EQUATIONS.length - 1) {
+            heroInFinalLock = true;
+            setTimeout(startHeroEquationCycle, 900);
+            return;
+        }
+        heroEquationIndex += 1;
+        setTimeout(startHeroEquationCycle, 880);
+    });
+}
+startHeroEquationCycle();
+
+// ── BroadcastChannel for device count + command routing ──
+const bc = new BroadcastChannel('hexterm');
+const _devices = {};   // feedId → { src, status, fps, lastSeen }
+
+bc.onmessage = (evt) => {
+    const msg = evt.data;
+    if (!msg || !msg.type) return;
+
+    if (msg.type === 'feed-open') {
+        _devices[msg.feedId] = { src: msg.src || '?', status: 'active', fps: 0, lastSeen: Date.now() };
+        clog(`<span class="ok">+</span> feed opened: ${msg.feedId} (${msg.src || 'unknown'})`);
+    }
+    if (msg.type === 'feed-close') {
+        if (_devices[msg.feedId]) _devices[msg.feedId].status = 'closed';
+        clog(`feed closed: ${msg.feedId}`);
+    }
+    if (msg.type === 'feed-stats') {
+        if (!_devices[msg.feedId]) _devices[msg.feedId] = { src: msg.src, status: 'active', fps: 0, lastSeen: Date.now() };
+        _devices[msg.feedId].fps = msg.fps || 0;
+        _devices[msg.feedId].lastSeen = Date.now();
+        _devices[msg.feedId].status = 'active';
+    }
+    if (msg.type === 'feed-status') {
+        if (_devices[msg.feedId]) {
+            _devices[msg.feedId].status = msg.status;
+            _devices[msg.feedId].lastSeen = Date.now();
+        }
+    }
+    if (msg.type === 'transcript' && msg.watchHit) {
+        clog(`<span style="color:#ffe138">WATCH</span> [${msg.feedId}] ${msg.text}`);
+    }
+    if (msg.type === 'grid-stats') {
+        // Grid window reporting aggregate stats
+    }
+};
+
+// ── Console log ──
+const consoleLog = document.getElementById('console-log');
+let consoleLineCount = 0;
+let consoleCollapsed = false;
+
+function clog(html) {
+    const line = document.createElement('div');
+    const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    line.innerHTML = `<span class="ts">${t}</span> ${html}`;
+    consoleLog.appendChild(line);
+    if (consoleLog.children.length > 200) consoleLog.removeChild(consoleLog.firstChild);
+    consoleLog.scrollTop = consoleLog.scrollHeight;
+    consoleLineCount++;
+    document.getElementById('console-count').textContent = consoleLineCount;
+}
+
+function toggleConsole() {
+    consoleCollapsed = !consoleCollapsed;
+    const header = document.getElementById('console-header');
+    consoleLog.style.display = consoleCollapsed ? 'none' : '';
+    document.getElementById('console-cmd').style.display = consoleCollapsed ? 'none' : '';
+    header.classList.toggle('collapsed', consoleCollapsed);
+}
+
+function runHeroCmd() {
+    const heroInput = document.getElementById('hero-cmd-input');
+    const shellInput = document.getElementById('cmd-input');
+    if (!heroInput || !shellInput) return;
+    const raw = heroInput.value.trim();
+    if (!raw) return;
+    heroInput.value = '';
+    shellInput.value = raw;
+    runCmd();
+}
+
+// ── Device count helpers ──
+function countDevices() {
+    let active = 0, idle = 0, offline = 0;
+    const now = Date.now();
+    for (const [id, d] of Object.entries(_devices)) {
+        if (d.status === 'closed') { offline++; continue; }
+        if (now - d.lastSeen > 15000) { idle++; continue; }
+        active++;
+    }
+    return { active, idle, offline, total: active + idle + offline };
+}
+
+// ── Footer updates ──
+setInterval(() => {
+    const c = countDevices();
+    document.getElementById('ft-devices').textContent = c.active + '/' + c.total;
+    document.getElementById('ft-streams').textContent = c.active;
+    const secs = Math.floor((Date.now() - startTime) / 1000);
+    document.getElementById('ft-uptime').textContent = secs < 60 ? secs + 's' : Math.floor(secs / 60) + 'm';
+}, 2000);
+
+// ── Command runner ──
+function runCmd() {
+    const input = document.getElementById('cmd-input');
+    const raw = input.value.trim();
+    if (!raw) return;
+    input.value = '';
+    clog(`<span class="cmd">▸</span> ${raw}`);
+
+    const [cmd, ...rest] = raw.split(/\s+/);
+    const arg = rest.join(' ');
+
+    switch (cmd) {
+        case 'help':
+            clog('  <span class="cmd">list</span>              — list connected devices');
+            clog('  <span class="cmd">stop &lt;id|all&gt;</span>    — close feed(s)');
+            clog('  <span class="cmd">reload &lt;id|all&gt;</span>  — force reload window(s)');
+            clog('  <span class="cmd">feed &lt;ip&gt;</span>        — open feed window to IP');
+            clog('  <span class="cmd">cam [back]</span>        — open camera feed');
+            clog('  <span class="cmd">grid</span>              — open grid view');
+            clog('  <span class="cmd">terminal</span>          — open terminal instance');
+            clog('  <span class="cmd">watch &lt;phrase&gt;</span>   — set watch phrase on all feeds');
+            clog('  <span class="cmd">mute &lt;id&gt;</span>        — toggle mute on a feed');
+            clog('  <span class="cmd">clear</span>             — clear console log');
+            break;
+
+        case 'list':
+        case 'ls':
+        case 'devices': {
+            const c = countDevices();
+            if (c.total === 0) {
+                clog('  <span style="color:#484f58">no devices connected</span>');
+            } else {
+                clog(`  ${c.active} active, ${c.idle} idle, ${c.offline} offline`);
+                for (const [id, d] of Object.entries(_devices)) {
+                    const stColor = d.status === 'closed' ? '#484f58' : d.status === 'active' ? '#3fb950' : '#d29922';
+                    const age = ((Date.now() - d.lastSeen) / 1000).toFixed(0);
+                    clog(`  <span style="color:#58a6ff">${id}</span> src:${d.src} <span style="color:${stColor}">${d.status}</span> fps:${d.fps} ${age}s`);
+                }
+            }
+            break;
+        }
+
+        case 'stop':
+        case 'kill':
+        case 'close':
+            if (arg === 'all') {
+                for (const id of Object.keys(_devices)) {
+                    bc.postMessage({ type: 'command', cmd: 'close', feedId: id });
+                }
+                clog(`<span class="ok">closing all feeds</span>`);
+            } else if (arg) {
+                bc.postMessage({ type: 'command', cmd: 'close', feedId: arg });
+                clog(`closing: ${arg}`);
+            } else {
+                clog('<span class="err">usage: stop &lt;id|all&gt;</span>');
+            }
+            break;
+
+        case 'reload': {
+            if (arg === 'all') {
+                bc.postMessage({ type: 'command', cmd: 'reload-all' });
+                clog('<span class="ok">reloading all windows</span>');
+            } else if (arg) {
+                bc.postMessage({ type: 'command', cmd: 'reload', feedId: arg });
+                clog(`reloading: ${arg}`);
+            } else {
+                clog('<span class="err">usage: reload &lt;id|all&gt;</span>');
+            }
+            break;
+        }
+
+        case 'feed': {
+            if (!arg) { clog('<span class="err">usage: feed &lt;ip&gt;</span>'); break; }
+            const feedId = 'feed-' + Date.now() % 10000;
+            let src = arg;
+            if (!src.includes(':')) src += ':9876';
+            if (!src.startsWith('ws://')) src = 'ws://' + src;
+            if (IS_TAURI) {
+                window.__TAURI__.core.invoke('open_feed', { feedId, source: src })
+                    .then(() => clog(`<span class="ok">opened feed</span> ${feedId} → ${src}`))
+                    .catch(e => clog(`<span class="err">error:</span> ${e}`));
+            } else {
+                window.open(`feed.html?id=${feedId}&src=${encodeURIComponent(src)}`, feedId, 'width=480,height=640');
+                clog(`<span class="ok">opened feed</span> ${feedId}`);
+            }
+            break;
+        }
+
+        case 'cam':
+        case 'camera': {
+            const facing = (arg === 'back' || arg === 'rear') ? 'camera:back' : 'camera';
+            const feedId = 'cam-' + Date.now() % 10000;
+            if (IS_TAURI) {
+                window.__TAURI__.core.invoke('open_feed', { feedId, source: facing })
+                    .then(() => clog(`<span class="ok">opened camera</span> ${feedId}`))
+                    .catch(e => clog(`<span class="err">error:</span> ${e}`));
+            } else {
+                window.open(`feed.html?id=${feedId}&src=${facing}`, feedId, 'width=480,height=640');
+                clog(`<span class="ok">opened camera</span> ${feedId}`);
+            }
+            break;
+        }
+
+        case 'grid':
+            launchMode('grid');
+            clog('<span class="ok">opening grid view</span>');
+            break;
+
+        case 'terminal':
+        case 'term':
+            launchMode('instance');
+            clog('<span class="ok">opening terminal</span>');
+            break;
+
+        case 'watch':
+            if (arg) {
+                bc.postMessage({ type: 'command', cmd: 'watch', phrases: arg.split(',').map(s => s.trim()) });
+                clog(`<span class="ok">watch set:</span> ${arg}`);
+            } else {
+                clog('<span class="err">usage: watch &lt;phrase&gt;</span>');
+            }
+            break;
+
+        case 'mute':
+            if (arg) {
+                bc.postMessage({ type: 'command', cmd: 'mute', feedId: arg });
+                clog(`mute toggled: ${arg}`);
+            } else {
+                clog('<span class="err">usage: mute &lt;id&gt;</span>');
+            }
+            break;
+
+        case 'clear':
+            consoleLog.innerHTML = '';
+            consoleLineCount = 0;
+            document.getElementById('console-count').textContent = '0';
+            break;
+
+        default:
+            clog(`<span class="err">unknown:</span> ${cmd} — type <span class="cmd">help</span>`);
+    }
+}
+
+// Boot message
+clog('<span class="ok">uvspeed launcher ready</span> — type <span class="cmd">help</span> for commands');
+
+// ── Launch modes ──
+function launchMode(mode) {
+    if (IS_TAURI) {
+        const invoke = window.__TAURI__.core.invoke;
+        switch (mode) {
+            case 'instance':
+                invoke('open_window', {
+                    label: 'hexterm',
+                    url: 'terminal.html',
+                    title: 'uvspeed — terminal',
+                    device: 'ipad',
+                }).then(() => {
+                    // Close launcher or keep it — keep it as command center
+                });
+                break;
+            case 'grid':
+                invoke('open_window', {
+                    label: 'grid-' + Date.now() % 10000,
+                    url: 'grid.html',
+                    title: 'uvspeed — grid',
+                    device: 'desktop',
+                });
+                break;
+            case 'web':
+                // Open terminal.html in the default browser
+                if (window.__TAURI__.shell) {
+                    window.__TAURI__.shell.open('http://localhost:1420/terminal.html');
+                } else {
+                    window.open('terminal.html', '_blank');
+                }
+                break;
+        }
+    } else {
+        // Browser mode
+        switch (mode) {
+            case 'instance':
+                window.location.href = 'terminal.html';
+                break;
+            case 'grid':
+                window.location.href = 'grid.html';
+                break;
+            case 'web':
+                window.location.href = 'terminal.html';
+                break;
+        }
+    }
+}
+
+function launchDev() {
+    if (IS_TAURI) {
+        window.__TAURI__.core.invoke('open_window', {
+            label: 'dev-' + Date.now() % 10000,
+            url: 'terminal.html',
+            title: 'uvspeed — {dev}',
+            device: 'desktop',
+        }).then(() => {
+            // After terminal opens, send command to open dev console
+            setTimeout(() => {
+                const bc2 = new BroadcastChannel('hexterm');
+                bc2.postMessage({ type: 'command', cmd: 'dev-mode' });
+                bc2.close();
+            }, 1500);
+        });
+    } else {
+        window.location.href = 'terminal.html?dev=1';
+    }
+}
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function() {
+    const QP = window.QuantumPrefixes;
+    try {
+        const il = new BroadcastChannel('iron-line');
+        il.postMessage({ type: 'launcher-ready', source: 'launcher', ts: Date.now() });
+        il.close();
+    } catch (_) {}
+    try {
+        const hb = new BroadcastChannel('history-search');
+        hb.postMessage({ type: 'launcher-ready', source: 'launcher', ts: Date.now() });
+        hb.close();
+    } catch (_) {}
+    if (!QP) return;
+    QP.onStateChange(function(source, state, global) {
+        if (source === 'launcher' || !state) return;
+        // Launcher can display aggregate sync status
+        const agg = QP.aggregateGlobalStats();
+        const el = document.getElementById('qp-status');
+        if (el) el.textContent = agg.sources.length + ' apps | ' + agg.coverage + '% coverage | ' + agg.totalLines + ' lines';
+    });
+    QP.broadcastState('launcher', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, role: 'launcher' });
+    QP.requestStateSync();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#080b12">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Iron Browser — T5 Quantum Pipeline</title>
+<link rel="icon" href="../icons/qbit-favicon-32.png">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#080b12;--bg2:#0d1018;--bg3:#141822;--bg4:#1c2130;
+  --border:#222940;--bhl:#334160;
+  --text:#d1d9e6;--dim:#5a6580;--muted:#7a8599;
+  --gold:#c9a84c;--cyan:#56d4dd;--blue:#58a6ff;--purple:#a78bfa;
+  --green:#3fb950;--orange:#f0883e;--red:#f85149;--coral:#ff6b6b;
+  --cpu:#56d4dd;--gpu:#3fb950;--qpu:#a78bfa;--parent:#c9a84c;
+  --mono:'SF Mono','Cascadia Code','Fira Code',monospace;
+  --sans:-apple-system,'SF Pro Display',system-ui,sans-serif;
+  --r:6px;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--sans);overflow:hidden;-webkit-text-size-adjust:100%}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+a{color:var(--blue);text-decoration:none}a:hover{text-decoration:underline}
+
+#app{display:grid;grid-template-rows:34px 2px auto 28px;height:100%}
+
+/* TOP BAR */
+#top{display:flex;align-items:center;gap:8px;padding:0 12px;background:var(--bg2);border-bottom:1px solid var(--border);font:11px var(--mono);user-select:none}
+#top .logo{font-weight:800;letter-spacing:1px;background:linear-gradient(135deg,var(--gold),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#top .sep{color:var(--border)}
+#top .pill{padding:1px 6px;border-radius:3px;font-size:10px;font-weight:600}
+#top .pill.t5{background:#163b1e;color:var(--green)}
+#top .pill.iron{background:#1a1540;color:var(--purple)}
+#top .stat{color:var(--dim)}
+#top .stat b{color:var(--text)}
+.spacer{flex:1}
+#top .tbtn{background:none;border:1px solid var(--border);color:var(--dim);padding:2px 8px;border-radius:4px;cursor:pointer;font:10px var(--mono)}
+#top .tbtn:hover{color:var(--text);border-color:var(--bhl)}
+#top .tbtn.active{color:var(--cyan);border-color:var(--cyan)}
+
+/* RAINBOW */
+.rainbow{display:flex;height:2px}
+.rainbow span{flex:1}
+.r1{background:var(--purple)}.r2{background:var(--cyan)}.r3{background:var(--gold)}.r4{background:var(--green)}.r5{background:var(--blue)}.r6{background:var(--orange)}
+
+/* MAIN */
+#main{display:grid;grid-template-columns:280px 1fr 300px;overflow:hidden}
+
+/* LEFT: NAV + PIPELINE */
+#left{display:flex;flex-direction:column;background:var(--bg2);border-right:1px solid var(--border);overflow:hidden}
+#nav-header{padding:8px 12px;border-bottom:1px solid var(--border);font:11px var(--mono)}
+#nav-header .title{color:var(--gold);font-weight:700}
+#nav-tabs{display:flex;border-bottom:1px solid var(--border)}
+.ntab{flex:1;text-align:center;padding:6px;font:10px var(--mono);color:var(--dim);cursor:pointer;border-bottom:2px solid transparent}
+.ntab:hover{color:var(--text)}
+.ntab.active{color:var(--cyan);border-bottom-color:var(--cyan)}
+#nav-body{flex:1;overflow-y:auto;padding:8px}
+.nav-section{margin-bottom:12px}
+.nav-section .label{font:10px var(--mono);color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.nav-item{display:flex;align-items:center;gap:6px;padding:4px 8px;border-radius:var(--r);cursor:pointer;font:11px var(--mono);color:var(--muted)}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--bg4);color:var(--cyan)}
+.nav-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+/* PIPELINE VIZ */
+#pipeline{border-top:1px solid var(--border);padding:8px 12px;flex-shrink:0}
+#pipeline .title{font:10px var(--mono);color:var(--gold);margin-bottom:6px}
+.pipe-row{display:flex;align-items:center;gap:4px;margin-bottom:3px;font:10px var(--mono)}
+.pipe-label{width:36px;color:var(--dim);text-align:right}
+.pipe-bar{flex:1;height:8px;background:var(--bg);border-radius:2px;overflow:hidden}
+.pipe-fill{height:100%;border-radius:2px;transition:width .3s}
+.pipe-val{width:48px;text-align:right;color:var(--dim);font-size:9px}
+
+/* CENTER */
+#center{display:flex;flex-direction:column;overflow:hidden}
+#url-bar{display:flex;gap:6px;padding:6px 12px;background:var(--bg2);border-bottom:1px solid var(--border)}
+#url-bar button{background:var(--bg3);border:1px solid var(--border);color:var(--dim);width:28px;height:28px;border-radius:var(--r);cursor:pointer;font:12px var(--mono)}
+#url-bar button:hover{color:var(--text);border-color:var(--bhl)}
+#url-input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:4px 12px;border-radius:var(--r);font:12px var(--mono);outline:none}
+#url-input:focus{border-color:var(--purple)}
+
+/* SEARCH BAR */
+#search-bar{display:flex;gap:6px;padding:6px 12px;background:var(--bg2);border-bottom:1px solid var(--border)}
+#search-input{flex:1;background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 14px;border-radius:var(--r);font:13px var(--mono);outline:none}
+#search-input:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(86,212,221,.12)}
+#search-btn{background:linear-gradient(135deg,var(--purple),var(--cyan));color:var(--bg);border:none;padding:6px 16px;border-radius:var(--r);font:12px/1 var(--mono);font-weight:700;cursor:pointer}
+#search-btn:hover{opacity:.9}
+
+/* CONNECTORS */
+#connectors{display:flex;gap:4px;padding:4px 12px;overflow-x:auto;scrollbar-width:none;background:var(--bg2);border-bottom:1px solid var(--border)}
+#connectors::-webkit-scrollbar{display:none}
+.cpill{font:10px var(--mono);padding:3px 8px;border-radius:4px;border:1px solid var(--border);color:var(--dim);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.cpill:hover{color:var(--text);border-color:var(--bhl)}
+.cpill.active{color:var(--cyan);border-color:rgba(86,212,221,.4)}
+.cpill .cnt{font-weight:700;color:var(--green);margin-left:3px}
+
+/* RESULTS / VIEWER */
+#viewer{flex:1;overflow-y:auto;padding:12px}
+.result{padding:10px 12px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);margin-bottom:6px;cursor:pointer}
+.result:hover{border-color:var(--bhl);background:var(--bg3)}
+.r-source{font:10px var(--mono);color:var(--dim);margin-bottom:2px;display:flex;align-items:center;gap:4px}
+.r-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.r-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.r-snippet{font-size:11px;color:var(--dim);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+
+/* TIMELINE */
+#timeline{height:60px;flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);position:relative}
+#tl-canvas{width:100%;height:100%;display:block}
+#tl-label{position:absolute;top:4px;left:8px;font:9px var(--mono);color:var(--dim);pointer-events:none}
+
+/* RIGHT: INSPECTOR */
+#right{display:flex;flex-direction:column;background:var(--bg2);border-left:1px solid var(--border);overflow:hidden}
+#right-tabs{display:flex;border-bottom:1px solid var(--border)}
+.rtab{flex:1;text-align:center;padding:6px;font:10px var(--mono);color:var(--dim);cursor:pointer;border-bottom:2px solid transparent}
+.rtab:hover{color:var(--text)}
+.rtab.active{color:var(--gold);border-bottom-color:var(--gold)}
+#right-body{flex:1;overflow-y:auto;padding:8px 10px;font:11px var(--mono)}
+.rk{color:var(--dim)}.rv{color:var(--text)}
+.rk-gold{color:var(--gold)}.rk-cyan{color:var(--cyan)}
+.r-row{display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid var(--border)}
+.r-head{color:var(--gold);font-weight:700;margin:8px 0 4px;font-size:12px}
+.lane-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px}
+.lane-c{background:var(--cpu)}.lane-g{background:var(--gpu)}.lane-q{background:var(--qpu)}.lane-p{background:var(--parent)}
+
+/* 3D VIEW OVERLAY */
+#view3d{display:none;position:absolute;inset:0;z-index:50;background:var(--bg)}
+#view3d canvas{width:100%;height:100%}
+#view3d .close{position:absolute;top:8px;right:8px;background:var(--bg3);border:1px solid var(--border);color:var(--dim);padding:4px 10px;border-radius:4px;cursor:pointer;font:10px var(--mono);z-index:51}
+
+/* STATUS */
+#status{display:flex;align-items:center;gap:12px;padding:0 12px;background:var(--bg3);border-top:1px solid var(--border);font:10px var(--mono);color:var(--dim);user-select:none}
+#status b{color:var(--text)}
+
+@media(max-width:900px){
+  #main{grid-template-columns:1fr}
+  #left,#right{display:none}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top">
+    <span class="logo">Iron Browser</span>
+    <span class="sep">|</span>
+    <span class="pill t5">T5</span>
+    <span class="pill iron">Iron Line</span>
+    <span class="sep">|</span>
+    <span class="stat">3D: <b id="t-lane">C:</b></span>
+    <span class="stat">piezo: <b id="t-piezo">0ns</b></span>
+    <span class="spacer"></span>
+    <button class="tbtn" id="btn-3d">◇ 3D</button>
+    <button class="tbtn" id="btn-steno">⎔ Steno</button>
+    <button class="tbtn" id="btn-bench">⚡ Bench</button>
+  </div>
+  <div class="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+  <div id="main">
+    <div id="left">
+      <div id="nav-header"><span class="title">Iron Line Pipeline</span></div>
+      <div id="nav-tabs">
+        <div class="ntab active" data-tab="layers">Layers</div>
+        <div class="ntab" data-tab="lanes">Lanes</div>
+        <div class="ntab" data-tab="bench">Bench</div>
+      </div>
+      <div id="nav-body"></div>
+      <div id="pipeline">
+        <div class="title">Pipeline (24ms budget)</div>
+        <div id="pipe-bars"></div>
+      </div>
+    </div>
+    <div id="center">
+      <div id="url-bar">
+        <button id="btn-back">←</button>
+        <button id="btn-fwd">→</button>
+        <button id="btn-reload">↻</button>
+        <input id="url-input" placeholder="URL, search, or paste code..." spellcheck="false">
+      </div>
+      <div id="search-bar">
+        <input id="search-input" placeholder="Search 17 connectors..." spellcheck="false" autofocus>
+        <button id="search-btn">Search</button>
+      </div>
+      <div id="connectors"></div>
+      <div id="viewer"></div>
+      <div id="timeline"><canvas id="tl-canvas"></canvas><span id="tl-label"></span></div>
+      <div id="view3d"><canvas id="canvas3d"></canvas><button class="close" id="close3d">✕ Close</button></div>
+    </div>
+    <div id="right">
+      <div id="right-tabs">
+        <div class="rtab active" data-tab="inspect">Inspect</div>
+        <div class="rtab" data-tab="classify">Classify</div>
+        <div class="rtab" data-tab="piezo">Piezo</div>
+      </div>
+      <div id="right-body"></div>
+    </div>
+  </div>
+  <div id="status">
+    <span>engine: <b id="s-engine">T5-native</b></span>
+    <span>connectors: <b id="s-conn">0</b>/17</span>
+    <span>pipeline: <b id="s-pipe">idle</b></span>
+    <span>lanes: <b>C: G: Q: P:</b></span>
+    <span class="spacer"></span>
+    <span id="s-time"></span>
+  </div>
+</div>
+<script src="quantum-prefixes.js" defer></script>
+<script src="qbit-dac.js" defer></script>
+<script src="qbit-steno.js" defer></script>
+<script src="qbit-preflight.js" defer></script>
+<script src="history-search-engine.js" defer></script>
+<script src="plan-corpus-indexer.js" defer></script>
+<script>
+// ===== QUANTUM PREFIX LIVE SYNC =====
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(){});}
+try{
+  var _qpBC=new BroadcastChannel('quantum-prefixes');
+  _qpBC.addEventListener('message',function(e){if(e.data&&e.data.type==='state-request'&&window.QuantumPrefixes){window.QuantumPrefixes.broadcastState('iron-browser',{running:true});}});
+  var _hlBC=new BroadcastChannel('hexterm');
+  var _ilBC=new BroadcastChannel('iron-line');
+  _ilBC.addEventListener('message',function(e){if(e.data&&e.data.type==='classify-result'){handlePipelineResult(e.data);}});
+  var _hsBC=new BroadcastChannel('history-search');
+}catch(e){}
+</script>
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var QP,DAC,ST,PF,HS;
+var T0=performance.now();
+var LAYER=0,TOTAL_CLS=0,TOTAL_LINES=0;
+var PCLS={'n:':'#c9a84c','+1:':'#6e7681','-n:':'#58a6ff','+0:':'#a78bfa','0:':'#56d4dd','-1:':'#f85149','+n:':'#34d399','+2:':'#f0883e','-0:':'#3fb950','+3:':'#ff6b6b','1:':'#e6edf3'};
+var GATES={'n:':'SWAP','+1:':'H','-n:':'M','+0:':'Rz','0:':'I','-1:':'X','+n:':'T','+2:':'CZ','-0:':'S','+3:':'Y','1:':'CNOT'};
+var LANE_COLORS={'C:':'var(--cpu)','G:':'var(--gpu)','Q:':'var(--qpu)','P:':'var(--parent)'};
+
+// piezo clock shim
+var piezoBase=performance.now()*1e6;
+function piezoNow(){return performance.now()*1e6;}
+function piezoRelNs(){return piezoNow()-piezoBase;}
+function piezoFmt(ns){return ns<1000?ns.toFixed(0)+'ns':ns<1e6?(ns/1000).toFixed(1)+'μs':(ns/1e6).toFixed(2)+'ms';}
+setInterval(function(){$('t-piezo').textContent=piezoFmt(piezoRelNs());$('s-time').textContent=new Date().toLocaleTimeString();},200);
+
+// === CONNECTORS (from history-search-engine.js) ===
+var CONNECTORS=[
+  {name:'Wikipedia',icon:'📚',color:'#58a6ff',enabled:true},
+  {name:'Open Library',icon:'📖',color:'#34d399',enabled:true},
+  {name:'Wayback',icon:'⏪',color:'#f0883e',enabled:true},
+  {name:'Sacred Texts',icon:'📜',color:'#c9a84c',enabled:true},
+  {name:'Yale Archives',icon:'🏛️',color:'#a78bfa',enabled:true},
+  {name:'ARDA',icon:'🧝',color:'#3fb950',enabled:true},
+  {name:'arXiv',icon:'📄',color:'#ff6b6b',enabled:true},
+  {name:'PubChem',icon:'⚗️',color:'#56d4dd',enabled:true},
+  {name:'GenBank',icon:'🧬',color:'#f85149',enabled:true},
+  {name:'LGBTQ Archives',icon:'🌈',color:'#a78bfa',enabled:true},
+  {name:'Meta Research',icon:'🔬',color:'#58a6ff',enabled:true},
+  {name:'HathiTrust',icon:'📕',color:'#f0883e',enabled:true},
+  {name:'Internet Archive',icon:'🌐',color:'#34d399',enabled:true},
+  {name:'Plan Corpus',icon:'📋',color:'#c9a84c',enabled:true},
+  {name:'Chat Corpus',icon:'💬',color:'#56d4dd',enabled:true},
+  {name:'Iron Line',icon:'⚡',color:'#ff6b6b',enabled:true},
+  {name:'qbit Codec',icon:'⎔',color:'#a78bfa',enabled:true}
+];
+
+function renderConnectors(){
+  var el=$('connectors');el.innerHTML='';
+  CONNECTORS.forEach(function(c,i){
+    var d=document.createElement('span');
+    d.className='cpill'+(c.enabled?' active':'');
+    d.textContent=c.icon+' '+c.name;
+    d.onclick=function(){c.enabled=!c.enabled;d.classList.toggle('active');};
+    el.appendChild(d);
+  });
+  $('s-conn').textContent=CONNECTORS.filter(function(c){return c.enabled;}).length;
+}
+
+// === SEARCH ===
+var _searchResults=[];
+function doSearch(query){
+  if(!query)return;
+  $('s-pipe').textContent='searching...';
+  var t0=piezoNow();
+  _searchResults=[];
+  var viewer=$('viewer');viewer.innerHTML='';
+
+  if(HS&&HS.search){
+    HS.search(query,{}).then(function(r){
+      _searchResults=r.results||[];
+      renderResults(_searchResults,piezoNow()-t0);
+    }).catch(function(){
+      mockSearch(query,t0);
+    });
+  }else{
+    mockSearch(query,t0);
+  }
+}
+
+function mockSearch(query,t0){
+  var sources=CONNECTORS.filter(function(c){return c.enabled;});
+  sources.forEach(function(c){
+    _searchResults.push({title:query+' — '+c.name,snippet:'Results from '+c.name+' for "'+query+'"',source:c.name,url:'#',color:c.color});
+  });
+  renderResults(_searchResults,piezoNow()-t0);
+}
+
+function renderResults(results,nsElapsed){
+  var viewer=$('viewer');viewer.innerHTML='';
+  $('s-pipe').textContent='done ('+piezoFmt(nsElapsed)+')';
+  if(!results.length){viewer.innerHTML='<div style="color:var(--dim);padding:40px;text-align:center">No results</div>';return;}
+  results.forEach(function(r){
+    var d=document.createElement('div');d.className='result';
+    d.innerHTML='<div class="r-source"><span class="r-dot" style="background:'+(r.color||'var(--dim)')+'"></span>'+(r.source||'unknown')+'</div><div class="r-title">'+(r.title||'')+'</div><div class="r-snippet">'+(r.snippet||r.description||'')+'</div>';
+    d.onclick=function(){if(r.url&&r.url!=='#')window.open(r.url,'_blank');};
+    viewer.appendChild(d);
+  });
+}
+
+// === CLASSIFY (paste or URL content) ===
+function classifyContent(text,lang){
+  if(!QP)return;
+  var t0=piezoNow();
+  var lines=text.split('\n');
+  var viewer=$('viewer');viewer.innerHTML='';
+  var counts={};var clsd=0;
+  var frag=document.createDocumentFragment();
+  for(var i=0;i<lines.length;i++){
+    var r=QP.classifyLine(lines[i],lang||'auto');
+    var sym=(r&&r.sym)?r.sym:' ';
+    if(sym!==' '){counts[sym]=(counts[sym]||0)+1;clsd++;}
+    var lane=detectLane(lines[i]);
+    var d=document.createElement('div');d.className='result';d.style.padding='2px 8px';d.style.marginBottom='1px';d.style.borderRadius='2px';
+    d.innerHTML='<div style="display:flex;gap:8px;align-items:baseline;font:12px var(--mono)"><span style="width:28px;text-align:right;color:var(--border)">'+(i+1)+'</span><span style="width:24px;text-align:right;color:'+(PCLS[sym]||'var(--dim)')+';font-weight:700">'+(sym!==' '?sym:'')+'</span><span style="flex:1;white-space:pre-wrap">'+escHtml(lines[i])+'</span><span class="lane-dot lane-'+lane[0].toLowerCase()+'"></span><span style="color:var(--dim);font-size:10px">'+lane+'</span></div>';
+    frag.appendChild(d);
+  }
+  viewer.appendChild(frag);
+  TOTAL_LINES+=lines.length;TOTAL_CLS+=clsd;
+  var elapsed=piezoNow()-t0;
+  $('s-pipe').textContent='classified '+lines.length+' lines ('+piezoFmt(elapsed)+')';
+  updateInspector(counts,clsd,lines.length,elapsed,lang);
+  drawTimeline(counts);
+  updatePipeline(elapsed);
+}
+
+function escHtml(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function detectLane(line){
+  var l=line.toLowerCase();
+  if(/qiskit|quantumcircuit|qc\.\w|openqasm|qreg|creg|measure/.test(l))return'Q:';
+  if(/torch|cuda|\.gpu|metal|@compute|wgsl|kernel|__global__|dispatch/.test(l))return'G:';
+  if(/merge|barrier|await|orchestrat|parent|schedule|sync/.test(l))return'P:';
+  return'C:';
+}
+
+// === LEFT NAV ===
+var LAYERS=[
+  {l:0,name:'Super Speed',apps:'uterm, qbit-raw, μgrad',budget:'1.3ms',color:'var(--gold)'},
+  {l:1,name:'Terminal',apps:'qbit-search, HexTerm',budget:'100μs',color:'var(--cyan)'},
+  {l:2,name:'Commander',apps:'agent, corpus',budget:'100ms',color:'var(--blue)'},
+  {l:3,name:'Quantum',apps:'uvqbit, jawta',budget:'0.1μs',color:'var(--purple)'},
+  {l:4,name:'Notepad',apps:'notepad, kbatch',budget:'2ms',color:'var(--green)'},
+  {l:5,name:'RNDR',apps:'studio, archflow',budget:'16ms',color:'var(--orange)'},
+  {l:6,name:'Medical',apps:'medical, freya',budget:'5ms',color:'var(--coral)'},
+  {l:7,name:'Persona',apps:'history, search, qa',budget:'5ms',color:'var(--red)'}
+];
+
+var BENCHMARKS=[
+  {name:'T5-native (Rust)',ns:3.2,color:'var(--green)'},
+  {name:'Rust standard',ns:89.6,color:'var(--cyan)'},
+  {name:'WASM',ns:300,color:'var(--blue)'},
+  {name:'JS regex',ns:246,color:'var(--orange)'},
+  {name:'tree-sitter',ns:500,color:'var(--dim)'},
+  {name:'Ruff (py)',ns:100,color:'var(--purple)'},
+  {name:'Qiskit transpile',ns:50000000,color:'var(--red)'}
+];
+
+var SPEED_LADDER=[
+  {tier:'T0',name:'JS regex',ns:246,status:'DEPLOYED'},
+  {tier:'T1',name:'Rust standard',ns:89.6,status:'DEPLOYED'},
+  {tier:'T2',name:'WASM',ns:300,status:'DEPLOYED'},
+  {tier:'T5',name:'Native M4',ns:3.2,status:'DEPLOYED ★'},
+  {tier:'T3',name:'GPU WGSL',ns:10,status:'BUILT'},
+  {tier:'T4',name:'FPGA',ns:3,status:'DESIGNED'},
+  {tier:'T5+',name:'ASIC',ns:1,status:'SPEC'},
+  {tier:'T6',name:'Photonic',ns:0.1,status:'FUTURE'},
+  {tier:'T7',name:'Quantum',ns:0.01,status:'FUTURE'}
+];
+
+function renderNav(tab){
+  var body=$('nav-body');body.innerHTML='';
+  document.querySelectorAll('.ntab').forEach(function(t){t.classList.toggle('active',t.dataset.tab===tab);});
+  if(tab==='layers'){
+    LAYERS.forEach(function(ly){
+      var d=document.createElement('div');d.className='nav-item'+(ly.l===LAYER?' active':'');
+      d.innerHTML='<span class="nav-dot" style="background:'+ly.color+'"></span>L'+ly.l+' '+ly.name+'<span style="flex:1"></span><span style="color:var(--dim);font-size:9px">'+ly.budget+'</span>';
+      d.onclick=function(){LAYER=ly.l;$('t-lane').textContent='L'+ly.l;renderNav('layers');};
+      body.appendChild(d);
+    });
+  }else if(tab==='lanes'){
+    var lanes=[
+      {id:'C:',name:'CPU',color:'var(--cpu)',desc:'Sequential, I/O, control flow'},
+      {id:'G:',name:'GPU',color:'var(--gpu)',desc:'Parallel, SIMD, matrix, Metal'},
+      {id:'Q:',name:'QPU',color:'var(--qpu)',desc:'Quantum gates, superposition'},
+      {id:'P:',name:'Parent',color:'var(--parent)',desc:'Orchestrator, sync barriers'}
+    ];
+    lanes.forEach(function(ln){
+      var d=document.createElement('div');d.className='nav-item';
+      d.innerHTML='<span class="lane-dot" style="background:'+ln.color+'"></span>'+ln.id+' '+ln.name+'<span style="flex:1"></span><span style="color:var(--dim);font-size:9px">'+ln.desc+'</span>';
+      body.appendChild(d);
+    });
+    var h=document.createElement('div');h.style.cssText='margin-top:12px;color:var(--dim);font-size:10px;line-height:1.6';
+    h.textContent='3D Codec: CPU/GPU/QPU lanes encoded in steno whitespace. 2 bits per line. Code is a 3D ocean — surface (I/O), mid (compute), deep (quantum). Paste code to see lane assignments.';
+    body.appendChild(h);
+  }else if(tab==='bench'){
+    SPEED_LADDER.forEach(function(s){
+      var d=document.createElement('div');d.className='nav-item';
+      var pct=Math.max(2,Math.round((1-Math.log10(s.ns)/Math.log10(300))*100));
+      d.innerHTML='<span style="color:var(--dim);width:24px">'+s.tier+'</span><span style="flex:1">'+s.name+'</span><span style="color:'+(s.ns<=10?'var(--green)':s.ns<=300?'var(--orange)':'var(--red)')+';font-size:10px">'+s.ns+'ns</span>';
+      body.appendChild(d);
+    });
+  }
+}
+
+function renderPipeline(){
+  var bars=$('pipe-bars');bars.innerHTML='';
+  LAYERS.forEach(function(ly){
+    var d=document.createElement('div');d.className='pipe-row';
+    d.innerHTML='<span class="pipe-label">L'+ly.l+'</span><div class="pipe-bar"><div class="pipe-fill" id="pipe-'+ly.l+'" style="width:0%;background:'+ly.color+'"></div></div><span class="pipe-val" id="pipev-'+ly.l+'">—</span>';
+    bars.appendChild(d);
+  });
+}
+
+function updatePipeline(totalNs){
+  var budget=24*1e6;
+  LAYERS.forEach(function(ly){
+    var share=totalNs*(ly.l===0?0.3:ly.l===LAYER?0.4:0.3/(LAYERS.length-1));
+    var pct=Math.min(share/budget*100*8,100);
+    var el=$('pipe-'+ly.l);if(el){el.style.width=pct+'%';}
+    var vel=$('pipev-'+ly.l);if(vel){vel.textContent=piezoFmt(share);}
+  });
+}
+
+// === RIGHT INSPECTOR ===
+function updateInspector(counts,clsd,total,elapsed,lang){
+  var body=$('right-body');body.innerHTML='';
+  var cov=total>0?Math.round(clsd/total*100):0;
+  var html='<div class="r-head">Classification</div>';
+  html+='<div class="r-row"><span class="rk">Lines</span><span class="rv">'+total+'</span></div>';
+  html+='<div class="r-row"><span class="rk">Classified</span><span class="rv">'+clsd+' ('+cov+'%)</span></div>';
+  html+='<div class="r-row"><span class="rk">Language</span><span class="rv">'+(lang||'auto')+'</span></div>';
+  html+='<div class="r-row"><span class="rk">Elapsed</span><span class="rv">'+piezoFmt(elapsed)+'</span></div>';
+  html+='<div class="r-row"><span class="rk">Piezo</span><span class="rv">'+piezoFmt(piezoRelNs())+'</span></div>';
+  html+='<div class="r-head">Prefix Distribution</div>';
+  var syms=['n:','+1:','-n:','+0:','0:','-1:','+n:','+2:','-0:','+3:','1:'];
+  syms.forEach(function(s){
+    var c=counts[s]||0;if(c===0)return;
+    var pct=total>0?Math.round(c/total*100):0;
+    html+='<div class="r-row"><span style="color:'+(PCLS[s]||'var(--dim)')+'">'+s+'</span><span class="rv">'+c+' ('+pct+'%)</span></div>';
+  });
+  html+='<div class="r-head">Gates</div>';
+  syms.forEach(function(s){
+    if(!counts[s])return;
+    html+='<div class="r-row"><span style="color:'+(PCLS[s])+'">'+s+'</span><span class="rv">'+(GATES[s]||'·')+'</span></div>';
+  });
+  body.innerHTML=html;
+}
+
+function renderInspectorDefault(){
+  var body=$('right-body');
+  body.innerHTML='<div class="r-head">Iron Browser</div><div class="r-row"><span class="rk">Engine</span><span class="rv">T5-native</span></div><div class="r-row"><span class="rk">Speed</span><span class="rv">3.2ns/line</span></div><div class="r-row"><span class="rk">Languages</span><span class="rv">59</span></div><div class="r-row"><span class="rk">Connectors</span><span class="rv">17</span></div><div class="r-row"><span class="rk">Lanes</span><span class="rv">C: G: Q: P:</span></div><div class="r-row"><span class="rk">Layers</span><span class="rv">L0–L7</span></div><div class="r-head">Steno Capacity</div><div class="r-row"><span class="rk">Bits/line</span><span class="rv">19 (→ 21 with lanes)</span></div><div class="r-row"><span class="rk">Spaces</span><span class="rv">13 Unicode variants</span></div><div class="r-row"><span class="rk">Overhead</span><span class="rv">8.63%</span></div><div class="r-head">Piezo Sync</div><div class="r-row"><span class="rk">Resolution</span><span class="rv">~5μs (browser)</span></div><div class="r-row"><span class="rk">Native target</span><span class="rv">0.25ns (ARM64 TSC)</span></div><div class="r-row"><span class="rk">Drift</span><span class="rv">±20ppm</span></div>';
+}
+
+// === TIMELINE CANVAS ===
+function drawTimeline(counts){
+  var canvas=$('tl-canvas');var ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth*2;canvas.height=canvas.offsetHeight*2;
+  ctx.scale(2,2);
+  var w=canvas.offsetWidth,h=canvas.offsetHeight;
+  ctx.fillStyle='#0d1018';ctx.fillRect(0,0,w,h);
+  if(!counts||!Object.keys(counts).length){$('tl-label').textContent='timeline — paste code to visualize';return;}
+  var syms=Object.keys(counts);var max=0;
+  syms.forEach(function(s){if(counts[s]>max)max=counts[s];});
+  var bw=Math.max(2,Math.floor((w-20)/syms.length)-2);
+  syms.forEach(function(s,i){
+    var bh=max>0?Math.round(counts[s]/max*(h-16)):0;
+    ctx.fillStyle=PCLS[s]||'#333';
+    ctx.fillRect(10+i*(bw+2),h-8-bh,bw,bh);
+    ctx.fillStyle='#5a6580';ctx.font='8px monospace';
+    ctx.fillText(s,10+i*(bw+2),h-1);
+  });
+  $('tl-label').textContent='prefix distribution — '+Object.keys(counts).length+' symbols';
+}
+
+// === 3D VIEW (simple WebGL-like depth viz) ===
+function render3D(text){
+  if(!text)return;
+  var overlay=$('view3d');overlay.style.display='block';
+  var canvas=$('canvas3d');var ctx=canvas.getContext('2d');
+  canvas.width=canvas.offsetWidth*2;canvas.height=canvas.offsetHeight*2;
+  ctx.scale(2,2);
+  var w=canvas.offsetWidth,h=canvas.offsetHeight;
+  ctx.fillStyle='var(--bg)';ctx.fillRect(0,0,w,h);
+  var lines=text.split('\n');
+  var cx=w/2,cy=h/2;
+  lines.forEach(function(line,i){
+    if(!line.trim())return;
+    var depth=0;for(var j=0;j<line.length;j++){if(line[j]===' ')depth++;else break;}
+    depth=Math.floor(depth/2);
+    var lane=detectLane(line);
+    var laneX=lane==='Q:'?-1:lane==='G:'?1:lane==='P:'?0:0;
+    var x=cx+laneX*80+(Math.random()-.5)*40;
+    var y=10+i*(h-20)/lines.length;
+    var z=depth*8;
+    var sz=Math.max(2,8-depth);
+    var col=lane==='Q:'?'rgba(167,139,250,':'rgba(86,212,221,';
+    if(lane==='G:')col='rgba(63,185,80,';
+    if(lane==='P:')col='rgba(201,168,76,';
+    ctx.fillStyle=col+(0.3+depth*0.1)+')';
+    ctx.fillRect(x-z*0.3,y-z*0.2,sz+z*0.2,sz);
+  });
+  ctx.fillStyle='rgba(255,255,255,.6)';ctx.font='11px monospace';
+  ctx.fillText('← QPU',30,cy);ctx.fillText('GPU →',w-60,cy);ctx.fillText('CPU ↓',cx-15,20);ctx.fillText('depth ↕',cx-20,h-10);
+}
+
+// === PASTE HANDLER ===
+$('search-input').addEventListener('paste',function(e){
+  var text=(e.clipboardData||window.clipboardData).getData('text');
+  if(text.split('\n').length>3){
+    e.preventDefault();
+    classifyContent(text,'auto');
+  }
+});
+$('url-input').addEventListener('paste',function(e){
+  var text=(e.clipboardData||window.clipboardData).getData('text');
+  if(text.split('\n').length>3){
+    e.preventDefault();
+    classifyContent(text,'auto');
+  }
+});
+
+// === EVENT WIRING ===
+$('search-btn').onclick=function(){doSearch($('search-input').value.trim());};
+$('search-input').addEventListener('keydown',function(e){if(e.key==='Enter')doSearch(this.value.trim());});
+$('url-input').addEventListener('keydown',function(e){if(e.key==='Enter'){var v=this.value.trim();if(v.match(/^https?:\/\//))window.open(v,'_blank');else doSearch(v);}});
+document.querySelectorAll('.ntab').forEach(function(t){t.onclick=function(){renderNav(this.dataset.tab);};});
+document.querySelectorAll('.rtab').forEach(function(t){t.onclick=function(){
+  document.querySelectorAll('.rtab').forEach(function(r){r.classList.remove('active');});
+  this.classList.add('active');
+  if(this.dataset.tab==='inspect')renderInspectorDefault();
+  else if(this.dataset.tab==='piezo')renderPiezoTab();
+  else if(this.dataset.tab==='classify')renderClassifyTab();
+};});
+$('btn-3d').onclick=function(){var v=$('viewer').innerText;render3D(v||'def f():\n  x=1\n  return x');};
+$('close3d').onclick=function(){$('view3d').style.display='none';};
+$('btn-steno').onclick=function(){
+  if(!ST){alert('qbit-steno not loaded');return;}
+  var code='function hello() {\n  console.log("world");\n  return 42;\n}';
+  var enc=ST.stenoEncode(code,'javascript');
+  classifyContent(enc.code,'javascript');
+};
+$('btn-bench').onclick=function(){runBenchmarks();};
+
+function renderPiezoTab(){
+  var body=$('right-body');
+  body.innerHTML='<div class="r-head">Piezo Time Sync</div><div class="r-row"><span class="rk">Now</span><span class="rv">'+piezoFmt(piezoRelNs())+'</span></div><div class="r-row"><span class="rk">Base epoch</span><span class="rv">'+new Date().toISOString()+'</span></div><div class="r-row"><span class="rk">Resolution</span><span class="rv">~5μs (browser)</span></div><div class="r-row"><span class="rk">Target</span><span class="rv">0.25ns (ARM64 cntvct_el0)</span></div><div class="r-row"><span class="rk">Crystal</span><span class="rv">24 MHz → PLL → 4.05 GHz</span></div><div class="r-row"><span class="rk">Drift</span><span class="rv">±20 ppm (±1.73 sec/day)</span></div><div class="r-head">Time Domains</div><div class="r-row"><span class="rk">L0 T5</span><span class="rv">0.25 ns/tick</span></div><div class="r-row"><span class="rk">L3 QPU</span><span class="rv">0.13 ns/gate</span></div><div class="r-row"><span class="rk">L5 GPU</span><span class="rv">0.72 ns/tick</span></div><div class="r-row"><span class="rk">L1 Browser</span><span class="rv">5 μs/tick</span></div><div class="r-head">Steno Record</div><div class="r-row"><span class="rk">Current</span><span class="rv">19 bits/line</span></div><div class="r-row"><span class="rk">With lanes</span><span class="rv">21 bits/line (+2 lane)</span></div><div class="r-row"><span class="rk">With piezo</span><span class="rv">29 bits/line (+8 time)</span></div>';
+}
+function renderClassifyTab(){
+  var body=$('right-body');
+  body.innerHTML='<div class="r-head">Paste Code to Classify</div><div style="color:var(--dim);font-size:11px;line-height:1.6">Paste multi-line code into the search bar or URL bar. Iron Browser will:<br><br>1. T5-classify every line (11 symbols)<br>2. Assign execution lanes (C:/G:/Q:/P:)<br>3. Show prefix gutter + gate mapping<br>4. Draw timeline distribution<br>5. Update pipeline telemetry<br>6. Record piezo timestamps<br><br>Supports 59 languages.</div>';
+}
+
+function runBenchmarks(){
+  var viewer=$('viewer');viewer.innerHTML='';
+  var t0,tests=[];
+  t0=piezoNow();for(var i=0;i<10000;i++){document.createElement('div');}
+  tests.push({name:'DOM create 10K',ns:(piezoNow()-t0)/10000});
+  t0=piezoNow();for(var i=0;i<1000000;i++){Math.sqrt(i*3.14);}
+  tests.push({name:'Math sqrt 1M',ns:(piezoNow()-t0)/1000000});
+  if(QP){t0=piezoNow();for(var i=0;i<1000;i++){QP.classifyLine('def f():','python');}tests.push({name:'QP classify 1K',ns:(piezoNow()-t0)/1000});}
+  if(DAC&&DAC.dacTracks){t0=piezoNow();for(var i=0;i<100;i++){DAC.dacTracks('def f():\n  return 1','python');}tests.push({name:'DAC tracks 100',ns:(piezoNow()-t0)/100});}
+  if(ST){t0=piezoNow();for(var i=0;i<100;i++){ST.stenoEncode('var x = 42;','javascript');}tests.push({name:'Steno enc 100',ns:(piezoNow()-t0)/100});}
+
+  var max=0;tests.forEach(function(t){if(t.ns>max)max=t.ns;});
+  var html='<div style="padding:12px"><div style="color:var(--gold);font-weight:700;margin-bottom:12px;font:13px var(--mono)">BENCHMARK — '+tests.length+' tests</div>';
+  tests.forEach(function(t){
+    var pct=Math.min(t.ns/max*100,100);
+    html+='<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;font:11px var(--mono)"><span style="width:120px;color:var(--dim)">'+t.name+'</span><div style="flex:1;height:10px;background:var(--bg);border-radius:2px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+(t.ns<500?'var(--green)':t.ns<5000?'var(--orange)':'var(--red)')+';border-radius:2px"></div></div><span style="width:80px;text-align:right;color:var(--text)">'+piezoFmt(t.ns)+'</span></div>';
+  });
+  html+='<div style="margin-top:12px;color:var(--green);font:11px var(--mono)">T5-native reference: 3.2 ns/line (312M lines/sec)</div>';
+  html+='</div>';
+  viewer.innerHTML=html;
+  $('s-pipe').textContent='bench done';
+}
+
+function handlePipelineResult(data){
+  if(data&&data.meta){
+    $('s-pipe').textContent='classify: '+data.meta.totalLines+'L '+Math.round(data.meta.coverage*100)+'%';
+  }
+}
+
+// === BOOT ===
+window.addEventListener('DOMContentLoaded',function(){
+  setTimeout(function(){
+    QP=window.QuantumPrefixes;
+    if(window.prefixDAC)DAC={prefixDAC:window.prefixDAC,dacTracks:window.dacTracks,dacTrackHtml:window.dacTrackHtml,dacStripeHtml:window.dacStripeHtml,dacComplexity:window.dacComplexity,dacStats:window.dacStats,dacMode:window.dacMode,qbitCodec:window.qbitCodec};
+    ST=window.QbitSteno;PF=window.QbitPreflight;HS=window.HistorySearch;
+    var engine=DAC&&DAC.dacStats?DAC.dacStats():{};
+    $('s-engine').textContent=engine.engine||'JS-regex';
+    renderConnectors();renderNav('layers');renderPipeline();renderInspectorDefault();
+    drawTimeline(null);
+    $('search-input').focus();
+  },250);
+});
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!--
+  pad-grid.html — DOM drum pad only (no canvas layer).
+  Same grid math as interactive-pattern: SP=40, ox/oy centered, ?padRows= N extra rows (default 40).
+-->
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Pad grid — uvspeed</title>
+<link rel="stylesheet" href="quantum-theme.css">
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{
+  height:100%;overflow:hidden;
+  background:var(--qp-bg,#0d1117);
+  color:var(--qp-text,#e6edf3);
+  font-family:system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+.visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);border:0}
+.pad-scroller{
+  position:fixed;inset:0;
+  overflow:auto;-webkit-overflow-scrolling:touch;
+  padding:var(--pg-inset,10px);
+  padding-bottom:calc(var(--pg-inset,10px) + 36px);
+}
+.pad-work{
+  position:relative;
+  width:max-content;
+  min-width:100%;
+  min-height:100%;
+}
+.pad-grid{
+  display:grid;gap:0;box-sizing:border-box;
+  background-image:
+    linear-gradient(rgba(127,127,127,.16) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(127,127,127,.16) 1px,transparent 1px);
+  background-position:0 0;
+}
+[data-theme="light"] .pad-grid{
+  background-image:
+    linear-gradient(rgba(36,41,47,.22) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(36,41,47,.22) 1px,transparent 1px);
+}
+.pad-cell{
+  box-sizing:border-box;margin:0;padding:0;border:none;
+  border-right:1px solid var(--qp-border-muted,#21262d);
+  border-bottom:1px solid var(--qp-border-muted,#21262d);
+  background:rgba(128,128,128,.06);
+  cursor:pointer;position:relative;
+  transition:background .1s,box-shadow .12s;
+  font:600 8px/1 ui-monospace,monospace;color:var(--qp-text-muted,#8b949e);
+}
+[data-theme="light"] .pad-cell{
+  border-right-color:#8c959f;
+  border-bottom-color:#8c959f;
+  background:linear-gradient(180deg,rgba(230,233,237,.95) 0%,rgba(208,215,222,.88) 48%,rgba(185,192,200,.82) 100%);
+  color:#57606a;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.75);
+}
+.pad-cell:hover,.pad-cell:focus-visible{
+  outline:none;
+  background:var(--qp-accent-subtle,rgba(56,139,253,0.15));
+  box-shadow:inset 0 0 0 1px var(--qp-accent,#58a6ff);
+  color:var(--qp-text,#e6edf3);
+  z-index:1;
+}
+[data-theme="light"] .pad-cell:hover,
+[data-theme="light"] .pad-cell:focus-visible{
+  background:rgba(9,105,218,.12);
+  color:#24292f;
+  box-shadow:inset 0 0 0 2px #0969da;
+}
+.pad-cell.is-lit{
+  background:rgba(255,223,74,.14);
+  color:rgba(255,230,160,.92);
+  box-shadow:inset 0 0 0 1px rgba(255,210,80,.55),0 0 14px rgba(255,190,60,.22);
+}
+[data-theme="light"] .pad-cell.is-lit{
+  background:linear-gradient(180deg,rgba(255,240,180,.95),rgba(255,220,120,.75));
+  color:#4d2d00;
+  box-shadow:inset 0 0 0 2px #bf8700,0 0 12px rgba(191,135,0,.35);
+}
+.pad-cell:active{transform:scale(0.98)}
+.pg-footer{
+  position:fixed;left:0;right:0;bottom:0;padding:8px 12px 10px;
+  font:500 10px ui-monospace,monospace;
+  color:var(--qp-text-muted,#8b949e);
+  background:linear-gradient(0deg,var(--qp-bg-secondary,#161b22),transparent);
+  pointer-events:none;text-align:center;
+}
+.pg-footer a{color:var(--qp-accent,#58a6ff);pointer-events:auto}
+#qp-theme-toggle{z-index:100001!important}
+</style>
+</head>
+<body>
+<h1 class="visually-hidden">Drum pad grid</h1>
+<div id="pad-scroller" class="pad-scroller">
+  <div id="pad-work" class="pad-work">
+    <div id="pad-grid" class="pad-grid" role="grid" aria-label="Pad cells"></div>
+  </div>
+</div>
+  <p class="pg-footer"><code>pad-grid.html</code> · <a href="pad-datatable.html">pad-datatable</a> (inputs + export) · <code>?padRows=64</code> · <a href="interactive-pattern.html">interactive-pattern</a></p>
+<script>
+(function () {
+  'use strict';
+  var SP = 40;
+  var FRAME_INSET = 10;
+  document.documentElement.style.setProperty('--pg-inset', FRAME_INSET + 'px');
+  var q = new URLSearchParams(location.search);
+  var PAD_EXTRA_ROWS = Math.max(4, Math.min(400, parseInt(q.get('padRows'), 10) || 40));
+  var padGrid = document.getElementById('pad-grid');
+  var lastPadKey = '';
+  var gridStats = { cols: 0, rows: 0, cells: 0 };
+
+  function syncThemeMeta() {
+    var light = document.documentElement.getAttribute('data-theme') === 'light';
+    try {
+      var m = document.querySelector('meta[name="theme-color"]');
+      if (m) m.setAttribute('content', light ? '#f6f8fa' : '#0d1117');
+    } catch (e) {}
+  }
+  try {
+    if (window.QuantumPrefixes && QuantumPrefixes.onThemeChange) {
+      QuantumPrefixes.onThemeChange(syncThemeMeta);
+    }
+  } catch (e2) {}
+  syncThemeMeta();
+
+  function rebuildPadGrid(nx, ny, ox, oy) {
+    if (!padGrid) return;
+    var ncx = nx - 1;
+    var ncy = ny - 1;
+    if (ncx < 1 || ncy < 1) return;
+    var totalRows = ncy + PAD_EXTRA_ROWS;
+    var pl = Math.max(0, Math.round(ox - FRAME_INSET));
+    var pt = Math.max(0, Math.round(oy - FRAME_INSET));
+    var key = ['pad-only', ncx, totalRows, pl, pt, SP, PAD_EXTRA_ROWS].join(',');
+    if (key === lastPadKey) return;
+    lastPadKey = key;
+    padGrid.style.gridTemplateColumns = 'repeat(' + ncx + ', ' + SP + 'px)';
+    padGrid.style.gridAutoRows = SP + 'px';
+    padGrid.style.paddingLeft = pl + 'px';
+    padGrid.style.paddingTop = pt + 'px';
+    padGrid.style.width = pl + ncx * SP + 'px';
+    padGrid.style.minHeight = pt + totalRows * SP + 'px';
+    padGrid.style.backgroundSize = SP + 'px ' + SP + 'px';
+    var need = ncx * totalRows;
+    var r, c, cell;
+    if (padGrid.childElementCount !== need) {
+      padGrid.innerHTML = '';
+      for (r = 0; r < totalRows; r++) {
+        for (c = 0; c < ncx; c++) {
+          cell = document.createElement('button');
+          cell.type = 'button';
+          cell.className = 'pad-cell';
+          cell.dataset.col = String(c);
+          cell.dataset.row = String(r);
+          cell.setAttribute('role', 'gridcell');
+          cell.setAttribute('aria-label', 'Pad ' + c + ',' + r);
+          cell.addEventListener('click', function (e) {
+            e.currentTarget.classList.toggle('is-lit');
+          });
+          padGrid.appendChild(cell);
+        }
+      }
+    }
+    gridStats = { cols: ncx, rows: totalRows, cells: ncx * totalRows };
+  }
+
+  function layout() {
+    var w = innerWidth;
+    var h = innerHeight;
+    var nx = Math.ceil(w / SP) + 3;
+    var ny = Math.ceil(h / SP) + 3;
+    var ox = (w - (nx - 1) * SP) / 2;
+    var oy = (h - (ny - 1) * SP) / 2;
+    rebuildPadGrid(nx, ny, ox, oy);
+  }
+
+  window.addEventListener('resize', layout, { passive: true });
+  layout();
+
+  window.PadGridOnly = {
+    VERSION: '1.0.0',
+    layout: layout,
+    getState: function () {
+      return {
+        sp: SP,
+        padExtraRows: PAD_EXTRA_ROWS,
+        cols: gridStats.cols,
+        rows: gridStats.rows,
+        cells: gridStats.cells
+      };
+    }
+  };
+})();
+</script>
+<script>
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function () {
+  try {
+    if (window.QuantumPrefixes && QuantumPrefixes.broadcastState) {
+      QuantumPrefixes.broadcastState('pad-grid', { app: 'pad-grid', version: '1.0.0', ts: Date.now() });
+    }
+  } catch (e) {}
+})();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+</script>
+</body>
+</html>

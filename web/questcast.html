@@ -1,0 +1,553 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>uvspeed — questcast | Meta Quest Broadcasting + Research Tools</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+    <link rel="icon" type="image/x-icon" href="../icons/favicon.ico">
+    <style>
+        :root {
+            --cursor-bg: var(--qp-bg, #0d1117); --cursor-bg-secondary: var(--qp-bg-secondary, #161b22); --cursor-bg-tertiary: var(--qp-bg-tertiary, #21262d);
+            --cursor-border: var(--qp-border, #30363d); --cursor-text: var(--qp-text, #e6edf3); --cursor-text-muted: var(--qp-text-muted, #8b949e);
+            --cursor-accent: var(--qp-accent, #58a6ff); --cursor-success: #3fb950; --cursor-warning: #f0883e;
+            --cursor-error: #f85149; --cursor-purple: #a78bfa; --cursor-cyan: #56d4dd;
+            --meta-blue: #1877f2; --meta-blue-dim: #1877f222;
+            --cursor-space-xs: 4px; --cursor-space-sm: 8px; --cursor-space-md: 16px;
+            --cursor-space-lg: 24px; --cursor-radius: 6px;
+            --cursor-font-mono: 'SF Mono','Fira Code','JetBrains Mono','Cascadia Code',monospace;
+        }
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;overflow:hidden;-webkit-text-size-adjust:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--cursor-bg);color:var(--cursor-text);font-size:14px;line-height:1.5}
+        a{color:var(--cursor-accent);text-decoration:none}a:hover{text-decoration:underline}
+
+        .app{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+
+        /* Header */
+        .hdr{background:var(--cursor-bg-secondary);border-bottom:1px solid var(--cursor-border);padding:var(--cursor-space-sm) var(--cursor-space-lg);display:flex;align-items:center;justify-content:space-between;gap:var(--cursor-space-md);flex-shrink:0;min-height:48px}
+        .hdr-title{display:flex;align-items:center;gap:var(--cursor-space-sm);font-size:1rem;font-weight:600;white-space:nowrap}
+        .hdr-logo{height:24px;width:auto;border-radius:4px;filter:drop-shadow(0 0 4px rgba(139,92,246,.3))}
+        .hdr-badge{display:inline-flex;align-items:center;gap:4px;background:var(--meta-blue-dim);border:1px solid var(--meta-blue);color:var(--meta-blue);border-radius:10px;padding:2px 8px;font-size:.625rem;font-weight:600}
+        .hdr-nav{display:flex;align-items:center;gap:6px;font-size:.75rem;flex-wrap:wrap}
+        .hdr-nav a{padding:3px 8px;border-radius:var(--cursor-radius);background:var(--cursor-bg-tertiary);border:1px solid var(--cursor-border);color:var(--cursor-text-muted);transition:all .15s}
+        .hdr-nav a:hover{color:var(--cursor-accent);border-color:var(--cursor-accent);text-decoration:none}
+        .pulse{display:inline-block;width:7px;height:7px;border-radius:50%;animation:pulse 2s infinite}
+        .pulse-blue{background:var(--meta-blue);box-shadow:0 0 6px var(--meta-blue)}
+        @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.85)}}
+
+        /* Controls Bar */
+        .controls{background:var(--cursor-bg-secondary);border-bottom:1px solid var(--cursor-border);padding:6px var(--cursor-space-lg);display:flex;align-items:center;gap:6px;flex-wrap:wrap;flex-shrink:0}
+        .ctrl-btn{background:var(--cursor-bg-tertiary);border:1px solid var(--cursor-border);color:var(--cursor-text);padding:4px 10px;border-radius:var(--cursor-radius);font-size:.6875rem;cursor:pointer;transition:all .15s;font-family:inherit}
+        .ctrl-btn:hover{border-color:var(--cursor-accent);color:var(--cursor-accent)}
+        .ctrl-btn.active{background:var(--meta-blue);border-color:var(--meta-blue);color:#fff}
+        .ctrl-sep{width:1px;height:20px;background:var(--cursor-border);margin:0 4px}
+        .ctrl-select{background:var(--cursor-bg-tertiary);border:1px solid var(--cursor-border);color:var(--cursor-text);padding:4px 6px;border-radius:var(--cursor-radius);font-size:.6875rem;font-family:var(--cursor-font-mono)}
+
+        /* Stats Bar */
+        .stats{background:var(--cursor-bg);border-bottom:1px solid var(--cursor-border);padding:4px var(--cursor-space-lg);display:flex;gap:16px;font-size:.625rem;font-family:var(--cursor-font-mono);color:var(--cursor-text-muted);flex-shrink:0;overflow-x:auto}
+        .stat-val{color:var(--cursor-text);font-weight:600}
+
+        /* Main Grid */
+        .main{flex:1;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;overflow:hidden}
+        @media(max-width:900px){.main{grid-template-columns:1fr;grid-template-rows:repeat(4,1fr)}}
+
+        .panel{display:flex;flex-direction:column;border:1px solid var(--cursor-border);overflow:hidden;position:relative}
+        .panel-hdr{background:var(--cursor-bg-secondary);padding:4px 10px;font-size:.6875rem;font-weight:600;border-bottom:1px solid var(--cursor-border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+        .panel-tag{font-size:.5625rem;padding:1px 6px;border-radius:8px;font-weight:500}
+        .tag-live{background:#3fb95022;color:var(--cursor-success);border:1px solid #3fb95044}
+        .tag-meta{background:var(--meta-blue-dim);color:var(--meta-blue);border:1px solid #1877f244}
+        .tag-ai{background:#a78bfa22;color:var(--cursor-purple);border:1px solid #a78bfa44}
+        .panel-body{flex:1;position:relative;background:#000;overflow:hidden}
+        .panel-body canvas,.panel-body video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:contain}
+        .panel-overlay{position:absolute;top:6px;left:6px;font-family:var(--cursor-font-mono);font-size:.5625rem;color:var(--cursor-success);background:rgba(0,0,0,.7);padding:3px 6px;border-radius:3px;pointer-events:none;z-index:2}
+
+        /* Sidebar */
+        .sidebar{position:fixed;right:0;top:0;bottom:0;width:260px;background:var(--cursor-bg-secondary);border-left:1px solid var(--cursor-border);z-index:100;transform:translateX(100%);transition:transform .2s;overflow-y:auto;padding-top:48px}
+        .sidebar.open{transform:translateX(0)}
+        .sidebar-section{padding:var(--cursor-space-sm) var(--cursor-space-md);border-bottom:1px solid var(--cursor-border)}
+        .sidebar-title{font-size:.625rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--cursor-text-muted);margin-bottom:6px}
+        .tool-item{background:var(--cursor-bg-tertiary);border:1px solid var(--cursor-border);border-radius:var(--cursor-radius);padding:6px 8px;margin-bottom:4px;font-size:.6875rem;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:6px}
+        .tool-item:hover{border-color:var(--meta-blue);color:var(--meta-blue)}
+        .tool-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+
+        /* Detection Boxes */
+        .det-box{position:absolute;border:2px solid var(--cursor-success);border-radius:3px;pointer-events:none;z-index:3}
+        .det-label{position:absolute;top:-16px;left:0;background:var(--cursor-success);color:#000;font-size:.5rem;font-family:var(--cursor-font-mono);padding:1px 4px;border-radius:2px;white-space:nowrap;font-weight:700}
+        .det-box.track{border-color:var(--meta-blue)}.det-box.track .det-label{background:var(--meta-blue);color:#fff}
+        .det-box.seg{border-color:var(--cursor-purple)}.det-box.seg .det-label{background:var(--cursor-purple);color:#fff}
+
+        /* Footer */
+        .ftr{background:var(--cursor-bg-secondary);border-top:1px solid var(--cursor-border);padding:4px var(--cursor-space-lg);display:flex;align-items:center;gap:8px;font-size:.625rem;color:var(--cursor-text-muted);flex-shrink:0;flex-wrap:wrap}
+        .ftr-mono{font-family:var(--cursor-font-mono)}
+
+        ::-webkit-scrollbar{width:5px;height:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--cursor-border);border-radius:3px}
+    </style>
+</head>
+<body>
+<div style="display:flex;height:2px;width:100%;flex-shrink:0"><span style="flex:1;background:#ff3838"></span><span style="flex:1;background:#ff8c38"></span><span style="flex:1;background:#ffe138"></span><span style="flex:1;background:#3fb950"></span><span style="flex:1;background:#38a5ff"></span><span style="flex:1;background:#bc8cff"></span></div>
+<div class="app">
+    <!-- Header -->
+    <div class="hdr">
+        <div class="hdr-title">
+            <img src="../icons/nyan-banner.png" alt="uvspeed" class="hdr-logo">
+            questcast
+            <span style="color:var(--cursor-text-muted);font-weight:400;font-size:.8rem">— Meta Quest broadcast + research tools</span>
+            <span class="hdr-badge"><span class="pulse pulse-blue"></span> Meta Research</span>
+        </div>
+        <div class="hdr-nav">
+            <a href="quantum-notepad.html">Notepad</a>
+            <a href="hexcast.html">hexcast</a>
+            <a href="blackwell.html" style="color:#76b900">Blackwell</a>
+            <a href="archflow.html">archflow</a>
+            <a href="jawta-audio.html">jawta</a>
+            <a href="brothernumsy.html">Game</a>
+            <button class="ctrl-btn" id="btn-sidebar" title="Toggle tools sidebar">🔧 Tools</button>
+        </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+        <button class="ctrl-btn" id="btn-camera" title="Quest passthrough camera">📷 Camera</button>
+        <button class="ctrl-btn" id="btn-screen" title="Screen capture">🖵 Screen</button>
+        <button class="ctrl-btn active" id="btn-test" title="Simulated test feed">▦ Test Feed</button>
+        <div class="ctrl-sep"></div>
+        <button class="ctrl-btn" id="btn-detect" title="Detectron2 object detection">🔍 Detect</button>
+        <button class="ctrl-btn" id="btn-track" title="BabyTrack multi-object tracking">👶 BabyTrack</button>
+        <button class="ctrl-btn" id="btn-sam" title="SAM2/SAM3 segmentation">✂ SAM</button>
+        <button class="ctrl-btn" id="btn-dino" title="DINOv3 self-supervised features">🦕 DINOv3</button>
+        <button class="ctrl-btn" id="btn-momentum" title="Momentum body tracking">🏃 Momentum</button>
+        <button class="ctrl-btn" id="btn-depth" title="MVDust3r depth estimation">🌊 Depth</button>
+        <div class="ctrl-sep"></div>
+        <select class="ctrl-select" id="sel-model">
+            <option value="detectron2">Detectron2</option>
+            <option value="sam2">SAM2</option>
+            <option value="sam3">SAM3</option>
+            <option value="dinov3">DINOv3</option>
+            <option value="babytrack">BabyTrack</option>
+            <option value="momentum">Momentum</option>
+            <option value="mvdust3r">MVDust3r</option>
+            <option value="slowfast">SlowFast</option>
+            <option value="fairseq">fairseq</option>
+        </select>
+        <select class="ctrl-select" id="sel-res">
+            <option value="480">480p</option>
+            <option value="720" selected>720p</option>
+            <option value="1080">1080p</option>
+        </select>
+        <select class="ctrl-select" id="sel-fps">
+            <option value="15">15fps</option>
+            <option value="30" selected>30fps</option>
+            <option value="60">60fps</option>
+            <option value="72">72fps (Quest)</option>
+            <option value="90">90fps (Quest)</option>
+        </select>
+        <div class="ctrl-sep"></div>
+        <button class="ctrl-btn" id="btn-broadcast" title="Broadcast via BroadcastChannel">📡 Broadcast</button>
+        <button class="ctrl-btn" id="btn-record" title="Record session">⏺ Record</button>
+        <button class="ctrl-btn" id="btn-snapshot" title="Take snapshot">📸 Snap</button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <span>Source: <span class="stat-val" id="st-source">test</span></span>
+        <span>FPS: <span class="stat-val" id="st-fps">30</span></span>
+        <span>Model: <span class="stat-val" id="st-model">idle</span></span>
+        <span>Detections: <span class="stat-val" id="st-det">0</span></span>
+        <span>Tracks: <span class="stat-val" id="st-tracks">0</span></span>
+        <span>Infer: <span class="stat-val" id="st-infer">— ms</span></span>
+        <span>Latency: <span class="stat-val" id="st-latency">— ms</span></span>
+        <span>Frames: <span class="stat-val" id="st-frames">0</span></span>
+    </div>
+
+    <!-- Main 4-panel Grid -->
+    <div class="main">
+        <!-- Panel 1: Source Feed -->
+        <div class="panel">
+            <div class="panel-hdr"><span>📷 Source Feed</span><span class="panel-tag tag-live"><span class="pulse pulse-blue" style="width:5px;height:5px"></span> live</span></div>
+            <div class="panel-body" id="panel-source">
+                <video id="video-el" autoplay muted playsinline style="display:none"></video>
+                <canvas id="cv-source"></canvas>
+                <div class="panel-overlay" id="ov-source">test feed | 720p | 30fps</div>
+            </div>
+        </div>
+        <!-- Panel 2: Detection / Tracking -->
+        <div class="panel">
+            <div class="panel-hdr"><span>🔍 Detection + Tracking</span><span class="panel-tag tag-meta">BabyTrack</span></div>
+            <div class="panel-body" id="panel-detect">
+                <canvas id="cv-detect"></canvas>
+                <div class="panel-overlay" id="ov-detect">detectron2 | 0 objects</div>
+            </div>
+        </div>
+        <!-- Panel 3: Segmentation -->
+        <div class="panel">
+            <div class="panel-hdr"><span>✂ Segmentation</span><span class="panel-tag tag-ai">SAM3</span></div>
+            <div class="panel-body" id="panel-seg">
+                <canvas id="cv-seg"></canvas>
+                <div class="panel-overlay" id="ov-seg">SAM | masks: 0</div>
+            </div>
+        </div>
+        <!-- Panel 4: Depth / Features -->
+        <div class="panel">
+            <div class="panel-hdr"><span>🌊 Depth + Features</span><span class="panel-tag tag-ai">DINOv3</span></div>
+            <div class="panel-body" id="panel-depth">
+                <canvas id="cv-depth"></canvas>
+                <div class="panel-overlay" id="ov-depth">depth | idle</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="ftr">
+        <span>⚛ questcast</span><span style="opacity:.3">|</span>
+        <span class="ftr-mono" id="ftr-fps">30 FPS</span><span style="opacity:.3">|</span>
+        <span class="ftr-mono" id="ftr-det">0 det</span><span style="opacity:.3">|</span>
+        <span class="ftr-mono" id="ftr-tracks">0 tracks</span><span style="opacity:.3">|</span>
+        <span class="ftr-mono">{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</span>
+        <span style="flex:1"></span>
+        <a href="quantum-notepad.html" style="font-size:.625rem">Notepad</a>
+        <a href="hexcast.html" style="font-size:.625rem">hexcast</a>
+        <span style="color:var(--meta-blue);font-family:var(--cursor-font-mono)">Meta Research</span>
+    </div>
+</div>
+
+<!-- Tools Sidebar -->
+<div class="sidebar" id="sidebar">
+    <div class="sidebar-section">
+        <div class="sidebar-title">Meta Research Models</div>
+        <div class="tool-item" data-tool="detectron2"><span class="tool-dot" style="background:var(--cursor-success)"></span>Detectron2 — Object Detection</div>
+        <div class="tool-item" data-tool="sam2"><span class="tool-dot" style="background:var(--cursor-purple)"></span>SAM2 — Segment Anything v2</div>
+        <div class="tool-item" data-tool="sam3"><span class="tool-dot" style="background:var(--cursor-purple)"></span>SAM3 — Segment Anything v3</div>
+        <div class="tool-item" data-tool="dinov3"><span class="tool-dot" style="background:var(--cursor-cyan)"></span>DINOv3 — Self-Supervised Vision</div>
+        <div class="tool-item" data-tool="babytrack"><span class="tool-dot" style="background:var(--meta-blue)"></span>BabyTrack — Multi-Object Tracking</div>
+        <div class="tool-item" data-tool="slowfast"><span class="tool-dot" style="background:var(--cursor-warning)"></span>SlowFast — Video Recognition</div>
+        <div class="tool-item" data-tool="momentum"><span class="tool-dot" style="background:var(--cursor-error)"></span>Momentum — Body Tracking</div>
+        <div class="tool-item" data-tool="mvdust3r"><span class="tool-dot" style="background:#56d4dd"></span>MVDust3r — Multi-View 3D</div>
+    </div>
+    <div class="sidebar-section">
+        <div class="sidebar-title">Quest Pipeline</div>
+        <div class="tool-item" data-tool="passthrough"><span class="tool-dot" style="background:var(--cursor-success)"></span>Passthrough Camera</div>
+        <div class="tool-item" data-tool="spatial"><span class="tool-dot" style="background:var(--cursor-accent)"></span>Spatial Anchors</div>
+        <div class="tool-item" data-tool="hand"><span class="tool-dot" style="background:var(--cursor-warning)"></span>Hand Tracking API</div>
+        <div class="tool-item" data-tool="scene"><span class="tool-dot" style="background:var(--cursor-purple)"></span>Scene Understanding</div>
+        <div class="tool-item" data-tool="aria"><span class="tool-dot" style="background:var(--meta-blue)"></span>Project Aria Tools</div>
+    </div>
+    <div class="sidebar-section">
+        <div class="sidebar-title">Data Formats</div>
+        <div class="tool-item" data-tool="habitat"><span class="tool-dot" style="background:var(--cursor-success)"></span>Habitat — 3D Scenes</div>
+        <div class="tool-item" data-tool="replica"><span class="tool-dot" style="background:var(--cursor-accent)"></span>Replica Dataset</div>
+        <div class="tool-item" data-tool="ocean"><span class="tool-dot" style="background:#56d4dd"></span>Ocean — Spatial Data</div>
+        <div class="tool-item" data-tool="actionmesh"><span class="tool-dot" style="background:var(--cursor-warning)"></span>ActionMesh — 3D Actions</div>
+    </div>
+    <div class="sidebar-section">
+        <div class="sidebar-title">Llama Local Models</div>
+        <div class="tool-item" data-tool="llama32"><span class="tool-dot" style="background:var(--cursor-success)"></span>Llama 3.2 — 3B (default)</div>
+        <div class="tool-item" data-tool="llama32-1b"><span class="tool-dot" style="background:var(--cursor-accent)"></span>Llama 3.2 — 1B (fast)</div>
+        <div class="tool-item" data-tool="codellama"><span class="tool-dot" style="background:var(--cursor-purple)"></span>CodeLlama — Code Analysis</div>
+        <div style="font-size:.5625rem;color:var(--cursor-text-muted);margin:4px 0">Bridge: <code>POST /api/ai/prefix-infer</code></div>
+    </div>
+    <div class="sidebar-section">
+        <div class="sidebar-title">SDK References</div>
+        <div style="font-size:.5625rem;color:var(--cursor-text-muted);line-height:1.7">
+            <a href="https://developers.meta.com/horizon/documentation/native/native-passthrough/" target="_blank">Passthrough API</a><br>
+            <a href="https://developers.meta.com/horizon/documentation/native/native-spatial-anchors-overview/" target="_blank">Spatial Anchors</a><br>
+            <a href="https://developers.meta.com/horizon/documentation/native/native-hand-tracking/" target="_blank">Hand Tracking v2</a><br>
+            <a href="https://developers.meta.com/horizon/documentation/native/native-scene-overview/" target="_blank">Scene Understanding</a><br>
+            <a href="https://github.com/facebookresearch/projectaria_tools" target="_blank">Project Aria Tools</a><br>
+            <a href="https://ai.meta.com/llama/" target="_blank">Llama 3 Models</a>
+        </div>
+    </div>
+    <div class="sidebar-section">
+        <div class="sidebar-title">Local Repos</div>
+        <div style="font-size:.5625rem;color:var(--cursor-text-muted);font-family:var(--cursor-font-mono);word-break:break-all">/Users/tref/MetaQuestDev/</div>
+    </div>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+(function(){
+'use strict';
+const $ = id => document.getElementById(id);
+
+// Sidebar toggle
+$('btn-sidebar').addEventListener('click', () => $('sidebar').classList.toggle('open'));
+
+// Canvas setup
+const canvases = {source:'cv-source',detect:'cv-detect',seg:'cv-seg',depth:'cv-depth'};
+const ctxs = {};
+function initCanvases(){
+    Object.entries(canvases).forEach(([k,id])=>{
+        const c=document.getElementById(id);
+        const r=c.parentElement.getBoundingClientRect();
+        c.width=r.width*devicePixelRatio;c.height=r.height*devicePixelRatio;
+        const ctx=c.getContext('2d');ctx.scale(devicePixelRatio,devicePixelRatio);
+        ctxs[k]=ctx;ctxs[k]._w=r.width;ctxs[k]._h=r.height;
+    });
+}
+setTimeout(initCanvases,100);
+window.addEventListener('resize',initCanvases);
+
+// Simulated objects for tracking
+const objects=[];
+for(let i=0;i<8;i++){
+    objects.push({
+        id:i, x:Math.random()*.8+.1, y:Math.random()*.8+.1,
+        vx:(Math.random()-.5)*.003, vy:(Math.random()-.5)*.003,
+        w:Math.random()*.1+.05, h:Math.random()*.12+.06,
+        cls:['person','car','dog','bicycle','chair','bottle','phone','bag'][i],
+        color:['#3fb950','#58a6ff','#f0883e','#a78bfa','#56d4dd','#f85149','#1877f2','#e6b422'][i],
+        conf:Math.random()*.3+.7, trackId:i+1
+    });
+}
+function updateObjects(){
+    objects.forEach(o=>{
+        o.x+=o.vx; o.y+=o.vy;
+        if(o.x<.05||o.x>.85)o.vx*=-1;
+        if(o.y<.05||o.y>.85)o.vy*=-1;
+        o.vx+=(Math.random()-.5)*.0005;
+        o.vy+=(Math.random()-.5)*.0005;
+    });
+}
+
+// Draw source (camera, screen, or test pattern)
+let frame=0;
+function drawSource(){
+    const ctx=ctxs.source; if(!ctx)return;
+    const w=ctx._w, h=ctx._h;
+    ctx.clearRect(0,0,w,h);
+
+    // If camera/screen active, draw video frame
+    if ((activeSource === 'camera' || activeSource === 'screen') && videoEl && videoEl.readyState >= 2) {
+        ctx.drawImage(videoEl, 0, 0, w, h);
+        return;
+    }
+
+    // Test pattern fallback
+    ctx.fillStyle='#0a0a1a'; ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='#ffffff08'; ctx.lineWidth=.5;
+    for(let x=0;x<w;x+=30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
+    for(let y=0;y<h;y+=30){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+    // Moving scan line
+    const sy=(frame*2)%h;
+    ctx.fillStyle='rgba(24,119,242,0.08)';ctx.fillRect(0,sy-2,w,4);
+    // Color bars
+    const bw=w/8;
+    ['#c0c0c0','#c0c000','#00c0c0','#00c000','#c000c0','#c00000','#0000c0','#000000'].forEach((c,i)=>{
+        ctx.globalAlpha=.15;ctx.fillStyle=c;ctx.fillRect(i*bw,0,bw,h);ctx.globalAlpha=1;
+    });
+    // Simulated object shapes
+    objects.forEach(o=>{
+        ctx.fillStyle=o.color+'33';
+        ctx.fillRect(o.x*w,o.y*h,o.w*w,o.h*h);
+    });
+}
+
+// Draw detection overlay
+function drawDetect(){
+    const ctx=ctxs.detect; if(!ctx)return;
+    const w=ctx._w, h=ctx._h;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle='#08080f'; ctx.fillRect(0,0,w,h);
+    // Copy source grid faintly
+    ctx.strokeStyle='#ffffff05'; ctx.lineWidth=.5;
+    for(let x=0;x<w;x+=30){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}
+    for(let y=0;y<h;y+=30){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+    // Detection boxes
+    objects.forEach(o=>{
+        const bx=o.x*w, by=o.y*h, bw=o.w*w, bh=o.h*h;
+        ctx.strokeStyle=o.color; ctx.lineWidth=2;
+        ctx.strokeRect(bx,by,bw,bh);
+        // Label
+        ctx.fillStyle=o.color;
+        const label=`${o.cls} #${o.trackId} ${(o.conf*100).toFixed(0)}%`;
+        ctx.font='bold 9px '+getComputedStyle(document.body).getPropertyValue('--cursor-font-mono');
+        const tw=ctx.measureText(label).width;
+        ctx.fillRect(bx,by-13,tw+6,13);
+        ctx.fillStyle='#000';
+        ctx.fillText(label,bx+3,by-3);
+        // Track trail
+        ctx.beginPath(); ctx.arc(bx+bw/2,by+bh/2,2,0,Math.PI*2);
+        ctx.fillStyle=o.color+'88'; ctx.fill();
+    });
+}
+
+// Draw segmentation masks
+function drawSeg(){
+    const ctx=ctxs.seg; if(!ctx)return;
+    const w=ctx._w, h=ctx._h;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle='#050510'; ctx.fillRect(0,0,w,h);
+    objects.forEach(o=>{
+        ctx.globalAlpha=.35;
+        ctx.fillStyle=o.color;
+        // Rounded mask shape
+        const bx=o.x*w-4,by=o.y*h-4,bw=o.w*w+8,bh=o.h*h+8;
+        ctx.beginPath();
+        ctx.ellipse(bx+bw/2,by+bh/2,bw/2,bh/2,0,0,Math.PI*2);
+        ctx.fill();
+        ctx.globalAlpha=1;
+        // Outline
+        ctx.strokeStyle=o.color;ctx.lineWidth=1;
+        ctx.beginPath();ctx.ellipse(bx+bw/2,by+bh/2,bw/2,bh/2,0,0,Math.PI*2);ctx.stroke();
+        // Label
+        ctx.fillStyle=o.color;
+        ctx.font='bold 8px '+getComputedStyle(document.body).getPropertyValue('--cursor-font-mono');
+        ctx.fillText(`mask:${o.trackId}`,bx+bw/2-15,by+bh/2+3);
+    });
+}
+
+// Draw depth map
+function drawDepth(){
+    const ctx=ctxs.depth; if(!ctx)return;
+    const w=ctx._w, h=ctx._h;
+    ctx.clearRect(0,0,w,h);
+    // Gradient depth field
+    const grd=ctx.createLinearGradient(0,0,w,h);
+    grd.addColorStop(0,'#000033');grd.addColorStop(.3,'#003366');grd.addColorStop(.6,'#006699');grd.addColorStop(1,'#0099cc');
+    ctx.fillStyle=grd;ctx.fillRect(0,0,w,h);
+    // Depth blobs for objects
+    objects.forEach(o=>{
+        const bx=o.x*w,by=o.y*h,r=Math.max(o.w*w,o.h*h)*.8;
+        const grad=ctx.createRadialGradient(bx+o.w*w/2,by+o.h*h/2,0,bx+o.w*w/2,by+o.h*h/2,r);
+        grad.addColorStop(0,'rgba(255,100,0,0.6)');grad.addColorStop(.5,'rgba(255,200,0,0.2)');grad.addColorStop(1,'transparent');
+        ctx.fillStyle=grad;ctx.fillRect(bx-r,by-r,r*2+o.w*w,r*2+o.h*h);
+    });
+    // Noise
+    for(let i=0;i<200;i++){
+        ctx.fillStyle=`rgba(255,255,255,${Math.random()*.05})`;
+        ctx.fillRect(Math.random()*w,Math.random()*h,1,1);
+    }
+}
+
+// Stats
+function updateStats(){
+    $('st-det').textContent=objects.length;
+    $('st-tracks').textContent=objects.length;
+    $('st-infer').textContent=(Math.random()*8+12).toFixed(1)+' ms';
+    $('st-latency').textContent=(Math.random()*5+3).toFixed(1)+' ms';
+    $('st-frames').textContent=frame;
+    $('ftr-det').textContent=objects.length+' det';
+    $('ftr-tracks').textContent=objects.length+' tracks';
+    $('ov-source').textContent=`test feed | 720p | 30fps | frame ${frame}`;
+    $('ov-detect').textContent=`detectron2+babytrack | ${objects.length} objects`;
+    $('ov-seg').textContent=`SAM3 | masks: ${objects.length}`;
+    $('ov-depth').textContent=`mvdust3r | depth active`;
+}
+
+// Animation loop
+function tick(){
+    frame++;
+    if(frame%2===0)updateObjects();
+    drawSource();drawDetect();drawSeg();drawDepth();
+    if(frame%10===0)updateStats();
+    requestAnimationFrame(tick);
+}
+setTimeout(tick,200);
+
+// ── Live source management ──
+let activeSource = 'test';
+let cameraStream = null;
+const videoEl = $('video-el');
+
+function stopStream() {
+    if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+    if (videoEl) videoEl.srcObject = null;
+}
+
+async function startCamera() {
+    stopStream();
+    try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+        videoEl.srcObject = cameraStream;
+        videoEl.style.display = 'block';
+        await videoEl.play();
+        activeSource = 'camera';
+        $('ov-source').textContent = 'camera | ' + (cameraStream.getVideoTracks()[0]?.getSettings()?.width || 720) + 'p | live';
+    } catch (e) {
+        console.warn('Camera error:', e);
+        $('ov-source').textContent = 'camera denied — using test feed';
+        activeSource = 'test';
+    }
+}
+
+async function startScreen() {
+    stopStream();
+    try {
+        cameraStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        videoEl.srcObject = cameraStream;
+        videoEl.style.display = 'block';
+        await videoEl.play();
+        activeSource = 'screen';
+        $('ov-source').textContent = 'screen share | live';
+    } catch (e) {
+        console.warn('Screen share error:', e);
+        activeSource = 'test';
+    }
+}
+
+function startTest() {
+    stopStream();
+    videoEl.style.display = 'none';
+    activeSource = 'test';
+    $('ov-source').textContent = 'test feed | 720p | 30fps';
+}
+
+// Control button active states + source switching
+document.querySelectorAll('.ctrl-btn[id^="btn-"]').forEach(btn=>{
+    if(['btn-sidebar','btn-broadcast','btn-record','btn-snapshot'].includes(btn.id))return;
+    btn.addEventListener('click',()=>{
+        const group=btn.id.startsWith('btn-camera')||btn.id.startsWith('btn-screen')||btn.id.startsWith('btn-test')?
+            ['btn-camera','btn-screen','btn-test']:null;
+        if(group){group.forEach(id=>{document.getElementById(id).classList.remove('active')});btn.classList.add('active')}
+        else{btn.classList.toggle('active')}
+        // Source switching
+        if (btn.id === 'btn-camera') startCamera();
+        else if (btn.id === 'btn-screen') startScreen();
+        else if (btn.id === 'btn-test') startTest();
+    });
+});
+
+// Model selection handler
+$('sel-model')?.addEventListener('change', e => {
+    const m = e.target.value;
+    $('ov-detect').textContent = m + ' | ' + objects.length + ' objects';
+    console.log('Model switched to:', m);
+});
+
+// API
+window.questcast={
+    get state(){return{source:activeSource,fps:30,model:$('sel-model')?.value||'detectron2',detections:objects.length,tracks:objects.length,frame}},
+    get objects(){return objects.map(o=>({...o}))},
+    startCamera,
+    startScreen,
+    startTest,
+    snapshot(){const c=$('cv-detect');const a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='questcast-'+Date.now()+'.png';a.click()},
+    exportJSON(){return JSON.stringify({state:this.state,objects:this.objects})}
+};
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function() {
+    const QP = window.QuantumPrefixes;
+    if (!QP) return;
+    QP.onStateChange(function(source, state) {
+        if (source === 'questcast' || !state) return;
+    });
+    QP.broadcastState('questcast', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, role: 'quest-broadcast' });
+    QP.requestStateSync();
+})();
+
+console.log('⚛ questcast — Meta Quest broadcast + research tools');
+console.log('{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}');
+console.log('API: window.questcast');
+})();
+</script>
+</body>
+</html>

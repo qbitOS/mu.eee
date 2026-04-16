@@ -1,0 +1,1668 @@
+<!DOCTYPE html>
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>qbit core race — L0 earth-core fiber network</title>
+<link rel="icon" href="../icons/favicon.ico" sizes="any">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#000;color:#c9d1d9;font:13px/1.5 'SF Mono','Fira Code',monospace;overflow:hidden;color-scheme:dark}
+#app{display:flex;flex-direction:column;height:100vh;contain:layout}
+#top-bar{display:flex;gap:1px;padding:2px 12px;font-size:10px;user-select:none;flex-shrink:0;border-bottom:1px solid #0d1117}
+.tb{padding:1px 5px;border-radius:2px;cursor:pointer;color:#484f58;letter-spacing:.5px}.tb:hover{color:#c9d1d9}.tb.on{color:#c9a84c}
+#main{flex:1;display:flex;overflow:hidden;position:relative}
+#cv{width:100%;height:100%;display:block}
+#legend{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.75);border:1px solid #21262d;border-radius:6px;padding:8px 10px;font-size:9px;max-width:180px;pointer-events:auto;user-select:none;z-index:10}
+.lr{display:flex;align-items:center;gap:5px;padding:1px 0;cursor:pointer;opacity:1;transition:opacity .2s}
+.lr.off{opacity:0.25}
+.ld{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+#hud{position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.75);border:1px solid #21262d;border-radius:6px;padding:8px 10px;font-size:9px;max-width:220px;z-index:10;color:#8b949e}
+#controls{display:flex;gap:6px;align-items:center;padding:3px 12px;background:#000;border-bottom:1px solid #0d1117;flex-shrink:0}
+#controls button{background:transparent;border:1px solid #30363d;color:#c9d1d9;padding:2px 8px;border-radius:4px;cursor:pointer;font:10px 'SF Mono',monospace}
+#controls button:hover{border-color:#58a6ff;color:#58a6ff}
+#controls input[type=range]{width:80px;accent-color:#c9a84c}
+#controls .lbl{color:#484f58;font-size:9px}
+#term{height:40px;display:flex;align-items:center;gap:4px;padding:0 12px;border-top:1px solid #0d1117;flex-shrink:0;background:#000}
+#term b{color:#c9a84c;font-weight:400;user-select:none;font-size:12px}
+#term input{flex:1;background:0 0;border:0;color:#c9d1d9;font:13px/1.5 'SF Mono','Fira Code',monospace;outline:0;caret-color:#c9a84c}
+#status{display:flex;gap:10px;padding:2px 12px;border-top:1px solid #0d1117;font-size:10px;color:#484f58;flex-shrink:0;user-select:none}
+#log{position:absolute;bottom:8px;left:8px;max-width:420px;max-height:320px;overflow-y:auto;background:rgba(0,0,0,0.8);border:1px solid #21262d;border-radius:6px;padding:6px 8px;font-size:9px;color:#8b949e;z-index:10;display:none}
+#tip{position:absolute;background:rgba(13,17,23,0.95);border:1px solid #30363d;border-radius:6px;padding:6px 10px;color:#c9d1d9;font:10px monospace;pointer-events:none;z-index:100;display:none;max-width:300px}
+.g{color:#3fb950}.y{color:#c9a84c}.r{color:#f85149}.c{color:#58a6ff}.m{color:#bc8cff}.o{color:#d29922}.d{color:#484f58}
+#ft-strip{display:none;flex-shrink:0;border-bottom:1px solid #0d1117;background:#000}
+#ft-strip.on{display:flex}
+#ft-strip .fterm{flex:1;min-width:0;display:flex;flex-direction:column;border-right:1px solid #0d1117;font-size:9px;overflow:hidden}
+#ft-strip .fterm:last-child{border-right:none}
+.fterm-bar{display:flex;align-items:center;justify-content:space-between;padding:2px 8px;background:rgba(22,27,34,0.95);cursor:default;user-select:none;border-bottom:1px solid #21262d;flex-shrink:0}
+.fterm-title{font-weight:700;font-size:10px;display:flex;align-items:center;gap:4px}
+.fterm-dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.fterm-close{cursor:pointer;color:#484f58;font-size:12px;padding:0 4px}.fterm-close:hover{color:#f85149}
+.fterm-body{padding:4px 6px;height:160px;overflow-y:auto;color:#8b949e;line-height:1.4;flex:1}
+.fterm-body::-webkit-scrollbar{width:3px}.fterm-body::-webkit-scrollbar-thumb{background:#21262d}
+.fterm-row{padding:1px 0;border-bottom:1px solid rgba(33,38,45,0.3)}
+.fterm-row:last-child{border-bottom:none}
+.ft-lbl{color:#484f58;display:inline-block;min-width:50px}
+.ft-val{color:#c9d1d9}
+.ft-g{color:#3fb950}.ft-r{color:#f85149}.ft-y{color:#c9a84c}.ft-c{color:#58a6ff}.ft-m{color:#bc8cff}.ft-o{color:#ff8c38}
+.qg{display:inline-block;width:22px;text-align:right;margin-right:4px;font-weight:700;font-size:8px;opacity:0.85}
+.qg-n{color:#f85149}.qg-p1{color:#8b949e}.qg-mn{color:#58a6ff}.qg-p0{color:#a78bfa}.qg-0{color:#3fb950}
+.qg-m1{color:#ff8c38}.qg-pn{color:#c9a84c}.qg-p2{color:#e040fb}.qg-m0{color:#56d4dd}.qg-p3{color:#ffe138}.qg-1{color:#c9d1d9}
+.contrail-bar{display:flex;height:4px;margin:2px 0;border-radius:2px;overflow:hidden}
+.contrail-seg{height:100%;min-width:1px}
+.dac-track{font-family:monospace;font-size:8px;color:#484f58;letter-spacing:0}
+#info{position:absolute;bottom:8px;left:440px;max-width:280px;max-height:320px;overflow-y:auto;background:rgba(0,0,0,0.85);border:1px solid #21262d;border-radius:6px;padding:8px 10px;font-size:9px;color:#8b949e;z-index:10;display:none}
+#info .info-hdr{color:#c9d1d9;font-weight:700;font-size:10px;margin-bottom:4px;border-bottom:1px solid #21262d;padding-bottom:3px}
+#info .info-row{padding:2px 0;display:flex;gap:6px}
+#info .info-lbl{color:#484f58;min-width:44px;flex-shrink:0}
+#info .info-val{color:#c9d1d9;word-break:break-all}
+#settings{position:absolute;top:8px;left:8px;max-width:220px;max-height:400px;overflow-y:auto;background:rgba(0,0,0,0.88);border:1px solid #21262d;border-radius:6px;padding:8px 10px;font-size:9px;color:#8b949e;z-index:15;display:none}
+#settings .set-hdr{color:#c9d1d9;font-weight:700;font-size:10px;margin-bottom:4px;border-bottom:1px solid #21262d;padding-bottom:3px}
+#settings .set-row{display:flex;align-items:center;gap:6px;padding:2px 0}
+#settings .set-row label{flex:1;cursor:pointer}
+#settings .set-row input[type=range]{width:60px;accent-color:#c9a84c}
+#settings .set-row input[type=checkbox]{accent-color:#3fb950}
+.set-swatch{width:10px;height:10px;border-radius:2px;display:inline-block;cursor:pointer;border:1px solid #30363d}
+@media(max-width:600px){#legend{display:none}#hud{font-size:8px;max-width:160px}#controls{flex-wrap:wrap}#ft-strip{flex-wrap:wrap}#ft-strip .fterm{min-width:140px}.fterm-body{height:120px}#info{max-width:200px}#settings{max-width:160px}}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="top-bar">
+<span class="tb on" data-h="qbit-core-race">⊕core</span>
+<span class="tb" data-h="qbit-raw">⚡0</span>
+<span class="tb" data-h="qbit-search">◉1</span>
+<span class="tb" data-h="nterminal">△2</span>
+<span class="tb" data-h="qbit-globe">◎globe</span>
+<span class="tb" data-h="ugrad-photonic-park">⬡park</span>
+</div>
+<div id="controls">
+<button id="cr-launch">Launch</button>
+<button id="cr-auto">Auto: ON</button>
+<button id="cr-reset">Reset</button>
+<span class="lbl">Speed</span>
+<input type="range" id="cr-speed" min="0.1" max="5" step="0.1" value="1.5">
+<button id="cr-infra">Infra: ON</button>
+<button id="cr-log">Log</button>
+<span class="lbl">│</span>
+<button id="cr-sitrep" style="color:#3fb950">SITREP</button>
+<button id="cr-comms" style="color:#58a6ff">COMMS</button>
+<button id="cr-gates" style="color:#ff8c38">GATES</button>
+<button id="cr-data" style="color:#a78bfa">DATA</button>
+<button id="cr-quantum" style="color:#e040fb">Q⊕</button>
+<span class="lbl">│</span>
+<button id="cr-settings">⚙</button>
+<button id="cr-info">Info</button>
+<button id="cr-dormant">Dormant</button>
+</div>
+<div id="ft-strip">
+<div class="fterm" id="ft-sitrep">
+<div class="fterm-bar"><span class="fterm-title"><span class="fterm-dot" style="background:#3fb950"></span>SITREP</span><span class="fterm-close" data-ft="ft-sitrep">✕</span></div>
+<div class="fterm-body" id="ftb-sitrep"></div>
+</div>
+<div class="fterm" id="ft-comms">
+<div class="fterm-bar"><span class="fterm-title"><span class="fterm-dot" style="background:#58a6ff"></span>COMMS</span><span class="fterm-close" data-ft="ft-comms">✕</span></div>
+<div class="fterm-body" id="ftb-comms"></div>
+</div>
+<div class="fterm" id="ft-gates">
+<div class="fterm-bar"><span class="fterm-title"><span class="fterm-dot" style="background:#ff8c38"></span>GATES</span><span class="fterm-close" data-ft="ft-gates">✕</span></div>
+<div class="fterm-body" id="ftb-gates"></div>
+</div>
+<div class="fterm" id="ft-data">
+<div class="fterm-bar"><span class="fterm-title"><span class="fterm-dot" style="background:#a78bfa"></span>DATA</span><span class="fterm-close" data-ft="ft-data">✕</span></div>
+<div class="fterm-body" id="ftb-data"></div>
+</div>
+<div class="fterm" id="ft-quantum">
+<div class="fterm-bar"><span class="fterm-title"><span class="fterm-dot" style="background:#e040fb"></span>QUANTUM</span><span class="fterm-close" data-ft="ft-quantum">✕</span></div>
+<div class="fterm-body" id="ftb-quantum"></div>
+</div>
+</div>
+<div id="main">
+<canvas id="cv"></canvas>
+<div id="legend"></div>
+<div id="hud"></div>
+<div id="log"></div>
+<div id="tip"></div>
+<div id="info"></div>
+<div id="settings"></div>
+</div>
+<div id="status">
+<span id="st-pkt">pkt:0</span>
+<span id="st-speed">×1.5</span>
+<span id="st-fac">fac:0</span>
+<span id="st-fps">fps:—</span>
+<span id="st-boot">boot:—</span>
+<span id="st-qp" style="color:#e040fb">Q:—</span>
+<span id="st-dac" style="color:#a78bfa">DAC:—</span>
+<span id="st-steno" style="color:#56d4dd">S:—</span>
+</div>
+<div id="term"><b>core ❯</b><input id="in" spellcheck="false" autocomplete="off"></div>
+</div>
+<script defer src="quantum-prefixes.js"></script>
+<script defer src="qbit-dac.js"></script>
+<script defer src="qbit-steno.js"></script>
+<script>
+(function(){
+var T0=performance.now();
+var $=function(id){return document.getElementById(id)};
+var mono="'SF Mono','Fira Code',monospace";
+
+var rotX=-0.3,rotY=0.6,drag=false,lx=0,ly=0,zoom=1;
+var autoMode=true,speed=1.5,packets=[],time=0;
+var infraShow=true,logShow=false;
+var _layerResearch=true,_layerSpace=true,_layerDC=true,_layerNet=true,_layerPower=true,_layerMfg=true,_layerProto=true;
+var frameCount=0,lastFps=0,fpsT=performance.now();
+
+var EARTH_LAYERS=[
+  {name:'Inner Core',rFrac:0.19,iron:'L0',label:'Super Speed',color:'#ff3838',budget:'1.3ms',glow:'rgba(255,56,56,.12)'},
+  {name:'Outer Core',rFrac:0.35,iron:'L1–L2',label:'Terminal+Commander',color:'#ff8c38',budget:'100ms',glow:'rgba(255,140,56,.09)'},
+  {name:'Lower Mantle',rFrac:0.55,iron:'L3',label:'Quantum',color:'#ffe138',budget:'0.1μs',glow:'rgba(255,225,56,.07)'},
+  {name:'Upper Mantle',rFrac:0.75,iron:'L4–L5',label:'Notepad+RNDR',color:'#3fb950',budget:'16ms',glow:'rgba(63,185,80,.06)'},
+  {name:'Crust',rFrac:0.93,iron:'L6–L7',label:'Research+Persona',color:'#38a5ff',budget:'5ms',glow:'rgba(56,165,255,.05)'},
+  {name:'Surface',rFrac:1.00,iron:'—',label:'Cable Landing',color:'#bc8cff',budget:'—',glow:'rgba(188,140,255,.04)'}
+];
+
+var STATIONS=[
+  {name:'New York',lon:-73.9,lat:40.7,hub:true},{name:'Virginia Beach',lon:-76.0,lat:36.8,hub:true},
+  {name:'Miami',lon:-80.2,lat:25.8,hub:false},{name:'Los Angeles',lon:-118.2,lat:34.1,hub:true},
+  {name:'London',lon:-0.1,lat:51.5,hub:true},{name:'Bilbao',lon:-2.9,lat:43.3,hub:false},
+  {name:'Marseille',lon:5.4,lat:43.3,hub:true},{name:'Mumbai',lon:72.9,lat:19.1,hub:true},
+  {name:'Singapore',lon:103.8,lat:1.4,hub:true},{name:'Tokyo',lon:139.7,lat:35.7,hub:true},
+  {name:'Sydney',lon:151.2,lat:-33.9,hub:true},{name:'Fortaleza',lon:-38.5,lat:-3.7,hub:false},
+  {name:'Cape Town',lon:18.4,lat:-33.9,hub:false},{name:'Lagos',lon:3.4,lat:6.5,hub:false},
+  {name:'Dubai',lon:55.3,lat:25.2,hub:true},{name:'Hong Kong',lon:114.2,lat:22.3,hub:true},
+  {name:'Djibouti',lon:43.1,lat:11.6,hub:false},{name:'Perth',lon:115.9,lat:-31.9,hub:false},
+  {name:'Portland',lon:-122.7,lat:45.5,hub:false},{name:'Seattle',lon:-122.3,lat:47.6,hub:false},
+  {name:'São Paulo',lon:-43.2,lat:-22.9,hub:false},{name:'Chennai',lon:80.3,lat:13.1,hub:false},
+  {name:'Busan',lon:129.0,lat:35.2,hub:false},{name:'Frankfurt',lon:8.7,lat:50.1,hub:true}
+];
+
+var CABLES=[
+  {name:'TAT-14',from:0,to:4,color:'#58a6ff'},{name:'MAREA',from:1,to:5,color:'#a78bfa'},
+  {name:'BRUSA',from:11,to:1,color:'#c586c0'},{name:'FLAG-Atlantic',from:4,to:6,color:'#56d4dd'},
+  {name:'SEA-ME-WE 6',from:6,to:8,color:'#e2b714'},{name:'Pacific Crossing',from:3,to:9,color:'#ff8c38'},
+  {name:'FASTER',from:18,to:9,color:'#ff3838'},{name:'Southern Cross',from:10,to:3,color:'#3fb950'},
+  {name:'SAC',from:11,to:12,color:'#f85149'},{name:'ACE',from:4,to:13,color:'#d7ba7d'},
+  {name:'AAE-1',from:6,to:14,color:'#4ec9b0'},{name:'India-ME',from:14,to:7,color:'#c586c0'},
+  {name:'SJC',from:7,to:8,color:'#9cdcfe'},{name:'APG',from:8,to:15,color:'#56d4dd'},
+  {name:'EASSy',from:16,to:12,color:'#e2b714'},{name:'IndoConnect',from:17,to:8,color:'#ff8c38'},
+  {name:'Hawaiki',from:10,to:18,color:'#3fb950'},{name:'AJC',from:9,to:10,color:'#38a5ff'},
+  {name:'PEACE',from:7,to:21,color:'#a78bfa'},{name:'Europe-Asia',from:23,to:7,color:'#ffe138'},
+  {name:'KR-JP',from:22,to:9,color:'#ff3838'},{name:'Ellalink',from:11,to:5,color:'#bc8cff'}
+];
+
+var RESEARCH=[
+  {name:'CERN LHC',lon:6.05,lat:46.23,depth:'100m',type:'particle',iron:'L3',note:'27km ring, 13.6 TeV',speed:'40GB/s',bw:'1PB/s',code:'ROOT/C++'},
+  {name:'CJPL',lon:101.7,lat:28.15,depth:'2400m',type:'particle',iron:'L0',note:'China Jinping, dark matter',speed:'10GB/s',bw:'100TB/yr',code:'C++/Python'},
+  {name:'JUNO',lon:112.5,lat:22.12,depth:'700m',type:'neutrino',iron:'L3',note:'20kt liquid scintillator',speed:'5GB/s',bw:'2PB/yr',code:'ROOT/Python'},
+  {name:'Super-Kamiokande',lon:137.3,lat:36.43,depth:'1000m',type:'neutrino',iron:'L0',note:'50kt water, Nobel 2015',speed:'1GB/s',bw:'500TB/yr',code:'Fortran/C++'},
+  {name:'LIGO Hanford',lon:-119.4,lat:46.45,depth:'surface',type:'gravity',iron:'L6',note:'2.5mi arms, gravity waves',speed:'20GB/s',bw:'16kHz',code:'Python/C'},
+  {name:'LIGO Livingston',lon:-90.77,lat:30.56,depth:'surface',type:'gravity',iron:'L6',note:'Twin detector',speed:'20GB/s',bw:'16kHz',code:'Python/C'},
+  {name:'Tevatron',lon:-88.26,lat:41.84,depth:'surface',type:'particle',iron:'L3',note:'Fermilab, Higgs verify',speed:'25GB/s',bw:'200TB/yr',code:'ROOT/C++'},
+  {name:'FAST',lon:106.86,lat:25.65,depth:'surface',type:'radio',iron:'L1',note:'500m dish, Guizhou',speed:'3GB/s',bw:'38GHz',code:'FITS/Python'},
+  {name:'IceCube',lon:0,lat:-89.99,depth:'2500m',type:'neutrino',iron:'L0',note:'86×1.5mi, Antarctica',speed:'100MB/s',bw:'1TB/day',code:'C++/Python'},
+  {name:'ALMA',lon:-67.75,lat:-23.02,depth:'5000m+',type:'radio',iron:'L1',note:'66 dishes, 5050m, Chile',speed:'60GB/s',bw:'16GHz',code:'CASA/Python'},
+  {name:'NIF',lon:-121.7,lat:37.69,depth:'surface',type:'fusion',iron:'L5',note:'192 lasers, 500TW',speed:'50GB/s',bw:'10TB/shot',code:'Fortran/C++'},
+  {name:'HAARP',lon:-145.2,lat:62.39,depth:'surface',type:'ionosphere',iron:'L7',note:'180 antennas, UAF',speed:'500MB/s',bw:'2.8-10MHz',code:'MATLAB/C'}
+];
+
+var SPACE_INFRA=[
+  {name:'NASA DSN Goldstone',lon:-116.89,lat:35.43,type:'dsn',note:'70m dish, Mojave',speed:'6.4Gbps',bw:'X/Ka-band',code:'CCSDS/SLE'},
+  {name:'NASA DSN Madrid',lon:-4.25,lat:40.43,type:'dsn',note:'70m dish, Robledo',speed:'6.4Gbps',bw:'X/Ka-band',code:'CCSDS/SLE'},
+  {name:'NASA DSN Canberra',lon:148.98,lat:-35.4,type:'dsn',note:'70m dish, Tidbinbilla',speed:'6.4Gbps',bw:'X/Ka-band',code:'CCSDS/SLE'},
+  {name:'Starlink Redmond',lon:-122.12,lat:47.67,type:'starlink',note:'SpaceX primary',speed:'20Gbps',bw:'Ku/Ka-band',code:'gRPC/proto'},
+  {name:'Starlink Boca Chica',lon:-97.16,lat:25.99,type:'starlink',note:'Starbase, Texas',speed:'20Gbps',bw:'Ku/Ka-band',code:'gRPC/proto'},
+  {name:'ISRO Byalalu',lon:77.37,lat:13.03,type:'ground',note:'Indian DSN, 32m dish',speed:'1Gbps',bw:'S/X-band',code:'ISTRAC/C'},
+  {name:'JAXA Usuda',lon:138.36,lat:36.13,type:'ground',note:'64m dish, Hayabusa2',speed:'4Gbps',bw:'X/Ka-band',code:'CCSDS/Java'},
+  {name:'Pine Gap',lon:133.74,lat:-23.8,type:'sigint',note:'Joint US-AU, Alice Springs',speed:'10Gbps',bw:'multi-band',code:'classified'},
+  {name:'Goonhilly',lon:-5.18,lat:50.05,type:'ground',note:'UK deep space, 30m',speed:'3Gbps',bw:'X/Ka-band',code:'CCSDS/Python'}
+];
+
+var DATA_CENTERS=[
+  {name:'Ashburn',lon:-77.49,lat:39.04,provider:'multi',mw:2500,note:'70%+ US internet',speed:'800Tbps',bw:'aggregate IX',code:'BGP/REST'},
+  {name:'The Dalles (Google)',lon:-121.18,lat:45.6,provider:'Google',mw:600,note:'Columbia River cooling',speed:'100Tbps',bw:'internal',code:'Borg/gRPC'},
+  {name:'Prineville (Meta)',lon:-120.73,lat:44.3,provider:'Meta',mw:450,note:'FB primary',speed:'80Tbps',bw:'FBOSS',code:'Thrift/Hack'},
+  {name:'Phoenix',lon:-112.07,lat:33.45,provider:'multi',mw:800,note:'CyrusOne, QTS, NTT',speed:'200Tbps',bw:'cross-connect',code:'BGP/REST'},
+  {name:'Dublin (AWS)',lon:-6.26,lat:53.35,provider:'multi',mw:900,note:'Atlantic cables',speed:'300Tbps',bw:'transatlantic',code:'AWS SDK'},
+  {name:'Frankfurt (DE-CIX)',lon:8.68,lat:50.11,provider:'multi',mw:700,note:'Largest IX',speed:'400Tbps',bw:'DE-CIX',code:'BGP/RPKI'},
+  {name:'Singapore',lon:103.85,lat:1.35,provider:'multi',mw:400,note:'SE Asia hub',speed:'150Tbps',bw:'SGIX',code:'BGP/REST'},
+  {name:'Tokyo',lon:139.69,lat:35.69,provider:'Equinix',mw:300,note:'Largest APAC IX',speed:'120Tbps',bw:'JPNAP',code:'BGP/REST'}
+];
+
+var NETWORK_HUBS=[
+  {name:'DE-CIX',lon:8.68,lat:50.11,type:'ixp',tbps:17,note:'Largest IX, 17+ Tbps',speed:'17Tbps',bw:'IX',code:'BGP/RPKI'},
+  {name:'AMS-IX',lon:4.9,lat:52.37,type:'ixp',tbps:12,note:'80+ networks',speed:'12Tbps',bw:'IX',code:'BGP/RPKI'},
+  {name:'LINX',lon:-0.13,lat:51.52,type:'ixp',tbps:8,note:'900+ members',speed:'8Tbps',bw:'IX',code:'BGP/RPKI'},
+  {name:'Equinix Ashburn',lon:-77.49,lat:39.04,type:'ixp',tbps:10,note:'US East primary',speed:'10Tbps',bw:'IX',code:'BGP/RPKI'},
+  {name:'IX.br São Paulo',lon:-46.63,lat:-23.55,type:'ixp',tbps:15,note:'Largest LATAM',speed:'15Tbps',bw:'IX',code:'BGP/RPKI'},
+  {name:'Tanjung Kling',lon:102.24,lat:2.19,type:'cable_landing',tbps:100,note:'Melaka, 20+ cables',speed:'100Tbps',bw:'fiber',code:'DWDM'},
+  {name:'Marseille (MRS)',lon:5.38,lat:43.3,type:'cable_landing',tbps:80,note:'Med hub',speed:'80Tbps',bw:'fiber',code:'DWDM'}
+];
+
+var POWER_INFRA=[
+  {name:'Three Gorges',lon:111.0,lat:30.82,type:'hydro',gw:22.5,note:'Largest on Earth',speed:'22.5GW',bw:'500kV HVDC',code:'SCADA'},
+  {name:'Itaipu',lon:-54.59,lat:-25.41,type:'hydro',gw:14.0,note:'Brazil/Paraguay',speed:'14GW',bw:'765kV',code:'SCADA'},
+  {name:'Grand Coulee',lon:-118.98,lat:47.96,type:'hydro',gw:6.8,note:'Columbia River',speed:'6.8GW',bw:'500kV',code:'SCADA'},
+  {name:'Gansu Wind',lon:97.0,lat:40.0,type:'wind',gw:20.0,note:'Gobi Desert',speed:'20GW',bw:'800kV UHVDC',code:'SCADA'},
+  {name:'Bhadla Solar',lon:71.91,lat:27.54,type:'solar',gw:2.25,note:'Rajasthan',speed:'2.25GW',bw:'400kV',code:'SCADA'},
+  {name:'Hornsea Wind',lon:1.8,lat:53.9,type:'wind',gw:2.85,note:'North Sea offshore',speed:'2.85GW',bw:'HVDC subsea',code:'SCADA'}
+];
+
+var MANUFACTURING=[
+  {name:'TSMC Fab 18',lon:120.3,lat:23.0,type:'chip_fab',node:'3nm',note:'Tainan, most advanced',speed:'wafer/2mo',bw:'EUV',code:'GDSII'},
+  {name:'TSMC Arizona',lon:-111.93,lat:33.45,type:'chip_fab',node:'4nm',note:'US CHIPS Act',speed:'wafer/2mo',bw:'EUV',code:'GDSII'},
+  {name:'Samsung Pyeongtaek',lon:127.1,lat:36.99,type:'chip_fab',node:'3nm',note:'Largest fab',speed:'wafer/2mo',bw:'GAA',code:'GDSII'},
+  {name:'NVIDIA HQ',lon:-121.98,lat:37.37,type:'gpu',node:'—',note:'Santa Clara',speed:'100GB/s',bw:'PCIe 5',code:'CUDA'},
+  {name:'IBM Quantum',lon:-73.8,lat:41.21,type:'quantum',node:'—',note:'Yorktown, Eagle/Heron',speed:'1KB/s',bw:'4096 shots',code:'QASM'},
+  {name:'Google Quantum AI',lon:-122.08,lat:37.42,type:'quantum',node:'—',note:'Willow chip',speed:'1KB/s',bw:'custom',code:'Cirq'}
+];
+
+var NET_PROTOCOL=[
+  {name:'IANA',lon:-117.83,lat:33.68,type:'governance',note:'Internet numbers',speed:'policy',bw:'RFC',code:'WHOIS',ping:1},
+  {name:'IETF',lon:-121.98,lat:37.55,type:'governance',note:'RFC standards',speed:'policy',bw:'RFC 9000+',code:'RFC',ping:2},
+  {name:'Root DNS A',lon:-77.49,lat:39.04,type:'root_dns',note:'a.root-servers.net',speed:'100Gbps',bw:'100K qps',code:'DNSSEC',ping:1},
+  {name:'Root DNS F',lon:-122.27,lat:37.87,type:'root_dns',note:'f.root-servers.net',speed:'100Gbps',bw:'200K qps',code:'DNSSEC',ping:2},
+  {name:'Root DNS K',lon:4.9,lat:52.37,type:'root_dns',note:'k.root-servers.net, RIPE',speed:'100Gbps',bw:'200K qps',code:'DNSSEC',ping:8},
+  {name:'Cloudflare',lon:-122.39,lat:37.79,type:'cdn',note:'1.1.1.1, 300+ PoPs',speed:'25Tbps',bw:'edge',code:'HTTP/3',ping:3},
+  {name:'Akamai',lon:-71.1,lat:42.36,type:'cdn',note:'365K+ servers',speed:'300Tbps',bw:'edge',code:'HTTP/2',ping:2},
+  {name:'AWS CloudFront',lon:-77.49,lat:39.04,type:'cdn',note:'450+ PoPs',speed:'100Tbps',bw:'edge',code:'HTTP/3',ping:1}
+];
+
+// ═══ SECURITY MODEL — gates, ports, firewalls per layer ═══
+var LAYER_SECURITY=[
+  {layer:0,name:'L0 Kernel',ports:[22,25,53],firewall:'hardware',ids:'tripwire',acl:'root-only',denial:0.05,jitter:2,desc:'Bare metal / firmware / JTAG'},
+  {layer:1,name:'L1-L2 Internal',ports:[80,443,8080,3306,5432,6379,27017],firewall:'iptables',ids:'snort',acl:'internal-net',denial:0.08,jitter:5,desc:'LAN / VPN / terminal access'},
+  {layer:2,name:'L3 Quantum',ports:[8086,5000,9000],firewall:'quantum-key',ids:'qkd-monitor',acl:'entangled-pair',denial:0.02,jitter:0.1,desc:'QKD channel / QASM gate'},
+  {layer:3,name:'L4-L5 Application',ports:[80,443,8443,3000,4200,5173],firewall:'waf',ids:'modsecurity',acl:'cdn-whitelist',denial:0.12,jitter:15,desc:'HTTP / WebSocket / API'},
+  {layer:4,name:'L6-L7 Public',ports:[80,443,53,853,8853],firewall:'cloudflare',ids:'crowdstrike',acl:'geo-fence',denial:0.15,jitter:50,desc:'Public internet / DNS / CDN'},
+  {layer:5,name:'Surface Cable',ports:[179,830,161],firewall:'bgp-filter',ids:'flow-monitor',acl:'peering-asn',denial:0.10,jitter:80,desc:'BGP / SNMP / submarine fiber'}
+];
+
+var PING_ENDPOINTS=[
+  {name:'Cloudflare',url:'https://1.1.1.1/cdn-cgi/trace',layer:4,expect:200},
+  {name:'Google DNS',url:'https://dns.google/resolve?name=example.com&type=A',layer:4,expect:200},
+  {name:'AWS',url:'https://aws.amazon.com/favicon.ico',layer:4,expect:200},
+  {name:'GitHub',url:'https://api.github.com',layer:4,expect:200},
+  {name:'Cloudflare Workers',url:'https://workers.cloudflare.com',layer:4,expect:200},
+  {name:'Wikipedia',url:'https://en.wikipedia.org/w/api.php?action=query&meta=siteinfo&format=json',layer:4,expect:200},
+  {name:'RIPE NCC',url:'https://stat.ripe.net/data/dns-chain/data.json?resource=example.com',layer:4,expect:200},
+  {name:'ipinfo.io',url:'https://ipinfo.io/json',layer:4,expect:200}
+];
+
+var COMMON_PORTS={
+  21:'FTP',22:'SSH',23:'Telnet',25:'SMTP',53:'DNS',80:'HTTP',110:'POP3',
+  143:'IMAP',443:'HTTPS',445:'SMB',993:'IMAPS',995:'POP3S',
+  3306:'MySQL',5432:'PostgreSQL',6379:'Redis',8080:'HTTP-ALT',8443:'HTTPS-ALT',
+  27017:'MongoDB',179:'BGP',161:'SNMP',830:'NETCONF',853:'DNS-TLS'
+};
+
+var gateStates=[];
+var score={recon:0,traversals:0,denied:0,dropped:0,exploits:0,intel:[],flags:[]};
+var denialEffects=[];
+var portScanResults={};
+
+function initGates(){
+  gateStates=[];
+  EARTH_LAYERS.forEach(function(l,i){
+    var sec=LAYER_SECURITY[Math.min(i,LAYER_SECURITY.length-1)];
+    var ports={};
+    sec.ports.forEach(function(p){
+      var state=Math.random()<0.7?'open':(Math.random()<0.5?'filtered':'closed');
+      ports[p]={state:state,service:COMMON_PORTS[p]||'unknown',lastProbe:0};
+    });
+    [1337,4444,31337,12345].forEach(function(p){
+      ports[p]={state:'closed',service:'suspicious',lastProbe:0};
+    });
+    gateStates.push({
+      layer:i,name:sec.name,firewall:sec.firewall,ids:sec.ids,acl:sec.acl,
+      denial:sec.denial,jitter:sec.jitter,ports:ports,
+      status:'active',lastBreach:0,alertLevel:0,desc:sec.desc
+    });
+  });
+}
+initGates();
+
+// ═══ FLOATING TERMINAL MANAGER ═══
+var ftPanels={sitrep:'ft-sitrep',comms:'ft-comms',gates:'ft-gates',data:'ft-data',quantum:'ft-quantum'};
+var ftMaxLines={sitrep:40,comms:60,gates:30,data:80,quantum:50};
+var ftActive={sitrep:false,comms:false,gates:false,data:false,quantum:false};
+
+// ═══ QUANTUM / DAC / STENO / CONTRAIL STATE ═══
+var SYM_COLORS={'n:':'#f85149','+1:':'#8b949e','-n:':'#58a6ff','+0:':'#a78bfa','0:':'#3fb950','-1:':'#ff8c38','+n:':'#c9a84c','+2:':'#e040fb','-0:':'#56d4dd','+3:':'#ffe138','1:':'#c9d1d9'};
+var SYM_GATES={'n:':'SWAP','+1:':'H','-n:':'M','+0:':'Rz','0:':'I','-1:':'X','+n:':'T','+2:':'CZ','-0:':'S','+3:':'Y','1:':'CNOT'};
+var SYM_CSS={'n:':'qg-n','+1:':'qg-p1','-n:':'qg-mn','+0:':'qg-p0','0:':'qg-0','-1:':'qg-m1','+n:':'qg-pn','+2:':'qg-p2','-0:':'qg-m0','+3:':'qg-p3','1:':'qg-1'};
+var gutterMode=true;
+var qLines=0,qClassified=0;
+var prefixCounts={};
+var contrailBuf=[];
+var contrailMax=120;
+var stenoTotalLines=0,stenoTotalBits=0;
+var dacCallCount=0,dacLPS=0,dacLastT=performance.now();
+var qLang='transcript';
+
+function ftToggle(name){
+  var el=$(ftPanels[name]);if(!el)return;
+  ftActive[name]=!ftActive[name];
+  el.style.display=ftActive[name]?'flex':'none';
+  var btn=$('cr-'+name);if(btn)btn.style.borderColor=ftActive[name]?'#58a6ff':'#30363d';
+  var anyOpen=Object.keys(ftActive).some(function(k){return ftActive[k]});
+  var strip=$('ft-strip');
+  if(strip){strip.className=anyOpen?'on':''}
+}
+
+function ftLog(panel,msg,color){
+  var body=$('ftb-'+panel);if(!body||!ftActive[panel])return;
+  var row=document.createElement('div');
+  row.className='fterm-row';
+  var ts=new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  row.innerHTML='<span class="ft-lbl">'+ts+'</span> <span style="color:'+(color||'#c9d1d9')+'">'+msg+'</span>';
+  body.appendChild(row);
+  while(body.children.length>ftMaxLines[panel]) body.removeChild(body.firstChild);
+  body.scrollTop=body.scrollHeight;
+}
+
+function ftClear(panel){var body=$('ftb-'+panel);if(body)body.innerHTML=''}
+
+function ftSitrep(){
+  ftClear('sitrep');
+  var up=((performance.now()-T0)/1000).toFixed(0);
+  ftLog('sitrep','<b>SITUATION REPORT</b>','#c9a84c');
+  ftLog('sitrep','Uptime: '+up+'s | FPS: '+lastFps,'#8b949e');
+  ftLog('sitrep','Packets: <span class="ft-c">'+packets.length+'</span> active','#c9d1d9');
+  var asc=0,sur=0,des=0;
+  packets.forEach(function(p){if(p.phase==='ascend')asc++;else if(p.phase==='surface')sur++;else des++});
+  ftLog('sitrep','<span class="ft-r">↑'+asc+'</span> <span class="ft-g">→'+sur+'</span> <span class="ft-c">↓'+des+'</span>','#c9d1d9');
+  ftLog('sitrep','Speed: ×'+speed.toFixed(1)+' | Auto: '+(autoMode?'ON':'OFF'),'#8b949e');
+  ftLog('sitrep','Infrastructure: '+totalInfra+' facilities','#8b949e');
+  ftLog('sitrep','Cables: '+CABLES.length+' | Hubs: '+STATIONS.filter(function(s){return s.hub}).length,'#8b949e');
+  ftLog('sitrep','─── SCORE ───','#484f58');
+  var total=(score.traversals*10+score.recon*5+score.exploits*25)-(score.denied*3+score.dropped*2);
+  ftLog('sitrep','Total: <b>'+total+'</b> pts','#c9a84c');
+  ftLog('sitrep','✓ Traversals: '+score.traversals,'#3fb950');
+  ftLog('sitrep','🔍 Recon: '+score.recon,'#58a6ff');
+  ftLog('sitrep','⚡ Exploits: '+score.exploits,'#a78bfa');
+  ftLog('sitrep','⊘ Denied: '+score.denied,'#ff8c38');
+  ftLog('sitrep','✗ Dropped: '+score.dropped,'#f85149');
+  if(score.flags.length){
+    ftLog('sitrep','─── FLAGS ───','#484f58');
+    score.flags.forEach(function(f){ftLog('sitrep','🚩 '+f,'#a78bfa')});
+  }
+  ftLog('sitrep','─── QUANTUM ───','#484f58');
+  var cov=qLines>0?(qClassified/qLines*100).toFixed(1):'0.0';
+  ftLog('sitrep','Prefix: '+cov+'% ('+qClassified+'/'+qLines+') | Lang: '+qLang,'#e040fb');
+  ftLog('sitrep','DAC: '+dacCallCount+' | Steno: '+stenoTotalLines+'L | Contrail: '+contrailBuf.length+'/'+contrailMax,'#a78bfa');
+  ftLog('sitrep','Gluelam: '+(window.QuantumPrefixes?'QP':'—')+' '+(window.prefixDAC?'DAC':'—')+' '+(window.QbitSteno?'Steno':'—')+' '+(window.qbitCodec?'Codec':'—'),'#56d4dd');
+}
+
+function ftGates(){
+  ftClear('gates');
+  ftLog('gates','<b>GATE STATUS</b>','#ff8c38');
+  gateStates.forEach(function(g,i){
+    var open=Object.values(g.ports).filter(function(p){return p.state==='open'}).length;
+    var filt=Object.values(g.ports).filter(function(p){return p.state==='filtered'}).length;
+    var cls=Object.values(g.ports).filter(function(p){return p.state==='closed'}).length;
+    var alertCol=g.alertLevel>5?'#f85149':g.alertLevel>2?'#ff8c38':'#3fb950';
+    var alertSym=g.alertLevel>5?'🔴':g.alertLevel>2?'🟡':'🟢';
+    ftLog('gates',alertSym+' <b>L'+i+'</b> '+g.name,alertCol);
+    ftLog('gates','  FW: '+g.firewall+' | IDS: '+g.ids,'#8b949e');
+    ftLog('gates','  <span class="ft-g">●'+open+'</span> <span class="ft-y">◐'+filt+'</span> <span class="ft-r">○'+cls+'</span> alert:'+g.alertLevel.toFixed(0),'#c9d1d9');
+  });
+}
+
+function ftQuantum(){
+  try{
+  ftClear('quantum');
+  var cov=qLines>0?(qClassified/qLines*100).toFixed(1):'0.0';
+  ftLog('quantum','<b>QUANTUM GUTTER</b> · '+qLang,'#e040fb');
+  ftLog('quantum','Coverage: <b>'+cov+'%</b> ('+qClassified+'/'+qLines+' lines)','#c9d1d9');
+  ftLog('quantum','─── PREFIX DISTRIBUTION ───','#484f58');
+  var syms=['n:','+1:','-n:','+0:','0:','-1:','+n:','+2:','-0:','+3:','1:'];
+  var maxC=1;syms.forEach(function(s){if((prefixCounts[s]||0)>maxC)maxC=prefixCounts[s]});
+  syms.forEach(function(s){
+    var c=prefixCounts[s]||0;if(c===0)return;
+    var bar='';var len=Math.round(c/maxC*16);for(var b=0;b<len;b++)bar+='█';
+    var gate=SYM_GATES[s]||'?';
+    var label=(s+'    ').substring(0,4);
+    ftLog('quantum','<span style="color:'+(SYM_COLORS[s]||'#484f58')+'">'+label+'</span> '+bar+' '+c+' <span style="color:#484f58">['+gate+']</span>',SYM_COLORS[s]||'#484f58');
+  });
+  ftLog('quantum','─── CONTRAIL ───','#484f58');
+  if(contrailBuf.length>0){
+    var html='<div class="contrail-bar">';
+    contrailBuf.forEach(function(s){html+='<div class="contrail-seg" style="background:'+(SYM_COLORS[s]||'#21262d')+'"></div>'});
+    html+='</div>';
+    ftLog('quantum',html,'#8b949e');
+    ftLog('quantum','Last '+contrailBuf.length+' classifications','#484f58');
+  } else {ftLog('quantum','No data yet','#484f58')}
+  ftLog('quantum','─── DAC ───','#484f58');
+  var DAC=window.prefixDAC;
+  if(DAC&&typeof DAC.dacStats==='function'){
+    try{var ds=DAC.dacStats();
+      ftLog('quantum','Calls: '+(ds.calls||dacCallCount)+' | Lines: '+(ds.lines||qLines)+' | LPS: '+(ds.lps||0).toFixed(0),'#a78bfa');
+    }catch(e){ftLog('quantum','DAC: '+dacCallCount+' calls','#a78bfa')}
+  } else {ftLog('quantum','DAC: '+dacCallCount+' classify calls','#a78bfa')}
+  var mode='prefix';
+  try{if(DAC&&typeof DAC.dacMode==='function')mode=DAC.dacMode()}catch(e){}
+  ftLog('quantum','Mode: '+mode,'#8b949e');
+  ftLog('quantum','─── STENO ───','#484f58');
+  var QS=window.QbitSteno;
+  if(QS){
+    ftLog('quantum','Codec: 13 Unicode spaces · 19b/line','#56d4dd');
+    ftLog('quantum','Lines encoded: '+stenoTotalLines+' | Bits: '+stenoTotalBits,'#56d4dd');
+  } else {ftLog('quantum','qbit-steno.js not loaded','#484f58')}
+  ftLog('quantum','─── GLUELAM ───','#484f58');
+  ftLog('quantum','QP: '+(window.QuantumPrefixes?'<span class="ft-g">✓</span> 59 langs':'<span class="ft-r">✗</span>'),'#c9d1d9');
+  ftLog('quantum','DAC: '+(DAC?'<span class="ft-g">✓</span> tracks+stripes':'<span class="ft-r">✗</span>'),'#c9d1d9');
+  ftLog('quantum','Steno: '+(QS?'<span class="ft-g">✓</span> codec active':'<span class="ft-r">✗</span>'),'#c9d1d9');
+  ftLog('quantum','Codec: '+(window.qbitCodec?'<span class="ft-g">✓</span> .qbit ready':'<span class="ft-r">✗</span>'),'#c9d1d9');
+  ftLog('quantum','Gutter: '+(gutterMode?'<span class="ft-g">ON</span>':'<span class="ft-r">OFF</span>'),'#c9d1d9');
+  }catch(err){console.warn('ftQuantum error:',err)}
+}
+
+// Panels are docked in #ft-strip — no drag needed
+
+document.querySelectorAll('.fterm-close').forEach(function(btn){
+  btn.addEventListener('click',function(){
+    var id=this.dataset.ft;
+    var name=id.replace('ft-','');
+    ftActive[name]=false;
+    $(id).style.display='none';
+    var ctrl=$('cr-'+name);if(ctrl)ctrl.style.borderColor='#30363d';
+    var anyOpen=Object.keys(ftActive).some(function(k){return ftActive[k]});
+    var strip=$('ft-strip');if(strip){strip.className=anyOpen?'on':''}
+  });
+});
+
+$('cr-sitrep').addEventListener('click',function(){ftToggle('sitrep');if(ftActive.sitrep)ftSitrep()});
+$('cr-comms').addEventListener('click',function(){ftToggle('comms')});
+$('cr-gates').addEventListener('click',function(){ftToggle('gates');if(ftActive.gates)ftGates()});
+$('cr-data').addEventListener('click',function(){ftToggle('data')});
+$('cr-quantum').addEventListener('click',function(){ftToggle('quantum');if(ftActive.quantum)ftQuantum()});
+
+setInterval(function(){
+  if(ftActive.sitrep) ftSitrep();
+  if(ftActive.gates) ftGates();
+  if(ftActive.quantum) ftQuantum();
+  var now=performance.now();
+  dacLPS=dacCallCount/((now-dacLastT)/1000);
+  $('st-qp').textContent='Q:'+(qLines>0?(qClassified/qLines*100).toFixed(0)+'%':'—');
+  $('st-dac').textContent='DAC:'+dacCallCount;
+  $('st-steno').textContent='S:'+stenoTotalLines;
+},2000);
+
+// ═══ SETTINGS PANEL ═══
+var settingsOpen=false;
+var layerOpacity=[1,1,1,1,1,1];
+var layerFlash=[true,true,true,true,true,true];
+var dormantMode=false;
+
+function buildSettings(){
+  var el=$('settings');
+  var h='<div class="set-hdr">⚙ Display Settings</div>';
+  h+='<div class="set-row"><input type="checkbox" id="stg-map"'+(showMap?' checked':'')+'/><label for="stg-map">Coastlines</label></div>';
+  h+='<div class="set-row"><input type="checkbox" id="stg-grid"'+(showGrid?' checked':'')+'/><label for="stg-grid">Lat/Lon Grid</label></div>';
+  h+='<div class="set-row"><input type="checkbox" id="stg-mag"'+(showMag?' checked':'')+'/><label for="stg-mag">Magnetic Field</label></div>';
+  h+='<div class="set-row"><input type="checkbox" id="stg-infra"'+(infraShow?' checked':'')+'/><label for="stg-infra">Infrastructure</label></div>';
+  h+='<div class="set-row"><input type="checkbox" id="stg-cables" checked/><label for="stg-cables">Cables</label></div>';
+  h+='<div class="set-row"><input type="checkbox" id="stg-stations" checked/><label for="stg-stations">Stations</label></div>';
+  h+='<div class="set-row"><input type="checkbox" id="stg-junctions" checked/><label for="stg-junctions">Junctions</label></div>';
+  h+='<div class="set-hdr" style="margin-top:6px">Layer Rings</div>';
+  EARTH_LAYERS.forEach(function(l,i){
+    h+='<div class="set-row"><span class="set-swatch" style="background:'+l.color+'"></span><label>'+l.iron+' '+l.name+'</label></div>';
+    h+='<div class="set-row" style="padding-left:16px"><span style="color:#484f58;font-size:8px">Opacity</span><input type="range" min="0" max="100" value="100" data-lo="'+i+'"/>';
+    h+='<input type="checkbox" data-lf="'+i+'" checked/><span style="color:#484f58;font-size:8px">Flash</span></div>';
+  });
+  h+='<div class="set-hdr" style="margin-top:6px">Infrastructure Tiers</div>';
+  var tiers=[{k:'_layerResearch',l:'Research',c:'#ff3838'},{k:'_layerSpace',l:'Space',c:'#ffe138'},{k:'_layerDC',l:'Data Centers',c:'#3fb950'},{k:'_layerNet',l:'Network',c:'#e2b714'},{k:'_layerPower',l:'Power',c:'#38a5ff'},{k:'_layerMfg',l:'Manufacturing',c:'#a78bfa'},{k:'_layerProto',l:'Protocol',c:'#f0883e'}];
+  tiers.forEach(function(t){
+    var on=(t.k==='_layerResearch'?_layerResearch:t.k==='_layerSpace'?_layerSpace:t.k==='_layerDC'?_layerDC:t.k==='_layerNet'?_layerNet:t.k==='_layerPower'?_layerPower:t.k==='_layerMfg'?_layerMfg:_layerProto);
+    h+='<div class="set-row"><input type="checkbox" data-tier="'+t.k+'"'+(on?' checked':'')+'/><span class="set-swatch" style="background:'+t.c+'"></span><label>'+t.l+'</label></div>';
+  });
+  h+='<div class="set-hdr" style="margin-top:6px">Mode</div>';
+  h+='<div class="set-row"><input type="checkbox" id="stg-dormant"'+(dormantMode?' checked':'')+'/><label for="stg-dormant">Dormant (data only)</label></div>';
+  el.innerHTML=h;
+  el.querySelector('#stg-map').addEventListener('change',function(){showMap=this.checked});
+  el.querySelector('#stg-grid').addEventListener('change',function(){showGrid=this.checked});
+  el.querySelector('#stg-mag').addEventListener('change',function(){showMag=this.checked});
+  el.querySelector('#stg-infra').addEventListener('change',function(){infraShow=this.checked;$('cr-infra').textContent=infraShow?'Infra: ON':'Infra: OFF'});
+  el.querySelector('#stg-dormant').addEventListener('change',function(){dormantMode=this.checked;$('cr-dormant').style.color=dormantMode?'#3fb950':'#c9d1d9'});
+  el.querySelectorAll('[data-lo]').forEach(function(inp){
+    inp.addEventListener('input',function(){layerOpacity[+this.dataset.lo]=+this.value/100});
+  });
+  el.querySelectorAll('[data-lf]').forEach(function(inp){
+    inp.addEventListener('change',function(){layerFlash[+this.dataset.lf]=this.checked});
+  });
+  el.querySelectorAll('[data-tier]').forEach(function(inp){
+    inp.addEventListener('change',function(){
+      var k=this.dataset.tier,v=this.checked;
+      if(k==='_layerResearch')_layerResearch=v;else if(k==='_layerSpace')_layerSpace=v;
+      else if(k==='_layerDC')_layerDC=v;else if(k==='_layerNet')_layerNet=v;
+      else if(k==='_layerPower')_layerPower=v;else if(k==='_layerMfg')_layerMfg=v;
+      else if(k==='_layerProto')_layerProto=v;
+    });
+  });
+  var showCables=true,showStations=true,showJunctions=true;
+  el.querySelector('#stg-cables').addEventListener('change',function(){window._showCables=this.checked});
+  el.querySelector('#stg-stations').addEventListener('change',function(){window._showStations=this.checked});
+  el.querySelector('#stg-junctions').addEventListener('change',function(){window._showJunctions=this.checked});
+}
+window._showCables=true;window._showStations=true;window._showJunctions=true;
+
+$('cr-settings').addEventListener('click',function(){
+  settingsOpen=!settingsOpen;
+  $('settings').style.display=settingsOpen?'block':'none';
+  this.style.borderColor=settingsOpen?'#58a6ff':'#30363d';
+  if(settingsOpen) buildSettings();
+});
+
+// ═══ INFO PANEL — destination data ═══
+var infoOpen=false;
+var infoTarget=null;
+
+function tzFromLon(lon){var h=Math.round(lon/15);return'UTC'+(h>=0?'+':'')+h}
+function elevLabel(f){if(!f)return'—';if(f.depth)return f.depth;if(f.type==='hydro'||f.type==='wind'||f.type==='solar')return'surface';return'surface'}
+
+function updateInfo(fac){
+  if(!fac){$('info').style.display='none';infoTarget=null;return}
+  infoTarget=fac;
+  var el=$('info');
+  var tz=tzFromLon(fac.lon);
+  var localTime;
+  try{var d=new Date();var utcMs=d.getTime()+(d.getTimezoneOffset()*60000);var off=Math.round(fac.lon/15);localTime=new Date(utcMs+off*3600000).toLocaleTimeString('en-US',{hour12:false})}catch(e){localTime='—'}
+  var h='<div class="info-hdr">📍 '+fac.name+'</div>';
+  h+='<div class="info-row"><span class="info-lbl">Lat</span><span class="info-val">'+fac.lat.toFixed(4)+'°</span></div>';
+  h+='<div class="info-row"><span class="info-lbl">Lon</span><span class="info-val">'+fac.lon.toFixed(4)+'°</span></div>';
+  h+='<div class="info-row"><span class="info-lbl">Elev</span><span class="info-val">'+elevLabel(fac)+'</span></div>';
+  h+='<div class="info-row"><span class="info-lbl">TZ</span><span class="info-val">'+tz+' ('+localTime+')</span></div>';
+  if(fac.type) h+='<div class="info-row"><span class="info-lbl">Type</span><span class="info-val" style="color:'+(INFRA_COLORS[fac.type]||'#58a6ff')+'">'+fac.type+'</span></div>';
+  if(fac.iron) h+='<div class="info-row"><span class="info-lbl">Iron</span><span class="info-val" style="color:#c9a84c">'+fac.iron+'</span></div>';
+  if(fac.note) h+='<div class="info-row"><span class="info-lbl">Note</span><span class="info-val">'+fac.note+'</span></div>';
+  if(fac.speed) h+='<div class="info-row"><span class="info-lbl">Speed</span><span class="info-val" style="color:#3fb950">'+fac.speed+'</span></div>';
+  if(fac.bw) h+='<div class="info-row"><span class="info-lbl">Band</span><span class="info-val" style="color:#a78bfa">'+fac.bw+'</span></div>';
+  if(fac.code) h+='<div class="info-row"><span class="info-lbl">Stack</span><span class="info-val" style="color:#ffe138">'+fac.code+'</span></div>';
+  if(fac.mw) h+='<div class="info-row"><span class="info-lbl">Power</span><span class="info-val" style="color:#ff8c38">'+fac.mw+' MW</span></div>';
+  if(fac.gw) h+='<div class="info-row"><span class="info-lbl">Power</span><span class="info-val" style="color:#ff8c38">'+fac.gw+' GW</span></div>';
+  if(fac.tbps) h+='<div class="info-row"><span class="info-lbl">Tbps</span><span class="info-val" style="color:#56d4dd">'+fac.tbps+'</span></div>';
+  if(fac.node) h+='<div class="info-row"><span class="info-lbl">Node</span><span class="info-val">'+fac.node+'</span></div>';
+  if(fac.provider) h+='<div class="info-row"><span class="info-lbl">Provider</span><span class="info-val">'+fac.provider+'</span></div>';
+  // Active packets through this area
+  var nearPkts=0;
+  packets.forEach(function(p){
+    if(p.phase==='surface'){
+      var sa=STATIONS[p.fromStation],sb=STATIONS[p.toStation];
+      if(Math.abs(sa.lon-fac.lon)<20&&Math.abs(sa.lat-fac.lat)<15)nearPkts++;
+      if(Math.abs(sb.lon-fac.lon)<20&&Math.abs(sb.lat-fac.lat)<15)nearPkts++;
+    }
+  });
+  if(nearPkts>0) h+='<div class="info-row"><span class="info-lbl">Active</span><span class="info-val" style="color:#3fb950">'+nearPkts+' packets nearby</span></div>';
+  el.innerHTML=h;
+  el.style.display='block';
+}
+
+$('cr-info').addEventListener('click',function(){
+  infoOpen=!infoOpen;
+  this.style.borderColor=infoOpen?'#58a6ff':'#30363d';
+  if(!infoOpen){$('info').style.display='none'}
+  else if(infoTarget){updateInfo(infoTarget)}
+  else{$('info').innerHTML='<div class="info-hdr">📍 Click a facility</div><div class="info-row"><span class="info-val">Hover or click any facility on the globe</span></div>';$('info').style.display='block'}
+});
+
+// ═══ DORMANT MODE ═══
+$('cr-dormant').addEventListener('click',function(){
+  dormantMode=!dormantMode;
+  this.style.color=dormantMode?'#3fb950':'#c9d1d9';
+  this.style.borderColor=dormantMode?'#3fb950':'#30363d';
+  logMsg('Dormant mode: '+(dormantMode?'ON — data flow only':'OFF — full globe'));
+});
+
+function realPing(endpoint,cb){
+  var t0=performance.now();
+  fetch(endpoint.url,{method:'HEAD',mode:'no-cors',cache:'no-store'}).then(function(){
+    var ms=performance.now()-t0;
+    cb(null,{name:endpoint.name,ms:ms,status:'up',layer:endpoint.layer});
+  }).catch(function(err){
+    var ms=performance.now()-t0;
+    cb(null,{name:endpoint.name,ms:ms,status:'timeout',layer:endpoint.layer,err:err.message});
+  });
+}
+
+function traceRoute(fromStation,toStation,cb){
+  var hops=[];
+  var layers=[0,1,2,3,4,5];
+  var t0=performance.now();
+  var hopIdx=0;
+  function nextHop(){
+    if(hopIdx>=layers.length*2){cb(hops);return}
+    var li=hopIdx<layers.length?layers[hopIdx]:layers[layers.length*2-1-hopIdx];
+    var gate=gateStates[Math.min(li,gateStates.length-1)];
+    var phase=hopIdx<layers.length?'ascend':'descend';
+    var latency=gate.jitter*(0.5+Math.random());
+    var dropped=Math.random()<gate.denial;
+    var denied=false;
+    if(gate.alertLevel>3&&Math.random()<0.4) denied=true;
+    setTimeout(function(){
+      var hop={
+        idx:hopIdx,layer:li,name:gate.name,phase:phase,
+        ms:latency,ttl:64-hopIdx*4,
+        dropped:dropped,denied:denied,
+        firewall:gate.firewall,ids:gate.ids
+      };
+      hops.push(hop);
+      var sym=dropped?'✗':denied?'⊘':'✓';
+      var col=dropped?'#f85149':denied?'#ff8c38':'#3fb950';
+      logMsg('  '+hopIdx+' '+sym+' '+gate.name+' '+latency.toFixed(1)+'ms ttl='+hop.ttl+' ['+gate.firewall+']',col);
+      ftLog('comms',sym+' hop '+hopIdx+' '+gate.name+' '+latency.toFixed(1)+'ms ['+phase+']',col);
+      ftLog('data','trace|hop'+hopIdx+'|L'+li+'|'+latency.toFixed(1)+'ms|'+(dropped?'DROP':denied?'DENY':'OK'),'#8b949e');
+
+      if(!dropped&&!denied){
+        var ci=Math.floor(Math.random()*CABLES.length);
+        spawnPacket(ci,{speed:0.4+Math.random()*0.3,color:col,
+          gateData:{trace:true,hop:hopIdx,layer:li}});
+      } else {
+        denialEffects.push({layer:li,time:time,type:dropped?'drop':'deny',ttl:60});
+        if(dropped) score.dropped++;
+        if(denied) score.denied++;
+      }
+      hopIdx++;nextHop();
+    },30+latency*0.5);
+  }
+  nextHop();
+}
+
+var INFRA_COLORS={particle:'#ff3838',neutrino:'#ff8c38',radio:'#ffe138',gravity:'#a78bfa',fusion:'#3fb950',supercomp:'#38a5ff',nuclear:'#f85149',ionosphere:'#bc8cff',cable:'#58a6ff',
+  dsn:'#ffe138',ground:'#3fb950',starlink:'#58a6ff',sigint:'#f85149',chip_fab:'#ff3838',gpu:'#3fb950',quantum:'#a78bfa',assembly:'#ff8c38',
+  hydro:'#38a5ff',wind:'#3fb950',solar:'#ffe138',ixp:'#e2b714',cable_landing:'#56d4dd',governance:'#f0883e',root_dns:'#56d4dd',cdn:'#3fb950',proxy:'#bc8cff'};
+var INFRA_SHAPES={particle:'◆',neutrino:'◇',radio:'◎',gravity:'◈',fusion:'⊛',supercomp:'▣',nuclear:'⚛',ionosphere:'◉',cable:'≈',
+  dsn:'⊕',ground:'⊙',starlink:'✦',sigint:'◉',chip_fab:'▲',gpu:'■',quantum:'◈',assembly:'●',hydro:'▽',wind:'◇',solar:'○',
+  ixp:'◆',cable_landing:'◎',governance:'⚖',root_dns:'⊗',cdn:'⊞',proxy:'⇋'};
+
+var totalInfra=RESEARCH.length+SPACE_INFRA.length+DATA_CENTERS.length+NETWORK_HUBS.length+POWER_INFRA.length+MANUFACTURING.length+NET_PROTOCOL.length;
+var allFacs=[].concat(RESEARCH,SPACE_INFRA,DATA_CENTERS,NETWORK_HUBS,POWER_INFRA,MANUFACTURING,NET_PROTOCOL);
+var showMap=true,showGrid=true,showMag=true;
+var MAG_TILT=11.5*Math.PI/180;
+var MAG_NORTH={lon:-72.6,lat:86.5};
+var MAG_SOUTH={lon:137.2,lat:-64.1};
+
+// Simplified world coastlines — compact [lon,lat] segments, null=break
+var COAST=[
+// North America
+[-168,65.5],[-162,64],[-153,60],[-149,61],[-141,60],[-138,59],[-135,57],[-130,55],[-126,49],[-124,46],[-124,42],[-120,35],[-117,33],[-115,30],[-110,25],[-105,20],[-97,19],[-96,16],[-88,15],[-84,11],[-80,8],[-77,9],null,
+[-80,25],[-82,27],[-84,30],[-89,30],[-90,29],[-94,30],[-97,26],null,
+[-77,18],[-76,18],null,
+[-67,45],[-70,42],[-74,40],[-76,37],[-76,35],[-81,32],[-81,25],null,
+[-64,47],[-60,47],[-56,48],[-52,47],null,
+// Greenland
+[-45,60],[-43,64],[-22,70],[-18,76],[-20,82],[-40,83],[-53,79],[-68,76],[-57,69],[-45,60],null,
+// South America
+[-80,9],[-75,11],[-72,12],[-67,11],[-62,11],[-60,9],[-52,4],[-50,0],[-49,-2],[-45,-3],[-41,-3],[-38,-8],[-35,-10],[-39,-15],[-40,-22],[-43,-23],[-48,-28],[-52,-33],[-55,-34],[-57,-38],[-66,-55],[-68,-54],[-74,-50],[-76,-45],[-73,-40],[-72,-34],[-71,-30],[-70,-18],[-76,-14],[-81,-5],[-80,0],[-80,9],null,
+// Europe
+[-10,36],[-9,39],[-8,44],[-2,43],[0,43],[3,43],[5,44],[8,44],[14,45],[16,46],[18,42],[20,40],[24,38],[26,41],[30,41],[32,42],[34,42],[36,37],null,
+[-6,53],[-10,52],[-10,54],[-6,58],[-3,59],[0,56],[2,53],[0,52],[-5,50],[-6,53],null,
+[5,53],[5,54],[10,55],[12,57],[12,56],[9,54],[7,53],[5,53],null,
+// Scandinavia
+[5,60],[7,62],[12,65],[15,69],[20,70],[25,71],[30,70],[30,66],[25,65],[18,60],[13,56],[12,57],null,
+// Africa
+[-17,15],[-16,12],[-13,10],[-8,5],[-5,5],[2,5],[5,4],[10,4],[10,1],[9,-1],[12,-6],[14,-10],[17,-22],[18,-28],[20,-35],[26,-34],[28,-30],[32,-26],[35,-24],[40,-11],[45,-12],[50,-26],[44,-24],[36,-19],[40,-2],[42,12],[44,12],[43,11],[46,3],[50,12],[44,13],[43,14],null,
+// Asia
+[30,42],[36,42],[40,43],[44,42],[49,38],[52,37],[54,27],[56,26],[51,24],[48,29],[44,30],[36,33],[35,32],[34,29],[32,31],[30,31],[35,35],[36,37],null,
+// India
+[68,24],[72,20],[73,16],[75,12],[77,8],[80,10],[80,14],[83,18],[87,22],[89,22],[92,21],[97,17],[100,14],[104,10],null,
+// East Asia
+[104,2],[106,10],[109,20],[110,20],[114,22],[117,24],[120,26],[121,30],[121,34],[120,36],[124,40],[126,38],[130,33],[131,34],[135,35],[140,36],[141,43],[145,44],[142,47],[140,52],[136,55],[130,55],[128,50],[120,53],[119,50],[107,51],[89,50],[73,55],[68,56],[55,57],[50,55],[40,53],[30,45],null,
+// SE Asia / Indonesia
+[100,1],[104,-2],[106,-6],[110,-8],[115,-8],[120,-10],[126,-8],[131,-2],[141,-3],[141,-8],[145,-6],null,
+// Australia
+[115,-34],[114,-22],[119,-18],[122,-17],[127,-14],[130,-12],[136,-12],[136,-14],[139,-17],[141,-18],[142,-11],[145,-15],[150,-24],[153,-27],[153,-31],[151,-34],[142,-38],[137,-35],[130,-32],[115,-34],null,
+// NZ
+[174,-41],[172,-44],[168,-46],[167,-45],[171,-43],[175,-37],[178,-37],[177,-40],[174,-41],null,
+// Iceland
+[-24,64],[-22,66],[-14,66],[-13,65],[-18,63],[-24,64],null,
+// Japan
+[130,31],[131,34],[136,35],[140,36],[141,41],[142,43],[145,44],[145,43],[141,39],[140,37],[137,35],[135,34],[130,31],null
+];
+
+var GRID_LATS=[-66.5,-45,-23.4,0,23.4,45,66.5];
+var GRID_LONS=[-180,-150,-120,-90,-60,-30,0,30,60,90,120,150];
+
+function cGeo(lon,lat){var la=lat*Math.PI/180,lo=lon*Math.PI/180;return{x:Math.cos(la)*Math.cos(lo),y:-Math.sin(la),z:Math.cos(la)*Math.sin(lo)}}
+function cRot(x,y,z){var x1=x*Math.cos(rotY)-z*Math.sin(rotY);var z1=x*Math.sin(rotY)+z*Math.cos(rotY);var y1=y*Math.cos(rotX)-z1*Math.sin(rotX);var z2=y*Math.sin(rotX)+z1*Math.cos(rotX);return[x1,y1,z2]}
+function cProj(x,y,z,rad,W,H){var r=cRot(x,y,z);return{x:W/2+r[0]*rad,y:H/2+r[1]*rad,z:r[2],vis:r[2]<0.15}}
+function slerp(a,b,t){var dot=a.x*b.x+a.y*b.y+a.z*b.z;dot=Math.max(-1,Math.min(1,dot));var om=Math.acos(dot);if(om<0.001)return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t,z:a.z+(b.z-a.z)*t};var s=Math.sin(om);return{x:Math.sin((1-t)*om)/s*a.x+Math.sin(t*om)/s*b.x,y:Math.sin((1-t)*om)/s*a.y+Math.sin(t*om)/s*b.y,z:Math.sin((1-t)*om)/s*a.z+Math.sin(t*om)/s*b.z}}
+
+var junctions=[];
+EARTH_LAYERS.forEach(function(layer,li){
+  if(li===EARTH_LAYERS.length-1) return;
+  var nJ=6+li*2;
+  for(var j=0;j<nJ;j++){
+    var angle=(j/nJ)*Math.PI*2;
+    junctions.push({layer:li,r:layer.rFrac,lat:(60-li*8)*Math.sin(angle),lon:(j/nJ)*360-180,angle:angle,color:layer.color});
+  }
+});
+
+function spawnPacket(cableIdx,opts){
+  var cable=CABLES[cableIdx%CABLES.length];
+  packets.push({cable:cableIdx%CABLES.length,phase:opts&&opts.phase||'ascend',progress:opts&&opts.progress||0,
+    speed:opts&&opts.speed||(0.3+Math.random()*0.4),color:opts&&opts.color||cable.color,
+    fromStation:cable.from,toStation:cable.to,trail:[],born:time,laps:0,gateData:opts&&opts.gateData||null});
+}
+
+function classifyMsg(text){
+  var QP=window.QuantumPrefixes;
+  if(!QP||!QP.classifyLine) return null;
+  try{return QP.classifyLine(text,qLang)}catch(e){return null}
+}
+
+function trackPrefix(cls){
+  if(!cls||!cls.sym) return;
+  qLines++;
+  if(cls.sym!==' '){qClassified++;var k=cls.sym;prefixCounts[k]=(prefixCounts[k]||0)+1}
+  contrailBuf.push(cls.sym);
+  if(contrailBuf.length>contrailMax) contrailBuf.shift();
+  dacCallCount++;
+}
+
+function logMsg(msg,color){
+  var el=$('log');
+  var d=document.createElement('div');
+  var ts='['+new Date().toLocaleTimeString()+'] ';
+  var cls=classifyMsg(msg);
+  trackPrefix(cls);
+  if(gutterMode&&cls&&cls.sym&&cls.sym!==' '){
+    var symCol=SYM_COLORS[cls.sym]||'#484f58';
+    d.innerHTML='<span class="qg" style="color:'+symCol+'">'+cls.sym.replace(':','')+'</span><span style="color:#484f58;font-size:8px">'+ts+'</span><span style="color:'+(color||'#8b949e')+'">'+msg+'</span>';
+  } else {
+    d.innerHTML='<span class="qg" style="color:#21262d">·</span><span style="color:#484f58;font-size:8px">'+ts+'</span><span style="color:'+(color||'#8b949e')+'">'+msg+'</span>';
+  }
+  el.appendChild(d);el.scrollTop=el.scrollHeight;
+  if(el.children.length>200) el.removeChild(el.firstChild);
+}
+
+var cvs=$('cv'),wrap=$('main'),ctx=cvs.getContext('2d');
+function resize(){var r=wrap.getBoundingClientRect();var dpr=devicePixelRatio||1;cvs.width=r.width*dpr;cvs.height=r.height*dpr;ctx.setTransform(dpr,0,0,dpr,0,0)}
+resize();window.addEventListener('resize',resize);
+
+wrap.addEventListener('pointerdown',function(e){if(e.target.closest('#log')||e.target.closest('#legend')||e.target.closest('#hud')||e.target.closest('#info')||e.target.closest('#settings'))return;drag=true;lx=e.clientX;ly=e.clientY});
+wrap.addEventListener('click',function(e){
+  if(e.target.closest('#log')||e.target.closest('#legend')||e.target.closest('#hud')||e.target.closest('#info')||e.target.closest('#settings'))return;
+  if(!infoOpen)return;
+  var rect=cvs.getBoundingClientRect();var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  var W2=rect.width,H2=rect.height,bR2=Math.min(W2,H2)*0.40*zoom;
+  var closest=null,dist=Infinity;
+  allFacs.forEach(function(f){var g=cGeo(f.lon,f.lat);var rv=cRot(g.x,g.y,g.z);var px=W2/2+rv[0]*bR2,py=H2/2+rv[1]*bR2;var d=Math.sqrt((mx-px)*(mx-px)+(my-py)*(my-py));if(d<dist&&d<25){dist=d;closest=f}});
+  if(closest) updateInfo(closest);
+});
+window.addEventListener('pointermove',function(e){if(!drag)return;rotY+=(e.clientX-lx)*0.006;rotX+=(e.clientY-ly)*0.006;rotX=Math.max(-Math.PI/2,Math.min(Math.PI/2,rotX));lx=e.clientX;ly=e.clientY});
+window.addEventListener('pointerup',function(){drag=false});
+wrap.addEventListener('wheel',function(e){e.preventDefault();zoom=Math.max(0.5,Math.min(3,zoom-e.deltaY*0.002))},{passive:false});
+
+$('cr-launch').addEventListener('click',function(){spawnPacket(Math.floor(Math.random()*CABLES.length))});
+$('cr-auto').addEventListener('click',function(){autoMode=!autoMode;this.textContent=autoMode?'Auto: ON':'Auto: OFF';this.style.color=autoMode?'#3fb950':'#c9d1d9'});
+$('cr-reset').addEventListener('click',function(){packets=[];time=0;logMsg('Reset')});
+$('cr-speed').addEventListener('input',function(){speed=+this.value});
+$('cr-infra').addEventListener('click',function(){infraShow=!infraShow;this.textContent=infraShow?'Infra: ON':'Infra: OFF';this.style.color=infraShow?'#3fb950':'#c9d1d9'});
+$('cr-log').addEventListener('click',function(){logShow=!logShow;$('log').style.display=logShow?'block':'none'});
+
+var legHTML='<div style="font-weight:700;margin-bottom:4px;font-size:10px;color:#c9d1d9">Iron Line · Earth</div>';
+EARTH_LAYERS.forEach(function(l){legHTML+='<div class="lr"><span class="ld" style="background:'+l.color+'"></span><span style="color:'+l.color+';width:30px;display:inline-block">'+l.iron+'</span>'+l.name+'</div>'});
+legHTML+='<div style="margin-top:4px;border-top:1px solid #21262d;padding-top:3px;font-weight:700;font-size:9px;color:#c9d1d9">Infrastructure</div>';
+var layerKeys=[{k:'_layerResearch',l:'Research ('+RESEARCH.length+')',c:'#ff3838',i:'◆'},{k:'_layerSpace',l:'Space ('+SPACE_INFRA.length+')',c:'#ffe138',i:'✦'},{k:'_layerDC',l:'DCs ('+DATA_CENTERS.length+')',c:'#3fb950',i:'●'},{k:'_layerNet',l:'Net ('+NETWORK_HUBS.length+')',c:'#e2b714',i:'▲'},{k:'_layerPower',l:'Power ('+POWER_INFRA.length+')',c:'#38a5ff',i:'▽'},{k:'_layerMfg',l:'Mfg ('+MANUFACTURING.length+')',c:'#a78bfa',i:'■'},{k:'_layerProto',l:'Proto ('+NET_PROTOCOL.length+')',c:'#f0883e',i:'⊞'}];
+layerKeys.forEach(function(ly){legHTML+='<div class="lr" data-lk="'+ly.k+'"><span class="ld" style="background:'+ly.c+'"></span><span style="color:'+ly.c+'">'+ly.i+'</span> '+ly.l+'</div>'});
+legHTML+='<div style="margin-top:3px;border-top:1px solid #21262d;padding-top:2px;color:#484f58;font-size:8px">'+CABLES.length+' cables · '+STATIONS.length+' stations<br>'+totalInfra+' facilities · '+junctions.length+' junctions</div>';
+$('legend').innerHTML=legHTML;
+$('legend').querySelectorAll('[data-lk]').forEach(function(el){
+  el.addEventListener('click',function(){
+    var k=this.dataset.lk;
+    if(k==='_layerResearch') _layerResearch=!_layerResearch;
+    else if(k==='_layerSpace') _layerSpace=!_layerSpace;
+    else if(k==='_layerDC') _layerDC=!_layerDC;
+    else if(k==='_layerNet') _layerNet=!_layerNet;
+    else if(k==='_layerPower') _layerPower=!_layerPower;
+    else if(k==='_layerMfg') _layerMfg=!_layerMfg;
+    else if(k==='_layerProto') _layerProto=!_layerProto;
+    this.classList.toggle('off');
+  });
+});
+
+function drawInfra(arr,radMul,toggle,W,H,baseRad){
+  if(!toggle) return;
+  arr.forEach(function(f){
+    var g=cGeo(f.lon,f.lat);var p=cProj(g.x,g.y,g.z,baseRad*radMul,W,H);
+    if(p.z<-0.2) return;
+    var a=Math.max(0.1,0.6*(1-Math.abs(p.z)));
+    ctx.globalAlpha=a;
+    var col=INFRA_COLORS[f.type]||'#58a6ff';
+    ctx.fillStyle=col;ctx.font='7px '+mono;ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.fillText(INFRA_SHAPES[f.type]||'●',p.x,p.y);
+    if(f.mw){var sz=Math.min(6,Math.max(2,f.mw/300));ctx.beginPath();ctx.arc(p.x,p.y,sz,0,Math.PI*2);ctx.fillStyle=col+'30';ctx.fill();ctx.strokeStyle=col+'60';ctx.lineWidth=0.4;ctx.stroke()}
+    if(f.tbps&&f.type==='ixp'){var sz=Math.min(5,f.tbps/4);ctx.beginPath();ctx.moveTo(p.x,p.y-sz);ctx.lineTo(p.x+sz,p.y+sz);ctx.lineTo(p.x-sz,p.y+sz);ctx.closePath();ctx.fillStyle=col+'40';ctx.fill()}
+    if(p.z<0.1){ctx.font='4.5px '+mono;ctx.fillStyle='rgba(230,237,243,'+a*0.4+')';ctx.textBaseline='top';ctx.fillText(f.name.split('(')[0].split(' ')[0],p.x,p.y+5)}
+    if(f.ping!==undefined){var pp=0.4+0.6*Math.abs(Math.sin(time*2+f.ping));var gl=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,6+f.ping);gl.addColorStop(0,col+(Math.round(pp*60).toString(16).padStart(2,'0')));gl.addColorStop(1,'transparent');ctx.fillStyle=gl;ctx.fillRect(p.x-10,p.y-10,20,20)}
+    ctx.globalAlpha=1;
+  });
+}
+
+function draw(){
+  requestAnimationFrame(draw);
+  if(!drag) rotY+=0.0015;
+  time+=0.016*speed;
+  frameCount++;
+  var now=performance.now();
+  if(now-fpsT>1000){lastFps=Math.round(frameCount*1000/(now-fpsT));frameCount=0;fpsT=now;$('st-fps').textContent='fps:'+lastFps}
+
+  if(autoMode&&Math.random()<0.025*speed&&packets.length<40) spawnPacket(Math.floor(Math.random()*CABLES.length));
+
+  var r=wrap.getBoundingClientRect();var W=r.width,H=r.height;
+  ctx.clearRect(0,0,W,H);
+  var baseRad=Math.min(W,H)*0.40*zoom;
+
+  var bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,baseRad*1.2);
+  bg.addColorStop(0,'rgba(14,10,24,0.15)');bg.addColorStop(0.7,'rgba(13,17,23,0.05)');bg.addColorStop(1,'transparent');
+  ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+
+  if(!dormantMode){
+  for(var li=EARTH_LAYERS.length-1;li>=0;li--){
+    var layer=EARTH_LAYERS[li];var layerRad=baseRad*layer.rFrac;
+    var lOp=layerOpacity[li]!==undefined?layerOpacity[li]:1;
+    ctx.globalAlpha=lOp;
+    ctx.beginPath();ctx.arc(W/2,H/2,layerRad,0,Math.PI*2);
+    var ringAlpha=li===0?0.15:0.07;
+    if(layerFlash[li]){ringAlpha+=(0.03*Math.abs(Math.sin(time*1.2+li*1.1)))}
+    var ah=Math.round(ringAlpha*255).toString(16).padStart(2,'0');
+    ctx.strokeStyle=layer.color+ah;
+    ctx.lineWidth=li===0?1.5:0.8;ctx.stroke();
+    var lx2=W/2+layerRad+6;if(lx2<W-80){ctx.fillStyle=layer.color+'90';ctx.font='bold 8px '+mono;ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillText(layer.iron+' '+layer.name,lx2,H/2-li*2)}
+    ctx.globalAlpha=1;
+  }
+
+  var cg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,baseRad*0.12);
+  cg.addColorStop(0,'rgba(255,100,40,0.12)');cg.addColorStop(0.6,'rgba(255,56,56,0.04)');cg.addColorStop(1,'transparent');
+  ctx.fillStyle=cg;ctx.beginPath();ctx.arc(W/2,H/2,baseRad*0.12,0,Math.PI*2);ctx.fill();
+
+  var pulse=0.4+0.2*Math.sin(time*2);
+  ctx.beginPath();ctx.arc(W/2,H/2,2+pulse*1.5,0,Math.PI*2);ctx.fillStyle='rgba(255,200,100,'+pulse*0.35+')';ctx.fill();
+  } else {
+    ctx.beginPath();ctx.arc(W/2,H/2,baseRad*0.05,0,Math.PI*2);ctx.fillStyle='rgba(255,200,100,0.3)';ctx.fill();
+    for(var li=0;li<EARTH_LAYERS.length;li++){var layerRad=baseRad*EARTH_LAYERS[li].rFrac;ctx.beginPath();ctx.arc(W/2,H/2,layerRad,0,Math.PI*2);ctx.strokeStyle=EARTH_LAYERS[li].color+'12';ctx.lineWidth=0.5;ctx.stroke()}
+  }
+
+  if(!dormantMode){
+  // ═══ COASTLINES ═══
+  if(showMap){
+    ctx.strokeStyle='rgba(86,212,221,0.25)';ctx.lineWidth=1;
+    var drawing=false;
+    for(var ci=0;ci<COAST.length;ci++){
+      if(COAST[ci]===null){drawing=false;continue}
+      var g=cGeo(COAST[ci][0],COAST[ci][1]);
+      var p=cProj(g.x,g.y,g.z,baseRad,W,H);
+      if(p.z<-0.15){drawing=false;continue}
+      var a=Math.max(0.05,0.3*(1-Math.abs(p.z)));
+      if(!drawing){ctx.beginPath();ctx.moveTo(p.x,p.y);drawing=true}
+      else{ctx.lineTo(p.x,p.y)}
+      if(ci+1>=COAST.length||COAST[ci+1]===null){ctx.strokeStyle='rgba(86,212,221,'+a+')';ctx.stroke();drawing=false}
+    }
+  }
+
+  // ═══ LAT/LON GRID ═══
+  if(showGrid){
+    ctx.lineWidth=0.4;
+    GRID_LATS.forEach(function(lat){
+      ctx.beginPath();var started=false;
+      var isEquator=(lat===0);var isTropic=(Math.abs(lat)===23.4);var isArctic=(Math.abs(lat)===66.5);
+      ctx.strokeStyle=isEquator?'rgba(201,168,76,0.2)':isTropic?'rgba(255,140,56,0.12)':isArctic?'rgba(56,165,255,0.12)':'rgba(200,200,200,0.06)';
+      ctx.lineWidth=isEquator?1:0.5;
+      if(isTropic||isArctic) ctx.setLineDash([3,5]);
+      for(var lo=-180;lo<=180;lo+=5){var g=cGeo(lo,lat);var p=cProj(g.x,g.y,g.z,baseRad,W,H);if(p.z<-0.2){started=false;continue}if(!started){ctx.moveTo(p.x,p.y);started=true}else ctx.lineTo(p.x,p.y)}
+      ctx.stroke();ctx.setLineDash([]);
+      if(isEquator||isTropic||isArctic){var lbl=isEquator?'Equator':lat>0?(isTropic?'Tropic Cancer':'Arctic'):(isTropic?'Tropic Capricorn':'Antarctic');
+        var g=cGeo(10,lat);var p=cProj(g.x,g.y,g.z,baseRad,W,H);if(p.z>-0.1){ctx.fillStyle=isEquator?'rgba(201,168,76,0.35)':'rgba(200,200,200,0.2)';ctx.font='6px '+mono;ctx.textAlign='left';ctx.textBaseline='bottom';ctx.fillText(lbl,p.x+3,p.y-2)}}
+    });
+    ctx.strokeStyle='rgba(200,200,200,0.04)';ctx.lineWidth=0.3;
+    GRID_LONS.forEach(function(lon){
+      ctx.beginPath();var started=false;
+      for(var la=-85;la<=85;la+=5){var g=cGeo(lon,la);var p=cProj(g.x,g.y,g.z,baseRad,W,H);if(p.z<-0.2){started=false;continue}if(!started){ctx.moveTo(p.x,p.y);started=true}else ctx.lineTo(p.x,p.y)}
+      ctx.stroke();
+    });
+  }
+
+  // ═══ MAGNETIC POLES + DIPOLE FIELD ═══
+  if(showMag){
+    var gN=cGeo(MAG_NORTH.lon,MAG_NORTH.lat);var pN=cProj(gN.x,gN.y,gN.z,baseRad,W,H);
+    var gS=cGeo(MAG_SOUTH.lon,MAG_SOUTH.lat);var pS=cProj(gS.x,gS.y,gS.z,baseRad,W,H);
+    if(pN.z>-0.3){ctx.beginPath();ctx.arc(pN.x,pN.y,5,0,Math.PI*2);ctx.fillStyle='rgba(248,81,73,0.7)';ctx.fill();ctx.fillStyle='#f85149';ctx.font='bold 7px '+mono;ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('N',pN.x,pN.y-7)}
+    if(pS.z>-0.3){ctx.beginPath();ctx.arc(pS.x,pS.y,5,0,Math.PI*2);ctx.fillStyle='rgba(88,166,255,0.7)';ctx.fill();ctx.fillStyle='#58a6ff';ctx.font='bold 7px '+mono;ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText('S',pS.x,pS.y+7)}
+
+    ctx.lineWidth=0.6;
+    for(var fl=0;fl<8;fl++){
+      var fAngle=(fl/8)*Math.PI*2;
+      ctx.beginPath();
+      var started=false;
+      for(var t=0;t<=48;t++){
+        var theta=(t/48)*Math.PI;
+        var rF=baseRad*1.08*Math.sin(theta)*Math.sin(theta);
+        var fx=rF*Math.cos(fAngle);
+        var fy=-rF*Math.cos(theta);
+        var fz=rF*Math.sin(fAngle)*Math.sin(MAG_TILT);
+        var fy2=fy*Math.cos(MAG_TILT)-fz*Math.sin(MAG_TILT);
+        var fz2=fy*Math.sin(MAG_TILT)+fz*Math.cos(MAG_TILT);
+        var p=cProj(fx/baseRad,fy2/baseRad,fz2/baseRad,baseRad,W,H);
+        if(p.z<-0.3){started=false;continue}
+        if(!started){ctx.moveTo(p.x,p.y);started=true}else ctx.lineTo(p.x,p.y);
+      }
+      ctx.strokeStyle='rgba(167,139,250,'+(0.04+0.03*Math.sin(time*0.5+fl))+')';
+      ctx.stroke();
+    }
+  }
+
+  // Geographic poles (rotation axis)
+  var gNP=cGeo(0,90);var pNP=cProj(gNP.x,gNP.y,gNP.z,baseRad,W,H);
+  var gSP=cGeo(0,-90);var pSP=cProj(gSP.x,gSP.y,gSP.z,baseRad,W,H);
+  ctx.setLineDash([2,3]);ctx.strokeStyle='rgba(200,200,200,0.15)';ctx.lineWidth=0.5;
+  ctx.beginPath();ctx.moveTo(pNP.x,pNP.y);ctx.lineTo(pSP.x,pSP.y);ctx.stroke();ctx.setLineDash([]);
+
+  if(window._showJunctions) junctions.forEach(function(j){var jR=baseRad*j.r;var jA=j.angle+time*0.02;var jx=W/2+jR*Math.cos(jA);var jy=H/2+jR*Math.sin(jA)*0.4;var jp=0.4+0.6*Math.sin(time*2+j.angle*3);ctx.beginPath();ctx.arc(jx,jy,2+jp,0,Math.PI*2);ctx.fillStyle=j.color+(Math.round(jp*180).toString(16).padStart(2,'0'));ctx.fill()});
+
+  if(window._showCables) CABLES.forEach(function(c){var sA=STATIONS[c.from],sB=STATIONS[c.to];var gA=cGeo(sA.lon,sA.lat),gB=cGeo(sB.lon,sB.lat);ctx.beginPath();for(var t=0;t<=24;t++){var f=t/24;var mid=slerp(gA,gB,f);var p=cProj(mid.x,mid.y,mid.z,baseRad,W,H);if(p.z<-0.3)continue;t===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y)}ctx.strokeStyle=c.color+'50';ctx.lineWidth=1.2;ctx.stroke()});
+
+  if(window._showStations){
+  STATIONS.forEach(function(st){var g=cGeo(st.lon,st.lat);var p=cProj(g.x,g.y,g.z,baseRad,W,H);if(p.z<-0.2)return;var a=Math.max(0.2,1-Math.abs(p.z)*1.5);ctx.globalAlpha=a;var dR=st.hub?4:2.5;ctx.beginPath();ctx.arc(p.x,p.y,dR,0,Math.PI*2);ctx.fillStyle=st.hub?'#bc8cff':'#58a6ff';ctx.fill();
+    if(st.hub){var gl=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,8);gl.addColorStop(0,'rgba(188,140,255,0.12)');gl.addColorStop(1,'transparent');ctx.fillStyle=gl;ctx.fillRect(p.x-8,p.y-8,16,16)}
+    if(p.z<-0.05){ctx.globalAlpha=1;return}ctx.font=(st.hub?'bold ':'')+'7px '+mono;ctx.fillStyle='rgba(230,237,243,'+a*0.7+')';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText(st.name,p.x,p.y-dR-3);ctx.globalAlpha=1});
+  STATIONS.forEach(function(st){if(!st.hub)return;var g=cGeo(st.lon,st.lat);var p1=cProj(g.x,g.y,g.z,baseRad,W,H);if(p1.z<-0.1)return;ctx.strokeStyle='rgba(188,140,255,0.06)';ctx.lineWidth=0.8;ctx.setLineDash([2,4]);ctx.beginPath();ctx.moveTo(W/2,H/2);ctx.lineTo(p1.x,p1.y);ctx.stroke();ctx.setLineDash([])});
+  }
+
+  if(infraShow){
+    drawInfra(RESEARCH,1.0,_layerResearch,W,H,baseRad);
+    drawInfra(SPACE_INFRA,1.04,_layerSpace,W,H,baseRad);
+    drawInfra(DATA_CENTERS,0.99,_layerDC,W,H,baseRad);
+    drawInfra(NETWORK_HUBS,1.0,_layerNet,W,H,baseRad);
+    drawInfra(POWER_INFRA,0.97,_layerPower,W,H,baseRad);
+    drawInfra(MANUFACTURING,1.01,_layerMfg,W,H,baseRad);
+    drawInfra(NET_PROTOCOL,1.06,_layerProto,W,H,baseRad);
+  }
+  } // end !dormantMode for map/cables/stations/infra
+
+  var alive=[];
+  var activeCables={};
+  packets.forEach(function(pkt){
+    var cable=CABLES[pkt.cable];var sA=STATIONS[pkt.fromStation],sB=STATIONS[pkt.toStation];
+    var gA=cGeo(sA.lon,sA.lat),gB=cGeo(sB.lon,sB.lat);
+    pkt.progress+=0.008*pkt.speed*speed;
+    if(!pkt.lastLayer) pkt.lastLayer=-1;
+    var px,py,pa=0.9,pr=3;
+
+    if(pkt.phase==='ascend'){
+      var t=Math.min(pkt.progress,1);var e=1-Math.pow(1-t,2.5);var sp=cProj(gA.x,gA.y,gA.z,baseRad,W,H);
+      px=W/2+(sp.x-W/2)*e;py=H/2+(sp.y-H/2)*e;
+      var li=Math.floor(e*EARTH_LAYERS.length);if(li<EARTH_LAYERS.length){pkt.color=EARTH_LAYERS[Math.min(li,EARTH_LAYERS.length-1)].color;pkt.curLayer=li}
+      if(li!==pkt.lastLayer&&li<EARTH_LAYERS.length){
+        pkt.lastLayer=li;
+      }
+      // direction arrow only
+      var ax=px-W/2,ay=py-H/2;var al=Math.sqrt(ax*ax+ay*ay);if(al>8){var nx=ax/al,ny=ay/al;ctx.fillStyle=pkt.color+'60';ctx.beginPath();ctx.moveTo(px+nx*4,py+ny*4);ctx.lineTo(px-ny*2,py+nx*2);ctx.lineTo(px+ny*2,py-nx*2);ctx.closePath();ctx.fill()}
+      if(pkt.progress>=1){pkt.phase='surface';pkt.progress=0;pkt.color=cable.color;pkt.lastLayer=-1}
+    } else if(pkt.phase==='surface'){
+      activeCables[pkt.cable]=pkt.color;
+      var t=Math.min(pkt.progress,1);var mid=slerp(gA,gB,t);var mp=cProj(mid.x,mid.y,mid.z,baseRad,W,H);
+      px=mp.x;py=mp.y;pa=mp.z<-0.3?0.1:0.9;pkt.color=cable.color;
+      // cable highlight — subtle segment behind packet
+      if(pa>0.2){
+        ctx.strokeStyle=cable.color+'25';ctx.lineWidth=1.5;ctx.beginPath();
+        var seg0=Math.max(0,t-0.08),seg1=Math.min(1,t+0.02);
+        for(var st2=0;st2<=8;st2++){var f=seg0+(seg1-seg0)*(st2/8);var m2=slerp(gA,gB,f);var p2=cProj(m2.x,m2.y,m2.z,baseRad,W,H);if(p2.z<-0.3)continue;st2===0?ctx.moveTo(p2.x,p2.y):ctx.lineTo(p2.x,p2.y)}
+        ctx.stroke();
+      }
+      if(pkt.progress>=1){pkt.phase='descend';pkt.progress=0;pkt.lastLayer=-1}
+    } else if(pkt.phase==='descend'){
+      var t=Math.min(pkt.progress,1);var e=Math.pow(t,2.5);var sp=cProj(gB.x,gB.y,gB.z,baseRad,W,H);
+      px=sp.x+(W/2-sp.x)*e;py=sp.y+(H/2-sp.y)*e;
+      var li=EARTH_LAYERS.length-1-Math.floor(e*EARTH_LAYERS.length);if(li>=0){pkt.color=EARTH_LAYERS[Math.max(0,li)].color;pkt.curLayer=li}
+      if(li!==pkt.lastLayer&&li>=0){
+        pkt.lastLayer=li;
+      }
+      // direction arrow pointing inward
+      var ax=W/2-px,ay=H/2-py;var al=Math.sqrt(ax*ax+ay*ay);if(al>8){var nx=ax/al,ny=ay/al;ctx.fillStyle=pkt.color+'60';ctx.beginPath();ctx.moveTo(px+nx*4,py+ny*4);ctx.lineTo(px-ny*2,py+nx*2);ctx.lineTo(px+ny*2,py-nx*2);ctx.closePath();ctx.fill()}
+      if(pkt.progress>=1){pkt.laps++;if(pkt.laps>=3)return;pkt.phase='ascend';pkt.progress=0;pkt.fromStation=pkt.toStation;var nc=CABLES[Math.floor(Math.random()*CABLES.length)];pkt.cable=CABLES.indexOf(nc);pkt.fromStation=nc.from;pkt.toStation=nc.to;pkt.lastLayer=-1}
+    }
+
+    if(px!==undefined){
+      pkt.trail.push({x:px,y:py,color:pkt.color});if(pkt.trail.length>20)pkt.trail.shift();
+      for(var ti=1;ti<pkt.trail.length;ti++){var ta=ti/pkt.trail.length*0.25;ctx.strokeStyle=pkt.trail[ti].color+Math.round(ta*255).toString(16).padStart(2,'0');ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pkt.trail[ti-1].x,pkt.trail[ti-1].y);ctx.lineTo(pkt.trail[ti].x,pkt.trail[ti].y);ctx.stroke()}
+      ctx.globalAlpha=pa;
+      ctx.beginPath();ctx.arc(px,py,2.5,0,Math.PI*2);ctx.fillStyle=pkt.color;ctx.fill();
+      ctx.globalAlpha=1;
+    }
+    alive.push(pkt);
+  });
+  packets=alive;
+
+  // ═══ DENIAL / LOSS / CROSSING VISUAL EFFECTS ═══
+  var aliveEffects=[];
+  denialEffects.forEach(function(de){
+    var age=time-de.time;if(age>de.ttl)return;
+    aliveEffects.push(de);
+    var layerRad=baseRad*EARTH_LAYERS[Math.min(de.layer,EARTH_LAYERS.length-1)].rFrac;
+    var alpha=Math.max(0,1-age/de.ttl);
+    if(de.type==='cross'){
+      var col=de.color||EARTH_LAYERS[de.layer].color;
+      var ca=Math.round(alpha*30);
+      ctx.strokeStyle=col+(ca<16?'0':'')+ca.toString(16);
+      ctx.lineWidth=1+alpha*0.8;
+      ctx.beginPath();ctx.arc(W/2,H/2,layerRad,0,Math.PI*2);ctx.stroke();
+      if(alpha>0.7){
+        var sparkAngle=time*2+de.layer*1.5;
+        var sx=W/2+layerRad*Math.cos(sparkAngle);var sy=H/2+layerRad*Math.sin(sparkAngle)*0.4;
+        ctx.beginPath();ctx.arc(sx,sy,1.5+alpha,0,Math.PI*2);
+        var sa2=Math.round(alpha*50);ctx.fillStyle=col+(sa2<16?'0':'')+sa2.toString(16);ctx.fill();
+      }
+    } else if(de.type==='drop'){
+      ctx.strokeStyle='rgba(248,81,73,'+alpha*0.2+')';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.arc(W/2,H/2,layerRad,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+      var xSz=4+age*0.2;
+      ctx.strokeStyle='rgba(248,81,73,'+alpha*0.4+')';ctx.lineWidth=1.5;
+      var xA=time*0.5+de.layer;var xx=W/2+layerRad*Math.cos(xA);var xy=H/2+layerRad*Math.sin(xA)*0.4;
+      ctx.beginPath();ctx.moveTo(xx-xSz,xy-xSz);ctx.lineTo(xx+xSz,xy+xSz);ctx.stroke();
+      ctx.beginPath();ctx.moveTo(xx+xSz,xy-xSz);ctx.lineTo(xx-xSz,xy+xSz);ctx.stroke();
+    } else {
+      ctx.strokeStyle='rgba(255,140,56,'+alpha*0.15+')';ctx.lineWidth=0.8;
+      var segs=8+de.layer*2;
+      for(var s=0;s<segs;s++){
+        var a1=(s/segs)*Math.PI*2;var a2=((s+0.3)/segs)*Math.PI*2;
+        ctx.beginPath();ctx.arc(W/2,H/2,layerRad,a1,a2);ctx.stroke();
+      }
+      ctx.fillStyle='rgba(255,140,56,'+alpha*0.3+')';ctx.font='bold 8px '+mono;ctx.textAlign='center';
+      var bx=W/2+layerRad*Math.cos(time*0.3+de.layer*2);var by=H/2+layerRad*Math.sin(time*0.3+de.layer*2)*0.4;
+      ctx.fillText('⊘',bx,by);
+    }
+  });
+  denialEffects=aliveEffects;
+
+  // Gate alert rings
+  gateStates.forEach(function(gate,gi){
+    if(gate.alertLevel>0){
+      var layerRad=baseRad*EARTH_LAYERS[Math.min(gi,EARTH_LAYERS.length-1)].rFrac;
+      var blink=Math.sin(time*4+gi)*0.5+0.5;
+      var aCol=gate.alertLevel>5?'rgba(248,81,73,':'rgba(255,140,56,';
+      ctx.strokeStyle=aCol+(blink*0.15*Math.min(gate.alertLevel,10)/10)+')';
+      ctx.lineWidth=gate.alertLevel>5?2:1;
+      ctx.beginPath();ctx.arc(W/2,H/2,layerRad,0,Math.PI*2);ctx.stroke();
+      gate.alertLevel=Math.max(0,gate.alertLevel-0.002);
+    }
+  });
+
+  var asc=0,sur=0,des=0;
+  packets.forEach(function(p){if(p.phase==='ascend')asc++;else if(p.phase==='surface')sur++;else des++});
+  var hudExtra='';
+  if(score.traversals||score.denied||score.dropped){
+    hudExtra='<br><span style="color:#3fb950">✓'+score.traversals+'</span> <span style="color:#f85149">✗'+score.dropped+'</span> <span style="color:#ff8c38">⊘'+score.denied+'</span>';
+    hudExtra+='<br><span style="color:#c9a84c">Score: '+((score.traversals*10+score.recon*5+score.exploits*25)-(score.denied*3+score.dropped*2))+'</span>';
+  }
+  if(score.flags.length) hudExtra+='<br><span style="color:#a78bfa">🚩'+score.flags.length+' flags</span>';
+  $('hud').innerHTML='<span style="color:#c9d1d9;font-weight:600">Core Race</span><br>Packets: <span style="color:#58a6ff">'+packets.length+'</span><br>'+
+    '<span style="color:#ff3838">↑'+asc+'</span> <span style="color:#3fb950">→'+sur+'</span> <span style="color:#38a5ff">↓'+des+'</span><br>'+
+    'Speed: ×'+speed.toFixed(1)+hudExtra+'<br><span style="color:#484f58">'+totalInfra+' fac · '+gateStates.length+' gates</span><br><span style="color:#c9a84c">24ms cortical target</span>';
+  $('st-pkt').textContent='pkt:'+packets.length;$('st-speed').textContent='×'+speed.toFixed(1);$('st-fac').textContent='fac:'+totalInfra;
+}
+draw();
+
+var tip=$('tip');
+wrap.addEventListener('mousemove',function(e){
+  var rect=cvs.getBoundingClientRect();var mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  var closest=null,dist=Infinity;var W=rect.width,H=rect.height,bR=Math.min(W,H)*0.40*zoom;
+  allFacs.forEach(function(f){var g=cGeo(f.lon,f.lat);var r=cRot(g.x,g.y,g.z);var px=W/2+r[0]*bR,py=H/2+r[1]*bR;var d=Math.sqrt((mx-px)*(mx-px)+(my-py)*(my-py));if(d<dist&&d<20){dist=d;closest=f}});
+  if(closest){tip.style.display='block';tip.style.left=(mx+12)+'px';tip.style.top=(my-10)+'px';
+    tip.innerHTML='<b style="color:#58a6ff">'+closest.name+'</b><br>'+(closest.note||'')+'<br>'+(closest.speed?'<span style="color:#3fb950">'+closest.speed+'</span> ':'')+
+    (closest.bw?'<span style="color:#a78bfa">'+closest.bw+'</span> ':'')+(closest.code?'<span style="color:#ffe138">'+closest.code+'</span>':'')+(closest.ping!==undefined?' <span style="color:#f0883e">~'+closest.ping+'ms</span>':'');
+    if(infoOpen) updateInfo(closest)}
+  else tip.style.display='none';
+});
+wrap.addEventListener('mouseleave',function(){tip.style.display='none'});
+
+var input=$('in');
+var cmdHistory=[];try{cmdHistory=JSON.parse(localStorage.getItem('cr-hist')||'[]')}catch(e){}
+var hi=-1;
+
+function exec(cmd){
+  cmd=cmd.trim();if(!cmd)return;
+  cmdHistory.push(cmd);if(cmdHistory.length>100)cmdHistory.shift();
+  try{localStorage.setItem('cr-hist',JSON.stringify(cmdHistory))}catch(e){}
+  hi=-1;
+  var parts=cmd.split(/\s+/);var c0=parts[0].toLowerCase();
+
+  if(c0==='help'){
+    logMsg('─── NAVIGATION ───');
+    logMsg('launch [n] | reset | speed <v> | auto | infra | zoom <v> | clear');
+    logMsg('─── RECON ───');
+    logMsg('ping [target]    Real HTTP timing to live endpoints');
+    logMsg('trace [a] [b]    Traceroute core→crust→core through all gates');
+    logMsg('scan [layer]     Port scan a security layer (0-5)');
+    logMsg('recon [domain]   OSINT lookup via public APIs');
+    logMsg('nslookup [dom]   DNS resolution timing');
+    logMsg('─── SECURITY ───');
+    logMsg('gates            Show all gate states + alert levels');
+    logMsg('probe [layer]    Probe a gate — raises alert, tests firewall');
+    logMsg('exploit [layer]  Attempt gate bypass (risky — may trigger IDS)');
+    logMsg('─── INTEL ───');
+    logMsg('sitrep           Full situation report');
+    logMsg('score            CTF scoreboard');
+    logMsg('flags            Captured flags');
+    logMsg('intel            Collected intelligence');
+    logMsg('─── MAP / DISPLAY ───');
+    logMsg('map              Toggle coastline overlay');
+    logMsg('grid             Toggle lat/lon grid + equator/tropics/arctic');
+    logMsg('mag              Toggle magnetic dipole field + poles (N/S)');
+    logMsg('dormant          Data-flow-only mode (hide globe chrome)');
+    logMsg('settings         Open display settings panel');
+    logMsg('info             Open destination info panel (hover/click fac)');
+    logMsg('opacity <L> <%>  Set layer 0-5 opacity 0-100');
+    logMsg('flash <L>        Toggle layer 0-5 ring flash animation');
+    logMsg('─── QUANTUM / DAC / STENO ───');
+    logMsg('gutter           Toggle quantum prefix gutter on log lines');
+    logMsg('prefix <code>    Classify a line → sym, class, category, gate');
+    logMsg('dac stats|mode|tracks|complexity    DAC+ operations');
+    logMsg('steno stats|encode|decode|analyze|pipeline  Steno codec');
+    logMsg('contrail         Show prefix distribution trail');
+    logMsg('coverage         Prefix coverage report');
+    logMsg('quantum          Open quantum panel');
+    logMsg('lang [name]      Set/show classification language (59 langs)');
+    logMsg('gluelam          Show full gluelam stack status');
+    logMsg('.qbit <code>     Encode with DAC+steno pipeline');
+    logMsg('─── PANELS ───');
+    logMsg('panels           Toggle all floating terminal windows');
+    logMsg('sitrep / comms / gates / data / quantum — or toolbar buttons');
+    logMsg('─── DATA ───');
+    logMsg('cables | stations | facilities | layers | packets | bench');
+  }
+  // ─── NAVIGATION ───
+  else if(c0==='launch'){var n=parseInt(parts[1])||1;for(var i=0;i<n;i++)spawnPacket(Math.floor(Math.random()*CABLES.length));logMsg('Launched '+n+' packet(s)')}
+  else if(c0==='reset'){packets=[];time=0;initGates();score={recon:0,traversals:0,denied:0,dropped:0,exploits:0,intel:[],flags:[]};denialEffects=[];logMsg('Full reset — gates reinitialized')}
+  else if(c0==='speed'){var v=parseFloat(parts[1]);if(v&&v>=0.1&&v<=5){speed=v;$('cr-speed').value=v;logMsg('Speed: ×'+v.toFixed(1))}else logMsg('speed <0.1-5>')}
+  else if(c0==='auto'){autoMode=!autoMode;$('cr-auto').textContent=autoMode?'Auto: ON':'Auto: OFF';logMsg('Auto: '+(autoMode?'ON':'OFF'))}
+  else if(c0==='infra'){infraShow=!infraShow;$('cr-infra').textContent=infraShow?'Infra: ON':'Infra: OFF';logMsg('Infra: '+(infraShow?'ON':'OFF'))}
+  else if(c0==='zoom'){var v=parseFloat(parts[1]);if(v&&v>=0.5&&v<=3){zoom=v;logMsg('Zoom: '+v)}else logMsg('zoom <0.5-3>')}
+  else if(c0==='clear'){$('log').innerHTML=''}
+  // ─── REAL PING ───
+  else if(c0==='ping'){
+    var target=parts.slice(1).join(' ').toLowerCase();
+    if(!target){
+      logMsg('Pinging all '+PING_ENDPOINTS.length+' endpoints...');
+      var idx=0;
+      function pingNext(){
+        if(idx>=PING_ENDPOINTS.length){logMsg('── ping sweep complete');return}
+        var ep=PING_ENDPOINTS[idx];idx++;
+        realPing(ep,function(err,res){
+          var bar='';var ms=res.ms;
+          var blocks=Math.min(20,Math.round(ms/10));
+          for(var b=0;b<blocks;b++)bar+='█';
+          var col=ms<50?'#3fb950':ms<150?'#c9a84c':ms<500?'#ff8c38':'#f85149';
+          logMsg('  '+res.name+' '+ms.toFixed(1)+'ms '+bar+' ['+res.status+']',col);
+          ftLog('comms','→ PING '+res.name+' <b>'+ms.toFixed(1)+'ms</b> ['+res.status+']',col);
+          ftLog('data','ping|'+res.name+'|'+ms.toFixed(1)+'ms|'+res.status,'#8b949e');
+          score.recon++;
+          spawnPacket(Math.floor(Math.random()*CABLES.length),{speed:Math.max(0.2,1-ms/500),color:col});
+          pingNext();
+        });
+      }
+      pingNext();
+    } else {
+      var ep=PING_ENDPOINTS.find(function(e){return e.name.toLowerCase().includes(target)});
+      if(!ep){
+        logMsg('Pinging custom: '+target);
+        ftLog('comms','→ PING custom: '+target,'#58a6ff');
+        var url=target.startsWith('http')?target:'https://'+target;
+        realPing({name:target,url:url,layer:4,expect:200},function(err,res){
+          logMsg('  '+res.name+' '+res.ms.toFixed(1)+'ms ['+res.status+']');
+          ftLog('comms','← PONG '+res.name+' <b>'+res.ms.toFixed(1)+'ms</b>',res.status==='up'?'#3fb950':'#f85149');
+          ftLog('data','ping|custom|'+res.name+'|'+res.ms.toFixed(1)+'ms|'+res.status,'#8b949e');
+          score.recon++;
+        });
+      } else {
+        logMsg('Pinging '+ep.name+'...');
+        ftLog('comms','→ PING '+ep.name,'#58a6ff');
+        realPing(ep,function(err,res){
+          logMsg('  '+res.name+' '+res.ms.toFixed(1)+'ms ['+res.status+']');
+          ftLog('comms','← PONG '+res.name+' <b>'+res.ms.toFixed(1)+'ms</b>',res.ms<100?'#3fb950':'#c9a84c');
+          ftLog('data','ping|'+res.name+'|'+res.ms.toFixed(1)+'ms|'+res.status,'#8b949e');
+          score.recon++;
+          spawnPacket(Math.floor(Math.random()*CABLES.length),{speed:Math.max(0.2,1-res.ms/500),color:res.ms<100?'#3fb950':'#c9a84c'});
+        });
+      }
+    }
+  }
+  // ─── TRACEROUTE ───
+  else if(c0==='trace'||c0==='traceroute'){
+    var from=parseInt(parts[1])||0;var to=parseInt(parts[2])||Math.floor(Math.random()*STATIONS.length);
+    logMsg('Traceroute: '+STATIONS[from%STATIONS.length].name+' → '+STATIONS[to%STATIONS.length].name);
+    logMsg('  hop  status  layer                 ms    ttl  firewall');
+    traceRoute(from%STATIONS.length,to%STATIONS.length,function(hops){
+      var success=hops.filter(function(h){return!h.dropped&&!h.denied}).length;
+      var total=hops.length;
+      score.traversals+=success;
+      logMsg('── '+success+'/'+total+' hops completed — '+(total-success)+' blocked/dropped');
+      ftLog('comms','── TRACE DONE: '+success+'/'+total+' hops',success===total?'#3fb950':'#ff8c38');
+      ftLog('data','trace|complete|'+success+'/'+total+'|blocked:'+(total-success),'#c9a84c');
+      if(success===total&&!score.flags.includes('clean-trace')){
+        score.flags.push('clean-trace');
+        logMsg('🚩 FLAG: clean-trace — full traversal without loss!');
+        ftLog('comms','🚩 FLAG: clean-trace','#a78bfa');
+      }
+    });
+  }
+  // ─── PORT SCAN ───
+  else if(c0==='scan'||c0==='nmap'){
+    var li=parseInt(parts[1]);
+    if(isNaN(li)||li<0||li>=gateStates.length){logMsg('scan <0-'+(gateStates.length-1)+'> — choose a layer');return}
+    var gate=gateStates[li];
+    gate.alertLevel+=2;
+    logMsg('Scanning '+gate.name+' ['+gate.firewall+'/'+gate.ids+']...');
+    ftLog('comms','→ SCAN L'+li+' '+gate.name+' ['+gate.firewall+']','#ff8c38');
+    logMsg('  PORT      STATE      SERVICE');
+    var openCount=0;
+    Object.keys(gate.ports).sort(function(a,b){return a-b}).forEach(function(port){
+      var ps=gate.ports[port];
+      var stCol=ps.state==='open'?'#3fb950':ps.state==='filtered'?'#c9a84c':'#f85149';
+      var stSym=ps.state==='open'?'●':ps.state==='filtered'?'◐':'○';
+      logMsg('  '+port+'/tcp   '+stSym+' '+ps.state.padEnd(10)+ps.service,stCol);
+      ftLog('data','scan|L'+li+'|'+port+'/tcp|'+ps.state+'|'+ps.service,stCol);
+      ps.lastProbe=Date.now();
+      if(ps.state==='open') openCount++;
+    });
+    portScanResults[li]=gate.ports;
+    logMsg('── '+Object.keys(gate.ports).length+' ports scanned, '+openCount+' open');
+    logMsg('   IDS: '+gate.ids+' | ACL: '+gate.acl+' | Alert → '+gate.alertLevel.toFixed(0));
+    ftLog('comms','← SCAN L'+li+': <b>'+openCount+' open</b> / '+Object.keys(gate.ports).length+' total | alert:'+gate.alertLevel.toFixed(0),openCount>0?'#3fb950':'#f85149');
+    score.recon+=2;
+    denialEffects.push({layer:li,time:time,type:'deny',ttl:30});
+    if(openCount>0&&!score.flags.includes('first-scan')){score.flags.push('first-scan');logMsg('🚩 FLAG: first-scan — first open ports found!');ftLog('comms','🚩 FLAG: first-scan','#a78bfa')}
+  }
+  // ─── RECON / OSINT ───
+  else if(c0==='recon'||c0==='osint'){
+    var domain=parts[1]||'example.com';
+    logMsg('OSINT recon: '+domain);
+    logMsg('  Querying public APIs...');
+    ftLog('comms','→ RECON '+domain+' (DNS A/MX/NS/TXT)','#58a6ff');
+    var t0=performance.now();
+    fetch('https://dns.google/resolve?name='+domain+'&type=A').then(function(r){return r.json()}).then(function(d){
+      var ms=performance.now()-t0;
+      logMsg('  DNS A records ('+ms.toFixed(0)+'ms):');
+      ftLog('data','recon|A|'+domain+'|'+ms.toFixed(0)+'ms','#58a6ff');
+      if(d.Answer) d.Answer.forEach(function(a){logMsg('    '+a.data+' TTL='+a.TTL);ftLog('data','  A: '+a.data+' TTL='+a.TTL,'#3fb950')});
+      else logMsg('    No A records found');
+      score.recon+=3;
+      score.intel.push({type:'dns',domain:domain,data:d,ts:Date.now()});
+      return fetch('https://dns.google/resolve?name='+domain+'&type=MX');
+    }).then(function(r){return r.json()}).then(function(d){
+      if(d.Answer&&d.Answer.length){logMsg('  MX records:');d.Answer.forEach(function(a){logMsg('    '+a.data);ftLog('data','  MX: '+a.data,'#a78bfa')})}
+      return fetch('https://dns.google/resolve?name='+domain+'&type=NS');
+    }).then(function(r){return r.json()}).then(function(d){
+      if(d.Answer&&d.Answer.length){logMsg('  NS records:');d.Answer.forEach(function(a){logMsg('    '+a.data);ftLog('data','  NS: '+a.data,'#c9a84c')})}
+      return fetch('https://dns.google/resolve?name='+domain+'&type=TXT');
+    }).then(function(r){return r.json()}).then(function(d){
+      if(d.Answer&&d.Answer.length){logMsg('  TXT records:');d.Answer.slice(0,3).forEach(function(a){logMsg('    '+a.data.substring(0,80));ftLog('data','  TXT: '+a.data.substring(0,60),'#8b949e')})}
+      logMsg('── recon complete for '+domain);
+      ftLog('comms','← RECON '+domain+' complete ('+((performance.now()-t0)/1000).toFixed(1)+'s)','#3fb950');
+      if(!score.flags.includes('recon-'+domain)){score.flags.push('recon-'+domain);logMsg('🚩 FLAG: recon-'+domain);ftLog('comms','🚩 FLAG: recon-'+domain,'#a78bfa')}
+    }).catch(function(e){logMsg('  Error: '+e.message);ftLog('comms','✗ RECON ERROR: '+e.message,'#f85149')});
+  }
+  // ─── NSLOOKUP ───
+  else if(c0==='nslookup'||c0==='dig'){
+    var domain=parts[1]||'example.com';
+    var t0=performance.now();
+    logMsg('nslookup '+domain+'...');
+    ftLog('comms','→ NSLOOKUP '+domain,'#58a6ff');
+    fetch('https://dns.google/resolve?name='+domain+'&type=A').then(function(r){return r.json()}).then(function(d){
+      var ms=performance.now()-t0;
+      logMsg('  Server: dns.google ('+ms.toFixed(1)+'ms)');
+      ftLog('comms','← DNS '+domain+' '+ms.toFixed(1)+'ms','#3fb950');
+      if(d.Answer) d.Answer.forEach(function(a){logMsg('  Address: '+a.data+' TTL='+a.TTL);ftLog('data','dns|A|'+a.data+'|TTL='+a.TTL,'#3fb950')});
+      else logMsg('  ** No answer **');
+      score.recon++;
+    }).catch(function(e){logMsg('  Error: '+e.message);ftLog('comms','✗ DNS ERROR: '+e.message,'#f85149')});
+  }
+  // ─── GATES ───
+  else if(c0==='gates'){
+    if(!ftActive.gates){ftToggle('gates')}
+    ftGates();
+    logMsg('═══ GATE STATUS ═══');
+    gateStates.forEach(function(g,i){
+      var alertSym=g.alertLevel>5?'🔴':g.alertLevel>2?'🟡':'🟢';
+      var openPorts=Object.values(g.ports).filter(function(p){return p.state==='open'}).length;
+      logMsg('  L'+i+' '+alertSym+' '+g.name+' ['+g.firewall+'/'+g.ids+'] alert:'+g.alertLevel.toFixed(0)+' open:'+openPorts+'/'+Object.keys(g.ports).length+' deny:'+Math.round(g.denial*100)+'%');
+    });
+  }
+  // ─── PROBE ───
+  else if(c0==='probe'){
+    var li=parseInt(parts[1]);
+    if(isNaN(li)||li<0||li>=gateStates.length){logMsg('probe <0-'+(gateStates.length-1)+'>');return}
+    var gate=gateStates[li];
+    gate.alertLevel+=1;
+    var denied=Math.random()<gate.denial;
+    var latency=gate.jitter*(0.5+Math.random());
+    logMsg('Probing '+gate.name+'...');
+    ftLog('comms','→ PROBE L'+li+' '+gate.name,'#c9a84c');
+    logMsg('  Firewall: '+gate.firewall+' | IDS: '+gate.ids+' | ACL: '+gate.acl);
+    logMsg('  Latency: '+latency.toFixed(1)+'ms | Denial rate: '+Math.round(gate.denial*100)+'%');
+    ftLog('data','probe|L'+li+'|fw:'+gate.firewall+'|ids:'+gate.ids+'|'+latency.toFixed(1)+'ms','#8b949e');
+    if(denied){
+      logMsg('  ⊘ DENIED — firewall blocked probe',  '#ff8c38');
+      ftLog('comms','← PROBE L'+li+' <b>DENIED</b> by '+gate.firewall,'#ff8c38');
+      denialEffects.push({layer:li,time:time,type:'deny',ttl:40});
+      score.denied++;
+    } else {
+      logMsg('  ✓ Probe successful — gate responsive', '#3fb950');
+      ftLog('comms','← PROBE L'+li+' <b>OK</b> '+latency.toFixed(1)+'ms','#3fb950');
+      score.traversals++;
+      spawnPacket(Math.floor(Math.random()*CABLES.length),{color:'#a78bfa'});
+    }
+    logMsg('  Alert level → '+gate.alertLevel.toFixed(0));
+  }
+  // ─── EXPLOIT ───
+  else if(c0==='exploit'||c0==='pwn'){
+    var li=parseInt(parts[1]);
+    if(isNaN(li)||li<0||li>=gateStates.length){logMsg('exploit <0-'+(gateStates.length-1)+'>');return}
+    var gate=gateStates[li];
+    gate.alertLevel+=5;
+    logMsg('⚡ Attempting exploit on '+gate.name+'...');
+    ftLog('comms','⚡ EXPLOIT L'+li+' '+gate.name+' ['+gate.firewall+'/'+gate.ids+']','#f85149');
+    logMsg('  Target: '+gate.firewall+' + '+gate.ids);
+    var openPorts=Object.keys(gate.ports).filter(function(p){return gate.ports[p].state==='open'});
+    if(openPorts.length===0){logMsg('  ✗ No open ports — exploit failed','#f85149');ftLog('comms','← EXPLOIT L'+li+' FAILED — no vectors','#f85149');score.denied++;denialEffects.push({layer:li,time:time,type:'deny',ttl:60});return}
+    var targetPort=openPorts[Math.floor(Math.random()*openPorts.length)];
+    logMsg('  Vector: port '+targetPort+' ('+gate.ports[targetPort].service+')');
+    ftLog('data','exploit|L'+li+'|port:'+targetPort+'|svc:'+gate.ports[targetPort].service,'#a78bfa');
+    var success=Math.random()<(0.3-gate.alertLevel*0.02);
+    if(success){
+      logMsg('  ✓ EXPLOIT SUCCESS — gate bypassed!','#3fb950');
+      ftLog('comms','← EXPLOIT L'+li+' <b>SUCCESS</b> via port '+targetPort,'#3fb950');
+      gate.denial=Math.max(0,gate.denial-0.05);
+      score.exploits++;
+      for(var i=0;i<3;i++)spawnPacket(Math.floor(Math.random()*CABLES.length),{color:'#a78bfa',speed:0.8});
+      var flagName='pwn-L'+li;
+      if(!score.flags.includes(flagName)){score.flags.push(flagName);logMsg('🚩 FLAG: '+flagName+' — gate '+gate.name+' compromised!');ftLog('comms','🚩 FLAG: '+flagName,'#a78bfa')}
+    } else {
+      logMsg('  ✗ EXPLOIT FAILED — IDS detected, alert raised','#f85149');
+      ftLog('comms','← EXPLOIT L'+li+' <b>FAILED</b> — IDS triggered, alert +3','#f85149');
+      gate.alertLevel+=3;
+      denialEffects.push({layer:li,time:time,type:'drop',ttl:80});
+      score.denied++;
+      if(gate.alertLevel>8){
+        var closedCount=0;
+        Object.keys(gate.ports).forEach(function(p){if(Math.random()<0.3){gate.ports[p].state='filtered';closedCount++}});
+        if(closedCount>0){logMsg('  ⚠ IDS response: '+closedCount+' ports switched to filtered','#ff8c38');ftLog('comms','⚠ IDS lockdown: '+closedCount+' ports filtered','#ff8c38')}
+      }
+    }
+    logMsg('  Alert level → '+gate.alertLevel.toFixed(0));
+  }
+  // ─── SITREP ───
+  else if(c0==='sitrep'){
+    if(!ftActive.sitrep){ftToggle('sitrep')}
+    ftSitrep();
+    logMsg('═══ SITUATION REPORT ═══');
+    logMsg('Time: '+new Date().toLocaleTimeString()+' | Uptime: '+((performance.now()-T0)/1000).toFixed(0)+'s');
+    logMsg('Packets: '+packets.length+' active | FPS: '+lastFps);
+    logMsg('Infrastructure: '+totalInfra+' facilities across '+CABLES.length+' cables');
+    logMsg('── GATE STATUS ──');
+    gateStates.forEach(function(g,i){
+      var open=Object.values(g.ports).filter(function(p){return p.state==='open'}).length;
+      var filt=Object.values(g.ports).filter(function(p){return p.state==='filtered'}).length;
+      var cls=Object.values(g.ports).filter(function(p){return p.state==='closed'}).length;
+      logMsg('  L'+i+' '+g.name+': open='+open+' filtered='+filt+' closed='+cls+' alert='+g.alertLevel.toFixed(0)+' deny='+Math.round(g.denial*100)+'%');
+    });
+    logMsg('── SCORE ──');
+    logMsg('  Traversals: '+score.traversals+' | Recon: '+score.recon+' | Exploits: '+score.exploits);
+    logMsg('  Denied: '+score.denied+' | Dropped: '+score.dropped);
+    logMsg('  Flags: '+score.flags.length+' captured');
+    logMsg('  Total: '+((score.traversals*10+score.recon*5+score.exploits*25)-(score.denied*3+score.dropped*2)));
+  }
+  // ─── SCORE / FLAGS / INTEL ───
+  else if(c0==='score'){
+    var total=(score.traversals*10+score.recon*5+score.exploits*25)-(score.denied*3+score.dropped*2);
+    logMsg('Score: '+total+' pts | ✓'+score.traversals+'×10 + 🔍'+score.recon+'×5 + ⚡'+score.exploits+'×25 − ⊘'+score.denied+'×3 − ✗'+score.dropped+'×2');
+    logMsg('Flags: '+score.flags.length+'/'+((gateStates.length+PING_ENDPOINTS.length+3))+' possible');
+  }
+  else if(c0==='flags'){
+    if(score.flags.length===0){logMsg('No flags captured yet — try: scan, trace, recon, exploit')}
+    else score.flags.forEach(function(f,i){logMsg('  🚩 '+(i+1)+'. '+f)});
+  }
+  else if(c0==='intel'){
+    if(score.intel.length===0){logMsg('No intel collected — try: recon <domain>')}
+    else score.intel.forEach(function(i){logMsg('  ['+i.type+'] '+i.domain+' @ '+new Date(i.ts).toLocaleTimeString())});
+  }
+  // ─── MAP / GRID / MAG ───
+  else if(c0==='map'){showMap=!showMap;logMsg('Coastlines: '+(showMap?'ON':'OFF'))}
+  else if(c0==='grid'){showGrid=!showGrid;logMsg('Lat/lon grid: '+(showGrid?'ON':'OFF'))}
+  else if(c0==='mag'||c0==='magnetic'){showMag=!showMag;logMsg('Magnetic field: '+(showMag?'ON':'OFF'))}
+  else if(c0==='dormant'||c0==='dark'){dormantMode=!dormantMode;$('cr-dormant').style.color=dormantMode?'#3fb950':'#c9d1d9';$('cr-dormant').style.borderColor=dormantMode?'#3fb950':'#30363d';logMsg('Dormant: '+(dormantMode?'ON — data flow only':'OFF'))}
+  else if(c0==='settings'||c0==='config'){settingsOpen=!settingsOpen;$('settings').style.display=settingsOpen?'block':'none';$('cr-settings').style.borderColor=settingsOpen?'#58a6ff':'#30363d';if(settingsOpen)buildSettings();logMsg('Settings: '+(settingsOpen?'ON':'OFF'))}
+  else if(c0==='info'){infoOpen=!infoOpen;$('cr-info').style.borderColor=infoOpen?'#58a6ff':'#30363d';if(!infoOpen){$('info').style.display='none'}else{$('info').innerHTML='<div class="info-hdr">📍 Hover a facility</div>';$('info').style.display='block'}logMsg('Info panel: '+(infoOpen?'ON — hover facilities':'OFF'))}
+  else if(c0==='opacity'){var li2=parseInt(parts[1]),v2=parseInt(parts[2]);if(!isNaN(li2)&&!isNaN(v2)&&li2>=0&&li2<6){layerOpacity[li2]=Math.max(0,Math.min(1,v2/100));logMsg('Layer '+li2+' opacity → '+v2+'%')}else{logMsg('opacity <layer 0-5> <0-100>')}}
+  else if(c0==='flash'){var li3=parseInt(parts[1]);if(!isNaN(li3)&&li3>=0&&li3<6){layerFlash[li3]=!layerFlash[li3];logMsg('Layer '+li3+' flash: '+(layerFlash[li3]?'ON':'OFF'))}else{logMsg('flash <layer 0-5>')}}
+  // ─── QUANTUM / DAC / STENO / CONTRAIL ───
+  else if(c0==='gutter'){
+    gutterMode=!gutterMode;logMsg('Quantum gutter: '+(gutterMode?'ON':'OFF'));
+  }
+  else if(c0==='prefix'||c0==='classify'){
+    var text=parts.slice(1).join(' ');
+    if(!text){logMsg('prefix <code>  — classify a line');return}
+    var QP=window.QuantumPrefixes;
+    if(!QP){logMsg('quantum-prefixes.js not loaded','#f85149');return}
+    var cls=QP.classifyLine(text,qLang);
+    logMsg('Sym: '+cls.sym+' | Class: '+cls.cls+' | Cat: '+cls.category+' | Gate: '+(SYM_GATES[cls.sym]||'?'));
+    ftLog('data','classify|'+cls.sym+'|'+cls.cls+'|'+cls.category+'|'+text.substring(0,40),SYM_COLORS[cls.sym]||'#8b949e');
+  }
+  else if(c0==='dac'){
+    var sub=parts[1]||'stats';
+    var DAC=window.prefixDAC;
+    if(!DAC){logMsg('qbit-dac.js not loaded','#f85149');return}
+    if(sub==='stats'){
+      try{var ds=DAC.dacStats();logMsg('DAC calls:'+ds.calls+' lines:'+ds.lines+' lps:'+ds.lps.toFixed(0)+' sources:'+JSON.stringify(ds.sources||{}))}catch(e){logMsg('DAC: '+dacCallCount+' calls')}
+    } else if(sub==='mode'){
+      var m=parts[2];
+      if(m){try{DAC.dacMode(m);logMsg('DAC mode → '+m)}catch(e){logMsg('Error: '+e.message,'#f85149')}}
+      else{try{logMsg('DAC mode: '+DAC.dacMode())}catch(e){logMsg('DAC mode: prefix (default)')}}
+    } else if(sub==='tracks'){
+      var code=parts.slice(2).join(' ')||'function hello() { return 42; }';
+      try{var tracks=DAC.dacTracks(code,qLang);tracks.forEach(function(t){logMsg(t.track+' d'+t.depth+' '+t.sym+' '+t.stack.join('›'))})}catch(e){logMsg('Error: '+e.message,'#f85149')}
+    } else if(sub==='complexity'){
+      var code=parts.slice(2).join(' ')||'if(x){for(i=0;i<n;i++){try{f()}catch(e){throw e}}}';
+      try{var cx=DAC.dacComplexity(code,qLang);logMsg('Complexity: '+cx.score+' maxD:'+cx.maxDepth+' avgD:'+cx.avgDepth.toFixed(1)+' hotspots:'+cx.hotspots)}catch(e){logMsg('Error: '+e.message,'#f85149')}
+    } else {logMsg('dac stats|mode [m]|tracks [code]|complexity [code]')}
+  }
+  else if(c0==='steno'){
+    var sub=parts[1]||'stats';
+    var QS=window.QbitSteno;
+    if(!QS){logMsg('qbit-steno.js not loaded','#f85149');return}
+    if(sub==='stats'){
+      logMsg('Steno: 13 Unicode spaces · 19b/line');
+      logMsg('Lines encoded: '+stenoTotalLines+' | Bits: '+stenoTotalBits);
+    } else if(sub==='encode'){
+      var code=parts.slice(2).join(' ')||'x = 42';
+      try{var r=QS.stenoEncode(code,qLang);stenoTotalLines+=r.stats.lines||1;stenoTotalBits+=r.stats.bitsEncoded||19;
+        logMsg('Encoded '+r.stats.lines+' lines ('+r.stats.bitsEncoded+'b)');
+        logMsg('Capacity: '+r.stats.capacity+'b available');
+        ftLog('data','steno|encode|'+r.stats.lines+'L|'+r.stats.bitsEncoded+'b|cap:'+r.stats.capacity,'#56d4dd');
+      }catch(e){logMsg('Error: '+e.message,'#f85149')}
+    } else if(sub==='decode'){
+      var code=parts.slice(2).join(' ');
+      try{var r=QS.stenoDecode(code);logMsg('Decoded: '+r.lines.length+' lines, encoded:'+r.encoded);
+        r.meta.forEach(function(m,i){logMsg('  L'+i+': sym='+m.sym+' gate='+m.gate+' depth='+m.depth)});
+      }catch(e){logMsg('Error: '+e.message,'#f85149')}
+    } else if(sub==='analyze'){
+      var code=parts.slice(2).join(' ')||'var x = 1;\nif(x) { print(x); }';
+      try{var r=QS.stenoAnalyze(code);logMsg('Capacity: '+r.totalCapacity+'b over '+r.lines+' lines')}catch(e){logMsg('Error: '+e.message,'#f85149')}
+    } else if(sub==='pipeline'){
+      var code=parts.slice(2).join(' ')||'function f(x) { return x * 2; }';
+      try{var r=QS.stenoPipeline(code,qLang);
+        r.stages.forEach(function(s){logMsg('  L'+s.layer+' '+s.name+': '+(s.ms||0).toFixed(2)+'ms',s.ok?'#3fb950':'#f85149')});
+        logMsg('Pipeline: '+r.stages.length+' stages, '+(r.totalMs||0).toFixed(2)+'ms total');
+      }catch(e){logMsg('Error: '+e.message,'#f85149')}
+    } else {logMsg('steno stats|encode [code]|decode [code]|analyze [code]|pipeline [code]')}
+  }
+  else if(c0==='contrail'){
+    if(contrailBuf.length===0){logMsg('No contrail data — run commands first');return}
+    logMsg('Contrail: '+contrailBuf.length+' entries');
+    var dist={};contrailBuf.forEach(function(s){dist[s]=(dist[s]||0)+1});
+    Object.keys(dist).sort(function(a,b){return dist[b]-dist[a]}).forEach(function(s){
+      var pct=(dist[s]/contrailBuf.length*100).toFixed(1);
+      logMsg('  '+s.padEnd(4)+' '+dist[s]+' ('+pct+'%)',SYM_COLORS[s]||'#8b949e');
+    });
+    if(!ftActive.quantum){ftToggle('quantum')}ftQuantum();
+  }
+  else if(c0==='coverage'){
+    var cov=qLines>0?(qClassified/qLines*100).toFixed(1):'0.0';
+    logMsg('Coverage: '+cov+'% ('+qClassified+'/'+qLines+')');
+    logMsg('Prefixes: '+Object.keys(prefixCounts).length+' symbols active');
+    Object.keys(prefixCounts).sort(function(a,b){return prefixCounts[b]-prefixCounts[a]}).forEach(function(s){
+      logMsg('  '+s.padEnd(4)+' '+prefixCounts[s]+' ['+SYM_GATES[s]+']',SYM_COLORS[s]);
+    });
+  }
+  else if(c0==='qbit'||c0==='quantum'){
+    if(!ftActive.quantum){ftToggle('quantum')}ftQuantum();
+    logMsg('Quantum panel opened');
+  }
+  else if(c0==='lang'){
+    var lang=parts[1];
+    if(lang){qLang=lang;logMsg('Language → '+qLang)}
+    else{logMsg('Language: '+qLang+' (set with: lang <name>)');logMsg('Available: python, javascript, typescript, rust, go, shell, c, cpp, html, css, markdown, sql, yaml, json, arduino, nushell, java, swift, kotlin, ...')}
+  }
+  else if(c0==='gluelam'){
+    logMsg('═══ GLUELAM STACK ═══');
+    logMsg('quantum-prefixes.js: '+(window.QuantumPrefixes?'✓ loaded — 59 languages, 11 symbols':'✗ missing'),'#e040fb');
+    logMsg('qbit-dac.js: '+(window.prefixDAC?'✓ loaded — tracks, stripes, complexity, .qbit codec':'✗ missing'),'#a78bfa');
+    logMsg('qbit-steno.js: '+(window.QbitSteno?'✓ loaded — 13 Unicode spaces, 19b/line, pipeline':'✗ missing'),'#56d4dd');
+    logMsg('qbitCodec: '+(window.qbitCodec?'✓ loaded — encode/decode/wrap/extract/reinject':'✗ missing'),'#c9a84c');
+    logMsg('Gutter: '+(gutterMode?'ON':'OFF')+' | Lang: '+qLang+' | Lines: '+qLines+' | Coverage: '+(qLines>0?(qClassified/qLines*100).toFixed(1):'0')+'%');
+    logMsg('Contrail: '+contrailBuf.length+'/'+contrailMax+' | Steno: '+stenoTotalLines+'L/'+stenoTotalBits+'b');
+  }
+  else if(c0==='.qbit'||c0==='encode'){
+    var code=parts.slice(1).join(' ');
+    if(!code){logMsg('.qbit <code> — encode with full DAC+steno pipeline');return}
+    var QC=window.qbitCodec;
+    if(!QC){logMsg('qbitCodec not available','#f85149');return}
+    try{
+      var r=QC.encode(code,qLang,'core-race');
+      logMsg('.qbit encoded: '+code.split('\n').length+' lines');
+      stenoTotalLines+=code.split('\n').length;stenoTotalBits+=code.split('\n').length*19;
+      ftLog('data','qbit|encode|'+code.split('\n').length+'L|'+qLang,'#e040fb');
+    }catch(e){logMsg('Error: '+e.message,'#f85149')}
+  }
+  // ─── PANELS ───
+  else if(c0==='panels'||c0==='windows'||c0==='win'){
+    ['sitrep','comms','gates','data','quantum'].forEach(function(p){ftToggle(p);if(p==='sitrep'&&ftActive.sitrep)ftSitrep();if(p==='gates'&&ftActive.gates)ftGates();if(p==='quantum'&&ftActive.quantum)ftQuantum()});
+    logMsg('All panels toggled');
+  }
+  // ─── ORIGINAL COMMANDS ───
+  else if(c0==='packets'||c0==='pkt'){logMsg('Active: '+packets.length)}
+  else if(c0==='cables'){CABLES.forEach(function(c,i){logMsg(i+': '+c.name+' ('+STATIONS[c.from].name+' → '+STATIONS[c.to].name+')')})}
+  else if(c0==='stations'){STATIONS.forEach(function(s,i){logMsg(i+': '+s.name+(s.hub?' [HUB]':''))})}
+  else if(c0==='facilities'||c0==='fac'){logMsg('Research:'+RESEARCH.length+' Space:'+SPACE_INFRA.length+' DC:'+DATA_CENTERS.length+' Net:'+NETWORK_HUBS.length+' Power:'+POWER_INFRA.length+' Mfg:'+MANUFACTURING.length+' Proto:'+NET_PROTOCOL.length+' Total:'+totalInfra)}
+  else if(c0==='layers'){EARTH_LAYERS.forEach(function(l){logMsg(l.iron+' '+l.name+' r='+l.rFrac+' budget='+l.budget)})}
+  else if(c0==='bench'){var t0=performance.now();for(var i=0;i<10000;i++)cGeo(Math.random()*360-180,Math.random()*180-90);for(var i=0;i<1000;i++){var a=cGeo(0,0),b=cGeo(90,45);slerp(a,b,Math.random())}logMsg('Bench: 11K ops in '+(performance.now()-t0).toFixed(2)+'ms')}
+  else{logMsg('Unknown: '+cmd+' — type help')}
+}
+
+input.addEventListener('keydown',function(e){
+  if(e.key==='Enter'){exec(input.value);input.value=''}
+  else if(e.key==='ArrowUp'){e.preventDefault();if(cmdHistory.length){hi=hi<0?cmdHistory.length-1:Math.max(0,hi-1);input.value=cmdHistory[hi]||''}}
+  else if(e.key==='ArrowDown'){e.preventDefault();hi=Math.min(cmdHistory.length,hi+1);input.value=cmdHistory[hi]||''}
+});
+
+document.querySelectorAll('.tb').forEach(function(b){
+  b.addEventListener('click',function(){
+    var h=this.dataset.h;if(h&&h!=='qbit-core-race')location.href=h+'.html';
+  });
+});
+
+try{
+  var ironBC=new BroadcastChannel('iron-line');
+  ironBC.onmessage=function(e){
+    if(e.data&&e.data.type==='gate-submit'&&e.data.source==='ugrad-photonic-park'){
+      var ci=e.data.gate%CABLES.length;
+      spawnPacket(ci,{speed:0.6+Math.random()*0.3,color:e.data.riderColor||'#a78bfa',gateData:{gate:e.data.gate,rider:e.data.riderName,verdict:e.data.verdict,nQ:e.data.nQ}});
+      try{var ack=new BroadcastChannel('iron-line');ack.postMessage({type:'gate-globe-ack',source:'qbit-core-race',gate:e.data.gate,rider:e.data.rider,t:performance.now()});ack.close()}catch(ex){}
+      logMsg('GATE '+e.data.gate+': '+e.data.riderName+' → '+e.data.verdict+' ('+e.data.nQ+'Q) ↑crust');
+      ftLog('comms','↑ GATE '+e.data.gate+': '+e.data.riderName+' → '+e.data.verdict,'#e040fb');
+      ftLog('data','gate|submit|G'+e.data.gate+'|'+e.data.riderName+'|'+e.data.verdict+'|'+e.data.nQ+'Q','#e040fb');
+      var hud=$('hud');if(hud){var gp=hud.querySelector('.gate-pip');if(!gp){gp=document.createElement('div');gp.className='gate-pip';gp.style.cssText='color:#e040fb;font-size:9px;margin-top:4px;border-top:1px solid #21262d;padding-top:4px';hud.appendChild(gp)}gp.textContent='GATE '+e.data.gate+': '+e.data.riderName+' ↑crust'}
+    }
+    if(e.data&&e.data.type==='gate-result'&&e.data.source==='ugrad-photonic-park'){
+      var ci=(e.data.gate+3)%CABLES.length;
+      var hf=e.data.hellingerFidelity||0;
+      spawnPacket(ci,{phase:'descend',progress:1,speed:0.5+Math.random()*0.3,color:hf>0.9?'#3fb950':hf>0.7?'#ffe138':'#f85149',gateData:{gate:e.data.gate,rider:e.data.riderName,hFid:hf}});
+      logMsg('IBM G'+e.data.gate+': '+e.data.riderName+' H:'+(hf*100).toFixed(1)+'% ↓core');
+      ftLog('comms','↓ IBM G'+e.data.gate+': '+e.data.riderName+' H:'+(hf*100).toFixed(1)+'%',hf>0.9?'#3fb950':'#ff8c38');
+      ftLog('data','gate|result|G'+e.data.gate+'|'+e.data.riderName+'|H:'+(hf*100).toFixed(1)+'%',hf>0.9?'#3fb950':'#f85149');
+      var hud=$('hud');if(hud){var gp=hud.querySelector('.gate-pip');if(!gp){gp=document.createElement('div');gp.className='gate-pip';gp.style.cssText='color:#3fb950;font-size:9px;margin-top:4px;border-top:1px solid #21262d;padding-top:4px';hud.appendChild(gp)}gp.textContent='IBM G'+e.data.gate+': H:'+(hf*100).toFixed(1)+'% ↓core'}
+    }
+    if(e.data&&e.data.type==='scan-locate'&&e.data.point){
+      var pt=e.data.point;
+      logMsg('SCAN: idx='+pt.idx+' θ='+(pt.theta*180/Math.PI).toFixed(1)+'° score='+pt.score.toFixed(3)+' L'+e.data.layer);
+    }
+  };
+}catch(ex){}
+
+try{
+  var kbBC=new BroadcastChannel('kbatch-training');
+  kbBC.onmessage=function(e){
+    if(e.data&&e.data.contrail){
+      logMsg('kbatch contrail: '+e.data.contrail.length+' pts');
+      ftLog('comms','↓ kbatch contrail: '+e.data.contrail.length+' pts','#c9a84c');
+      e.data.contrail.forEach(function(pt){
+        if(pt.sym) contrailBuf.push(pt.sym);
+      });
+      while(contrailBuf.length>contrailMax) contrailBuf.shift();
+    }
+  };
+}catch(ex){}
+
+try{
+  var dacBC=new BroadcastChannel('qbit-dac');
+  dacBC.onmessage=function(e){
+    if(e.data&&e.data.type==='dac-stats'){
+      ftLog('data','dac-sync|'+e.data.source+'|calls:'+e.data.calls+'|lines:'+e.data.lines+'|lps:'+(e.data.lps||0).toFixed(0),'#a78bfa');
+    }
+  };
+  setInterval(function(){
+    try{
+      dacBC.postMessage({type:'dac-stats',source:'qbit-core-race',calls:dacCallCount,lines:qLines,lps:dacLPS,coverage:qLines>0?qClassified/qLines:0});
+    }catch(e){}
+  },5000);
+}catch(ex){}
+
+$('st-boot').textContent='boot:'+(performance.now()-T0).toFixed(1)+'ms';
+logShow=true;$('log').style.display='block';
+logMsg('═══ CORE RACE · OSINT · QUANTUM TERMINAL ═══');
+logMsg(CABLES.length+' cables · '+STATIONS.length+' stations · '+totalInfra+' facilities · '+gateStates.length+' security gates');
+logMsg('Quantum: 11 prefixes · 59 langs · DAC+ · steno · gluelam');
+logMsg('Type help for commands');
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+// ===== QUANTUM PREFIX LIVE SYNC =====
+var QP=window.QuantumPrefixes;
+if(QP){
+  QP.onStateChange(function(source,state){
+    if(source==='qbit-core-race'||!state) return;
+    ftLog('data','qp-sync|'+source+'|cov:'+(state.coverage||0).toFixed(1)+'%|lines:'+(state.totalLines||0),'#e040fb');
+  });
+  setInterval(function(){
+    if(!QP) return;
+    QP.broadcastState('qbit-core-race',{
+      coverage:qLines>0?qClassified/qLines*100:0,
+      totalLines:qLines,classifiedLines:qClassified,
+      prefixCounts:prefixCounts,role:'core-race-osint-terminal',
+      contrailLength:contrailBuf.length,stenoLines:stenoTotalLines,
+      dacCalls:dacCallCount,language:qLang
+    });
+  },5000);
+  QP.requestStateSync();
+}
+var PDAC=window.prefixDAC;
+if(PDAC){logMsg('DAC+ loaded: tracks · stripes · complexity · .qbit codec','#a78bfa')}
+var QSTENO=window.QbitSteno;
+if(QSTENO){logMsg('Steno loaded: 13 Unicode spaces · 19b/line · pipeline','#56d4dd')}
+var QCODEC=window.qbitCodec;
+if(QCODEC){logMsg('qbitCodec loaded: encode · decode · wrap · extract','#c9a84c')}
+})();
+
+</script>
+</body>
+</html>

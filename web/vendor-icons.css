@@ -1,0 +1,18 @@
+/* vendor-icons.css — pair with uvspeed-icons.js + web/vendor/*.svg */
+.ui-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    flex-shrink: 0;
+    color: inherit;
+}
+.ui-icon--sm { width: 0.875em; height: 0.875em; }
+.ui-icon--md { width: 1em; height: 1em; }
+.ui-icon--lg { width: 1.25em; height: 1.25em; }
+.ui-icon svg,
+.ui-icon img {
+    width: 1em;
+    height: 1em;
+    display: block;
+}

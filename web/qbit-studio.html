@@ -1,0 +1,1569 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>qbit studio — draw → build → ship</title>
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+<link rel="icon" type="image/x-icon" href="../icons/favicon.ico">
+<link rel="apple-touch-icon" sizes="192x192" href="../icons/icon-192.png">
+<style>
+:root{
+  --bg:var(--qp-bg,#0d1117);--bg2:var(--qp-bg-secondary,#161b22);--bg3:var(--qp-bg-tertiary,#21262d);
+  --border:var(--qp-border,#30363d);--text:var(--qp-text,#e6edf3);--muted:var(--qp-text-muted,#8b949e);
+  --accent:var(--qp-accent,#58a6ff);--success:#3fb950;--warning:#f0883e;--error:#f85149;
+  --purple:#a78bfa;--cyan:#56d4dd;--gold:#c9a84c;--green:#34d399;
+  --space-xs:4px;--space-sm:8px;--space-md:16px;--space-lg:24px;--space-xl:32px;
+  --radius:6px;--font-mono:'SF Mono','Fira Code','JetBrains Mono',monospace;
+}
+:root.light{
+  --bg:#f6f8fa;--bg2:#fff;--bg3:#f0f2f5;--border:#d0d7de;--text:#1f2328;--muted:#656d76;
+  --accent:#0969da;--success:#1a7f37;--warning:#bf8700;--error:#cf222e;--purple:#8250df;--cyan:#0891b2;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;-webkit-text-size-adjust:100%;touch-action:manipulation}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);font-size:13px;line-height:1.5;display:flex;flex-direction:column}
+a{color:var(--accent);text-decoration:none}
+
+/* HEADER */
+.header{display:flex;align-items:center;gap:var(--space-md);padding:6px var(--space-md);background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;z-index:100}
+.header .logo{font-size:15px;font-weight:700;font-family:var(--font-mono);color:var(--gold)}
+.header .logo span{color:var(--purple)}
+.header .badge{background:var(--purple);color:#fff;padding:1px 8px;border-radius:10px;font-size:10px;font-weight:600;letter-spacing:.5px}
+.header nav{display:flex;gap:2px;margin-left:auto}
+.header nav button{background:none;border:1px solid transparent;color:var(--muted);padding:4px 12px;border-radius:var(--radius);cursor:pointer;font-size:12px;font-family:var(--font-mono);transition:.15s}
+.header nav button:hover{color:var(--text);border-color:var(--border)}
+.header nav button.active{color:var(--accent);border-color:var(--accent);background:rgba(88,166,255,.08)}
+.hdr-btn{background:none;border:1px solid var(--border);color:var(--muted);width:28px;height:28px;border-radius:var(--radius);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:.15s}
+.hdr-btn:hover{color:var(--text);border-color:var(--accent)}
+.export-btn{background:var(--success);border:none;color:#fff;padding:4px 14px;border-radius:var(--radius);cursor:pointer;font-size:12px;font-weight:600;font-family:var(--font-mono);transition:.15s}
+.export-btn:hover{filter:brightness(1.15)}
+
+/* MAIN LAYOUT */
+.main{display:flex;flex:1;overflow:hidden}
+.sidebar{width:220px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow-y:auto;flex-shrink:0}
+.sidebar.collapsed{width:0;overflow:hidden;border:none}
+.sb-section{padding:var(--space-sm) var(--space-md)}
+.sb-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:var(--space-sm);font-family:var(--font-mono)}
+.sb-item{display:flex;align-items:center;gap:var(--space-sm);padding:6px var(--space-sm);border-radius:var(--radius);cursor:grab;border:1px solid transparent;color:var(--text);font-size:12px;transition:.15s;user-select:none}
+.sb-item:hover{background:var(--bg3);border-color:var(--border)}
+.sb-item .icon{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.sb-item .icon.header-i{background:rgba(88,166,255,.15);color:var(--accent)}
+.sb-item .icon.hero-i{background:rgba(167,139,250,.15);color:var(--purple)}
+.sb-item .icon.feat-i{background:rgba(52,211,153,.15);color:var(--green)}
+.sb-item .icon.card-i{background:rgba(201,168,76,.15);color:var(--gold)}
+.sb-item .icon.form-i{background:rgba(86,212,221,.15);color:var(--cyan)}
+.sb-item .icon.footer-i{background:rgba(240,136,62,.15);color:var(--warning)}
+.sb-item .icon.cta-i{background:rgba(248,113,113,.15);color:var(--error)}
+.sb-item .icon.text-i{background:rgba(139,148,158,.15);color:var(--muted)}
+.sb-item .icon.img-i{background:rgba(63,185,80,.15);color:var(--success)}
+.sb-item .icon.code-i{background:rgba(167,139,250,.15);color:var(--purple)}
+.sb-item .icon.chart-i{background:rgba(86,212,221,.15);color:var(--cyan)}
+.sb-item .icon.nav-i{background:rgba(88,166,255,.15);color:var(--accent)}
+.sb-item .icon.retro-i{background:rgba(255,107,107,.15);color:#ff6b6b}
+.sb-item .icon.palette-i{background:rgba(255,190,11,.15);color:#ffbe0b}
+.sb-item .icon.sprite-i{background:rgba(0,245,160,.15);color:#00f5a0}
+.sb-item .icon.tilemap-i{background:rgba(131,56,236,.15);color:#8338ec}
+.sb-divider{height:1px;background:var(--border);margin:var(--space-sm) var(--space-md)}
+
+/* CANVAS WORKSPACE */
+.workspace{flex:1;position:relative;overflow:hidden;background:var(--bg)}
+#draw-canvas{position:absolute;inset:0;cursor:crosshair;z-index:2}
+#grid-canvas{position:absolute;inset:0;z-index:1;pointer-events:none}
+.section-labels{position:absolute;inset:0;z-index:3;pointer-events:none}
+.section-label{position:absolute;pointer-events:auto;background:rgba(167,139,250,.12);border:1.5px dashed var(--purple);border-radius:var(--radius);display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--purple);cursor:pointer;transition:border-color .15s}
+.section-label:hover{border-color:var(--gold);border-style:solid}
+.section-label .sl-type{font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:1px}
+.section-label .sl-size{font-size:9px;color:var(--muted);margin-top:2px}
+.section-label .sl-remove{position:absolute;top:-8px;right:-8px;width:18px;height:18px;background:var(--error);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:11px;display:none;align-items:center;justify-content:center;z-index:5}
+.section-label:hover .sl-remove{display:flex}
+
+/* PROMPT BAR (center bottom of workspace) */
+#prompt-bar{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:10;display:flex;gap:var(--space-sm);background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:6px 8px;width:min(600px,80%);backdrop-filter:blur(12px);box-shadow:0 4px 24px rgba(0,0,0,.4)}
+#prompt-bar input{flex:1;background:none;border:none;color:var(--text);font-family:var(--font-mono);font-size:13px;outline:none;padding:4px 8px}
+#prompt-bar input::placeholder{color:var(--muted)}
+#prompt-bar button{background:var(--purple);border:none;color:#fff;padding:6px 16px;border-radius:8px;cursor:pointer;font-family:var(--font-mono);font-size:12px;font-weight:600;transition:.15s;white-space:nowrap}
+#prompt-bar button:hover{filter:brightness(1.2)}
+#prompt-bar .mode-pill{background:var(--bg3);border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:8px;font-size:10px;font-family:var(--font-mono);cursor:pointer;transition:.15s}
+#prompt-bar .mode-pill.active{background:rgba(167,139,250,.15);color:var(--purple);border-color:var(--purple)}
+
+/* RIGHT PANEL */
+.right-panel{width:380px;background:var(--bg2);border-left:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.right-panel.collapsed{width:0;overflow:hidden;border:none}
+.rp-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.rp-tab{flex:1;padding:8px;text-align:center;font-family:var(--font-mono);font-size:11px;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:.15s;background:none;border-top:none;border-left:none;border-right:none}
+.rp-tab:hover{color:var(--text)}
+.rp-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.rp-content{flex:1;overflow:hidden;position:relative}
+.rp-pane{position:absolute;inset:0;overflow-y:auto;display:none;padding:var(--space-md)}
+.rp-pane.active{display:block}
+
+/* PREVIEW */
+#preview-frame{width:100%;height:100%;border:none;background:#fff;border-radius:var(--radius)}
+
+/* CODE EDITOR */
+#code-editor{width:100%;height:100%;background:var(--bg);color:var(--green);font-family:var(--font-mono);font-size:11px;border:none;resize:none;padding:var(--space-md);outline:none;line-height:1.6;tab-size:2}
+
+/* AI CHAT */
+#ai-log{padding:var(--space-sm);overflow-y:auto;flex:1}
+.ai-msg{margin-bottom:6px;padding:6px 10px;border-radius:var(--radius);line-height:1.4;word-wrap:break-word;font-size:12px}
+.ai-msg.user{background:rgba(201,168,76,.1);color:var(--gold);border-left:2px solid var(--gold)}
+.ai-msg.ai{background:rgba(52,211,153,.08);color:var(--green);border-left:2px solid var(--green)}
+.ai-msg.system{background:rgba(139,148,158,.08);color:var(--muted);font-size:10px;border-left:2px solid var(--muted)}
+#ai-input-bar{display:flex;border-top:1px solid var(--border);padding:var(--space-sm)}
+#ai-input-bar input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:var(--font-mono);font-size:12px;padding:6px 10px;outline:none}
+#ai-input-bar input:focus{border-color:var(--accent)}
+#ai-input-bar button{background:var(--green);border:none;color:var(--bg);padding:6px 14px;border-radius:var(--radius);cursor:pointer;font-family:var(--font-mono);font-size:11px;font-weight:600;margin-left:var(--space-xs)}
+
+/* DRAW TOOLBAR (floating left of canvas) */
+#draw-toolbar{position:absolute;top:50%;left:12px;transform:translateY(-50%);z-index:10;display:flex;flex-direction:column;gap:4px;padding:6px;background:var(--bg2);border:1px solid var(--border);border-radius:8px;backdrop-filter:blur(12px)}
+.dt-btn{background:none;border:1px solid var(--border);color:var(--muted);width:32px;height:32px;border-radius:var(--radius);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:.15s;font-family:var(--font-mono)}
+.dt-btn:hover{border-color:var(--accent);color:var(--accent)}
+.dt-btn.active{border-color:var(--purple);color:var(--purple);background:rgba(167,139,250,.1)}
+.dt-sep{height:1px;background:var(--border);margin:2px 0}
+
+/* STATUS BAR */
+.status-bar{display:flex;align-items:center;gap:var(--space-md);padding:3px var(--space-md);background:var(--bg2);border-top:1px solid var(--border);font-family:var(--font-mono);font-size:10px;color:var(--muted);flex-shrink:0}
+.status-bar .st-dot{width:6px;height:6px;border-radius:50%;background:var(--success);display:inline-block}
+.status-bar .st-sep{color:var(--border)}
+
+/* SECTION TYPE PICKER (popup) */
+#type-picker{position:fixed;z-index:200;display:none;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:var(--space-sm);box-shadow:0 8px 32px rgba(0,0,0,.5);min-width:160px}
+#type-picker.active{display:block}
+.tp-option{display:flex;align-items:center;gap:var(--space-sm);padding:6px var(--space-sm);border-radius:var(--radius);cursor:pointer;font-size:12px;transition:.1s}
+.tp-option:hover{background:var(--bg3)}
+.tp-option .tp-icon{font-size:14px;width:22px;text-align:center}
+
+/* TEMPLATE GALLERY */
+.tmpl-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:var(--space-sm);cursor:pointer;transition:.15s;margin-bottom:var(--space-sm)}
+.tmpl-card:hover{border-color:var(--purple)}
+.tmpl-card .tmpl-name{font-weight:600;font-size:12px;margin-bottom:2px}
+.tmpl-card .tmpl-desc{font-size:10px;color:var(--muted)}
+.tmpl-card .tmpl-tags{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.tmpl-card .tmpl-tag{font-size:9px;padding:1px 6px;border-radius:8px;background:rgba(167,139,250,.12);color:var(--purple);font-family:var(--font-mono)}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--bg3);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--border)}
+
+/* AUDIO VISUALIZER */
+.av-wrap{position:absolute;inset:0;display:none;flex-direction:column;overflow:hidden;z-index:5}
+.av-wrap.active{display:flex}
+.av-top{display:flex;flex:1;overflow:hidden}
+.av-canvas-wrap{flex:1;position:relative;min-width:0}
+#av-spectrum{position:absolute;inset:0}
+#av-field{position:absolute;inset:0;pointer-events:none}
+.av-sidebar{width:260px;background:var(--bg2);border-left:1px solid var(--border);overflow-y:auto;padding:var(--space-md);flex-shrink:0}
+.av-bottom{height:160px;background:var(--bg2);border-top:1px solid var(--border);display:flex;overflow:hidden;flex-shrink:0}
+.av-cv-panel{flex:1;padding:var(--space-sm) var(--space-md);overflow-y:auto}
+.av-qubits{width:200px;border-left:1px solid var(--border);padding:var(--space-sm);overflow-y:auto}
+.av-title{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:var(--space-sm);font-family:var(--font-mono)}
+.av-stat{display:flex;justify-content:space-between;align-items:center;padding:2px 0;font-size:11px;font-family:var(--font-mono)}
+.av-stat .label{color:var(--muted)}
+.av-stat .val{color:var(--green);font-weight:600}
+.av-bar{height:4px;background:var(--bg3);border-radius:2px;margin:2px 0 6px 0;overflow:hidden}
+.av-bar-fill{height:100%;border-radius:2px;transition:width .05s}
+.av-controls{display:flex;gap:var(--space-sm);align-items:center;flex-wrap:wrap;margin-bottom:var(--space-md)}
+.av-btn{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:4px 12px;border-radius:var(--radius);cursor:pointer;font-family:var(--font-mono);font-size:11px;transition:.15s}
+.av-btn:hover{border-color:var(--accent);color:var(--accent)}
+.av-btn.active{background:rgba(167,139,250,.15);border-color:var(--purple);color:var(--purple)}
+.av-btn.rec{background:rgba(248,81,73,.15);border-color:var(--error);color:var(--error)}
+.av-btn.rec.active{background:var(--error);color:#fff}
+.av-select{background:var(--bg3);border:1px solid var(--border);color:var(--text);padding:4px 8px;border-radius:var(--radius);font-family:var(--font-mono);font-size:11px;outline:none}
+.av-pipe-status{font-size:10px;font-family:var(--font-mono);padding:4px 8px;border-radius:var(--radius);display:inline-flex;align-items:center;gap:4px}
+.av-pipe-status .dot{width:6px;height:6px;border-radius:50%;display:inline-block}
+.qubit-row{display:flex;align-items:center;gap:4px;padding:1px 0;font-size:10px;font-family:var(--font-mono)}
+.qubit-row .qname{color:var(--muted);width:28px}
+.qubit-row .qbar{flex:1;height:8px;background:var(--bg3);border-radius:2px;position:relative;overflow:hidden}
+.qubit-row .qfill{position:absolute;inset:0;border-radius:2px;transition:width .08s}
+.qubit-row .qval{width:42px;text-align:right;color:var(--cyan);font-size:9px}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .sidebar,.right-panel{display:none}
+  #prompt-bar{width:92%}
+  .av-sidebar,.av-qubits{display:none}
+  .av-bottom{height:120px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo"><span>{.qbit}</span> studio</div>
+  <div class="badge">DESIGN</div>
+  <nav>
+    <button class="active" data-mode="draw">✎ Draw</button>
+    <button data-mode="preview">▶ Preview</button>
+    <button data-mode="code">⟨/⟩ Code</button>
+    <button data-mode="audio">⚛ Audio CV</button>
+  </nav>
+  <a href="pad-datatable.html" style="font-size:11px;font-family:var(--font-mono);color:var(--muted);text-decoration:underline;text-underline-offset:3px;margin-left:8px" title="Data grid pad: CSV/JSON, HTML→block infer, Framer-style chrome">pad data</a>
+  <button class="hdr-btn" id="btn-sidebar" title="Toggle sidebar">☰</button>
+  <button class="hdr-btn" id="btn-grid" title="Toggle grid">⊞</button>
+  <button class="hdr-btn" id="btn-theme" title="Toggle theme">◐</button>
+  <button class="hdr-btn" id="btn-clear" title="Clear canvas">∅</button>
+  <button class="export-btn" id="btn-export">↓ Export HTML</button>
+  <button class="export-btn" id="btn-park" style="background:#e040fb20;color:#e040fb;border-color:#e040fb40" title="Send chip design to μPark">⬡ Export to Park</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- LEFT SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sb-section">
+      <div class="sb-title">Sections</div>
+      <div class="sb-item" draggable="true" data-section="header"><div class="icon header-i">▬</div>Header / Nav</div>
+      <div class="sb-item" draggable="true" data-section="hero"><div class="icon hero-i">◆</div>Hero Banner</div>
+      <div class="sb-item" draggable="true" data-section="features"><div class="icon feat-i">⊞</div>Features Grid</div>
+      <div class="sb-item" draggable="true" data-section="cards"><div class="icon card-i">▤</div>Card Row</div>
+      <div class="sb-item" draggable="true" data-section="cta"><div class="icon cta-i">⬤</div>Call to Action</div>
+      <div class="sb-item" draggable="true" data-section="form"><div class="icon form-i">☐</div>Form / Contact</div>
+      <div class="sb-item" draggable="true" data-section="footer"><div class="icon footer-i">▁</div>Footer</div>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section">
+      <div class="sb-title">Elements</div>
+      <div class="sb-item" draggable="true" data-section="text"><div class="icon text-i">T</div>Text Block</div>
+      <div class="sb-item" draggable="true" data-section="image"><div class="icon img-i">▣</div>Image / Media</div>
+      <div class="sb-item" draggable="true" data-section="code"><div class="icon code-i">{ }</div>Code Block</div>
+      <div class="sb-item" draggable="true" data-section="chart"><div class="icon chart-i">📊</div>Chart / Data</div>
+      <div class="sb-item" draggable="true" data-section="nav"><div class="icon nav-i">≡</div>Navigation</div>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section">
+      <div class="sb-title">Retro Graphics</div>
+      <div class="sb-item" draggable="true" data-section="palette"><div class="icon palette-i">🎨</div>Palette Editor</div>
+      <div class="sb-item" draggable="true" data-section="sprite"><div class="icon sprite-i">👾</div>Sprite / Tile</div>
+      <div class="sb-item" draggable="true" data-section="tilemap"><div class="icon tilemap-i">🗺</div>Tilemap Grid</div>
+      <div class="sb-item" draggable="true" data-section="retro"><div class="icon retro-i">🕹</div>Retro Showcase</div>
+      <div style="padding:4px 8px;font-size:9px;color:var(--muted);font-family:var(--font-mono)">
+        via <a href="https://github.com/SavagePencil/RetroGraphicsToolkit" target="_blank" style="color:var(--accent)">RetroGraphicsToolkit</a>
+      </div>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section">
+      <div class="sb-title">Photonic Chip</div>
+      <div class="sb-item" draggable="true" data-section="chip-source"><div class="icon" style="color:#a78bfa">◎</div>GBS Source</div>
+      <div class="sb-item" draggable="true" data-section="chip-fiber"><div class="icon" style="color:#484f58">〰</div>Fiber Buffer</div>
+      <div class="sb-item" draggable="true" data-section="chip-detector"><div class="icon" style="color:#58a6ff">⊙</div>PNR Detector</div>
+      <div class="sb-item" draggable="true" data-section="chip-refinery"><div class="icon" style="color:#3fb950">⊕</div>Refinery MUX</div>
+      <div class="sb-item" draggable="true" data-section="chip-routing"><div class="icon" style="color:#484f58">⇌</div>Fiber Routing</div>
+      <div class="sb-item" draggable="true" data-section="chip-qpu"><div class="icon" style="color:#f0883e">⬡</div>QPU Array</div>
+      <div class="sb-item" draggable="true" data-section="chip-decoder"><div class="icon" style="color:#f85149">⊡</div>Decoder FPGA</div>
+      <div class="sb-item" draggable="true" data-section="chip-ft"><div class="icon" style="color:#d2a8ff">⊞</div>Fault Tolerance</div>
+      <div style="padding:4px 8px;font-size:9px;color:var(--muted);font-family:var(--font-mono)">
+        drag to design chip → <b style="color:#e040fb">Export to Park</b>
+      </div>
+    </div>
+    <div class="sb-divider"></div>
+    <div class="sb-section">
+      <div class="sb-title">Templates</div>
+      <div id="template-gallery"></div>
+    </div>
+  </div>
+
+  <!-- CANVAS WORKSPACE -->
+  <div class="workspace" id="workspace">
+    <canvas id="grid-canvas"></canvas>
+    <canvas id="draw-canvas"></canvas>
+    <div class="section-labels" id="section-labels"></div>
+
+    <!-- DRAW TOOLBAR -->
+    <div id="draw-toolbar">
+      <button class="dt-btn active" data-tool="section" title="Draw section (S)">▢</button>
+      <button class="dt-btn" data-tool="pen" title="Freehand pen (P)">✎</button>
+      <button class="dt-btn" data-tool="arrow" title="Arrow (A)">→</button>
+      <button class="dt-btn" data-tool="text" title="Text label (T)">T</button>
+      <div class="dt-sep"></div>
+      <button class="dt-btn" data-tool="select" title="Select / Move (V)">⊹</button>
+      <button class="dt-btn" data-tool="eraser" title="Eraser (E)">⌫</button>
+      <div class="dt-sep"></div>
+      <button class="dt-btn" data-tool="undo" title="Undo (Ctrl+Z)">↩</button>
+      <button class="dt-btn" data-tool="ai" title="Ask AI about canvas (?)">◇</button>
+    </div>
+
+    <!-- AUDIO VISUALIZER -->
+    <div class="av-wrap" id="av-wrap">
+      <div class="av-top">
+        <div class="av-canvas-wrap">
+          <canvas id="av-spectrum"></canvas>
+          <canvas id="av-field"></canvas>
+        </div>
+        <div class="av-sidebar" id="av-sidebar">
+          <div class="av-title">Source</div>
+          <div class="av-controls">
+            <button class="av-btn active" id="av-src-mic" title="Microphone / System Audio">Mic</button>
+            <button class="av-btn" id="av-src-file" title="Load audio file">File</button>
+            <button class="av-btn" id="av-src-stream" title="System audio (BlackHole)">System</button>
+          </div>
+          <div class="av-controls">
+            <select class="av-select" id="av-device-select"><option>default</option></select>
+          </div>
+          <div class="av-controls">
+            <button class="av-btn rec" id="av-rec">REC</button>
+            <span class="av-pipe-status" id="av-pipe-status"><span class="dot" style="background:var(--muted)"></span> idle</span>
+          </div>
+          <input type="file" id="av-file-input" accept="audio/*" style="display:none">
+          <div class="av-title" style="margin-top:var(--space-md)">Control Vectors</div>
+          <div id="av-cv-list"></div>
+          <div class="av-title" style="margin-top:var(--space-md)">Quantum State</div>
+          <div class="av-stat"><span class="label">Energy</span><span class="val" id="av-energy">—</span></div>
+          <div class="av-stat"><span class="label">ILD</span><span class="val" id="av-ild">—</span></div>
+          <div class="av-stat"><span class="label">ITD</span><span class="val" id="av-itd">—</span></div>
+          <div class="av-stat"><span class="label">Dispersion</span><span class="val" id="av-omega">—</span></div>
+          <div class="av-stat"><span class="label">Frame</span><span class="val" id="av-frame">0</span></div>
+          <div class="av-stat"><span class="label">Latency</span><span class="val" id="av-latency">—</span></div>
+          <div class="av-title" style="margin-top:var(--space-md)">Spatial</div>
+          <div class="av-controls">
+            <label style="font-size:10px;color:var(--muted);font-family:var(--font-mono)">Az</label>
+            <input type="range" id="av-azimuth" min="0" max="360" value="0" style="width:80px;accent-color:var(--purple)">
+            <span id="av-az-val" style="font-size:10px;color:var(--purple);font-family:var(--font-mono);width:28px">0</span>
+          </div>
+          <div class="av-controls">
+            <label style="font-size:10px;color:var(--muted);font-family:var(--font-mono)">El</label>
+            <input type="range" id="av-elevation" min="-90" max="90" value="0" style="width:80px;accent-color:var(--cyan)">
+            <span id="av-el-val" style="font-size:10px;color:var(--cyan);font-family:var(--font-mono);width:28px">0</span>
+          </div>
+          <div class="av-controls">
+            <label style="font-size:10px;color:var(--muted);font-family:var(--font-mono)">Viz</label>
+            <select class="av-select" id="av-viz-mode">
+              <option value="spectrum">Spectrum</option>
+              <option value="waveform">Waveform</option>
+              <option value="field" selected>Quantum Field</option>
+              <option value="bloch">Bloch Map</option>
+            </select>
+          </div>
+          <div class="av-title" style="margin-top:var(--space-md)">Live Pipe</div>
+          <div style="font-size:10px;color:var(--muted);font-family:var(--font-mono);line-height:1.6">
+            <div>BlackHole 2ch/16ch virtual audio</div>
+            <div>Loopback (Rogue Amoeba)</div>
+            <div>Any DAW send → system output</div>
+            <div style="margin-top:4px;color:var(--gold)">Spotify / Apple / Vevo / Amazon</div>
+            <div>→ system audio → BlackHole → here</div>
+          </div>
+        </div>
+      </div>
+      <div class="av-bottom">
+        <div class="av-cv-panel" id="av-cv-bars"></div>
+        <div class="av-qubits" id="av-qubits"></div>
+      </div>
+    </div>
+
+    <!-- PROMPT BAR -->
+    <div id="prompt-bar">
+      <span class="mode-pill active" data-pm="build">build</span>
+      <span class="mode-pill" data-pm="refine">refine</span>
+      <span class="mode-pill" data-pm="ask">ask</span>
+      <input type="text" id="prompt-input" placeholder="describe what you want to build…" autocomplete="off">
+      <button id="prompt-go">Generate ⚡</button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div class="right-panel" id="right-panel">
+    <div class="rp-tabs">
+      <button class="rp-tab active" data-rp="preview">Preview</button>
+      <button class="rp-tab" data-rp="code">Code</button>
+      <button class="rp-tab" data-rp="ai">AI Chat</button>
+      <button class="rp-tab" data-rp="components">Parts</button>
+    </div>
+    <div class="rp-content">
+      <div class="rp-pane active" data-rp="preview">
+        <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
+      </div>
+      <div class="rp-pane" data-rp="code">
+        <textarea id="code-editor" spellcheck="false"></textarea>
+      </div>
+      <div class="rp-pane" data-rp="ai" style="display:none;flex-direction:column;padding:0">
+        <div id="ai-log"></div>
+        <div id="ai-input-bar">
+          <input type="text" id="ai-chat-input" placeholder="ask the commander…" autocomplete="off">
+          <button id="ai-chat-send">Send</button>
+        </div>
+      </div>
+      <div class="rp-pane" data-rp="components">
+        <div id="component-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION TYPE PICKER -->
+<div id="type-picker">
+  <div class="tp-option" data-type="header"><span class="tp-icon">▬</span>Header</div>
+  <div class="tp-option" data-type="hero"><span class="tp-icon">◆</span>Hero</div>
+  <div class="tp-option" data-type="features"><span class="tp-icon">⊞</span>Features</div>
+  <div class="tp-option" data-type="cards"><span class="tp-icon">▤</span>Cards</div>
+  <div class="tp-option" data-type="cta"><span class="tp-icon">⬤</span>CTA</div>
+  <div class="tp-option" data-type="form"><span class="tp-icon">☐</span>Form</div>
+  <div class="tp-option" data-type="text"><span class="tp-icon">T</span>Text</div>
+  <div class="tp-option" data-type="image"><span class="tp-icon">▣</span>Image</div>
+  <div class="tp-option" data-type="code"><span class="tp-icon">{ }</span>Code</div>
+  <div class="tp-option" data-type="chart"><span class="tp-icon">📊</span>Chart</div>
+  <div class="tp-option" data-type="footer"><span class="tp-icon">▁</span>Footer</div>
+  <div class="tp-option" data-type="nav"><span class="tp-icon">≡</span>Nav</div>
+  <div class="tp-option" data-type="palette"><span class="tp-icon">🎨</span>Palette</div>
+  <div class="tp-option" data-type="sprite"><span class="tp-icon">👾</span>Sprite</div>
+  <div class="tp-option" data-type="tilemap"><span class="tp-icon">🗺</span>Tilemap</div>
+  <div class="tp-option" data-type="retro"><span class="tp-icon">🕹</span>Retro</div>
+  <div class="tp-option" data-type="custom"><span class="tp-icon">✦</span>Custom…</div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <span class="st-dot"></span>
+  <span id="st-mode">draw</span>
+  <span class="st-sep">│</span>
+  <span id="st-sections">0 sections</span>
+  <span class="st-sep">│</span>
+  <span id="st-lines">0 lines</span>
+  <span class="st-sep">│</span>
+  <span id="st-ai">AI: connecting…</span>
+  <span class="st-sep">│</span>
+  <span id="st-audio">audio: idle</span>
+  <span style="margin-left:auto" id="st-qp">{.qbit} studio v1.1</span>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+(function(){
+'use strict';
+
+const SECTION_TYPES={
+  header:{label:'Header',icon:'▬',color:'#58a6ff',template:'header'},
+  hero:{label:'Hero',icon:'◆',color:'#a78bfa',template:'hero'},
+  features:{label:'Features',icon:'⊞',color:'#34d399',template:'features'},
+  cards:{label:'Cards',icon:'▤',color:'#c9a84c',template:'cards'},
+  cta:{label:'CTA',icon:'⬤',color:'#f85149',template:'cta'},
+  form:{label:'Form',icon:'☐',color:'#56d4dd',template:'form'},
+  text:{label:'Text',icon:'T',color:'#8b949e',template:'text'},
+  image:{label:'Image',icon:'▣',color:'#3fb950',template:'image'},
+  code:{label:'Code',icon:'{ }',color:'#a78bfa',template:'code'},
+  chart:{label:'Chart',icon:'📊',color:'#56d4dd',template:'chart'},
+  footer:{label:'Footer',icon:'▁',color:'#f0883e',template:'footer'},
+  nav:{label:'Nav',icon:'≡',color:'#58a6ff',template:'nav'},
+  palette:{label:'Palette',icon:'🎨',color:'#ffbe0b',template:'palette'},
+  sprite:{label:'Sprite',icon:'👾',color:'#00f5a0',template:'sprite'},
+  tilemap:{label:'Tilemap',icon:'🗺',color:'#8338ec',template:'tilemap'},
+  'chip-source':{label:'GBS Source',icon:'◎',color:'#a78bfa',template:'chip-source'},
+  'chip-fiber':{label:'Fiber Buffer',icon:'〰',color:'#484f58',template:'chip-fiber'},
+  'chip-detector':{label:'PNR Detector',icon:'⊙',color:'#58a6ff',template:'chip-detector'},
+  'chip-refinery':{label:'Refinery',icon:'⊕',color:'#3fb950',template:'chip-refinery'},
+  'chip-routing':{label:'Fiber Routing',icon:'⇌',color:'#484f58',template:'chip-routing'},
+  'chip-qpu':{label:'QPU Array',icon:'⬡',color:'#f0883e',template:'chip-qpu'},
+  'chip-decoder':{label:'Decoder',icon:'⊡',color:'#f85149',template:'chip-decoder'},
+  'chip-ft':{label:'Fault Tolerance',icon:'⊞',color:'#d2a8ff',template:'chip-ft'},
+  retro:{label:'Retro',icon:'🕹',color:'#ff6b6b',template:'retro'},
+  custom:{label:'Custom',icon:'✦',color:'#a78bfa',template:'custom'}
+};
+
+const state={
+  sections:[],
+  strokes:[],
+  tool:'section',
+  drawing:false,
+  startX:0,startY:0,
+  gridVisible:true,
+  gridSize:20,
+  promptMode:'build',
+  generatedHTML:'',
+  aiMessages:[],
+  nextId:1
+};
+
+const $=id=>document.getElementById(id);
+const canvas=$('draw-canvas'),ctx=canvas.getContext('2d');
+const gridCanvas=$('grid-canvas'),gridCtx=gridCanvas.getContext('2d');
+const labelsEl=$('section-labels');
+const picker=$('type-picker');
+let pendingRect=null;
+
+function resize(){
+  const ws=$('workspace');
+  const w=ws.clientWidth,h=ws.clientHeight;
+  canvas.width=w;canvas.height=h;
+  gridCanvas.width=w;gridCanvas.height=h;
+  drawGrid();redraw();
+}
+
+function snap(v){return state.gridVisible?Math.round(v/state.gridSize)*state.gridSize:v;}
+
+function drawGrid(){
+  gridCtx.clearRect(0,0,gridCanvas.width,gridCanvas.height);
+  if(!state.gridVisible)return;
+  gridCtx.strokeStyle='rgba(48,54,61,0.5)';gridCtx.lineWidth=0.5;
+  for(let x=0;x<gridCanvas.width;x+=state.gridSize){gridCtx.beginPath();gridCtx.moveTo(x,0);gridCtx.lineTo(x,gridCanvas.height);gridCtx.stroke();}
+  for(let y=0;y<gridCanvas.height;y+=state.gridSize){gridCtx.beginPath();gridCtx.moveTo(0,y);gridCtx.lineTo(gridCanvas.width,y);gridCtx.stroke();}
+}
+
+function redraw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  state.strokes.forEach(s=>{
+    ctx.save();
+    if(s.type==='pen'||s.type==='eraser'){
+      ctx.strokeStyle=s.type==='eraser'?'rgba(13,17,23,0.8)':s.color;
+      ctx.lineWidth=s.type==='eraser'?12:2;ctx.lineCap='round';ctx.lineJoin='round';
+      ctx.beginPath();s.points.forEach((p,i)=>i===0?ctx.moveTo(p.x,p.y):ctx.lineTo(p.x,p.y));ctx.stroke();
+    }else if(s.type==='arrow'){
+      ctx.strokeStyle=s.color;ctx.lineWidth=2;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(s.sx,s.sy);ctx.lineTo(s.ex,s.ey);ctx.stroke();
+      const a=Math.atan2(s.ey-s.sy,s.ex-s.sx),hl=12;
+      ctx.beginPath();ctx.moveTo(s.ex,s.ey);ctx.lineTo(s.ex-hl*Math.cos(a-Math.PI/6),s.ey-hl*Math.sin(a-Math.PI/6));
+      ctx.moveTo(s.ex,s.ey);ctx.lineTo(s.ex-hl*Math.cos(a+Math.PI/6),s.ey-hl*Math.sin(a+Math.PI/6));ctx.stroke();
+    }else if(s.type==='text'){
+      ctx.fillStyle=s.color;ctx.font='13px "SF Mono","Fira Code",monospace';ctx.fillText(s.text,s.sx,s.sy);
+    }
+    ctx.restore();
+  });
+  if(state.drawing&&state.tool==='section'){
+    const x=Math.min(state.startX,state.curX),y=Math.min(state.startY,state.curY);
+    const w=Math.abs(state.curX-state.startX),h=Math.abs(state.curY-state.startY);
+    ctx.save();ctx.setLineDash([6,4]);ctx.strokeStyle='#a78bfa';ctx.lineWidth=2;
+    ctx.strokeRect(x,y,w,h);ctx.fillStyle='rgba(167,139,250,0.06)';ctx.fillRect(x,y,w,h);
+    ctx.restore();
+    if(w>40&&h>20){ctx.fillStyle='#a78bfa';ctx.font='11px "SF Mono",monospace';ctx.fillText(`${Math.round(w)}×${Math.round(h)}`,x+4,y-4);}
+  }
+}
+
+function renderSectionLabels(){
+  labelsEl.innerHTML='';
+  state.sections.forEach(s=>{
+    const d=document.createElement('div');d.className='section-label';
+    d.style.cssText=`left:${s.x}px;top:${s.y}px;width:${s.w}px;height:${s.h}px;border-color:${SECTION_TYPES[s.type]?.color||'#a78bfa'}`;
+    d.innerHTML=`<span class="sl-type">${SECTION_TYPES[s.type]?.icon||'✦'} ${s.type}</span><span class="sl-size">${Math.round(s.w)}×${Math.round(s.h)}</span><button class="sl-remove" data-sid="${s.id}">×</button>`;
+    d.addEventListener('click',e=>{if(e.target.classList.contains('sl-remove')){removeSection(s.id);return;}showTypePicker(s.id,e);});
+    labelsEl.appendChild(d);
+  });
+  updateStatus();
+}
+
+function addSection(x,y,w,h,type){
+  const id=state.nextId++;
+  state.sections.push({id,x,y,w,h,type:type||'custom',prompt:'',html:''});
+  renderSectionLabels();buildPage();
+  return id;
+}
+
+function removeSection(id){
+  state.sections=state.sections.filter(s=>s.id!==id);
+  renderSectionLabels();buildPage();
+}
+
+function showTypePicker(sectionId,e){
+  const s=state.sections.find(s=>s.id===sectionId);if(!s)return;
+  picker.style.left=e.clientX+'px';picker.style.top=e.clientY+'px';
+  picker.classList.add('active');
+  picker._sectionId=sectionId;
+}
+
+picker.addEventListener('click',e=>{
+  const opt=e.target.closest('.tp-option');if(!opt)return;
+  const type=opt.dataset.type;
+  if(type==='custom'){
+    const name=prompt('Section type name:');if(!name)return;
+    const s=state.sections.find(s=>s.id===picker._sectionId);if(s)s.type=name.toLowerCase().replace(/\s+/g,'-');
+  }else{
+    const s=state.sections.find(s=>s.id===picker._sectionId);if(s)s.type=type;
+  }
+  picker.classList.remove('active');
+  renderSectionLabels();buildPage();
+});
+
+document.addEventListener('click',e=>{if(!picker.contains(e.target)&&!e.target.closest('.section-label'))picker.classList.remove('active');});
+
+canvas.addEventListener('mousedown',e=>{
+  const rect=canvas.getBoundingClientRect();
+  const x=e.clientX-rect.left,y=e.clientY-rect.top;
+  state.drawing=true;state.startX=snap(x);state.startY=snap(y);state.curX=state.startX;state.curY=state.startY;
+  if(state.tool==='pen'||state.tool==='eraser'){
+    state.currentStroke={type:state.tool,color:state.tool==='eraser'?'#0d1117':'#a78bfa',points:[{x,y}]};
+  }else if(state.tool==='arrow'){
+    state.currentStroke={type:'arrow',color:'#f0883e',sx:x,sy:y,ex:x,ey:y};
+  }else if(state.tool==='text'){
+    state.drawing=false;
+    const txt=prompt('Label text:');
+    if(txt){state.strokes.push({type:'text',color:'#c9a84c',sx:x,sy:y,text:txt});redraw();}
+  }
+});
+
+canvas.addEventListener('mousemove',e=>{
+  if(!state.drawing)return;
+  const rect=canvas.getBoundingClientRect();
+  const x=e.clientX-rect.left,y=e.clientY-rect.top;
+  if(state.tool==='section'){state.curX=snap(x);state.curY=snap(y);redraw();}
+  else if(state.tool==='pen'||state.tool==='eraser'){state.currentStroke.points.push({x,y});redraw();ctx.save();ctx.strokeStyle=state.currentStroke.color;ctx.lineWidth=state.tool==='eraser'?12:2;ctx.lineCap='round';ctx.beginPath();const pts=state.currentStroke.points;if(pts.length>1){ctx.moveTo(pts[pts.length-2].x,pts[pts.length-2].y);ctx.lineTo(x,y);}ctx.stroke();ctx.restore();}
+  else if(state.tool==='arrow'){state.currentStroke.ex=x;state.currentStroke.ey=y;redraw();}
+});
+
+canvas.addEventListener('mouseup',e=>{
+  if(!state.drawing)return;state.drawing=false;
+  const rect=canvas.getBoundingClientRect();
+  const x=e.clientX-rect.left,y=e.clientY-rect.top;
+  if(state.tool==='section'){
+    const sx=Math.min(state.startX,snap(x)),sy=Math.min(state.startY,snap(y));
+    const w=Math.abs(snap(x)-state.startX),h=Math.abs(snap(y)-state.startY);
+    if(w>30&&h>20){
+      const id=addSection(sx,sy,w,h);
+      pendingRect={id,x:sx,y:sy};
+      picker.style.left=(e.clientX)+'px';picker.style.top=(e.clientY)+'px';
+      picker.classList.add('active');picker._sectionId=id;
+    }
+  }else if(state.tool==='pen'||state.tool==='eraser'){
+    if(state.currentStroke&&state.currentStroke.points.length>1)state.strokes.push(state.currentStroke);
+    state.currentStroke=null;
+  }else if(state.tool==='arrow'){
+    if(state.currentStroke)state.strokes.push(state.currentStroke);
+    state.currentStroke=null;
+  }
+  redraw();
+});
+
+document.querySelectorAll('.dt-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    const tool=b.dataset.tool;
+    if(tool==='undo'){
+      if(state.strokes.length)state.strokes.pop();
+      else if(state.sections.length){state.sections.pop();renderSectionLabels();}
+      redraw();return;
+    }
+    if(tool==='ai'){
+      const q=prompt('Ask AI about your design:');
+      if(q)askAI(q);return;
+    }
+    document.querySelectorAll('.dt-btn').forEach(b2=>b2.classList.remove('active'));
+    b.classList.add('active');state.tool=tool;
+    canvas.style.cursor=tool==='select'?'default':tool==='text'?'text':'crosshair';
+  });
+});
+
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  const map={s:'section',p:'pen',a:'arrow',t:'text',v:'select',e:'eraser'};
+  if(map[e.key]){
+    document.querySelectorAll('.dt-btn').forEach(b=>b.classList.remove('active'));
+    const btn=document.querySelector(`.dt-btn[data-tool="${map[e.key]}"]`);if(btn)btn.classList.add('active');
+    state.tool=map[e.key];
+  }
+  if(e.key==='z'&&(e.metaKey||e.ctrlKey)){
+    e.preventDefault();
+    if(state.strokes.length)state.strokes.pop();
+    else if(state.sections.length){state.sections.pop();renderSectionLabels();}
+    redraw();
+  }
+});
+
+const sbItems=document.querySelectorAll('.sb-item[data-section]');
+sbItems.forEach(item=>{
+  item.addEventListener('dragstart',e=>{e.dataTransfer.setData('section-type',item.dataset.section);});
+});
+$('workspace').addEventListener('dragover',e=>e.preventDefault());
+$('workspace').addEventListener('drop',e=>{
+  e.preventDefault();
+  const type=e.dataTransfer.getData('section-type');if(!type)return;
+  const rect=$('workspace').getBoundingClientRect();
+  const x=snap(e.clientX-rect.left-100),y=snap(e.clientY-rect.top-30);
+  addSection(Math.max(0,x),Math.max(0,y),canvas.width-40,80,type);
+});
+
+$('btn-grid').addEventListener('click',()=>{state.gridVisible=!state.gridVisible;drawGrid();});
+$('btn-sidebar').addEventListener('click',()=>$('sidebar').classList.toggle('collapsed'));
+$('btn-theme').addEventListener('click',()=>document.documentElement.classList.toggle('light'));
+$('btn-clear').addEventListener('click',()=>{
+  if(!confirm('Clear all sections and strokes?'))return;
+  state.sections=[];state.strokes=[];renderSectionLabels();redraw();buildPage();
+});
+
+document.querySelectorAll('.header nav button').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.header nav button').forEach(b2=>b2.classList.remove('active'));
+    b.classList.add('active');
+    $('st-mode').textContent=b.dataset.mode;
+  });
+});
+
+document.querySelectorAll('.rp-tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.rp-tab').forEach(t2=>t2.classList.remove('active'));
+    document.querySelectorAll('.rp-pane').forEach(p=>{p.classList.remove('active');p.style.display='';});
+    t.classList.add('active');
+    const pane=document.querySelector(`.rp-pane[data-rp="${t.dataset.rp}"]`);
+    if(pane){pane.classList.add('active');if(t.dataset.rp==='ai')pane.style.display='flex';}
+  });
+});
+
+document.querySelectorAll('#prompt-bar .mode-pill').forEach(p=>{
+  p.addEventListener('click',()=>{
+    document.querySelectorAll('#prompt-bar .mode-pill').forEach(p2=>p2.classList.remove('active'));
+    p.classList.add('active');state.promptMode=p.dataset.pm;
+  });
+});
+
+function updateStatus(){
+  $('st-sections').textContent=state.sections.length+' section'+(state.sections.length!==1?'s':'');
+  const lines=state.generatedHTML.split('\n').length;
+  $('st-lines').textContent=lines+' lines';
+}
+
+window.addEventListener('resize',resize);
+resize();
+
+const TEMPLATES={
+header:()=>`<header style="display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:var(--bg2);border-bottom:1px solid var(--border)">
+  <div style="font-size:18px;font-weight:700;font-family:var(--font-mono);color:var(--gold)">{.qbit} <span style="color:var(--purple)">app</span></div>
+  <nav style="display:flex;gap:24px;font-size:13px"><a href="#" style="color:var(--text)">Home</a><a href="#" style="color:var(--muted)">Features</a><a href="#" style="color:var(--muted)">Docs</a><a href="#" style="color:var(--muted)">About</a></nav>
+  <button style="background:var(--purple);color:#fff;border:none;padding:8px 20px;border-radius:6px;cursor:pointer;font-weight:600">Get Started</button>
+</header>`,
+hero:()=>`<section style="padding:80px 32px;text-align:center;background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(52,211,153,.05))">
+  <h1 style="font-size:48px;font-weight:800;margin-bottom:16px;background:linear-gradient(135deg,var(--purple),var(--cyan));-webkit-background-clip:text;-webkit-text-fill-color:transparent">Build Something<br>Quantum</h1>
+  <p style="color:var(--muted);font-size:18px;max-width:600px;margin:0 auto 32px">Draw your vision. AI builds the code. Ship in minutes, not months.</p>
+  <div style="display:flex;gap:12px;justify-content:center"><button style="background:var(--purple);color:#fff;border:none;padding:12px 32px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer">Start Building</button><button style="background:transparent;color:var(--text);border:1px solid var(--border);padding:12px 32px;border-radius:8px;font-size:15px;cursor:pointer">Learn More</button></div>
+</section>`,
+features:()=>`<section style="padding:60px 32px;background:var(--bg)">
+  <h2 style="text-align:center;font-size:28px;margin-bottom:40px;color:var(--text)">Features</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:24px;max-width:1000px;margin:0 auto">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px"><div style="font-size:28px;margin-bottom:12px">⚡</div><h3 style="font-size:16px;margin-bottom:8px;color:var(--text)">Lightning Fast</h3><p style="color:var(--muted);font-size:13px;line-height:1.6">Built on quantum prefix architecture for sub-millisecond response times.</p></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px"><div style="font-size:28px;margin-bottom:12px">🔒</div><h3 style="font-size:16px;margin-bottom:8px;color:var(--text)">Secure by Default</h3><p style="color:var(--muted);font-size:13px;line-height:1.6">Every line classified, every action logged in the proof chain.</p></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:24px"><div style="font-size:28px;margin-bottom:12px">🧠</div><h3 style="font-size:16px;margin-bottom:8px;color:var(--text)">AI Commander</h3><p style="color:var(--muted);font-size:13px;line-height:1.6">Your design partner that grows with you through every iteration.</p></div>
+  </div>
+</section>`,
+cards:()=>`<section style="padding:60px 32px;background:var(--bg2)">
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px;max-width:1000px;margin:0 auto">
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden"><div style="height:160px;background:linear-gradient(135deg,var(--purple),var(--accent))"></div><div style="padding:20px"><h3 style="font-size:15px;margin-bottom:8px">Card Title</h3><p style="color:var(--muted);font-size:12px;line-height:1.5">Description text goes here with details about this item.</p></div></div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden"><div style="height:160px;background:linear-gradient(135deg,var(--green),var(--cyan))"></div><div style="padding:20px"><h3 style="font-size:15px;margin-bottom:8px">Card Title</h3><p style="color:var(--muted);font-size:12px;line-height:1.5">Description text goes here with details about this item.</p></div></div>
+    <div style="background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden"><div style="height:160px;background:linear-gradient(135deg,var(--gold),var(--warning))"></div><div style="padding:20px"><h3 style="font-size:15px;margin-bottom:8px">Card Title</h3><p style="color:var(--muted);font-size:12px;line-height:1.5">Description text goes here with details about this item.</p></div></div>
+  </div>
+</section>`,
+cta:()=>`<section style="padding:80px 32px;text-align:center;background:linear-gradient(135deg,rgba(248,113,113,.06),rgba(167,139,250,.06))">
+  <h2 style="font-size:32px;font-weight:700;margin-bottom:16px;color:var(--text)">Ready to Build?</h2>
+  <p style="color:var(--muted);font-size:16px;margin-bottom:32px;max-width:500px;margin-left:auto;margin-right:auto">Join the ecosystem. Draw, build, ship — all from your browser.</p>
+  <button style="background:linear-gradient(135deg,var(--purple),var(--accent));color:#fff;border:none;padding:14px 40px;border-radius:10px;font-size:16px;font-weight:700;cursor:pointer;box-shadow:0 4px 20px rgba(167,139,250,.3)">Get Started Free</button>
+</section>`,
+form:()=>`<section style="padding:60px 32px;background:var(--bg)">
+  <div style="max-width:500px;margin:0 auto"><h2 style="font-size:24px;margin-bottom:24px;text-align:center">Contact Us</h2>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <input type="text" placeholder="Name" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;color:var(--text);font-size:14px;outline:none">
+    <input type="email" placeholder="Email" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;color:var(--text);font-size:14px;outline:none">
+    <textarea placeholder="Message" rows="4" style="background:var(--bg2);border:1px solid var(--border);border-radius:6px;padding:12px 16px;color:var(--text);font-size:14px;outline:none;resize:vertical"></textarea>
+    <button style="background:var(--success);color:#fff;border:none;padding:12px;border-radius:6px;font-size:14px;font-weight:600;cursor:pointer">Send Message</button>
+  </div></div>
+</section>`,
+text:()=>`<section style="padding:40px 32px;max-width:800px;margin:0 auto">
+  <h2 style="font-size:24px;margin-bottom:16px;color:var(--text)">About</h2>
+  <p style="color:var(--muted);line-height:1.8;font-size:14px">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quantum prefix classification ensures every line of code carries dimensional meaning. The beyondBINARY paradigm transforms static pages into living documents.</p>
+</section>`,
+image:()=>`<section style="padding:40px 32px;text-align:center">
+  <div style="background:linear-gradient(135deg,var(--bg2),var(--bg3));border:2px dashed var(--border);border-radius:12px;padding:60px;max-width:800px;margin:0 auto">
+    <div style="font-size:48px;margin-bottom:12px;opacity:.4">▣</div>
+    <p style="color:var(--muted);font-size:13px">Image placeholder — drag & drop or click to upload</p>
+  </div>
+</section>`,
+code:()=>`<section style="padding:40px 32px">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;overflow:hidden;max-width:800px;margin:0 auto">
+    <div style="padding:8px 16px;background:var(--bg3);border-bottom:1px solid var(--border);font-family:var(--font-mono);font-size:11px;color:var(--muted)">example.py</div>
+    <pre style="padding:16px;font-family:var(--font-mono);font-size:13px;color:var(--green);line-height:1.6;overflow-x:auto;margin:0"><code># n: #!/usr/bin/env python3
+# +1: Quantum computation module
+# -n: import quantum_bridge as qb
+# 0: def classify(line):
+# -0:     return qb.prefix(line)</code></pre>
+  </div>
+</section>`,
+chart:()=>`<section style="padding:40px 32px;text-align:center">
+  <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:32px;max-width:800px;margin:0 auto">
+    <h3 style="font-size:16px;margin-bottom:20px;color:var(--text)">Performance Metrics</h3>
+    <div style="display:flex;gap:32px;justify-content:center;flex-wrap:wrap">
+      <div><div style="font-size:36px;font-weight:800;color:var(--purple)">99.7%</div><div style="color:var(--muted);font-size:12px">Coverage</div></div>
+      <div><div style="font-size:36px;font-weight:800;color:var(--green)">0.3ms</div><div style="color:var(--muted);font-size:12px">Latency</div></div>
+      <div><div style="font-size:36px;font-weight:800;color:var(--gold)">11</div><div style="color:var(--muted);font-size:12px">Prefixes</div></div>
+    </div>
+  </div>
+</section>`,
+footer:()=>`<footer style="padding:24px 32px;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:12px;color:var(--muted)">
+  <span style="font-family:var(--font-mono)">{.qbit} studio · beyondBINARY</span>
+  <span>{n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1}</span>
+</footer>`,
+nav:()=>`<nav style="display:flex;align-items:center;gap:16px;padding:12px 24px;background:var(--bg3);border-bottom:1px solid var(--border)">
+  <a href="#" style="color:var(--accent);font-size:13px;font-weight:600">Home</a>
+  <a href="#" style="color:var(--muted);font-size:13px">Products</a>
+  <a href="#" style="color:var(--muted);font-size:13px">Pricing</a>
+  <a href="#" style="color:var(--muted);font-size:13px">Blog</a>
+  <a href="#" style="color:var(--muted);font-size:13px">Support</a>
+</nav>`,
+palette:()=>`<section style="padding:40px 32px;background:var(--bg)">
+  <div style="max-width:480px;margin:0 auto">
+    <h3 style="font-size:16px;margin-bottom:16px;color:var(--text);font-family:var(--font-mono)">🎨 Palette Editor</h3>
+    <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:16px">
+      ${['#0d1117','#161b22','#21262d','#30363d','#58a6ff','#a78bfa','#34d399','#c9a84c','#f85149','#f0883e','#56d4dd','#3fb950','#ff6b6b','#ffbe0b','#00f5a0','#8338ec'].map(c=>`<div style="aspect-ratio:1;background:${c};border-radius:4px;border:1px solid var(--border);cursor:pointer" title="${c}"></div>`).join('')}
+    </div>
+    <p style="color:var(--muted);font-size:11px;font-family:var(--font-mono)">16-color retro palette · click to edit</p>
+  </div>
+</section>`,
+sprite:()=>`<section style="padding:40px 32px;background:var(--bg);text-align:center">
+  <div style="max-width:320px;margin:0 auto">
+    <h3 style="font-size:16px;margin-bottom:16px;color:var(--text);font-family:var(--font-mono)">👾 Sprite Editor</h3>
+    <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:12px">
+      ${Array(64).fill('').map(()=>`<div style="aspect-ratio:1;background:var(--bg2)"></div>`).join('')}
+    </div>
+    <p style="color:var(--muted);font-size:11px;font-family:var(--font-mono)">8×8 tile · draw with selected color</p>
+  </div>
+</section>`,
+tilemap:()=>`<section style="padding:40px 32px;background:var(--bg);text-align:center">
+  <div style="max-width:600px;margin:0 auto">
+    <h3 style="font-size:16px;margin-bottom:16px;color:var(--text);font-family:var(--font-mono)">🗺 Tilemap Grid</h3>
+    <div style="display:grid;grid-template-columns:repeat(16,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:12px">
+      ${Array(128).fill('').map(()=>`<div style="aspect-ratio:1;background:var(--bg2)"></div>`).join('')}
+    </div>
+    <p style="color:var(--muted);font-size:11px;font-family:var(--font-mono)">16×8 tilemap · place sprites to build levels</p>
+  </div>
+</section>`,
+retro:()=>`<section style="padding:60px 32px;text-align:center;background:linear-gradient(135deg,rgba(255,107,107,.06),rgba(131,56,236,.06))">
+  <h2 style="font-size:28px;font-weight:800;margin-bottom:8px;color:#ff6b6b;font-family:var(--font-mono)">🕹 Retro Showcase</h2>
+  <p style="color:var(--muted);font-size:14px;margin-bottom:24px">Pixel art, palettes & tilemaps — powered by <a href="https://github.com/SavagePencil/RetroGraphicsToolkit" target="_blank" style="color:var(--accent)">RetroGraphicsToolkit</a></p>
+  <div style="display:flex;gap:16px;justify-content:center;flex-wrap:wrap">
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;min-width:140px"><div style="font-size:32px;margin-bottom:8px">🎨</div><div style="font-size:13px;color:var(--text)">Palettes</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;min-width:140px"><div style="font-size:32px;margin-bottom:8px">👾</div><div style="font-size:13px;color:var(--text)">Sprites</div></div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:20px;min-width:140px"><div style="font-size:32px;margin-bottom:8px">🗺</div><div style="font-size:13px;color:var(--text)">Tilemaps</div></div>
+  </div>
+</section>`,
+custom:()=>`<section style="padding:40px 32px;background:var(--bg);text-align:center">
+  <p style="color:var(--muted);font-size:13px">Custom section — describe what you want and AI will generate it</p>
+</section>`
+};
+
+const PAGE_TEMPLATES=[
+  {name:'Landing Page',desc:'Hero + features + CTA + footer',tags:['marketing','launch'],sections:['header','hero','features','cta','footer']},
+  {name:'Portfolio',desc:'Nav + hero + cards + form + footer',tags:['personal','showcase'],sections:['nav','hero','cards','form','footer']},
+  {name:'Documentation',desc:'Nav + text blocks + code samples',tags:['docs','technical'],sections:['header','text','code','text','footer']},
+  {name:'Dashboard Shell',desc:'Header + chart + cards grid',tags:['app','data'],sections:['header','chart','cards','footer']},
+  {name:'Blog Post',desc:'Header + hero image + text + form',tags:['content','writing'],sections:['header','image','text','form','footer']},
+  {name:'SaaS Pricing',desc:'Header + hero + features + cards + CTA',tags:['business','pricing'],sections:['header','hero','features','cards','cta','footer']},
+  {name:'Photonic Chip (Aurora)',desc:'GBS → Fiber → PNR → Refinery → QPU → Decoder → FT',tags:['quantum','chip','photonic'],sections:['chip-source','chip-fiber','chip-detector','chip-refinery','chip-routing','chip-qpu','chip-decoder','chip-ft']},
+  {name:'Minimal Chip',desc:'Source → QPU → Decoder (3-sector)',tags:['quantum','minimal'],sections:['chip-source','chip-qpu','chip-decoder']},
+  {name:'Dense Chip',desc:'6 QPU + refinery heavy',tags:['quantum','dense'],sections:['chip-source','chip-refinery','chip-qpu','chip-qpu','chip-refinery','chip-qpu','chip-qpu','chip-decoder','chip-ft']},
+];
+
+function renderTemplateGallery(){
+  const g=$('template-gallery');g.innerHTML='';
+  PAGE_TEMPLATES.forEach((t,i)=>{
+    const d=document.createElement('div');d.className='tmpl-card';
+    d.innerHTML=`<div class="tmpl-name">${t.name}</div><div class="tmpl-desc">${t.desc}</div><div class="tmpl-tags">${t.tags.map(tag=>`<span class="tmpl-tag">${tag}</span>`).join('')}</div>`;
+    d.addEventListener('click',()=>applyTemplate(i));
+    g.appendChild(d);
+  });
+}
+
+function applyTemplate(idx){
+  const t=PAGE_TEMPLATES[idx];if(!t)return;
+  state.sections=[];state.strokes=[];
+  const totalH=canvas.height-40;const sH=Math.floor(totalH/t.sections.length);
+  t.sections.forEach((type,i)=>{
+    const id=state.nextId++;
+    state.sections.push({id,x:20,y:20+i*sH,w:canvas.width-40,h:sH-10,type,prompt:'',html:''});
+  });
+  renderSectionLabels();redraw();buildPage();
+  addAIMsg('system',`Template "${t.name}" applied — ${t.sections.length} sections created. Edit sections or hit Generate to customize.`);
+}
+
+function buildPage(){
+  const sorted=[...state.sections].sort((a,b)=>a.y-b.y);
+  const qpHeader=`<!-- beyondBINARY quantum-prefixed | qbit-studio | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->\n`;
+  let html=qpHeader+`<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width,initial-scale=1.0">\n<title>qbit app</title>\n<style>\n:root{\n  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;\n  --text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;\n  --purple:#a78bfa;--cyan:#56d4dd;--gold:#c9a84c;--green:#34d399;\n  --success:#3fb950;--warning:#f0883e;--error:#f85149;\n  --font-mono:'SF Mono','Fira Code','JetBrains Mono',monospace;\n}\n*{box-sizing:border-box;margin:0;padding:0}\nbody{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}\na{color:var(--accent);text-decoration:none}\n</style>\n</head>\n<body>\n`;
+  sorted.forEach(s=>{
+    if(s.html){html+=s.html+'\n';}
+    else{const fn=TEMPLATES[s.type];html+=(fn?fn():TEMPLATES.custom())+'\n';}
+  });
+  html+=`\n<script src="quantum-prefixes.js"><\/script>\n<script src="qbit-dac.js"><\/script>\n<script>\n(function(){\n  var QP=window.QuantumPrefixes;\n  if(QP){QP.broadcastState('qbit-app',{coverage:0,totalLines:0,classifiedLines:0,prefixCounts:{}});QP.requestStateSync();}\n})();\n<\/script>\n</body>\n</html>`;
+  state.generatedHTML=html;
+  $('code-editor').value=html;
+  updatePreview(html);updateStatus();
+}
+
+function updatePreview(html){
+  const frame=$('preview-frame');
+  const blob=new Blob([html],{type:'text/html'});
+  frame.src=URL.createObjectURL(blob);
+}
+
+$('code-editor').addEventListener('input',()=>{
+  state.generatedHTML=$('code-editor').value;
+  updatePreview(state.generatedHTML);updateStatus();
+});
+
+let aiReady=false;
+async function checkAI(){
+  try{
+    const r=await fetch('http://localhost:11434/api/tags');
+    if(r.ok){aiReady=true;$('st-ai').textContent='AI: ready';$('st-ai').style.color='var(--green)';}
+    else{aiReady=false;$('st-ai').textContent='AI: error';$('st-ai').style.color='var(--warning)';}
+  }catch(e){aiReady=false;$('st-ai').textContent='AI: offline';$('st-ai').style.color='var(--warning)';}
+}
+checkAI();setInterval(checkAI,30000);
+
+async function aiGenerate(prompt,context){
+  if(!aiReady){addAIMsg('system','AI offline — start Ollama (ollama serve)');return null;}
+  const sysPrompt=`You are qbit studio AI — a web design commander. You generate clean, modern HTML+CSS sections for websites using the qbit design system. Rules:
+- Use CSS variables: --bg, --bg2, --bg3, --border, --text, --muted, --accent, --purple, --cyan, --gold, --green, --success, --warning, --error, --font-mono
+- Use inline styles for sections (single-file apps)
+- Keep code minimal, beautiful, responsive
+- Include quantum prefix header comment
+- Font stack: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif
+- Mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', monospace
+- Dark theme by default with the color palette above
+Return ONLY the HTML section code, no explanation.`;
+  try{
+    addAIMsg('system','generating…');
+    const r=await fetch('http://localhost:11434/api/generate',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'qwen3:1.7b',prompt:context+'\n\nUser request: '+prompt,system:sysPrompt,stream:false,options:{temperature:0.7,num_predict:1200}})
+    });
+    const d=await r.json();
+    let raw=d.response||'';
+    raw=raw.replace(/<think>[\s\S]*?<\/think>/gi,'').trim();
+    if(!raw&&d.thinking) raw=d.thinking.replace(/<think>|<\/think>/gi,'').trim();
+    if(raw){
+      let code=raw;
+      const m=code.match(/```(?:html)?\s*([\s\S]*?)```/);
+      if(m)code=m[1].trim();
+      return code;
+    }
+  }catch(e){addAIMsg('system','AI error: '+e.message);}
+  return null;
+}
+
+async function askAI(question){
+  addAIMsg('user',question);
+  const context='Current page has '+state.sections.length+' sections: '+state.sections.map(s=>s.type).join(', ')+'. Canvas size: '+canvas.width+'x'+canvas.height;
+  if(!aiReady){addAIMsg('system','AI offline — start Ollama');return;}
+  try{
+    const r=await fetch('http://localhost:11434/api/generate',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({model:'qwen3:1.7b',prompt:context+'\n\nUser asks: '+question,system:'You are qbit studio AI commander. Help with web design, layout, code. Be concise (under 80 words). Reference the qbit design system when relevant.',stream:false,options:{temperature:0.7,num_predict:200}})
+    });
+    const d=await r.json();
+    let answer=d.response||'';
+    answer=answer.replace(/<think>[\s\S]*?<\/think>/gi,'').trim();
+    if(!answer&&d.thinking) answer=d.thinking.replace(/<think>|<\/think>/gi,'').trim();
+    if(answer)addAIMsg('ai',answer.substring(0,400));
+    else addAIMsg('system','AI returned empty — try rephrasing');
+  }catch(e){addAIMsg('system','AI error: '+e.message);}
+}
+
+function addAIMsg(role,text){
+  state.aiMessages.push({role,text,ts:Date.now()});
+  const log=$('ai-log');
+  const d=document.createElement('div');d.className='ai-msg '+role;d.textContent=text;
+  log.appendChild(d);log.scrollTop=log.scrollHeight;
+}
+
+$('ai-chat-send').addEventListener('click',()=>{
+  const inp=$('ai-chat-input');const q=inp.value.trim();if(!q)return;inp.value='';askAI(q);
+});
+$('ai-chat-input').addEventListener('keydown',e=>{if(e.key==='Enter')$('ai-chat-send').click();});
+
+$('prompt-go').addEventListener('click',async()=>{
+  const inp=$('prompt-input');const prompt=inp.value.trim();if(!prompt)return;
+  inp.value='';
+  if(state.promptMode==='ask'){askAI(prompt);return;}
+  addAIMsg('user','['+state.promptMode+'] '+prompt);
+  if(state.promptMode==='build'&&state.sections.length===0){
+    addAIMsg('system','Auto-scaffolding from prompt…');
+    const scaffoldPrompt='Generate a list of HTML section types (from: header, hero, features, cards, cta, form, text, image, code, chart, footer, nav) that would make sense for this website: '+prompt+'. Return ONLY a comma-separated list of section types, nothing else.';
+    try{
+      const r=await fetch('http://localhost:11434/api/generate',{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({model:'qwen3:1.7b',prompt:scaffoldPrompt,system:'Return only a comma-separated list of section types. No explanation.',stream:false,options:{temperature:0.5,num_predict:100}})
+      });
+      const d=await r.json();
+      if(d.response){
+        const types=d.response.trim().replace(/```/g,'').split(',').map(t=>t.trim().toLowerCase()).filter(t=>SECTION_TYPES[t]);
+        if(types.length>0){
+          state.sections=[];const sH=Math.floor((canvas.height-40)/types.length);
+          types.forEach((type,i)=>{const id=state.nextId++;state.sections.push({id,x:20,y:20+i*sH,w:canvas.width-40,h:sH-10,type,prompt:'',html:''});});
+          renderSectionLabels();addAIMsg('system','Scaffolded '+types.length+' sections: '+types.join(', '));
+        }
+      }
+    }catch(e){addAIMsg('system','Scaffold error: '+e.message);}
+  }
+  if(state.promptMode==='build'||state.promptMode==='refine'){
+    for(let i=0;i<state.sections.length;i++){
+      const s=state.sections[i];
+      const ctx='Section '+(i+1)+' of '+state.sections.length+', type: '+s.type+', position in page: '+(i===0?'top':i===state.sections.length-1?'bottom':'middle')+'. Full page context: '+state.sections.map(s=>s.type).join(' → ');
+      const sectionPrompt=state.promptMode==='refine'
+        ?'Refine this '+s.type+' section for: '+prompt+'. Current HTML:\n'+((s.html||TEMPLATES[s.type]?.())||'')
+        :'Generate a '+s.type+' section for a website about: '+prompt;
+      const code=await aiGenerate(sectionPrompt,ctx);
+      if(code){s.html=code;addAIMsg('ai','✓ '+s.type+' generated');}
+    }
+    buildPage();addAIMsg('system','Page built — '+state.sections.length+' sections generated. Check Preview tab.');
+  }
+});
+$('prompt-input').addEventListener('keydown',e=>{if(e.key==='Enter')$('prompt-go').click();});
+
+$('btn-export').addEventListener('click',()=>{
+  if(!state.generatedHTML){addAIMsg('system','Nothing to export — add sections first');return;}
+  let html=state.generatedHTML;
+  if(window.qbitCodec){
+    const r=window.qbitCodec.encode(html,'html','qbit-studio-export');
+    const header=`<!-- ${window.qbitCodec.header(r.meta)} -->\n`;
+    html=header+html;
+  }else if(typeof QuantumPrefixes!=='undefined'){
+    const meta=QuantumPrefixes.prefixMetadata(html,'html');
+    const header=`<!-- qbit studio export | ${new Date().toISOString()} | coverage: ${meta.coverage}% | lines: ${meta.totalLines} -->\n`;
+    html=header+html;
+  }
+  const blob=new Blob([html],{type:'text/html'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='qbit-app-'+Date.now()+'.html';a.click();
+  addAIMsg('system','Exported '+html.split('\n').length+' lines as standalone HTML');
+});
+
+$('btn-park').addEventListener('click',()=>{
+  const chipSections=state.sections.filter(s=>s.type.startsWith('chip-'));
+  if(chipSections.length===0){addAIMsg('system','No chip sections — drag chip components from sidebar or apply a Photonic Chip template');return;}
+
+  const CHIP_TYPE_MAP={
+    'chip-source':'source','chip-fiber':'fiber','chip-detector':'detector',
+    'chip-refinery':'refinery','chip-routing':'routing','chip-qpu':'qpu',
+    'chip-decoder':'decoder','chip-ft':'ft'
+  };
+  const CHIP_COLORS={
+    source:'#a78bfa',fiber:'#484f58',detector:'#58a6ff',refinery:'#3fb950',
+    routing:'#484f58',qpu:'#f0883e',decoder:'#f85149',ft:'#d2a8ff'
+  };
+  const CHIP_SHAPES={source:0,fiber:0,detector:1,refinery:2,routing:0,qpu:3,decoder:0,ft:0};
+  const CHIP_BASE_ERR={source:0.001,fiber:0.0005,detector:0.01,refinery:0.003,routing:0.0005,qpu:0.005,decoder:0.008,ft:0.015};
+
+  const sorted=[...chipSections].sort((a,b)=>a.x-b.x);
+  const totalW=sorted.reduce((s,sec)=>s+sec.w,0);
+  const canvasW=canvas.width||800;
+
+  const sectors=sorted.map(s=>{
+    const type=CHIP_TYPE_MAP[s.type]||'qpu';
+    const widthNorm=s.w/totalW;
+    const hNorm=s.h/canvasW;
+    return{
+      type,color:CHIP_COLORS[type],
+      width:widthNorm,
+      gateErr:CHIP_BASE_ERR[type]*(0.5+Math.random()),
+      hBase:0.2+hNorm*0.5,
+      hAmp:0.1+hNorm*0.3,
+      hFreq:2+Math.floor(Math.random()*10),
+      hShape:CHIP_SHAPES[type],
+      temp:type==='detector'?0.012:300
+    };
+  });
+
+  const genome={
+    sectors,
+    modes:8+Math.floor(Math.random()*8),
+    coupling:0.03+Math.random()*0.05,
+    noise:0.02+Math.random()*0.04,
+    gen:0,fitness:null,
+    id:Math.floor(Math.random()*1e6),
+    designedInStudio:true
+  };
+
+  try{
+    const bc=new BroadcastChannel('iron-line');
+    bc.postMessage({
+      type:'studio-chip-design',
+      source:'qbit-studio',
+      genome,
+      sectionCount:chipSections.length,
+      canvasSnapshot:{w:canvas.width,h:canvas.height,sections:sorted.map(s=>({type:s.type,x:s.x,y:s.y,w:s.w,h:s.h}))},
+      t:performance.now()
+    });
+    bc.close();
+  }catch(e){}
+
+  addAIMsg('system',`Chip design sent to μPark — ${chipSections.length} sectors, genome #${genome.id}`);
+  addAIMsg('system',`Sectors: ${sectors.map(s=>s.type).join(' → ')}`);
+  addAIMsg('system','Open μPark to see the terrain. Type "race" to test the design.');
+});
+
+function renderComponentList(){
+  const cl=$('component-list');cl.innerHTML='';
+  Object.entries(SECTION_TYPES).forEach(([key,info])=>{
+    const d=document.createElement('div');d.className='tmpl-card';
+    d.innerHTML=`<div class="tmpl-name">${info.icon} ${info.label}</div><div class="tmpl-desc">Click to preview this component</div>`;
+    d.addEventListener('click',()=>{
+      const html=TEMPLATES[key]?TEMPLATES[key]():'<div>Custom component</div>';
+      updatePreview(`<!DOCTYPE html><html><head><style>:root{--bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--border:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#58a6ff;--purple:#a78bfa;--cyan:#56d4dd;--gold:#c9a84c;--green:#34d399;--success:#3fb950;--warning:#f0883e;--error:#f85149;--font-mono:'SF Mono',monospace}*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--text);font-family:-apple-system,sans-serif}</style></head><body>${html}</body></html>`);
+    });
+    cl.appendChild(d);
+  });
+}
+
+renderTemplateGallery();
+renderComponentList();
+buildPage();
+addAIMsg('system','qbit studio ready — draw sections on the canvas, drag from sidebar, or type a prompt to build.');
+
+try{const parkBC=new BroadcastChannel('iron-line');
+parkBC.addEventListener('message',e=>{
+  if(e.data.type==='studio-design-ack'&&e.data.source==='ugrad-photonic-park'){
+    addAIMsg('system',`μPark received chip design #${e.data.genomeId} — ${e.data.sectors} sectors applied as terrain`);
+  }
+  if(e.data.type==='chip-evolved'&&e.data.source==='ugrad-photonic-park'){
+    addAIMsg('system',`μPark evolved to G${e.data.gen} — best design #${e.data.bestId}, fitness: ${e.data.fitness.toFixed(1)}, ${e.data.sectors} sectors`);
+  }
+  if(e.data.type==='photonic-park-race'&&e.data.source==='ugrad-photonic-park'){
+    const results=e.data.results;
+    if(results&&results.length){
+      addAIMsg('system','μPark race complete:');
+      results.forEach((r,i)=>addAIMsg('system',`  ${i+1}. ${r.name} — ${r.time.toFixed(2)}s, ${(r.acc*100).toFixed(0)}% acc`));
+    }
+  }
+})}catch(e){}
+
+// ═══════════════════════════════════════════════════════════════
+// Audio Control Vector Engine — live pipe → FFT → QAS → visualizer
+// ═══════════════════════════════════════════════════════════════
+
+const AV = {
+  ctx: null,
+  source: null,
+  analyser: null,
+  worker: null,
+  running: false,
+  frame: 0,
+  fftSize: 2048,
+  bands: 64,
+  sampleRate: 96000,
+  vizMode: 'field',
+  azimuth: 0,
+  elevation: 0,
+  lastResult: null,
+  history: [],
+  maxHistory: 300,
+  animId: null,
+  recording: false,
+  recordedFrames: [],
+
+  init() {
+    AV.worker = new Worker('ugrad-worker.js');
+    AV.worker.onmessage = AV.onWorkerMsg;
+    AV.setupUI();
+    AV.setupQubitDisplay();
+  },
+
+  setupUI() {
+    $('av-src-mic').onclick = () => AV.startMic();
+    $('av-src-file').onclick = () => $('av-file-input').click();
+    $('av-src-stream').onclick = () => AV.startSystem();
+    $('av-file-input').onchange = (e) => { if (e.target.files[0]) AV.startFile(e.target.files[0]); };
+    $('av-rec').onclick = () => AV.toggleRecord();
+    $('av-azimuth').oninput = (e) => { AV.azimuth = +e.target.value; $('av-az-val').textContent = AV.azimuth; };
+    $('av-elevation').oninput = (e) => { AV.elevation = +e.target.value; $('av-el-val').textContent = AV.elevation; };
+    $('av-viz-mode').onchange = (e) => { AV.vizMode = e.target.value; };
+    AV.enumerateDevices();
+  },
+
+  async enumerateDevices() {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const sel = $('av-device-select');
+      sel.innerHTML = '';
+      const audioInputs = devices.filter(d => d.kind === 'audioinput');
+      audioInputs.forEach((d, i) => {
+        const opt = document.createElement('option');
+        opt.value = d.deviceId;
+        opt.textContent = d.label || ('Input ' + (i + 1));
+        if (d.label.toLowerCase().includes('blackhole')) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    } catch (e) {}
+  },
+
+  async startMic(deviceId) {
+    AV.stop();
+    try {
+      const constraints = { audio: { sampleRate: { ideal: AV.sampleRate }, channelCount: 1, echoCancellation: false, noiseSuppression: false, autoGainControl: false } };
+      const did = deviceId || $('av-device-select').value;
+      if (did && did !== 'default') constraints.audio.deviceId = { exact: did };
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      AV.connectStream(stream);
+      AV.setStatus('mic', true);
+    } catch (e) {
+      AV.setStatus('error: ' + e.message, false);
+    }
+  },
+
+  async startSystem() {
+    AV.stop();
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const bh = devices.find(d => d.kind === 'audioinput' && d.label.toLowerCase().includes('blackhole'));
+      if (bh) {
+        AV.startMic(bh.deviceId);
+        AV.setStatus('system (BlackHole)', true);
+      } else {
+        const lb = devices.find(d => d.kind === 'audioinput' && d.label.toLowerCase().includes('loopback'));
+        if (lb) { AV.startMic(lb.deviceId); AV.setStatus('system (Loopback)', true); }
+        else AV.setStatus('no BlackHole/Loopback found — install virtual audio', false);
+      }
+    } catch (e) { AV.setStatus('error: ' + e.message, false); }
+  },
+
+  async startFile(file) {
+    AV.stop();
+    try {
+      const ab = await file.arrayBuffer();
+      AV.ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: AV.sampleRate });
+      const buf = await AV.ctx.decodeAudioData(ab);
+      AV.source = AV.ctx.createBufferSource();
+      AV.source.buffer = buf;
+      AV.analyser = AV.ctx.createAnalyser();
+      AV.analyser.fftSize = AV.fftSize;
+      AV.analyser.smoothingTimeConstant = 0.3;
+      AV.source.connect(AV.analyser);
+      AV.analyser.connect(AV.ctx.destination);
+      AV.source.start(0);
+      AV.running = true;
+      AV.frame = 0;
+      AV.loop();
+      AV.setStatus('file: ' + file.name, true);
+      AV.source.onended = () => { AV.running = false; AV.setStatus('ended', false); };
+    } catch (e) { AV.setStatus('error: ' + e.message, false); }
+  },
+
+  connectStream(stream) {
+    AV.ctx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: AV.sampleRate });
+    AV.source = AV.ctx.createMediaStreamSource(stream);
+    AV.analyser = AV.ctx.createAnalyser();
+    AV.analyser.fftSize = AV.fftSize;
+    AV.analyser.smoothingTimeConstant = 0.3;
+    AV.source.connect(AV.analyser);
+    AV.running = true;
+    AV.frame = 0;
+    AV.loop();
+  },
+
+  stop() {
+    AV.running = false;
+    if (AV.animId) { cancelAnimationFrame(AV.animId); AV.animId = null; }
+    if (AV.source) { try { AV.source.disconnect(); } catch(e){} }
+    if (AV.ctx && AV.ctx.state !== 'closed') { try { AV.ctx.close(); } catch(e){} }
+    AV.source = null; AV.analyser = null; AV.ctx = null;
+  },
+
+  loop() {
+    if (!AV.running) return;
+    AV.animId = requestAnimationFrame(AV.loop);
+    if (!AV.analyser) return;
+    const freqData = new Float32Array(AV.analyser.frequencyBinCount);
+    AV.analyser.getFloatFrequencyData(freqData);
+    const bandSize = Math.floor(freqData.length / AV.bands);
+    const bands = new Float32Array(AV.bands);
+    for (let b = 0; b < AV.bands; b++) {
+      let sum = 0;
+      for (let i = b * bandSize; i < (b + 1) * bandSize && i < freqData.length; i++) {
+        sum += Math.pow(10, freqData[i] / 20);
+      }
+      bands[b] = sum / bandSize;
+    }
+    AV.frame++;
+    const centroidFreq = AV.estimateCentroidFreq(bands);
+    AV.worker.postMessage({
+      type: 'audio-cv',
+      bands: bands,
+      azimuth: AV.azimuth,
+      elevation: AV.elevation,
+      freq: centroidFreq,
+      roomSize: 5,
+      frame: AV.frame
+    });
+    AV.drawSpectrum(bands, freqData);
+  },
+
+  estimateCentroidFreq(bands) {
+    let num = 0, den = 0;
+    const nyq = (AV.ctx ? AV.ctx.sampleRate : AV.sampleRate) / 2;
+    for (let i = 0; i < bands.length; i++) {
+      const freq = (i / bands.length) * nyq;
+      num += freq * bands[i];
+      den += bands[i];
+    }
+    return den > 0 ? num / den : 1000;
+  },
+
+  onWorkerMsg(e) {
+    const d = e.data;
+    if (d.type === 'audio-cv-result') {
+      AV.lastResult = d;
+      AV.history.push(d);
+      if (AV.history.length > AV.maxHistory) AV.history.shift();
+      if (AV.recording) AV.recordedFrames.push(d);
+      AV.updateCVDisplay(d);
+      AV.updateQubitDisplay(d);
+      AV.drawField(d);
+    }
+  },
+
+  setStatus(text, active) {
+    const el = $('av-pipe-status');
+    el.innerHTML = '<span class="dot" style="background:' + (active ? 'var(--success)' : 'var(--muted)') + '"></span> ' + text;
+    ['av-src-mic','av-src-file','av-src-stream'].forEach(id => $(id).classList.remove('active'));
+  },
+
+  toggleRecord() {
+    AV.recording = !AV.recording;
+    $('av-rec').classList.toggle('active', AV.recording);
+    if (AV.recording) {
+      AV.recordedFrames = [];
+    } else if (AV.recordedFrames.length > 0) {
+      const blob = new Blob([JSON.stringify({
+        version: '1.0', format: 'qbit-audio-cv',
+        sampleRate: AV.ctx ? AV.ctx.sampleRate : AV.sampleRate,
+        bands: AV.bands, frames: AV.recordedFrames.length,
+        data: AV.recordedFrames
+      }, null, 0)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'qbit-audio-cv-' + Date.now() + '.json';
+      a.click();
+    }
+  },
+
+  drawSpectrum(bands, raw) {
+    const cv = $('av-spectrum');
+    const w = cv.parentElement.clientWidth, h = cv.parentElement.clientHeight;
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    const c = cv.getContext('2d');
+    c.clearRect(0, 0, w, h);
+
+    if (AV.vizMode === 'waveform' && AV.analyser) {
+      const td = new Float32Array(AV.analyser.fftSize);
+      AV.analyser.getFloatTimeDomainData(td);
+      c.strokeStyle = '#a78bfa';
+      c.lineWidth = 1.5;
+      c.beginPath();
+      const step = w / td.length;
+      for (let i = 0; i < td.length; i++) {
+        const y = (1 - td[i]) * h / 2;
+        i === 0 ? c.moveTo(0, y) : c.lineTo(i * step, y);
+      }
+      c.stroke();
+      return;
+    }
+
+    const barW = Math.max(1, (w - bands.length) / bands.length);
+    const gap = 1;
+    for (let i = 0; i < bands.length; i++) {
+      const mag = Math.min(1, bands[i] * 3);
+      const barH = mag * h * 0.85;
+      const x = i * (barW + gap);
+      const hue = 260 - (i / bands.length) * 200;
+      c.fillStyle = 'hsla(' + hue + ',75%,60%,' + (0.4 + mag * 0.6) + ')';
+      c.fillRect(x, h - barH, barW, barH);
+      c.fillStyle = 'hsla(' + hue + ',90%,80%,0.8)';
+      c.fillRect(x, h - barH, barW, 2);
+    }
+
+    if (AV.history.length > 1) {
+      c.strokeStyle = 'rgba(86,212,221,0.4)';
+      c.lineWidth = 1;
+      c.beginPath();
+      const step = w / Math.min(AV.maxHistory, AV.history.length);
+      for (let i = 0; i < AV.history.length; i++) {
+        const e = AV.history[i].energy || 0;
+        const y = h / 2 - (e / 5) * h / 2;
+        i === 0 ? c.moveTo(0, y) : c.lineTo(i * step, y);
+      }
+      c.stroke();
+    }
+  },
+
+  drawField(result) {
+    if (AV.vizMode !== 'field' && AV.vizMode !== 'bloch') return;
+    const cv = $('av-field');
+    const w = cv.parentElement.clientWidth, h = cv.parentElement.clientHeight;
+    if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+    const c = cv.getContext('2d');
+    c.clearRect(0, 0, w, h);
+
+    if (!result || !result.qubits) return;
+    const q = result.qubits;
+
+    if (AV.vizMode === 'bloch') {
+      const cx = w / 2, cy = h / 2, r = Math.min(w, h) * 0.35;
+      c.strokeStyle = 'rgba(139,148,158,0.2)';
+      c.lineWidth = 1;
+      c.beginPath(); c.arc(cx, cy, r, 0, Math.PI * 2); c.stroke();
+      c.beginPath(); c.moveTo(cx - r, cy); c.lineTo(cx + r, cy); c.stroke();
+      c.beginPath(); c.moveTo(cx, cy - r); c.lineTo(cx, cy + r); c.stroke();
+
+      const colors = ['#a78bfa','#58a6ff','#56d4dd','#34d399','#c9a84c','#f0883e','#f85149','#ff6b6b','#ffbe0b','#00f5a0','#8338ec'];
+      for (let i = 0; i < q.length; i++) {
+        const theta = (q[i] + 1) / 2 * Math.PI;
+        const phi = (i / q.length) * Math.PI * 2;
+        const px = cx + r * Math.sin(theta) * Math.cos(phi);
+        const py = cy - r * Math.cos(theta);
+        c.fillStyle = colors[i % colors.length];
+        c.beginPath(); c.arc(px, py, 4, 0, Math.PI * 2); c.fill();
+        c.fillStyle = 'rgba(255,255,255,0.5)';
+        c.font = '8px ' + getComputedStyle(document.documentElement).getPropertyValue('--font-mono');
+        c.fillText('q' + i, px + 6, py + 3);
+      }
+      return;
+    }
+
+    const cv2 = result.cv;
+    if (!cv2) return;
+    const gridW = 8, gridH = 8;
+    const cellW = w / gridW, cellH = h / gridH;
+    const keys = ['sub','bass','loMid','mid','hiMid','pres','brill','air'];
+    for (let y = 0; y < gridH; y++) {
+      for (let x = 0; x < gridW; x++) {
+        const qi = (y * gridW + x) % q.length;
+        const bv = cv2[keys[x]] || 0;
+        const qv = (q[qi] + 1) / 2;
+        const intensity = bv * 0.6 + qv * 0.4;
+        const hue = 260 - x / gridW * 200 + y / gridH * 40;
+        c.fillStyle = 'hsla(' + hue + ',70%,50%,' + (intensity * 0.5) + ')';
+        c.fillRect(x * cellW, y * cellH, cellW - 1, cellH - 1);
+      }
+    }
+
+    if (result.spatial) {
+      const az = AV.azimuth * Math.PI / 180;
+      const lx = w / 2 + Math.sin(az) * w * 0.3;
+      const ly = h / 2 - Math.cos(az) * h * 0.3;
+      c.strokeStyle = 'rgba(167,139,250,0.6)';
+      c.lineWidth = 2;
+      c.beginPath();
+      c.moveTo(w / 2, h / 2);
+      c.lineTo(lx, ly);
+      c.stroke();
+      c.fillStyle = '#a78bfa';
+      c.beginPath(); c.arc(lx, ly, 6, 0, Math.PI * 2); c.fill();
+      c.fillStyle = 'rgba(167,139,250,0.4)';
+      c.font = '10px ' + getComputedStyle(document.documentElement).getPropertyValue('--font-mono');
+      c.fillText(AV.azimuth + '°', lx + 10, ly);
+    }
+  },
+
+  setupQubitDisplay() {
+    const el = $('av-qubits');
+    const names = ['SRC','MED0','MED1','MED2','MED3','L.EAR','L.PIN','R.EAR','R.PIN','HRTF0','HRTF1'];
+    let html = '<div class="av-title">Qubits (11)</div>';
+    for (let i = 0; i < 11; i++) {
+      html += '<div class="qubit-row"><span class="qname">q' + i + '</span><div class="qbar"><div class="qfill" id="qf-' + i + '" style="width:50%;background:var(--purple)"></div></div><span class="qval" id="qv-' + i + '">0</span></div>';
+      html += '<div style="font-size:8px;color:var(--muted);font-family:var(--font-mono);padding-left:32px;margin-bottom:2px">' + names[i] + '</div>';
+    }
+    el.innerHTML = html;
+  },
+
+  updateQubitDisplay(result) {
+    if (!result.qubits) return;
+    for (let i = 0; i < result.qubits.length; i++) {
+      const v = result.qubits[i];
+      const pct = ((v + 1) / 2 * 100).toFixed(0);
+      const fill = $('qf-' + i);
+      const val = $('qv-' + i);
+      if (fill) {
+        fill.style.width = pct + '%';
+        const hue = v > 0 ? 140 : v < -0.5 ? 0 : 260;
+        fill.style.background = 'hsl(' + hue + ',70%,55%)';
+      }
+      if (val) val.textContent = v.toFixed(2);
+    }
+    $('av-energy').textContent = (result.energy || 0).toFixed(3);
+    if (result.spatial) {
+      $('av-ild').textContent = result.spatial.ild_dB + ' dB';
+      $('av-itd').textContent = result.spatial.itd_us + ' \u00b5s';
+    }
+    if (result.dispersion) $('av-omega').textContent = result.dispersion.omega.toFixed(3);
+    $('av-frame').textContent = result.frame || AV.frame;
+    if (result.ms !== undefined) $('av-latency').textContent = result.ms.toFixed(1) + 'ms';
+  },
+
+  updateCVDisplay(result) {
+    if (!result.cv) return;
+    const cv = result.cv;
+    const panel = $('av-cv-bars');
+    const keys = ['sub','bass','loMid','mid','hiMid','pres','brill','air','centroid','energy','flatness','peak','crest','flux'];
+    const colors = ['#f85149','#f0883e','#c9a84c','#34d399','#56d4dd','#58a6ff','#a78bfa','#8338ec','#ff6b6b','#3fb950','#ffbe0b','#00f5a0','#c9a84c','#f85149'];
+    if (!panel._built) {
+      let html = '<div class="av-title">Control Vectors (14)</div><div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px">';
+      keys.forEach((k, i) => {
+        html += '<div style="text-align:center"><div style="font-size:8px;color:var(--muted);font-family:var(--font-mono);margin-bottom:2px">' + k + '</div><div style="height:80px;background:var(--bg3);border-radius:2px;position:relative;overflow:hidden"><div id="cvb-' + k + '" style="position:absolute;bottom:0;width:100%;background:' + colors[i] + ';border-radius:2px;transition:height .05s"></div></div><div id="cvv-' + k + '" style="font-size:8px;color:' + colors[i] + ';font-family:var(--font-mono);margin-top:1px">0</div></div>';
+      });
+      html += '</div>';
+      panel.innerHTML = html;
+      panel._built = true;
+    }
+    keys.forEach(k => {
+      const v = cv[k] || 0;
+      const bar = $('cvb-' + k);
+      const val = $('cvv-' + k);
+      if (bar) bar.style.height = Math.min(100, v * 100) + '%';
+      if (val) val.textContent = v.toFixed(2);
+    });
+
+    const sidebar = $('av-cv-list');
+    if (!sidebar._built) {
+      let html = '';
+      keys.forEach((k, i) => {
+        html += '<div class="av-stat"><span class="label">' + k + '</span><span class="val" id="cvs-' + k + '" style="color:' + colors[i] + '">0</span></div>';
+        html += '<div class="av-bar"><div class="av-bar-fill" id="cvsb-' + k + '" style="background:' + colors[i] + ';width:0%"></div></div>';
+      });
+      sidebar.innerHTML = html;
+      sidebar._built = true;
+    }
+    keys.forEach(k => {
+      const v = cv[k] || 0;
+      const val = $('cvs-' + k);
+      const bar = $('cvsb-' + k);
+      if (val) val.textContent = v.toFixed(3);
+      if (bar) bar.style.width = Math.min(100, v * 100) + '%';
+    });
+  }
+};
+
+// Wire audio mode toggle into nav
+document.querySelectorAll('.header nav button').forEach(btn => {
+  const origClick = btn.onclick;
+  btn.addEventListener('click', () => {
+    const mode = btn.dataset.mode;
+    const avWrap = $('av-wrap');
+    const drawToolbar = $('draw-toolbar');
+    const promptBar = $('prompt-bar');
+    if (mode === 'audio') {
+      avWrap.classList.add('active');
+      if (drawToolbar) drawToolbar.style.display = 'none';
+      if (promptBar) promptBar.style.display = 'none';
+      canvas.style.display = 'none';
+      gridCanvas.style.display = 'none';
+      labelsEl.style.display = 'none';
+      if (!AV.worker) AV.init();
+    } else {
+      avWrap.classList.remove('active');
+      if (drawToolbar) drawToolbar.style.display = '';
+      if (promptBar) promptBar.style.display = '';
+      canvas.style.display = '';
+      gridCanvas.style.display = '';
+      labelsEl.style.display = '';
+    }
+  });
+});
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+var QP=window.QuantumPrefixes;
+if(QP){
+  QP.broadcastState('qbit-studio',{coverage:0,totalLines:0,classifiedLines:0,prefixCounts:{}});
+  QP.onStateChange(function(s){});
+  QP.requestStateSync();
+}
+// ===== END QUANTUM PREFIX LIVE SYNC =====
+})();
+</script>
+<script>if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{})}</script>
+</body>
+</html>

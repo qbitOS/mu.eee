@@ -1,0 +1,421 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Numsy — uvspeed nyan tamagotchi</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon.png">
+    <style>
+        :root {
+            --bg:var(--qp-bg,#0d1117);--bg2:var(--qp-bg-secondary,#161b22);--bg3:var(--qp-bg-tertiary,#21262d);
+            --border:var(--qp-border,#30363d);--text:var(--qp-text,#e6edf3);--text-m:var(--qp-text-muted,#8b949e);
+            --accent:var(--qp-accent,#58a6ff);--green:#3fb950;--orange:#f0883e;
+            --red:#f85149;--purple:#a78bfa;--cyan:#56d4dd;
+            --mono:'SF Mono','Fira Code','JetBrains Mono','Cascadia Code',monospace;
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        html,body{height:100%;overflow:hidden;background:var(--bg);-webkit-text-size-adjust:100%;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;color:var(--text)}
+
+        .frame{
+            width:1080px;height:1080px;
+            max-width:100vw;max-height:100vh;
+            aspect-ratio:1/1;
+            margin:0 auto;
+            background:var(--bg);
+            display:flex;flex-direction:column;align-items:center;justify-content:center;
+            position:relative;overflow:hidden;
+        }
+        /* Scale down on smaller screens */
+        @media(max-width:1080px){.frame{width:100vw;height:100vw}}
+        @media(max-height:1080px) and (min-width:1081px){.frame{height:100vh;width:100vh}}
+
+        /* Starfield background */
+        .stars{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+        .star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;animation:twinkle var(--dur) ease-in-out infinite}
+        @keyframes twinkle{0%,100%{opacity:.2}50%{opacity:.9}}
+
+        /* Title */
+        .title-area{position:absolute;top:6%;text-align:center;z-index:2}
+        .title{font-size:2.5rem;font-weight:800;letter-spacing:-.02em}
+        .title span{background:linear-gradient(135deg,#f85149,#f0883e,#e3b341,#3fb950,#58a6ff,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+        .subtitle{font-size:.875rem;color:var(--text-m);margin-top:4px;font-family:var(--mono)}
+
+        /* Cat container — scaled up 5x from the 60x40 original */
+        .cat-stage{position:relative;width:300px;height:220px;z-index:3;cursor:grab;user-select:none}
+        .cat-stage:active{cursor:grabbing}
+
+        /* Nyan cat — scaled */
+        .n-rainbow{position:absolute;left:-150px;top:24px;width:150px;height:168px;display:flex;flex-direction:column;overflow:hidden;border-radius:8px 0 0 8px}
+        .n-stripe{flex:1;transition:width .3s}
+        .n-torso{position:absolute;left:0;top:24px;width:180px;height:144px;background:#f97583;border-radius:16px;border:4px solid #484f58}
+        .n-torso::before{content:'';position:absolute;inset:8px;background:repeating-linear-gradient(0deg,transparent,transparent 12px,rgba(0,0,0,.1) 12px,rgba(0,0,0,.1) 24px);border-radius:8px}
+        .n-head{position:absolute;left:140px;top:0;width:144px;height:144px;background:#8b949e;border-radius:16px;border:4px solid #484f58;z-index:2}
+        .n-ear-l,.n-ear-r{position:absolute;width:0;height:0;top:-28px;border-left:22px solid transparent;border-right:22px solid transparent;border-bottom:36px solid #8b949e}
+        .n-ear-l{left:10px}.n-ear-r{right:10px}
+        .n-ear-l::after,.n-ear-r::after{content:'';position:absolute;top:14px;left:-14px;width:0;height:0;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:22px solid #f97583}
+        .n-eyes{position:absolute;top:36px;left:18px;display:flex;gap:32px}
+        .n-eye{width:24px;height:24px;background:#e6edf3;border-radius:50%;position:relative;box-shadow:inset 0 0 0 2px rgba(0,0,0,.1)}
+        .n-eye::after{content:'';position:absolute;width:14px;height:14px;background:#0d1117;border-radius:50%;top:5px;left:5px;transition:all .15s}
+        .n-eye .n-shine{position:absolute;width:6px;height:6px;background:#fff;border-radius:50%;top:6px;right:6px;z-index:3}
+        .n-mouth{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);font-size:28px;line-height:1;color:#f97583;font-family:var(--mono)}
+        .n-cheek-l,.n-cheek-r{position:absolute;bottom:32px;width:20px;height:12px;background:rgba(249,117,131,.4);border-radius:50%}
+        .n-cheek-l{left:12px}.n-cheek-r{right:12px}
+        .n-feet{position:absolute;bottom:-16px;left:16px;display:flex;gap:40px}
+        .n-foot{width:36px;height:24px;background:#8b949e;border-radius:0 0 12px 12px;border:3px solid #484f58;border-top:none}
+        .n-tail{position:absolute;left:-40px;top:40px;width:44px;height:16px;background:#8b949e;border-radius:10px 0 0 10px;transform-origin:right center;animation:tail-wag 2s ease-in-out infinite}
+        @keyframes tail-wag{0%,100%{transform:rotate(-8deg)}50%{transform:rotate(8deg)}}
+
+        /* Speech bubble — scaled */
+        .n-bubble{position:absolute;top:-60px;left:50%;transform:translateX(-50%);background:var(--bg2);border:2px solid var(--border);border-radius:16px;padding:8px 16px;font-size:1.125rem;color:var(--text);white-space:nowrap;opacity:0;transition:opacity .3s;pointer-events:none;font-family:var(--mono);box-shadow:0 4px 20px rgba(0,0,0,.4);z-index:10}
+        .n-bubble::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:8px solid transparent;border-top-color:var(--border)}
+        .n-bubble.show{opacity:1}
+
+        /* Animations */
+        .cat-stage.idle .n-torso{animation:n-float 3s ease-in-out infinite}
+        .cat-stage.thinking .n-torso{animation:n-wobble .4s ease-in-out infinite}
+        .cat-stage.happy .n-stripe{animation:n-rainbow-pulse .5s ease infinite}
+        .cat-stage.dance{animation:n-dance .3s ease infinite}
+        .cat-stage.wiggle{animation:n-wiggle .5s ease infinite}
+        .cat-stage.fly{animation:n-fly 1s ease infinite}
+        .cat-stage.fly .n-stripe{animation:n-rainbow-pulse .3s ease infinite}
+        .cat-stage.sleepy{filter:brightness(.6) saturate(.5)}
+
+        @keyframes n-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+        @keyframes n-wobble{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+        @keyframes n-rainbow-pulse{0%,100%{opacity:1}50%{opacity:.5}}
+        @keyframes n-dance{0%{transform:rotate(0) scale(1)}25%{transform:rotate(-6deg) scale(1.06)}50%{transform:rotate(0) scale(1)}75%{transform:rotate(6deg) scale(1.06)}}
+        @keyframes n-wiggle{0%{transform:translateX(0)}25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-5px)}100%{transform:translateX(0)}}
+        @keyframes n-fly{0%{transform:translateY(0) rotate(0)}25%{transform:translateY(-20px) rotate(-4deg)}50%{transform:translateY(-8px) rotate(0)}75%{transform:translateY(-24px) rotate(4deg)}100%{transform:translateY(0) rotate(0)}}
+
+        /* Readout panel */
+        .readout{position:absolute;bottom:5%;width:80%;max-width:700px;z-index:2}
+        .readout-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:16px 20px;font-family:var(--mono);font-size:.8125rem;color:var(--text-m);line-height:1.8}
+        .readout-row{display:flex;justify-content:space-between;align-items:center;padding:2px 0}
+        .readout-label{color:var(--text-m)}
+        .readout-val{color:var(--text);font-weight:600}
+        .readout-val.green{color:var(--green)}
+        .readout-val.orange{color:var(--orange)}
+        .readout-val.purple{color:var(--purple)}
+        .readout-val.red{color:var(--red)}
+        .readout-val.cyan{color:var(--cyan)}
+        .readout-bar{height:6px;background:var(--bg3);border-radius:3px;flex:1;margin:0 10px;max-width:160px;overflow:hidden}
+        .readout-bar-fill{height:100%;border-radius:3px;transition:width .5s ease}
+        .readout-sep{border:none;border-top:1px solid var(--border);margin:6px 0}
+        .readout-prefix{display:flex;gap:6px;justify-content:center;margin-top:4px}
+        .readout-prefix span{display:inline-flex;align-items:center;justify-content:center;width:28px;height:22px;border:1px solid var(--border);border-radius:4px;font-size:.625rem;font-weight:700;background:var(--bg3)}
+
+        /* Action buttons */
+        .actions{display:flex;gap:8px;margin-top:10px;justify-content:center}
+        .act-btn{padding:6px 14px;font-size:.6875rem;font-weight:600;border:1px solid var(--border);border-radius:8px;background:var(--bg3);color:var(--text-m);cursor:pointer;font-family:var(--mono);transition:all .15s}
+        .act-btn:hover{border-color:var(--accent);color:var(--accent)}
+        .act-btn.primary{background:rgba(88,166,255,.12);border-color:var(--accent);color:var(--accent)}
+    </style>
+</head>
+<body>
+<div style="display:flex;height:2px;width:100%;flex-shrink:0"><span style="flex:1;background:#ff3838"></span><span style="flex:1;background:#ff8c38"></span><span style="flex:1;background:#ffe138"></span><span style="flex:1;background:#3fb950"></span><span style="flex:1;background:#38a5ff"></span><span style="flex:1;background:#bc8cff"></span></div>
+<div class="frame" id="frame">
+    <!-- Stars -->
+    <div class="stars" id="stars"></div>
+
+    <!-- Title -->
+    <div class="title-area">
+        <div class="title"><span>Numsy</span></div>
+        <div class="subtitle">uvspeed nyan tamagotchi</div>
+    </div>
+
+    <!-- Nyan Cat — scaled 5x -->
+    <div class="cat-stage idle" id="cat-stage">
+        <div class="n-bubble" id="n-bubble"></div>
+        <div class="n-rainbow">
+            <div class="n-stripe" style="background:#f85149"></div>
+            <div class="n-stripe" style="background:#f0883e"></div>
+            <div class="n-stripe" style="background:#e3b341"></div>
+            <div class="n-stripe" style="background:#3fb950"></div>
+            <div class="n-stripe" style="background:#58a6ff"></div>
+            <div class="n-stripe" style="background:#a78bfa"></div>
+        </div>
+        <div class="n-tail" id="n-tail"></div>
+        <div class="n-torso"></div>
+        <div class="n-head">
+            <div class="n-ear-l"></div>
+            <div class="n-ear-r"></div>
+            <div class="n-eyes">
+                <div class="n-eye" id="n-eye-l"><div class="n-shine"></div></div>
+                <div class="n-eye" id="n-eye-r"><div class="n-shine"></div></div>
+            </div>
+            <div class="n-cheek-l"></div>
+            <div class="n-cheek-r"></div>
+            <div class="n-mouth" id="n-mouth">w</div>
+        </div>
+        <div class="n-feet">
+            <div class="n-foot" id="n-foot-l"></div>
+            <div class="n-foot" id="n-foot-r"></div>
+        </div>
+    </div>
+
+    <!-- Readout -->
+    <div class="readout">
+        <div class="readout-box">
+            <div class="readout-row">
+                <span class="readout-label">mood</span>
+                <div class="readout-bar"><div class="readout-bar-fill" id="bar-mood" style="width:100%;background:#3fb950"></div></div>
+                <span class="readout-val green" id="val-mood">100</span>
+            </div>
+            <div class="readout-row">
+                <span class="readout-label">energy</span>
+                <div class="readout-bar"><div class="readout-bar-fill" id="bar-energy" style="width:100%;background:#58a6ff"></div></div>
+                <span class="readout-val" id="val-energy" style="color:#58a6ff">100</span>
+            </div>
+            <div class="readout-row">
+                <span class="readout-label">state</span>
+                <span class="readout-val purple" id="val-state">idle</span>
+            </div>
+            <div class="readout-row">
+                <span class="readout-label">uptime</span>
+                <span class="readout-val cyan" id="val-uptime">0:00</span>
+            </div>
+            <hr class="readout-sep">
+            <div class="readout-row" style="justify-content:center;gap:12px">
+                <span class="readout-label" style="font-size:.625rem">quantum prefix</span>
+            </div>
+            <div class="readout-prefix" id="prefix-display">
+                <span style="color:#3fb950">+1</span>
+                <span style="color:#e6edf3">1</span>
+                <span style="color:#f85149">-1</span>
+                <span style="color:#3fb950">+0</span>
+                <span style="color:#8b949e">0</span>
+                <span style="color:#f85149">-0</span>
+                <span style="color:#f0883e">+n</span>
+                <span style="color:#e6edf3">n</span>
+                <span style="color:#a78bfa">-n</span>
+            </div>
+            <div class="actions">
+                <button class="act-btn" id="btn-feed">feed</button>
+                <button class="act-btn" id="btn-pet">pet</button>
+                <button class="act-btn" id="btn-play">play</button>
+                <button class="act-btn primary" id="btn-fly">fly</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+(() => {
+'use strict';
+
+// Stars
+const starsEl = document.getElementById('stars');
+for (let i = 0; i < 80; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    s.style.left = Math.random() * 100 + '%';
+    s.style.top = Math.random() * 100 + '%';
+    s.style.setProperty('--dur', (1.5 + Math.random() * 3) + 's');
+    s.style.animationDelay = (Math.random() * 3) + 's';
+    s.style.width = s.style.height = (1 + Math.random() * 2) + 'px';
+    starsEl.appendChild(s);
+}
+
+const stage = document.getElementById('cat-stage');
+const bubble = document.getElementById('n-bubble');
+const mouth = document.getElementById('n-mouth');
+const tail = document.getElementById('n-tail');
+
+let state = 'idle';
+let mood = 100;
+let energy = 100;
+let startTime = Date.now();
+let bubbleTimer = null;
+
+const msgs = {
+    idle: ['zzz...', '*yawns*', 'bored~', 'pet me?', '*stretches*', 'la la la~'],
+    happy: ['meow!', 'nyan~', '*purrs*', 'nice!', 'yay!'],
+    feed: ['yum!', 'nom nom', 'thanks!', '*munch*', 'delicious~'],
+    pet: ['*purrs loudly*', 'more!', 'so nice~', '*nuzzle*', 'love it!'],
+    play: ['wheee!', 'fun!', 'again!', 'hehe~', 'catch me!'],
+    fly: ['WHEEEEE!', 'to the stars!', 'quantum leap!', 'beyond binary!', 'NYAAAAN!'],
+    click: ['hi!', 'meow!', '*purrr*', 'hey!', '*waves*'],
+};
+
+function say(text, dur) {
+    clearTimeout(bubbleTimer);
+    bubble.textContent = text;
+    bubble.classList.add('show');
+    bubbleTimer = setTimeout(() => bubble.classList.remove('show'), dur || 3000);
+}
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+
+function setState(s) {
+    state = s;
+    stage.className = 'cat-stage ' + s;
+    document.getElementById('val-state').textContent = s;
+    switch (s) {
+        case 'happy': mouth.textContent = '▽'; break;
+        case 'thinking': mouth.textContent = '~'; break;
+        case 'dance': case 'fly': mouth.textContent = '▽'; break;
+        case 'sleepy': mouth.textContent = '-'; break;
+        default: mouth.textContent = 'w';
+    }
+    if (s === 'happy' || s === 'dance') {
+        tail.style.animation = 'tail-wag 0.3s ease infinite';
+    } else {
+        tail.style.animation = 'tail-wag 2s ease-in-out infinite';
+    }
+}
+
+function updateBars() {
+    document.getElementById('bar-mood').style.width = mood + '%';
+    document.getElementById('val-mood').textContent = Math.round(mood);
+    document.getElementById('bar-mood').style.background = mood > 60 ? '#3fb950' : mood > 30 ? '#f0883e' : '#f85149';
+    document.getElementById('val-mood').style.color = mood > 60 ? '#3fb950' : mood > 30 ? '#f0883e' : '#f85149';
+
+    document.getElementById('bar-energy').style.width = energy + '%';
+    document.getElementById('val-energy').textContent = Math.round(energy);
+    document.getElementById('bar-energy').style.background = energy > 50 ? '#58a6ff' : energy > 20 ? '#f0883e' : '#f85149';
+    document.getElementById('val-energy').style.color = energy > 50 ? '#58a6ff' : energy > 20 ? '#f0883e' : '#f85149';
+}
+
+function updateUptime() {
+    const s = Math.floor((Date.now() - startTime) / 1000);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    document.getElementById('val-uptime').textContent = m + ':' + String(sec).padStart(2, '0');
+}
+
+// Actions
+document.getElementById('btn-feed').addEventListener('click', () => {
+    energy = Math.min(100, energy + 25);
+    mood = Math.min(100, mood + 10);
+    setState('happy'); say(pick(msgs.feed)); updateBars();
+    setTimeout(() => setState('idle'), 2500);
+});
+
+document.getElementById('btn-pet').addEventListener('click', () => {
+    mood = Math.min(100, mood + 20);
+    setState('happy'); say(pick(msgs.pet)); updateBars();
+    setTimeout(() => setState('idle'), 2500);
+});
+
+document.getElementById('btn-play').addEventListener('click', () => {
+    energy = Math.max(0, energy - 10);
+    mood = Math.min(100, mood + 15);
+    setState('dance'); say(pick(msgs.play)); updateBars();
+    setTimeout(() => setState('idle'), 3000);
+});
+
+document.getElementById('btn-fly').addEventListener('click', () => {
+    energy = Math.max(0, energy - 15);
+    mood = Math.min(100, mood + 25);
+    setState('fly'); say(pick(msgs.fly), 4000); updateBars();
+    setTimeout(() => setState('idle'), 4000);
+});
+
+// Click on cat
+stage.addEventListener('click', () => {
+    mood = Math.min(100, mood + 5);
+    say(pick(msgs.click));
+    setState('dance');
+    updateBars();
+    setTimeout(() => setState('idle'), 2000);
+});
+
+// Eye tracking
+document.addEventListener('mousemove', e => {
+    const eyeL = document.getElementById('n-eye-l');
+    const eyeR = document.getElementById('n-eye-r');
+    if (!eyeL || !eyeR) return;
+    const rect = stage.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const dx = Math.max(-1, Math.min(1, (e.clientX - cx) / 300));
+    const dy = Math.max(-1, Math.min(1, (e.clientY - cy) / 300));
+    [eyeL, eyeR].forEach(eye => {
+        const pupil = eye.querySelector('::after') || eye;
+        eye.style.transform = `translate(${dx * 3}px, ${dy * 3}px)`;
+    });
+});
+
+// Idle decay + random behaviors
+setInterval(() => {
+    energy = Math.max(0, energy - 0.5);
+    mood = Math.max(0, mood - 0.3);
+    updateBars();
+    updateUptime();
+
+    if (energy < 15 && state === 'idle') {
+        setState('sleepy'); say('zzz...');
+    } else if (state === 'idle' && Math.random() < 0.12) {
+        const actions = ['wiggle', 'dance'];
+        setState(pick(actions));
+        say(pick(msgs.idle));
+        setTimeout(() => setState('idle'), 3000);
+    }
+}, 5000);
+
+// Highlight random prefix symbol periodically
+const prefixSpans = document.querySelectorAll('#prefix-display span');
+setInterval(() => {
+    prefixSpans.forEach(s => s.style.background = 'var(--bg3)');
+    const idx = Math.floor(Math.random() * prefixSpans.length);
+    prefixSpans[idx].style.background = 'rgba(88,166,255,.2)';
+    prefixSpans[idx].style.borderColor = '#58a6ff';
+    setTimeout(() => {
+        prefixSpans[idx].style.background = 'var(--bg3)';
+        prefixSpans[idx].style.borderColor = 'var(--border)';
+    }, 1500);
+}, 3000);
+
+// Init
+setTimeout(() => say('nyan! ready to code~', 4000), 1000);
+updateBars();
+updateUptime();
+setInterval(updateUptime, 1000);
+
+// API for parent window / Electron IPC
+window.numsy = {
+    say, setState,
+    get mood() { return mood; },
+    set mood(v) { mood = Math.max(0, Math.min(100, v)); updateBars(); },
+    get energy() { return energy; },
+    set energy(v) { energy = Math.max(0, Math.min(100, v)); updateBars(); },
+    feed() { document.getElementById('btn-feed').click(); },
+    pet() { document.getElementById('btn-pet').click(); },
+    play() { document.getElementById('btn-play').click(); },
+    fly() { document.getElementById('btn-fly').click(); },
+    react(difficulty) {
+        switch(difficulty) {
+            case 'easy': setState('happy'); say(pick(msgs.happy)); break;
+            case 'medium': setState('thinking'); say('hmm... thinking...'); break;
+            case 'hard': setState('wiggle'); say('quantum thinking...'); break;
+            case 'extreme': setState('fly'); say('QUANTUM OVERLOAD!', 5000); break;
+        }
+        setTimeout(() => setState('idle'), 5000);
+    }
+};
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function() {
+    const QP = window.QuantumPrefixes;
+    if (!QP) return;
+    QP.onStateChange(function(source, state) { if (source === 'numsy' || !state) return; });
+    QP.broadcastState('numsy', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, role: 'numsy-visual' });
+    QP.requestStateSync();
+})();
+
+console.log('Numsy standalone — 1080x1080 Instagram format');
+console.log('API: window.numsy');
+})();
+</script>
+</body>
+</html>

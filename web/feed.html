@@ -1,0 +1,970 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="manifest" href="terminal-manifest.json">
+<title>hexterm — feed</title>
+<style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+        width: 100%; height: 100%;
+        background: var(--qp-bg, #0d1117); color: var(--qp-text, #e6edf3);
+        font-family: -apple-system, 'SF Pro', system-ui, sans-serif;
+        overflow: hidden;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none; user-select: none;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-text-size-adjust: 100%;
+    }
+    #app { display: flex; flex-direction: column; width: 100%; height: 100%; }
+
+    /* Title bar (matches terminal.html) */
+    #titlebar {
+        display: flex; align-items: center;
+        flex-shrink: 0; height: 38px;
+        background: #0d1117; position: relative;
+        -webkit-app-region: drag;
+        overflow: hidden;
+        border-bottom: 1px solid #21262d;
+    }
+    #titlebar-stars { position: absolute; inset: 0; z-index: 0; }
+    #titlebar .traffic-spacer { width: 78px; flex-shrink: 0; }
+    #titlebar .info {
+        z-index: 1; flex: 1; display: flex; align-items: center; gap: 8px;
+        font-size: .6875rem; font-family: 'SF Mono', monospace;
+        color: #8b949e; -webkit-app-region: no-drag;
+    }
+    #titlebar .info .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #3fb950; }
+    #titlebar .info .dot.sending { background: #58a6ff; }
+    #titlebar .info .dot.idle { background: #484f58; }
+    #titlebar .info .label { color: #e6edf3; font-weight: 600; }
+    #titlebar .title-center {
+        position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+        font-size: .5625rem; color: #484f58; font-family: 'SF Mono', monospace;
+        z-index: 0; pointer-events: none;
+    }
+    #titlebar .close-btn {
+        z-index: 1; background: none; border: none; color: #484f58;
+        font-size: .75rem; padding: 4px 10px; cursor: pointer;
+        font-family: 'SF Mono', monospace; -webkit-app-region: no-drag;
+    }
+    #titlebar .close-btn:hover { color: #da3633; }
+
+    /* Rainbow bar */
+    #rainbow { display: flex; flex-shrink: 0; height: 2px; width: 100%; }
+    #rainbow span { flex: 1; }
+    #rainbow .r1 { background: #ff3838; }
+    #rainbow .r2 { background: #ff8c38; }
+    #rainbow .r3 { background: #ffe138; }
+    #rainbow .r4 { background: #3fb950; }
+    #rainbow .r5 { background: #38a5ff; }
+    #rainbow .r6 { background: #bc8cff; }
+
+    /* Video area */
+    #video-wrap {
+        flex: 1; position: relative; overflow: hidden;
+        background: #010409; display: flex; align-items: center; justify-content: center;
+    }
+    #feed-video { width: 100%; height: 100%; object-fit: contain; display: none; }
+    #feed-canvas { width: 100%; height: 100%; object-fit: contain; display: none; }
+    #placeholder {
+        color: #484f58; font-size: .875rem; font-family: 'SF Mono', monospace;
+        text-align: center;
+    }
+    #placeholder .big { font-size: 2rem; margin-bottom: 8px; }
+
+    /* Stats bar */
+    #stats-bar {
+        display: flex; align-items: center; gap: 8px;
+        padding: 2px 8px; min-height: 18px;
+        background: #0d1117; flex-shrink: 0;
+        font-size: .5rem; font-family: 'SF Mono', monospace; color: #484f58;
+        border-top: 1px solid #21262d;
+    }
+    #stats-bar .val { color: #3fb950; }
+    #stats-bar .spacer { flex: 1; }
+
+    /* Audio indicator */
+    #audio-indicator {
+        display: none; align-items: center; gap: 4px;
+        font-size: .5rem; color: #58a6ff;
+    }
+    #audio-indicator.active { display: flex; }
+    #audio-indicator .bar { width: 2px; height: 8px; background: #58a6ff; border-radius: 1px; animation: audioBar 0.5s ease infinite alternate; }
+    #audio-indicator .bar:nth-child(2) { animation-delay: 0.1s; }
+    #audio-indicator .bar:nth-child(3) { animation-delay: 0.2s; }
+    @keyframes audioBar { from { height: 3px; } to { height: 10px; } }
+
+    /* Transcript panel */
+    #transcript-panel {
+        flex-shrink: 0; height: 120px; display: flex; flex-direction: column;
+        border-top: 1px solid #21262d; background: #0d1117;
+    }
+    #transcript-header {
+        display: flex; align-items: center; padding: 2px 8px;
+        font-size: .5625rem; font-family: 'SF Mono', monospace; color: #484f58;
+        border-bottom: 1px solid #161b22;
+    }
+    #transcript-header .title { flex: 1; }
+    #transcript-log {
+        flex: 1; overflow-y: auto; padding: 4px 8px;
+        font-size: .625rem; font-family: 'SF Mono', monospace; color: #8b949e;
+        line-height: 1.4;
+    }
+    #transcript-log .ts { color: #484f58; margin-right: 4px; }
+    #transcript-log .speech { color: #e6edf3; }
+    #transcript-log .system { color: #58a6ff; font-style: italic; }
+    #transcript-log .watch-hit { color: #ffe138; font-weight: 600; }
+    #transcript-input {
+        display: flex; border-top: 1px solid #161b22;
+    }
+    #transcript-input input {
+        flex: 1; background: #161b22; border: none; color: #e6edf3;
+        padding: 4px 8px; font-size: .625rem; font-family: 'SF Mono', monospace;
+        outline: none;
+    }
+    #transcript-input input::placeholder { color: #484f58; }
+    #transcript-input button {
+        background: #238636; border: none; color: #fff;
+        padding: 4px 10px; font-size: .5625rem; cursor: pointer;
+        font-family: 'SF Mono', monospace;
+    }
+
+    /* Audio waveform */
+    #waveform-wrap {
+        flex-shrink: 0; height: 32px; background: #010409;
+        border-top: 1px solid #21262d; position: relative;
+        display: none;
+    }
+    #waveform-wrap.active { display: block; }
+    #waveform-canvas { width: 100%; height: 100%; }
+    #waveform-label {
+        position: absolute; top: 2px; left: 6px;
+        font-size: .5rem; font-family: 'SF Mono', monospace; color: #484f58;
+    }
+
+    /* Device count bar */
+    #device-bar {
+        display: flex; align-items: center; gap: 6px;
+        padding: 1px 8px; min-height: 16px;
+        background: #0d1117; flex-shrink: 0;
+        font-size: .5rem; font-family: 'SF Mono', monospace; color: #484f58;
+        border-top: 1px solid #161b22;
+    }
+    #device-bar .active { color: #3fb950; }
+    #device-bar .idle { color: #d29922; }
+    #device-bar .offline { color: #484f58; }
+
+    /* System benchmark bar */
+    #bench-bar {
+        display: flex; align-items: center; gap: 6px;
+        padding: 1px 8px; min-height: 16px;
+        background: #0d1117; flex-shrink: 0;
+        font-size: .5rem; font-family: 'SF Mono', monospace; color: #484f58;
+        border-top: 1px solid #161b22;
+    }
+    #bench-bar .good { color: #3fb950; }
+    #bench-bar .warn { color: #d29922; }
+    #bench-bar .bad { color: #da3633; }
+
+    /* Dev console */
+    #dev-console {
+        flex-shrink: 0; max-height: 80px; overflow-y: auto;
+        padding: 2px 8px; background: #161b22;
+        border-top: 1px solid #21262d;
+        font-size: .5rem; font-family: 'SF Mono', monospace; color: #6e7681;
+        display: none;
+    }
+    #dev-console.active { display: block; }
+    #dev-console .cmd-input {
+        display: flex; border-top: 1px solid #21262d; margin-top: 2px;
+    }
+    #dev-console .cmd-input input {
+        flex: 1; background: #0d1117; border: none; color: #e6edf3;
+        padding: 2px 4px; font-size: .5rem; font-family: 'SF Mono', monospace;
+        outline: none;
+    }
+
+    /* Bottom rainbow */
+    #rainbow-bottom { display: flex; flex-shrink: 0; height: 2px; width: 100%; }
+    #rainbow-bottom span { flex: 1; }
+    #rainbow-bottom .r1 { background: #ff3838; }
+    #rainbow-bottom .r2 { background: #ff8c38; }
+    #rainbow-bottom .r3 { background: #ffe138; }
+    #rainbow-bottom .r4 { background: #3fb950; }
+    #rainbow-bottom .r5 { background: #38a5ff; }
+    #rainbow-bottom .r6 { background: #bc8cff; }
+
+    /* Mobile responsiveness */
+    @media (max-width: 600px) {
+        html, body {
+            font-size: 14px;
+        }
+        #app {
+            width: 100%;
+        }
+        #titlebar {
+            height: 36px;
+            padding: 0 4px;
+        }
+        #titlebar .info {
+            font-size: .625rem;
+            gap: 4px;
+        }
+        #titlebar .title-center {
+            font-size: .5rem;
+        }
+        #titlebar .close-btn {
+            padding: 4px 8px;
+            font-size: .6875rem;
+        }
+        #video-wrap {
+            width: 100%;
+        }
+        #stats-bar {
+            padding: 2px 6px;
+            font-size: .4375rem;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        #transcript-panel {
+            height: 100px;
+        }
+        #transcript-header {
+            padding: 2px 6px;
+            font-size: .5rem;
+        }
+        #transcript-log {
+            padding: 3px 6px;
+            font-size: .5625rem;
+        }
+        #transcript-input {
+            flex-direction: column;
+        }
+        #transcript-input input {
+            padding: 3px 6px;
+            font-size: .5625rem;
+        }
+        #transcript-input button {
+            padding: 3px 8px;
+            font-size: .5rem;
+        }
+        #device-bar, #bench-bar {
+            padding: 1px 6px;
+            font-size: .4375rem;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        #waveform-wrap {
+            height: 28px;
+        }
+        #waveform-label {
+            font-size: .4375rem;
+        }
+        #dev-console {
+            max-height: 60px;
+            padding: 2px 6px;
+            font-size: .4375rem;
+        }
+        #placeholder {
+            font-size: .75rem;
+            padding: 0 12px;
+        }
+        #placeholder .big {
+            font-size: 1.5rem;
+            margin-bottom: 6px;
+        }
+    }
+</style>
+</head>
+<body>
+<div id="app">
+    <div id="titlebar">
+        <canvas id="titlebar-stars"></canvas>
+        <div class="traffic-spacer"></div>
+        <div class="info">
+            <span class="dot idle" id="status-dot"></span>
+            <span class="label" id="feed-label">feed</span>
+            <span id="feed-src">—</span>
+            <div id="audio-indicator">
+                <span class="bar"></span><span class="bar"></span><span class="bar"></span>
+                <span>audio</span>
+            </div>
+        </div>
+        <span class="title-center">hexterm feed</span>
+        <button class="close-btn" onclick="closeFeed()">✕</button>
+    </div>
+    <div id="rainbow"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+
+    <div id="video-wrap">
+        <video id="feed-video" playsinline autoplay muted></video>
+        <canvas id="feed-canvas"></canvas>
+        <div id="placeholder">
+            <div class="big">◉</div>
+            connecting...
+        </div>
+    </div>
+
+    <div id="stats-bar">
+        <span>src:</span><span class="val" id="stat-src">—</span>
+        <span>fps:</span><span class="val" id="stat-fps">0</span>
+        <span>frames:</span><span class="val" id="stat-frames">0</span>
+        <span>res:</span><span class="val" id="stat-res">—</span>
+        <span class="spacer"></span>
+        <span>feed</span>
+    </div>
+
+    <div id="waveform-wrap">
+        <canvas id="waveform-canvas"></canvas>
+        <span id="waveform-label">audio</span>
+    </div>
+
+    <div id="device-bar">
+        <span>devices:</span>
+        <span class="active" id="db-active">0 active</span>
+        <span class="idle" id="db-idle">0 idle</span>
+        <span class="offline" id="db-offline">0 offline</span>
+        <span style="flex:1"></span>
+        <span>total: <span id="db-total">0</span></span>
+    </div>
+
+    <div id="bench-bar">
+        <span>cpu:</span><span id="bb-cpu" class="good">—</span>
+        <span>mem:</span><span id="bb-mem" class="good">—</span>
+        <span>net:</span><span id="bb-net" class="good">—</span>
+        <span>throttle:</span><span id="bb-throttle" class="good">none</span>
+        <span style="flex:1"></span>
+        <span id="bb-bottleneck">—</span>
+    </div>
+
+    <div id="transcript-panel">
+        <div id="transcript-header">
+            <span class="title">transcript</span>
+            <span id="transcript-count">0</span>
+        </div>
+        <div id="transcript-log"></div>
+        <div id="transcript-input">
+            <input type="text" id="chat-input" placeholder="type message..." onkeydown="if(event.key==='Enter')sendChat()">
+            <button onclick="sendChat()">send</button>
+        </div>
+    </div>
+
+    <div id="dev-console">
+        <div id="dev-log"></div>
+        <div class="cmd-input">
+            <input type="text" id="dev-input" placeholder="stop <id> | mute | pause | resume" onkeydown="if(event.key==='Enter')devCmd()">
+        </div>
+    </div>
+
+    <div id="rainbow-bottom"><span class="r1"></span><span class="r2"></span><span class="r3"></span><span class="r4"></span><span class="r5"></span><span class="r6"></span></div>
+</div>
+
+<audio id="feed-audio" autoplay></audio>
+
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script>
+'use strict';
+
+// ── Config from URL params ──
+const params = new URLSearchParams(location.search);
+const FEED_ID = params.get('id') || 'feed-' + Date.now() % 10000;
+const SOURCE = params.get('src') || '';      // ws://host:port, "camera", "camera:back"
+const HEXCAST_PORT = 9876;
+
+// ── DOM refs ──
+const video = document.getElementById('feed-video');
+const canvas = document.getElementById('feed-canvas');
+const ctx = canvas.getContext('2d');
+const placeholder = document.getElementById('placeholder');
+const statusDot = document.getElementById('status-dot');
+const feedLabel = document.getElementById('feed-label');
+const feedSrcEl = document.getElementById('feed-src');
+const audioIndicator = document.getElementById('audio-indicator');
+const transcriptLog = document.getElementById('transcript-log');
+const transcriptCount = document.getElementById('transcript-count');
+const chatInput = document.getElementById('chat-input');
+
+// ── Stats ──
+let frameCount = 0, fps = 0, lastFpsSec = Date.now();
+const statFps = document.getElementById('stat-fps');
+const statFrames = document.getElementById('stat-frames');
+const statSrc = document.getElementById('stat-src');
+const statRes = document.getElementById('stat-res');
+
+// ── BroadcastChannel to master ──
+const bc = new BroadcastChannel('hexterm');
+const transcripts = [];
+const MAX_TRANSCRIPT = 200;
+let watchPhrases = [];
+
+bc.onmessage = (evt) => {
+    const msg = evt.data;
+    if (!msg || !msg.type) return;
+
+    if (msg.type === 'command') {
+        if (msg.cmd === 'close' && (!msg.feedId || msg.feedId === FEED_ID)) {
+            closeFeed();
+        } else if (msg.cmd === 'mute') {
+            const audio = document.getElementById('feed-audio');
+            if (audio) audio.muted = !audio.muted;
+        } else if (msg.cmd === 'watch' && msg.phrases) {
+            watchPhrases = msg.phrases;
+        }
+    }
+};
+
+// Notify master that this feed is alive
+bc.postMessage({ type: 'feed-open', feedId: FEED_ID, src: SOURCE });
+
+// ── Transcript ──
+function addTranscript(text, cls) {
+    cls = cls || 'speech';
+    const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    transcripts.push({ t, text, cls });
+    if (transcripts.length > MAX_TRANSCRIPT) transcripts.shift();
+
+    const entry = document.createElement('div');
+    entry.innerHTML = `<span class="ts">${t}</span>`;
+
+    // Check watch phrases
+    let displayText = text;
+    let hitWatch = false;
+    for (const phrase of watchPhrases) {
+        if (text.toLowerCase().includes(phrase.toLowerCase())) {
+            displayText = text.replace(new RegExp(`(${phrase})`, 'gi'), '<span class="watch-hit">$1</span>');
+            hitWatch = true;
+        }
+    }
+
+    const span = document.createElement('span');
+    span.className = hitWatch ? 'watch-hit' : cls;
+    span.innerHTML = displayText;
+    entry.appendChild(span);
+    transcriptLog.appendChild(entry);
+    transcriptLog.scrollTop = transcriptLog.scrollHeight;
+    transcriptCount.textContent = transcripts.length;
+
+    // Broadcast to master
+    bc.postMessage({ type: 'transcript', feedId: FEED_ID, text, time: t, watchHit: hitWatch });
+}
+
+function sendChat() {
+    const text = chatInput.value.trim();
+    if (!text) return;
+    addTranscript(text, 'speech');
+    // Also send keystroke to master kbatch
+    for (const ch of text) {
+        bc.postMessage({ type: 'key', k: ch });
+    }
+    chatInput.value = '';
+}
+
+// ── Starfield (title bar) ──
+(function initTitlebarStars() {
+    const cvs = document.getElementById('titlebar-stars');
+    if (!cvs) return;
+    const sctx = cvs.getContext('2d');
+    const stars = [];
+    const COUNT = 50;
+    function resize() {
+        cvs.width = cvs.parentElement.offsetWidth;
+        cvs.height = cvs.parentElement.offsetHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+    for (let i = 0; i < COUNT; i++) {
+        stars.push({
+            x: Math.random() * 2000, y: Math.random() * 40,
+            r: Math.random() * 1.0 + 0.2, a: Math.random() * 0.5 + 0.2,
+            tw: Math.random() * 2 + 1, ph: Math.random() * Math.PI * 2,
+        });
+    }
+    function draw() {
+        sctx.clearRect(0, 0, cvs.width, cvs.height);
+        const t = Date.now() / 1000;
+        for (const s of stars) {
+            const alpha = 0.2 + 0.8 * s.a * (0.5 + 0.5 * Math.sin(t * s.tw + s.ph));
+            sctx.fillStyle = `rgba(255,255,255,${alpha})`;
+            sctx.beginPath();
+            sctx.arc(s.x % cvs.width, s.y % cvs.height, s.r, 0, Math.PI * 2);
+            sctx.fill();
+        }
+        requestAnimationFrame(draw);
+    }
+    draw();
+})();
+
+// ── FPS counter ──
+function tickFrame() {
+    frameCount++;
+    const now = Date.now();
+    if (now - lastFpsSec >= 1000) {
+        fps = frameCount;
+        frameCount = 0;
+        lastFpsSec = now;
+    }
+    statFps.textContent = fps;
+    statFrames.textContent = frameCount;
+}
+
+// ── Connect to WebSocket stream (hexcast protocol) ──
+function connectStream(url) {
+    statusDot.className = 'dot';
+    feedSrcEl.textContent = url;
+    statSrc.textContent = 'remote';
+    placeholder.textContent = 'connecting...';
+    addTranscript('connecting to ' + url, 'system');
+
+    const ws = new WebSocket(url);
+
+    ws.onopen = () => {
+        statusDot.className = 'dot'; // green
+        placeholder.style.display = 'none';
+        canvas.style.display = 'block';
+        addTranscript('connected', 'system');
+        bc.postMessage({ type: 'feed-status', feedId: FEED_ID, status: 'connected' });
+    };
+
+    ws.onmessage = (evt) => {
+        try {
+            const parts = evt.data.split('\n', 2);
+            const meta = JSON.parse(parts[0]);
+            if (meta.type !== 'frame' || !parts[1]) return;
+
+            const b64 = parts[1];
+            const img = new Image();
+            img.onload = () => {
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+                statRes.textContent = img.width + 'x' + img.height;
+                tickFrame();
+            };
+            img.src = 'data:image/jpeg;base64,' + b64;
+
+            // Update stats
+            if (window._hexStats) {
+                window._hexStats.fps = fps;
+                window._hexStats.res = (meta.w || '?') + 'x' + (meta.h || '?');
+            }
+        } catch(e) {}
+    };
+
+    ws.onerror = () => {
+        statusDot.className = 'dot idle';
+        addTranscript('connection error', 'system');
+    };
+
+    ws.onclose = () => {
+        statusDot.className = 'dot idle';
+        addTranscript('disconnected', 'system');
+        bc.postMessage({ type: 'feed-status', feedId: FEED_ID, status: 'disconnected' });
+    };
+
+    return ws;
+}
+
+// ── Connect to local camera + audio ──
+function connectCamera(facing) {
+    facing = facing || 'user';
+    statusDot.className = 'dot';
+    feedSrcEl.textContent = facing === 'user' ? 'front cam' : 'back cam';
+    statSrc.textContent = 'camera:' + facing;
+    placeholder.textContent = 'requesting camera...';
+    addTranscript('starting camera (' + facing + ')', 'system');
+
+    navigator.mediaDevices.getUserMedia({
+        video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } },
+        audio: true
+    }).then(stream => {
+        // Video
+        video.srcObject = stream;
+        video.style.display = 'block';
+        placeholder.style.display = 'none';
+
+        const vt = stream.getVideoTracks()[0];
+        if (vt) {
+            const settings = vt.getSettings();
+            statRes.textContent = (settings.width || '?') + 'x' + (settings.height || '?');
+        }
+
+        // Audio
+        const audioTracks = stream.getAudioTracks();
+        if (audioTracks.length > 0) {
+            const audioEl = document.getElementById('feed-audio');
+            audioEl.srcObject = new MediaStream(audioTracks);
+            audioEl.muted = false;
+            audioIndicator.classList.add('active');
+            addTranscript('audio active', 'system');
+
+            // Speech recognition (if available)
+            startSpeechRecognition();
+        }
+
+        // FPS from animation frame
+        function trackFps() {
+            tickFrame();
+            requestAnimationFrame(trackFps);
+        }
+        trackFps();
+
+        statusDot.className = 'dot';
+        addTranscript('camera active', 'system');
+        bc.postMessage({ type: 'feed-status', feedId: FEED_ID, status: 'camera-active' });
+
+    }).catch(err => {
+        statusDot.className = 'dot idle';
+        placeholder.textContent = 'camera unavailable';
+        addTranscript('camera error: ' + err.message, 'system');
+    });
+}
+
+// ── Speech Recognition ──
+function startSpeechRecognition() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) {
+        addTranscript('speech recognition unavailable', 'system');
+        return;
+    }
+
+    const recognition = new SR();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    let finalTranscript = '';
+
+    recognition.onresult = (event) => {
+        let interim = '';
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+            const t = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+                finalTranscript = t.trim();
+                if (finalTranscript) {
+                    addTranscript(finalTranscript, 'speech');
+                    finalTranscript = '';
+                }
+            } else {
+                interim += t;
+            }
+        }
+    };
+
+    recognition.onerror = (event) => {
+        if (event.error !== 'no-speech') {
+            addTranscript('speech error: ' + event.error, 'system');
+        }
+    };
+
+    recognition.onend = () => {
+        // Restart continuous recognition
+        try { recognition.start(); } catch(e) {}
+    };
+
+    try {
+        recognition.start();
+        addTranscript('speech recognition started', 'system');
+    } catch(e) {
+        addTranscript('speech recognition failed to start', 'system');
+    }
+}
+
+// ── Close feed ──
+function closeFeed() {
+    bc.postMessage({ type: 'feed-close', feedId: FEED_ID });
+    if (window.__TAURI__) {
+        window.__TAURI__.core.invoke('close_window', { label: FEED_ID }).catch(() => window.close());
+    } else {
+        window.close();
+    }
+}
+
+// ── Forward keystrokes to master kbatch ──
+document.addEventListener('keydown', (e) => {
+    if (e.target === chatInput) return; // don't capture when typing in chat
+    const k = e.key.length === 1 ? e.key : null;
+    if (k) {
+        bc.postMessage({ type: 'key', k });
+    }
+});
+
+// ── Auto-connect based on URL params ──
+feedLabel.textContent = FEED_ID;
+
+if (SOURCE.startsWith('ws://') || SOURCE.startsWith('wss://')) {
+    connectStream(SOURCE);
+} else if (SOURCE === 'camera' || SOURCE === 'camera:user' || SOURCE === 'front') {
+    connectCamera('user');
+} else if (SOURCE === 'camera:back' || SOURCE === 'back') {
+    connectCamera('environment');
+} else if (SOURCE) {
+    // Assume it's an IP — build ws URL
+    let wsUrl = SOURCE;
+    if (!wsUrl.includes(':')) wsUrl += ':' + HEXCAST_PORT;
+    if (!wsUrl.startsWith('ws://')) wsUrl = 'ws://' + wsUrl;
+    connectStream(wsUrl);
+} else {
+    placeholder.querySelector('.big').textContent = '◎';
+    placeholder.textContent = '';
+    placeholder.innerHTML = '<div class="big">◎</div>waiting for source...<br><small style="color:#484f58">use: feed &lt;IP&gt; or feed camera</small>';
+    addTranscript('no source specified — waiting', 'system');
+}
+
+// ── Periodic stats broadcast ──
+setInterval(() => {
+    bc.postMessage({
+        type: 'feed-stats',
+        feedId: FEED_ID,
+        fps, frameCount,
+        transcriptLen: transcripts.length,
+        src: statSrc.textContent,
+    });
+}, 3000);
+
+// ──────────────────────────────────────────────────────────
+// Audio Waveform Monitor
+// ──────────────────────────────────────────────────────────
+let _audioCtx = null, _analyser = null, _waveData = null;
+
+function initWaveform(stream) {
+    const wrapEl = document.getElementById('waveform-wrap');
+    const wCvs = document.getElementById('waveform-canvas');
+    const wCtx = wCvs.getContext('2d');
+
+    _audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const source = _audioCtx.createMediaStreamSource(stream);
+    _analyser = _audioCtx.createAnalyser();
+    _analyser.fftSize = 256;
+    source.connect(_analyser);
+    _waveData = new Uint8Array(_analyser.frequencyBinCount);
+
+    wrapEl.classList.add('active');
+
+    function resize() { wCvs.width = wCvs.parentElement.offsetWidth; wCvs.height = 32; }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function drawWave() {
+        if (!_analyser) return;
+        requestAnimationFrame(drawWave);
+        _analyser.getByteFrequencyData(_waveData);
+
+        wCtx.clearRect(0, 0, wCvs.width, wCvs.height);
+        const barW = wCvs.width / _waveData.length;
+        for (let i = 0; i < _waveData.length; i++) {
+            const h = (_waveData[i] / 255) * wCvs.height;
+            const hue = (i / _waveData.length) * 360;
+            wCtx.fillStyle = `hsla(${hue}, 70%, 55%, 0.8)`;
+            wCtx.fillRect(i * barW, wCvs.height - h, barW - 1, h);
+        }
+    }
+    drawWave();
+}
+
+// Hook waveform into camera if audio available
+const _origConnectCamera = connectCamera;
+connectCamera = function(facing) {
+    _origConnectCamera(facing);
+    // After getUserMedia resolves, grab the stream for waveform
+    setTimeout(() => {
+        if (video.srcObject && video.srcObject.getAudioTracks().length > 0) {
+            initWaveform(video.srcObject);
+        }
+    }, 1500);
+};
+
+// ──────────────────────────────────────────────────────────
+// Device Count (active / idle / offline)
+// ──────────────────────────────────────────────────────────
+const _deviceTracker = {};
+
+// Listen for feed events on BroadcastChannel
+const _origBcHandler = bc.onmessage;
+bc.onmessage = (evt) => {
+    // Call original handler first
+    if (_origBcHandler) _origBcHandler(evt);
+
+    const msg = evt.data;
+    if (!msg) return;
+
+    if (msg.type === 'feed-open' || msg.type === 'feed-stats' || msg.type === 'feed-status') {
+        const id = msg.feedId || 'unknown';
+        if (!_deviceTracker[id]) _deviceTracker[id] = { status: 'active', lastSeen: Date.now() };
+        _deviceTracker[id].lastSeen = Date.now();
+        if (msg.status) _deviceTracker[id].status = msg.status;
+    }
+    if (msg.type === 'feed-close') {
+        const id = msg.feedId || 'unknown';
+        if (_deviceTracker[id]) _deviceTracker[id].status = 'closed';
+    }
+};
+
+setInterval(() => {
+    let active = 0, idle = 0, offline = 0;
+    const now = Date.now();
+    for (const [id, d] of Object.entries(_deviceTracker)) {
+        if (d.status === 'closed') { offline++; continue; }
+        if (now - d.lastSeen > 10000) { idle++; continue; }
+        active++;
+    }
+    document.getElementById('db-active').textContent = active + ' active';
+    document.getElementById('db-idle').textContent = idle + ' idle';
+    document.getElementById('db-offline').textContent = offline + ' offline';
+    document.getElementById('db-total').textContent = active + idle + offline;
+}, 2000);
+
+// ──────────────────────────────────────────────────────────
+// System Benchmark (CPU/mem/net/throttle/bottleneck)
+// ──────────────────────────────────────────────────────────
+let _benchHistory = [];
+
+function runBenchmark() {
+    const bbCpu = document.getElementById('bb-cpu');
+    const bbMem = document.getElementById('bb-mem');
+    const bbNet = document.getElementById('bb-net');
+    const bbThrottle = document.getElementById('bb-throttle');
+    const bbBottleneck = document.getElementById('bb-bottleneck');
+
+    // CPU: event loop lag
+    const t0 = performance.now();
+    setTimeout(() => {
+        const lag = performance.now() - t0;
+        const cpuMs = (lag - 1).toFixed(1);
+        bbCpu.textContent = cpuMs + 'ms';
+        bbCpu.className = lag < 10 ? 'good' : lag < 50 ? 'warn' : 'bad';
+
+        // Memory
+        if (performance.memory) {
+            const mb = (performance.memory.usedJSHeapSize / 1048576).toFixed(0);
+            const limit = (performance.memory.jsHeapSizeLimit / 1048576).toFixed(0);
+            const pct = (performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit * 100).toFixed(0);
+            bbMem.textContent = mb + '/' + limit + 'MB';
+            bbMem.className = pct < 60 ? 'good' : pct < 85 ? 'warn' : 'bad';
+        } else {
+            bbMem.textContent = '—';
+        }
+
+        // Net: based on frame rate vs expected
+        const expectedFps = 10;
+        const netRatio = fps / Math.max(expectedFps, 1);
+        bbNet.textContent = (netRatio * 100).toFixed(0) + '%';
+        bbNet.className = netRatio > 0.8 ? 'good' : netRatio > 0.5 ? 'warn' : 'bad';
+
+        // Throttle detection
+        const throttled = lag > 100 || (document.hidden);
+        bbThrottle.textContent = throttled ? 'yes' : 'none';
+        bbThrottle.className = throttled ? 'bad' : 'good';
+
+        // Bottleneck assessment
+        let bottleneck = 'none';
+        if (lag > 50) bottleneck = 'CPU';
+        else if (performance.memory && performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit > 0.85) bottleneck = 'MEM';
+        else if (netRatio < 0.5) bottleneck = 'NET';
+        bbBottleneck.textContent = bottleneck === 'none' ? '✓ healthy' : '⚠ ' + bottleneck;
+        bbBottleneck.className = bottleneck === 'none' ? 'good' : 'bad';
+    }, 1);
+}
+
+setInterval(runBenchmark, 3000);
+runBenchmark();
+
+// ──────────────────────────────────────────────────────────
+// Dev Console — quick stream control commands
+// ──────────────────────────────────────────────────────────
+const devLog = document.getElementById('dev-log');
+const devInput = document.getElementById('dev-input');
+const devConsole = document.getElementById('dev-console');
+
+// Show dev console on double-tap of stats bar or via BC command
+document.getElementById('stats-bar').addEventListener('dblclick', () => {
+    devConsole.classList.toggle('active');
+});
+
+function devPrint(msg) {
+    const line = document.createElement('div');
+    const t = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    line.innerHTML = `<span style="color:#484f58">${t}</span> ${msg}`;
+    devLog.appendChild(line);
+    if (devLog.children.length > 100) devLog.removeChild(devLog.firstChild);
+    devLog.scrollTop = devLog.scrollHeight;
+}
+
+function devCmd() {
+    const raw = devInput.value.trim();
+    if (!raw) return;
+    devInput.value = '';
+    devPrint(`<span style="color:#58a6ff">&gt;</span> ${raw}`);
+
+    const [cmd, ...rest] = raw.split(/\s+/);
+    const arg = rest.join(' ');
+
+    switch (cmd) {
+        case 'stop':
+            if (arg) {
+                bc.postMessage({ type: 'command', cmd: 'close', feedId: arg });
+                devPrint(`sent stop to feed: ${arg}`);
+            } else {
+                devPrint('<span style="color:#d29922">usage: stop &lt;feedId&gt;</span>');
+            }
+            break;
+        case 'mute':
+            bc.postMessage({ type: 'command', cmd: 'mute', feedId: arg || FEED_ID });
+            devPrint(`toggled mute: ${arg || FEED_ID}`);
+            break;
+        case 'pause':
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(t => t.enabled = false);
+                devPrint('paused local stream');
+            }
+            break;
+        case 'resume':
+            if (video.srcObject) {
+                video.srcObject.getTracks().forEach(t => t.enabled = true);
+                devPrint('resumed local stream');
+            }
+            break;
+        case 'watch':
+            if (arg) {
+                bc.postMessage({ type: 'command', cmd: 'watch', phrases: arg.split(',').map(s => s.trim()) });
+                devPrint(`watch set: ${arg}`);
+            }
+            break;
+        case 'stats':
+            devPrint(`fps:${fps} frames:${frameCount} transcripts:${transcripts.length}`);
+            break;
+        case 'help':
+            devPrint('stop &lt;id&gt; | mute [id] | pause | resume | watch &lt;phrase&gt; | stats');
+            break;
+        default:
+            devPrint(`<span style="color:#da3633">unknown: ${cmd}</span>`);
+    }
+}
+
+// ===== PWA SERVICE WORKER =====
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+(function() {
+    const QP = window.QuantumPrefixes;
+    if (!QP) return;
+    QP.onStateChange(function(source, state) {
+        if (source === 'feed' || !state) return;
+    });
+    QP.broadcastState('feed', { coverage: 0, totalLines: 0, classifiedLines: 0, prefixCounts: {}, role: 'camera-feed' });
+    QP.requestStateSync();
+})();
+
+</script>
+</body>
+</html>

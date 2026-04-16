@@ -1,0 +1,1032 @@
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>QPU Results — Goldie · ibm_torino</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0d1117;color:#c9d1d9;font:13px/1.5 'SF Mono',monospace;overflow-x:hidden}
+.hdr{padding:12px 20px;background:#161b22;border-bottom:1px solid #30363d;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.hdr h1{font-size:16px;color:#58a6ff;font-weight:600}
+.hdr .tag{background:#238636;color:#fff;padding:2px 8px;border-radius:4px;font-size:11px}
+.hdr .tag.warn{background:#d29922}
+.hdr .meta{color:#8b949e;font-size:11px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#21262d;padding:1px}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.panel{background:#0d1117;padding:16px}
+.panel h2{font-size:13px;color:#58a6ff;margin-bottom:12px;text-transform:uppercase;letter-spacing:1px}
+canvas{width:100%;border-radius:6px;background:#161b22}
+table{width:100%;border-collapse:collapse;font-size:11px}
+th,td{padding:4px 8px;text-align:right;border-bottom:1px solid #21262d}
+th{color:#8b949e;font-weight:normal}
+td:first-child,th:first-child{text-align:left;color:#c9d1d9}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stat{background:#161b22;border-radius:6px;padding:10px 12px}
+.stat .label{font-size:10px;color:#8b949e;text-transform:uppercase}
+.stat .val{font-size:18px;color:#58a6ff;font-weight:600}
+.stat .val.green{color:#3fb950}
+.stat .val.gold{color:#d29922}
+.full{grid-column:1/-1}
+.footer{padding:12px 20px;background:#161b22;border-top:1px solid #30363d;color:#8b949e;font-size:11px;text-align:center}
+.mesh-wrap{position:relative;height:420px;background:#0a0e14;border-radius:6px;overflow:hidden}
+.mesh-wrap canvas{display:block;width:100%;height:100%;cursor:grab;border-radius:6px}
+.mesh-ctrl{position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap;z-index:2}
+.mesh-ctrl button{background:#21262d;border:1px solid #30363d;color:#c9d1d9;font:10px 'SF Mono',monospace;padding:3px 8px;border-radius:4px;cursor:pointer}
+.mesh-ctrl button:hover,.mesh-ctrl button.active{border-color:#58a6ff;color:#58a6ff}
+.mesh-info{position:absolute;bottom:8px;right:8px;font:10px 'SF Mono',monospace;color:#8b949e;text-align:right;z-index:2}
+.laser-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.laser-row{display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-bottom:1px solid #21262d}
+.laser-row label{font-size:11px;color:#8b949e}
+.laser-row input[type=range]{width:100px;accent-color:#a78bfa}
+.laser-row .lval{font-size:11px;color:#58a6ff;min-width:50px;text-align:right}
+.laser-row select,.export-btn{background:#21262d;border:1px solid #30363d;color:#c9d1d9;font:11px 'SF Mono',monospace;padding:4px 8px;border-radius:4px;cursor:pointer}
+.export-btn:hover{border-color:#58a6ff;color:#58a6ff}
+.export-btn.primary{background:#238636;border-color:#238636;color:#fff}
+.export-btn.primary:hover{background:#2ea043}
+.slice-bar{height:6px;background:#21262d;border-radius:3px;margin:4px 0;overflow:hidden}
+.slice-fill{height:100%;border-radius:3px;transition:width .2s}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <h1>QPU Results — A$AP Rocky "Goldie"</h1>
+  <span class="tag">COMPLETED</span>
+  <span class="tag warn">121q · 4096 shots</span>
+  <span class="meta">ibm_torino (133q Heron r1) · Job d6co82154hss73b8r0lg · Feb 21 2026 02:08 UTC · 8.4s QPU</span>
+</div>
+<div class="grid">
+  <div class="panel">
+    <h2>Job Stats</h2>
+    <div class="stat-grid">
+      <div class="stat"><div class="label">Backend</div><div class="val">ibm_torino</div></div>
+      <div class="stat"><div class="label">Qubits Used</div><div class="val">121 / 133</div></div>
+      <div class="stat"><div class="label">ISA Gates</div><div class="val">1,696</div></div>
+      <div class="stat"><div class="label">Circuit Depth</div><div class="val">134</div></div>
+      <div class="stat"><div class="label">QPU Time</div><div class="val green">8.4s</div></div>
+      <div class="stat"><div class="label">Cost</div><div class="val gold">600 units</div></div>
+      <div class="stat"><div class="label">Unique States</div><div class="val">4,096 / 4,096</div></div>
+      <div class="stat"><div class="label">Gate Breakdown</div><div class="val" style="font-size:12px">sx:885 rz:191 cz:499 m:121</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>Hamming Weight Distribution</h2>
+    <canvas id="hw-canvas" height="200"></canvas>
+  </div>
+  <div class="panel full">
+    <h2>Quantum Acoustic Heatmap — 11 Song Sections × 11 Qubit Roles</h2>
+    <canvas id="heatmap" height="340"></canvas>
+  </div>
+  <div class="panel">
+    <h2>Temporal Profile — P(|0⟩) by Section</h2>
+    <canvas id="temporal" height="220"></canvas>
+  </div>
+  <div class="panel">
+    <h2>Qubit Role Average</h2>
+    <canvas id="roles" height="220"></canvas>
+  </div>
+  <div class="panel full">
+    <h2>3D Quantum Acoustic Mesh — Bloch Point Cloud · MOPA Laser Export</h2>
+    <div class="mesh-wrap">
+      <canvas id="mesh3d"></canvas>
+      <div class="mesh-ctrl">
+        <button class="active" data-mode="surface">Surface</button>
+        <button data-mode="wireframe">Wireframe</button>
+        <button data-mode="points">Points</button>
+        <button data-mode="bloch">Bloch</button>
+        <button data-mode="slices">Z-Slices</button>
+      </div>
+      <div class="mesh-info" id="mesh-info"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <h2>MOPA / UV Laser Settings</h2>
+    <div class="laser-row"><label>Dwell Time (μs)</label><input type="range" id="ls-dwell" min="200" max="2000" value="800" step="50"><span class="lval" id="lv-dwell">800</span></div>
+    <div class="laser-row"><label>Frequency (kHz)</label><input type="range" id="ls-freq" min="10" max="100" value="40" step="5"><span class="lval" id="lv-freq">40</span></div>
+    <div class="laser-row"><label>Pulse Width (ns)</label><input type="range" id="ls-pulse" min="2" max="100" value="15" step="1"><span class="lval" id="lv-pulse">15</span></div>
+    <div class="laser-row"><label>Glass Depth (mm)</label><input type="range" id="ls-depth" min="10" max="100" value="50" step="5"><span class="lval" id="lv-depth">50</span></div>
+    <div class="laser-row"><label>Point Density</label><input type="range" id="ls-density" min="1" max="10" value="5" step="1"><span class="lval" id="lv-density">5</span></div>
+    <div class="laser-row"><label>Laser Type</label><select id="ls-type"><option value="uv">UV (355nm)</option><option value="mopa">MOPA Fiber</option><option value="green">Green (532nm)</option></select><span class="lval"></span></div>
+    <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="export-btn primary" id="btn-stl">Export STL</button>
+      <button class="export-btn" id="btn-qbit-mesh">Export .qbit</button>
+      <button class="export-btn" id="btn-pointcloud">Export Points</button>
+      <button class="export-btn" id="btn-slices">Export Z-Slices</button>
+    </div>
+    <div style="margin-top:8px;font-size:10px;color:#8b949e" id="laser-status">Ready — 11×11 mesh · 121 Bloch points</div>
+  </div>
+  <div class="panel full">
+    <h2>Per-Patch Measurement Table</h2>
+    <table id="patch-table"><thead><tr><th>Section</th><th>Time</th><th>src</th><th>abs₁</th><th>abs₂</th><th>abs₃</th><th>abs₄</th><th>ild_L</th><th>refl</th><th>ild_R</th><th>refl₂</th><th>rm_L</th><th>rm_R</th></tr></thead><tbody></tbody></table>
+  </div>
+</div>
+  <div class="panel full">
+    <h2>Quantum 3D Scan Pipeline — .qbit Codec Point Location</h2>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px">
+      <div id="scan-drop" style="flex:1;min-width:200px;border:2px dashed #30363d;border-radius:8px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s">
+        <div style="color:#58a6ff;font-size:14px;font-weight:600">Drop / Click to Ingest</div>
+        <div style="color:#8b949e;font-size:10px;margin-top:4px">.ply .obj .stl .xyz .splat .qbit .json .csv .wav .png .jpg</div>
+        <input type="file" id="scan-file" style="display:none" accept=".ply,.obj,.stl,.xyz,.splat,.qbit,.json,.csv,.wav,.png,.jpg,.gltf,.glb">
+      </div>
+      <div style="min-width:180px">
+        <div style="color:#8b949e;font-size:10px;margin-bottom:4px">MODALITY</div>
+        <select id="scan-modality" style="width:100%;background:#161b22;color:#c9d1d9;border:1px solid #30363d;border-radius:4px;padding:4px;font:11px monospace">
+          <option value="auto">Auto-detect</option>
+          <option value="photogrammetry">Photogrammetry (PLY/OBJ)</option>
+          <option value="sam2">SAM2 Mesh (JSON)</option>
+          <option value="gsplat">Gaussian Splat (.splat)</option>
+          <option value="wifi3d">WiFi/DensePose (JSON)</option>
+          <option value="lidar">LiDAR (XYZ/PLY)</option>
+          <option value="irflir">IR/FLIR Thermal (PNG/JPG)</option>
+          <option value="audio">Audio Waveform (WAV)</option>
+          <option value="contrail">kbatch Contrail (live)</option>
+          <option value="qpu">QPU Measurement (D.patches)</option>
+        </select>
+        <div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">
+          <button class="export-btn" id="btn-locate" style="font-size:10px">Locate Point</button>
+          <button class="export-btn" id="btn-bullet" style="font-size:10px">Bullet Time</button>
+        </div>
+        <div style="color:#8b949e;font-size:9px;margin-top:6px" id="scan-status">No scan loaded — use QPU data or drop file</div>
+      </div>
+      <div style="min-width:200px">
+        <div style="color:#8b949e;font-size:10px;margin-bottom:4px">POSITION CIRCUIT: ry(π/2) · e<sup>iθs*</sup></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;font-size:10px">
+          <label style="color:#8b949e">Iron Condor Low</label><input type="range" id="ic-low" min="0" max="100" value="30" style="width:100%">
+          <label style="color:#8b949e">Iron Condor High</label><input type="range" id="ic-high" min="0" max="100" value="70" style="width:100%">
+          <label style="color:#8b949e">J (coupling)</label><input type="range" id="ic-j" min="1" max="100" value="50" style="width:100%">
+          <label style="color:#8b949e">a (lattice)</label><input type="range" id="ic-a" min="1" max="100" value="30" style="width:100%">
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div style="background:#161b22;border-radius:6px;padding:8px">
+        <div style="color:#58a6ff;font-size:10px;font-weight:600;margin-bottom:4px">SCAN CLOUD STATS</div>
+        <div id="scan-cloud-stats" style="font-size:10px;color:#8b949e">Points: 0 · Bounds: — · Source: none</div>
+      </div>
+      <div style="background:#161b22;border-radius:6px;padding:8px">
+        <div style="color:#a78bfa;font-size:10px;font-weight:600;margin-bottom:4px">QUANTUM LOCATE RESULT</div>
+        <div id="locate-result" style="font-size:10px;color:#8b949e">Run Locate Point to find quantum position</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel full">
+    <h2>Ultrasonic Telemetry — Iron Line Lab</h2>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+      <canvas id="cv-ultrasonic" width="400" height="120" style="background:#0d1117;border-radius:6px;border:1px solid #21262d;max-width:100%"></canvas>
+      <div style="min-width:180px">
+        <div style="display:grid;grid-template-columns:auto 1fr;gap:2px 8px;font-size:10px">
+          <span style="color:#ff3838">L0</span><span style="color:#8b949e" id="us-l0">—</span>
+          <span style="color:#ff8c38">L1</span><span style="color:#8b949e" id="us-l1">—</span>
+          <span style="color:#ffe138">L3</span><span style="color:#8b949e" id="us-l3">—</span>
+          <span style="color:#3fb950">L4</span><span style="color:#8b949e" id="us-l4">—</span>
+          <span style="color:#38a5ff">L6</span><span style="color:#8b949e" id="us-l6">—</span>
+          <span style="color:#bc8cff">L7</span><span style="color:#8b949e" id="us-l7">—</span>
+        </div>
+        <div style="color:#8b949e;font-size:9px;margin-top:4px" id="us-status">Carrier: 40kHz · 8 virtual speakers</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel full">
+    <h2>System Directory — CPU / GPU / QPU / .qbit Registry</h2>
+    <div id="sys-dir" style="font-size:11px;color:#8b949e">Loading calibrations...</div>
+  </div>
+</div>
+<div class="footer">beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} | QPU: ibm_torino Heron r1</div>
+<script src="quantum-prefixes.js"></script>
+<script src="qbit-dac.js"></script>
+<script src="qbit-steno.js"></script>
+<script src="qbit-preflight.js"></script>
+<script>
+const D={
+  patches:[[52.3,39.3,84,98.6,84.4,73.8,87.1,97.5,93.2,83.1,95.6],[51.7,29,79.1,86.4,90.3,84.4,92.8,96.7,93.8,83.9,77.2],[57.8,31.8,89.7,94.7,90.7,93.4,90.8,98.8,99.1,87,95.9],[54.2,24.3,84.3,96.7,99.3,98,93.5,94.3,97.1,85.7,92.1],[73.4,48.7,65.6,54.6,91.1,90.5,94.9,90.9,86.6,84.9,92.6],[53.2,26.2,87.7,95.1,92.2,96.2,95.7,93.9,95.5,87.4,96.3],[52.9,28.8,84.8,92,94.5,94.8,92.9,98.9,99.1,84.5,94.9],[51.7,25.1,89.6,90.7,96.1,96.3,94.9,99.8,99.6,86.9,93.5],[56.8,23.9,59.4,74.1,94.2,65.4,64.3,46.2,49.3,1,32.8],[52.2,24.6,72.9,91.4,92.9,91.5,95.7,95.3,92.4,84.1,85.5],[57.8,51.2,72.5,91.7,96.7,91.8,96.9,99.5,92.2,79.5,89.8]],
+  hw:[0,0,0,0,0,0,0,0,0,0,0,0,1,2,4,17,26,49,103,126,194,263,324,393,406,427,385,342,271,249,168,116,105,42,26,22,17,8,4,4,1,1],
+  sections:['intro','v1a','v1b','hook','v2','v2b','bridge','v3','hook2','outro1','outro2'],
+  times:['0–17.7s','17.7–35.4s','35.4–53.1s','53.1–70.7s','70.7–88.4s','88.4–106.1s','106.1–123.8s','123.8–141.5s','141.5–159.1s','159.1–176.8s','176.8–194.5s'],
+  roles:['source','absorb₁','absorb₂','absorb₃','absorb₄','ild_L','refl','ild_R','refl₂','room_L','room_R'],
+  cv:[[0.711,0.242,0.102,0.106,0.088,0.040,0.020,0.015,7.10,0.064],[0.706,0.196,0.080,0.065,0.049,0.028,0.021,0.017,6.66,0.053],[0.678,0.165,0.071,0.047,0.035,0.023,0.023,0.019,7.15,0.048],[0.691,0.176,0.093,0.063,0.043,0.028,0.027,0.023,7.50,0.054],[0.735,0.275,0.125,0.105,0.081,0.040,0.021,0.016,7.13,0.067],[0.714,0.213,0.112,0.083,0.062,0.034,0.026,0.022,7.05,0.061],[0.705,0.199,0.096,0.058,0.041,0.023,0.023,0.020,6.98,0.054],[0.725,0.196,0.088,0.054,0.037,0.026,0.026,0.020,7.50,0.053],[0.720,0.253,0.117,0.112,0.088,0.043,0.022,0.016,7.26,0.067],[0.681,0.337,0.143,0.123,0.101,0.034,0.014,0.011,6.25,0.070],[0.611,0.349,0.145,0.110,0.092,0.032,0.014,0.012,8.02,0.068]]
+};
+
+function probColor(v){
+  if(v>=90) return `hsl(210,80%,${40+v*0.3}%)`;
+  if(v>=70) return `hsl(190,70%,${30+v*0.3}%)`;
+  if(v>=50) return `hsl(40,80%,${20+v*0.4}%)`;
+  if(v>=25) return `hsl(15,85%,${15+v*0.5}%)`;
+  return `hsl(0,90%,${10+v*0.6}%)`;
+}
+
+function drawHeatmap(){
+  const c=document.getElementById('heatmap'),ctx=c.getContext('2d');
+  const dpr=devicePixelRatio||1;
+  c.width=c.offsetWidth*dpr;c.height=340*dpr;
+  ctx.scale(dpr,dpr);
+  const W=c.offsetWidth,H=340;
+  const ml=80,mr=20,mt=40,mb=30;
+  const cw=(W-ml-mr)/11,ch=(H-mt-mb)/11;
+
+  ctx.fillStyle='#161b22';ctx.fillRect(0,0,W,H);
+  ctx.font='10px SF Mono,monospace';ctx.textAlign='center';
+  D.roles.forEach((r,i)=>{ctx.fillStyle='#8b949e';ctx.fillText(r,ml+i*cw+cw/2,mt-8);});
+  ctx.textAlign='right';
+  D.sections.forEach((s,i)=>{ctx.fillStyle='#c9d1d9';ctx.fillText(s,ml-6,mt+i*ch+ch/2+4);});
+
+  D.patches.forEach((row,r)=>{
+    row.forEach((v,q)=>{
+      const x=ml+q*cw,y=mt+r*ch;
+      ctx.fillStyle=probColor(v);
+      ctx.fillRect(x+1,y+1,cw-2,ch-2);
+      ctx.fillStyle=v<40?'#fff':'#000';
+      ctx.font='bold 10px SF Mono,monospace';
+      ctx.textAlign='center';
+      ctx.fillText(v.toFixed(0)+'%',x+cw/2,y+ch/2+4);
+    });
+  });
+}
+
+function drawHW(){
+  const c=document.getElementById('hw-canvas'),ctx=c.getContext('2d');
+  const dpr=devicePixelRatio||1;
+  c.width=c.offsetWidth*dpr;c.height=200*dpr;
+  ctx.scale(dpr,dpr);
+  const W=c.offsetWidth,H=200,ml=40,mr=10,mt=10,mb=30;
+  const hw=D.hw,maxHW=Math.max(...hw);
+  const barW=(W-ml-mr)/hw.length;
+
+  ctx.fillStyle='#161b22';ctx.fillRect(0,0,W,H);
+  hw.forEach((v,i)=>{
+    if(!v)return;
+    const bh=(v/maxHW)*(H-mt-mb);
+    const x=ml+i*barW;
+    const pct=i/121;
+    ctx.fillStyle=`hsl(${210-pct*180},70%,55%)`;
+    ctx.fillRect(x,H-mb-bh,Math.max(barW-1,2),bh);
+  });
+  ctx.fillStyle='#8b949e';ctx.font='10px SF Mono,monospace';ctx.textAlign='center';
+  [0,20,40].forEach(v=>{ctx.fillText(v,ml+v*barW+barW/2,H-mb+14);});
+  ctx.textAlign='left';ctx.fillText('|1⟩ count per shot',ml,H-mb+14);
+  const peakIdx=hw.indexOf(maxHW);
+  ctx.fillStyle='#58a6ff';ctx.fillText(`peak: ${peakIdx} bits (${maxHW} shots)`,W-200,mt+14);
+}
+
+function drawTemporal(){
+  const c=document.getElementById('temporal'),ctx=c.getContext('2d');
+  const dpr=devicePixelRatio||1;
+  c.width=c.offsetWidth*dpr;c.height=220*dpr;
+  ctx.scale(dpr,dpr);
+  const W=c.offsetWidth,H=220,ml=40,mr=20,mt=20,mb=40;
+  ctx.fillStyle='#161b22';ctx.fillRect(0,0,W,H);
+  const pw=(W-ml-mr)/10;
+
+  const metrics=[
+    {name:'source (q0)',idx:0,color:'#58a6ff'},
+    {name:'absorb₁',idx:1,color:'#f0883e'},
+    {name:'room_L',idx:9,color:'#3fb950'},
+    {name:'room_R',idx:10,color:'#bc8cff'}
+  ];
+
+  metrics.forEach(m=>{
+    ctx.beginPath();ctx.strokeStyle=m.color;ctx.lineWidth=2;
+    D.patches.forEach((p,i)=>{
+      const x=ml+i*pw,y=mt+(1-p[m.idx]/100)*(H-mt-mb);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+  });
+
+  ctx.font='10px SF Mono,monospace';ctx.textAlign='center';ctx.fillStyle='#8b949e';
+  D.sections.forEach((s,i)=>{
+    ctx.save();ctx.translate(ml+i*pw,H-mb+12);ctx.rotate(-0.5);ctx.fillText(s,0,0);ctx.restore();
+  });
+
+  ctx.textAlign='left';ctx.font='10px SF Mono,monospace';
+  let ly=mt+8;
+  metrics.forEach(m=>{ctx.fillStyle=m.color;ctx.fillText('■ '+m.name,W-140,ly);ly+=14;});
+
+  ctx.strokeStyle='#30363d';ctx.lineWidth=0.5;
+  [0,25,50,75,100].forEach(v=>{
+    const y=mt+(1-v/100)*(H-mt-mb);
+    ctx.beginPath();ctx.moveTo(ml,y);ctx.lineTo(W-mr,y);ctx.stroke();
+    ctx.fillStyle='#8b949e';ctx.textAlign='right';ctx.fillText(v+'%',ml-4,y+3);
+  });
+}
+
+function drawRoles(){
+  const c=document.getElementById('roles'),ctx=c.getContext('2d');
+  const dpr=devicePixelRatio||1;
+  c.width=c.offsetWidth*dpr;c.height=220*dpr;
+  ctx.scale(dpr,dpr);
+  const W=c.offsetWidth,H=220,ml=70,mr=20,mt=10,mb=10;
+  ctx.fillStyle='#161b22';ctx.fillRect(0,0,W,H);
+
+  const avgs=D.roles.map((_,q)=>{
+    let s=0;D.patches.forEach(p=>s+=p[q]);return s/11;
+  });
+
+  const bh=(H-mt-mb)/11;
+  avgs.forEach((v,i)=>{
+    const bw=(v/100)*(W-ml-mr);
+    ctx.fillStyle=probColor(v);
+    ctx.fillRect(ml,mt+i*bh+2,bw,bh-4);
+    ctx.fillStyle='#c9d1d9';ctx.font='10px SF Mono,monospace';ctx.textAlign='right';
+    ctx.fillText(D.roles[i],ml-4,mt+i*bh+bh/2+3);
+    ctx.textAlign='left';ctx.fillStyle=v<40?'#fff':'#000';
+    ctx.fillText(v.toFixed(1)+'%',ml+bw/2-15,mt+i*bh+bh/2+3);
+  });
+}
+
+function fillTable(){
+  const tb=document.querySelector('#patch-table tbody');
+  D.patches.forEach((row,i)=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="color:#58a6ff">${D.sections[i]}</td><td style="color:#8b949e">${D.times[i]}</td>`+
+      row.map(v=>`<td style="color:${probColor(v)}">${v.toFixed(1)}%</td>`).join('');
+    tb.appendChild(tr);
+  });
+}
+
+// ===== 3D MESH / BLOCH / MOPA ENGINE =====
+const M3={
+  mode:'surface',ax:-0.6,ay:0.4,drag:false,mx:0,my:0,zoom:1.4,
+  dwell:800,freq:40,pulse:15,depth:50,density:5,laserType:'uv',
+  sliceZ:0,animId:null
+};
+
+function blochFromProb(p0){
+  const p=Math.max(0,Math.min(1,p0/100));
+  const theta=2*Math.acos(Math.sqrt(p));
+  const phi=(1-p)*Math.PI*2;
+  return {theta,phi,
+    x:Math.sin(theta)*Math.cos(phi),
+    y:Math.sin(theta)*Math.sin(phi),
+    z:Math.cos(theta),p};
+}
+
+function proj3d(x,y,z,W,H){
+  const ca=Math.cos(M3.ax),sa=Math.sin(M3.ax),cb=Math.cos(M3.ay),sb=Math.sin(M3.ay);
+  let rx=x*cb+z*sb, ry=x*sa*sb+y*ca-z*sa*cb, rz=-x*ca*sb+y*sa+z*ca*cb;
+  const s=M3.zoom*Math.min(W,H)*0.28;
+  const d=5+rz;
+  return {sx:W/2+rx*s/d, sy:H/2-ry*s/d, d:rz};
+}
+
+function meshColor(v,alpha){
+  if(v>=90) return `rgba(88,166,255,${alpha})`;
+  if(v>=70) return `rgba(63,185,80,${alpha})`;
+  if(v>=50) return `rgba(210,153,34,${alpha})`;
+  if(v>=25) return `rgba(240,136,62,${alpha})`;
+  return `rgba(248,81,73,${alpha})`;
+}
+
+function drawMesh3D(){
+  const c=document.getElementById('mesh3d'),ctx=c.getContext('2d');
+  const dpr=devicePixelRatio||1;
+  const rect=c.parentElement.getBoundingClientRect();
+  c.width=rect.width*dpr;c.height=rect.height*dpr;
+  ctx.scale(dpr,dpr);
+  const W=rect.width,H=rect.height;
+  ctx.fillStyle='#0a0e14';ctx.fillRect(0,0,W,H);
+
+  const P=D.patches;
+  const R=11,C=11;
+  const mode=M3.mode;
+
+  if(mode==='bloch'){
+    drawBloch(ctx,W,H);return;
+  }
+  if(mode==='slices'){
+    drawSlices(ctx,W,H);return;
+  }
+
+  const verts=[];
+  for(let r=0;r<R;r++){
+    for(let c2=0;c2<C;c2++){
+      const nx=(c2/(C-1)-0.5)*2, nz=(r/(R-1)-0.5)*2;
+      const ny=(P[r][c2]/100-0.5)*1.2;
+      verts.push({x:nx,y:ny,z:nz,v:P[r][c2],r,c:c2});
+    }
+  }
+
+  if(mode==='points'){
+    const pts=verts.map(v=>{const p=proj3d(v.x,v.y,v.z,W,H);return {...v,...p};}).sort((a,b)=>a.d-b.d);
+    pts.forEach(p=>{
+      const sz=Math.max(3,(5-p.d)*2.5);
+      ctx.beginPath();ctx.arc(p.sx,p.sy,sz,0,Math.PI*2);
+      ctx.fillStyle=meshColor(p.v,0.9);ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=0.5;ctx.stroke();
+    });
+    drawAxes(ctx,W,H);
+    return;
+  }
+
+  const faces=[];
+  for(let r=0;r<R-1;r++){
+    for(let c2=0;c2<C-1;c2++){
+      const tl=r*C+c2,tr=r*C+c2+1,bl=(r+1)*C+c2,br=(r+1)*C+c2+1;
+      const avgV=(P[r][c2]+P[r][c2+1]+P[r+1][c2]+P[r+1][c2+1])/4;
+      const pts=[tl,tr,br,bl].map(i=>proj3d(verts[i].x,verts[i].y,verts[i].z,W,H));
+      const avgD=(pts[0].d+pts[1].d+pts[2].d+pts[3].d)/4;
+      faces.push({pts,avgV,avgD});
+    }
+  }
+  faces.sort((a,b)=>a.avgD-b.avgD);
+
+  faces.forEach(f=>{
+    ctx.beginPath();
+    ctx.moveTo(f.pts[0].sx,f.pts[0].sy);
+    f.pts.slice(1).forEach(p=>ctx.lineTo(p.sx,p.sy));
+    ctx.closePath();
+    if(mode==='surface'){
+      ctx.fillStyle=meshColor(f.avgV,0.85);ctx.fill();
+      ctx.strokeStyle='rgba(255,255,255,0.08)';ctx.lineWidth=0.5;ctx.stroke();
+    } else {
+      ctx.strokeStyle=meshColor(f.avgV,0.7);ctx.lineWidth=1;ctx.stroke();
+    }
+  });
+
+  drawAxes(ctx,W,H);
+}
+
+function drawAxes(ctx,W,H){
+  const axes=[{l:'Section',d:[1,0,0],c:'#58a6ff'},{l:'P(|0⟩)',d:[0,1,0],c:'#3fb950'},{l:'Role',d:[0,0,1],c:'#a78bfa'}];
+  axes.forEach(a=>{
+    const o=proj3d(0,0,0,W,H),e=proj3d(a.d[0]*1.2,a.d[1]*1.2,a.d[2]*1.2,W,H);
+    ctx.beginPath();ctx.moveTo(o.sx,o.sy);ctx.lineTo(e.sx,e.sy);
+    ctx.strokeStyle=a.c;ctx.lineWidth=1.5;ctx.stroke();
+    ctx.fillStyle=a.c;ctx.font='bold 10px SF Mono,monospace';
+    ctx.fillText(a.l,e.sx+4,e.sy);
+  });
+}
+
+function drawBloch(ctx,W,H){
+  const cx=W/2,cy=H/2,rad=Math.min(W,H)*0.28*M3.zoom;
+  ctx.strokeStyle='rgba(88,166,255,0.2)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(cx,cy,rad,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.ellipse(cx,cy,rad,rad*0.3,0,0,Math.PI*2);ctx.stroke();
+  ctx.beginPath();ctx.ellipse(cx,cy,rad*0.3,rad,0,0,Math.PI*2);ctx.stroke();
+
+  const poles=[{l:'|0⟩',y:-1},{l:'|1⟩',y:1}];
+  poles.forEach(p=>{
+    const pp=proj3d(0,p.y*0.95,0,W,H);
+    ctx.fillStyle='#58a6ff';ctx.font='bold 12px SF Mono,monospace';ctx.textAlign='center';
+    ctx.fillText(p.l,pp.sx,pp.sy+(p.y<0?-8:16));
+  });
+
+  const blochPts=[];
+  D.patches.forEach((row,r)=>{
+    row.forEach((v,q)=>{
+      const b=blochFromProb(v);
+      const p=proj3d(b.x*0.9,b.z*0.9,b.y*0.9,W,H);
+      blochPts.push({...p,v,r,q,theta:b.theta,phi:b.phi});
+    });
+  });
+  blochPts.sort((a,b)=>a.d-b.d);
+
+  blochPts.forEach(p=>{
+    const sz=Math.max(3,(5-p.d)*2);
+    ctx.beginPath();ctx.arc(p.sx,p.sy,sz,0,Math.PI*2);
+    ctx.fillStyle=meshColor(p.v,0.9);ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.3)';ctx.lineWidth=0.5;ctx.stroke();
+  });
+
+  ctx.fillStyle='#8b949e';ctx.font='10px SF Mono,monospace';ctx.textAlign='left';
+  ctx.fillText(`121 Bloch points · θ range [${(blochPts.reduce((a,p)=>Math.min(a,p.theta),99)*180/Math.PI).toFixed(1)}°–${(blochPts.reduce((a,p)=>Math.max(a,p.theta),0)*180/Math.PI).toFixed(1)}°]`,8,H-8);
+}
+
+function drawSlices(ctx,W,H){
+  const P=D.patches,nSlices=M3.density+3;
+  const sliceH=(H-40)/nSlices;
+  ctx.font='10px SF Mono,monospace';
+
+  for(let s=0;s<nSlices;s++){
+    const zPct=s/(nSlices-1);
+    const y=20+s*sliceH;
+    ctx.fillStyle='#161b22';ctx.fillRect(20,y,W-40,sliceH-4);
+
+    const thresh=zPct*100;
+    for(let r=0;r<11;r++){
+      for(let c2=0;c2<11;c2++){
+        const v=P[r][c2];
+        if(Math.abs(v-thresh)>15) continue;
+        const px=20+(c2/10)*(W-60)+10;
+        const py=y+(r/10)*(sliceH-8)+2;
+        const intensity=1-Math.abs(v-thresh)/15;
+        ctx.fillStyle=meshColor(v,intensity*0.8);
+        ctx.fillRect(px,py,Math.max(3,(W-60)/13),Math.max(2,(sliceH-8)/13));
+      }
+    }
+    ctx.fillStyle='#8b949e';ctx.textAlign='right';
+    ctx.fillText(`Z${s} ${(zPct*M3.depth).toFixed(0)}mm`,W-24,y+sliceH/2+3);
+  }
+
+  ctx.fillStyle='#a78bfa';ctx.textAlign='left';
+  ctx.fillText(`${nSlices} slices · ${M3.depth}mm depth · bottom→top`,24,H-4);
+}
+
+(function initMesh(){
+  const c=document.getElementById('mesh3d');
+  c.addEventListener('mousedown',e=>{M3.drag=true;M3.mx=e.clientX;M3.my=e.clientY;c.style.cursor='grabbing';});
+  window.addEventListener('mousemove',e=>{
+    if(!M3.drag)return;
+    M3.ay+=(e.clientX-M3.mx)*0.008;M3.ax+=(e.clientY-M3.my)*0.008;
+    M3.mx=e.clientX;M3.my=e.clientY;drawMesh3D();
+  });
+  window.addEventListener('mouseup',()=>{M3.drag=false;c.style.cursor='grab';});
+  c.addEventListener('wheel',e=>{e.preventDefault();M3.zoom=Math.max(0.5,Math.min(4,M3.zoom-e.deltaY*0.002));drawMesh3D();},{passive:false});
+
+  document.querySelectorAll('.mesh-ctrl button').forEach(b=>{
+    b.addEventListener('click',()=>{
+      document.querySelectorAll('.mesh-ctrl button').forEach(x=>x.classList.remove('active'));
+      b.classList.add('active');M3.mode=b.dataset.mode;drawMesh3D();
+      document.getElementById('mesh-info').textContent=
+        M3.mode==='bloch'?'121 Bloch vectors · drag to rotate':
+        M3.mode==='slices'?`${M3.density+3} Z-slices · ${M3.depth}mm depth`:
+        `11×11 ${M3.mode} mesh · ${121} vertices · drag to rotate`;
+    });
+  });
+
+  ['dwell','freq','pulse','depth','density'].forEach(k=>{
+    const el=document.getElementById('ls-'+k);
+    if(!el)return;
+    el.addEventListener('input',()=>{
+      M3[k]=+el.value;
+      document.getElementById('lv-'+k).textContent=el.value;
+      if(k==='depth'||k==='density')drawMesh3D();
+      updateLaserStatus();
+    });
+  });
+})();
+
+function updateLaserStatus(){
+  const pts=121*M3.density;
+  const timeEst=(pts*M3.dwell/1e6).toFixed(2);
+  const type=document.getElementById('ls-type').value;
+  const wl={uv:'355nm UV',mopa:'1064nm MOPA',green:'532nm Green'}[type];
+  document.getElementById('laser-status').textContent=
+    `${wl} · ${pts} points · ~${timeEst}s engrave · ${M3.depth}mm × 70mm × 70mm glass`;
+}
+
+function generateSTL(){
+  const P=D.patches;
+  let tris=[];
+  for(let r=0;r<10;r++){
+    for(let c=0;c<10;c++){
+      const s=70/(10);
+      const x0=c*s,x1=(c+1)*s,z0=r*s,z1=(r+1)*s;
+      const y00=P[r][c]/100*M3.depth, y10=P[r][c+1]/100*M3.depth;
+      const y01=P[r+1][c]/100*M3.depth, y11=P[r+1][c+1]/100*M3.depth;
+      tris.push([x0,y00,z0,x1,y10,z0,x0,y01,z1]);
+      tris.push([x1,y10,z0,x1,y11,z1,x0,y01,z1]);
+    }
+  }
+  const buf=new ArrayBuffer(84+tris.length*50);
+  const dv=new DataView(buf);
+  const hdr='qpu-goldie-mesh-stl';
+  for(let i=0;i<80;i++) dv.setUint8(i,i<hdr.length?hdr.charCodeAt(i):0);
+  dv.setUint32(80,tris.length,true);
+  let off=84;
+  tris.forEach(t=>{
+    const nx=0,ny=1,nz=0;
+    dv.setFloat32(off,nx,true);dv.setFloat32(off+4,ny,true);dv.setFloat32(off+8,nz,true);off+=12;
+    for(let i=0;i<9;i++){dv.setFloat32(off,t[i],true);off+=4;}
+    dv.setUint16(off,0,true);off+=2;
+  });
+  const blob=new Blob([buf],{type:'application/octet-stream'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='goldie-121q-mesh.stl';a.click();
+}
+
+function generatePointCloud(){
+  const lines=['# QPU Goldie 121q Bloch Point Cloud','# x y z probability theta phi section role'];
+  D.patches.forEach((row,r)=>{
+    row.forEach((v,q)=>{
+      const b=blochFromProb(v);
+      const scale=M3.depth;
+      lines.push(`${(b.x*35+35).toFixed(3)} ${(b.z*scale/2+scale/2).toFixed(3)} ${(b.y*35+35).toFixed(3)} ${v.toFixed(1)} ${(b.theta*180/Math.PI).toFixed(2)} ${(b.phi*180/Math.PI).toFixed(2)} ${D.sections[r]} ${D.roles[q]}`);
+    });
+  });
+  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='goldie-121q-bloch.xyz';a.click();
+}
+
+function generateQbitMesh(){
+  if(!window.qbitCodec){alert('qbit-dac.js not loaded');return;}
+  const meshData={
+    format:'.qbit-mesh',version:'1.0',
+    backend:'ibm_torino',job:'d6co82154hss73b8r0lg',qubits:121,shots:4096,
+    mesh:{rows:11,cols:11,data:D.patches},
+    bloch:D.patches.map((row,r)=>row.map((v,q)=>{
+      const b=blochFromProb(v);
+      return {section:D.sections[r],role:D.roles[q],prob:v,theta:+(b.theta*180/Math.PI).toFixed(2),phi:+(b.phi*180/Math.PI).toFixed(2)};
+    })),
+    laser:{type:document.getElementById('ls-type').value,dwell:M3.dwell,freq:M3.freq,pulse:M3.pulse,depth:M3.depth,density:M3.density},
+    glass:{width:70,height:70,depth:M3.depth,unit:'mm'}
+  };
+  const encoded=window.qbitCodec?qbitCodec.encode(JSON.stringify(meshData,null,2),'json','qpu-goldie-results'):JSON.stringify(meshData,null,2);
+  const blob=new Blob([encoded],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='goldie-121q-mesh.qbit';a.click();
+}
+
+function generateSlices(){
+  const P=D.patches,nSlices=M3.density+3;
+  const lines=['# QPU Goldie Z-Slice Data for MOPA/UV Laser',
+    `# laser: ${document.getElementById('ls-type').value} dwell:${M3.dwell}μs freq:${M3.freq}kHz pulse:${M3.pulse}ns`,
+    `# glass: 70×70×${M3.depth}mm · ${nSlices} slices · bottom→top`,'# slice z_mm x y intensity dwell_adj'];
+  for(let s=0;s<nSlices;s++){
+    const zMm=(s/(nSlices-1)*M3.depth).toFixed(1);
+    const zPct=s/(nSlices-1)*100;
+    for(let r=0;r<11;r++){
+      for(let c=0;c<11;c++){
+        const v=P[r][c];
+        if(Math.abs(v-zPct)>20)continue;
+        const intensity=(1-Math.abs(v-zPct)/20).toFixed(3);
+        const dwAdj=Math.round(M3.dwell*intensity);
+        lines.push(`${s} ${zMm} ${(c*7).toFixed(1)} ${(r*7).toFixed(1)} ${intensity} ${dwAdj}`);
+      }
+    }
+  }
+  const blob=new Blob([lines.join('\n')],{type:'text/plain'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='goldie-121q-slices.gcode';a.click();
+}
+
+document.getElementById('btn-stl').addEventListener('click',generateSTL);
+document.getElementById('btn-qbit-mesh').addEventListener('click',generateQbitMesh);
+document.getElementById('btn-pointcloud').addEventListener('click',generatePointCloud);
+document.getElementById('btn-slices').addEventListener('click',generateSlices);
+document.getElementById('ls-type').addEventListener('change',updateLaserStatus);
+
+window.addEventListener('load',()=>{drawHeatmap();drawHW();drawTemporal();drawRoles();fillTable();drawMesh3D();updateLaserStatus();
+
+  // Post-retrieval validation via preflight pipeline
+  if(window.QbitPreflight){
+    const goldieCounts={};
+    D.hw.forEach((v,i)=>{if(v>0) goldieCounts[i.toString()]=v;});
+    const vr=QbitPreflight.validateResults(goldieCounts,121,4096);
+    const tag=document.createElement('span');
+    tag.className='tag'+(vr.valid?'':' warn');
+    tag.textContent=vr.valid?'VALIDATED':'CHECK RESULTS';
+    tag.title=vr.checks.map(c=>(c.pass?'✓':'✗')+' '+c.name+': '+c.detail).join('\n');
+    document.querySelector('.hdr').appendChild(tag);
+  }
+});
+window.addEventListener('resize',()=>{drawHeatmap();drawHW();drawTemporal();drawRoles();drawMesh3D();});
+document.getElementById('mesh-info').textContent='11×11 surface mesh · 121 vertices · drag to rotate';
+
+// ===== QUANTUM 3D SCAN PIPELINE =====
+const SCAN={
+  cloud:null,modality:'auto',bulletAngle:0,bulletAnim:null,
+  ironCondor:{lo:30,hi:70,J:50,a:30},
+  ultraBuf:new Float32Array(400),ultraIdx:0,
+  LAYER_COLORS:['#ff3838','#ff8c38','#ffcc38','#ffe138','#3fb950','#38e0a5','#38a5ff','#bc8cff'],
+  MODALITY_BANDWIDTH:{
+    photogrammetry:{speed:'500MB/s',code:'PLY/OBJ',bandwidth:'10M pts/s'},
+    sam2:{speed:'250MB/s',code:'JSON mesh',bandwidth:'2M faces/s'},
+    gsplat:{speed:'1.2GB/s',code:'splat',bandwidth:'50M splats/s'},
+    wifi3d:{speed:'10MB/s',code:'DensePose JSON',bandwidth:'30fps'},
+    lidar:{speed:'800MB/s',code:'XYZ/LAS',bandwidth:'1.2M pts/s'},
+    irflir:{speed:'30MB/s',code:'16-bit PNG',bandwidth:'60fps'},
+    audio:{speed:'1.4MB/s',code:'WAV PCM',bandwidth:'44.1kHz'},
+    contrail:{speed:'50KB/s',code:'BroadcastChannel',bandwidth:'60fps'},
+    qpu:{speed:'1KB/s',code:'IBM REST',bandwidth:'4096 shots/run'}
+  }
+};
+
+function normalizeToCloud(data,modality){
+  const pts=[];
+  if(!data)return pts;
+  if(modality==='qpu'||modality==='auto'&&D&&D.patches){
+    for(let r=0;r<D.patches.length;r++){
+      for(let c=0;c<D.patches[r].length;c++){
+        const b=blochFromProb(D.patches[r][c]);
+        pts.push({x:b.x,y:b.y,z:b.z,v:D.patches[r][c],theta:b.theta,phi:b.phi,src:'qpu',idx:r*11+c});
+      }
+    }
+    return pts;
+  }
+  if(Array.isArray(data)){
+    data.forEach((d,i)=>{
+      if(d.x!==undefined)pts.push({x:d.x,y:d.y,z:d.z||0,v:d.v||d.intensity||50,theta:0,phi:0,src:modality,idx:i});
+      else if(d.position)pts.push({x:d.position[0],y:d.position[1],z:d.position[2]||0,v:d.confidence||50,theta:0,phi:0,src:modality,idx:i});
+    });
+  } else if(typeof data==='string'){
+    const lines=data.trim().split('\n');
+    lines.forEach((ln,i)=>{
+      const p=ln.trim().split(/[\s,]+/).map(Number);
+      if(p.length>=3&&!isNaN(p[0]))pts.push({x:p[0],y:p[1],z:p[2],v:p[3]||50,theta:0,phi:0,src:modality,idx:i});
+    });
+  }
+  if(pts.length>0){
+    const mx=Math.max(...pts.map(p=>Math.abs(p.x)),Math.max(...pts.map(p=>Math.abs(p.y)),Math.max(...pts.map(p=>Math.abs(p.z)),1)));
+    pts.forEach(p=>{p.x/=mx;p.y/=mx;p.z/=mx;
+      const r=Math.sqrt(p.x*p.x+p.y*p.y+p.z*p.z)||1;
+      p.theta=Math.acos(p.z/r);p.phi=Math.atan2(p.y,p.x);
+    });
+  }
+  return pts;
+}
+
+function ballisticWaveform(pt,t){
+  const k=2*Math.PI/(SCAN.ironCondor.a/100+0.01);
+  const omega=2*SCAN.ironCondor.J/100*Math.abs(Math.sin(k*SCAN.ironCondor.a/200));
+  const psi=Math.cos(k*pt.x-omega*t)*Math.exp(-0.1*t);
+  return psi;
+}
+
+function dispersionRelation(k){
+  const J=SCAN.ironCondor.J/100, a=SCAN.ironCondor.a/100;
+  return 2*J*Math.abs(Math.sin(k*a/2));
+}
+
+function ironCondorCircuit(theta,lo,hi){
+  const ry=Math.cos(Math.PI/4);
+  const phase=Math.exp(1)*Math.cos(theta);
+  const condor=(theta>=lo*Math.PI/100&&theta<=hi*Math.PI/100)?1:0;
+  return {ry,phase,condor,position:ry*phase*condor,qasm:`ry(${(Math.PI/2).toFixed(4)}) q[0];\nrz(${theta.toFixed(4)}) q[0];\ncx q[0],q[1];\nmeasure q[0] -> c[0];`};
+}
+
+function quantumLocate(cloud){
+  if(!cloud||cloud.length===0)return null;
+  const lo=SCAN.ironCondor.lo,hi=SCAN.ironCondor.hi;
+  let bestPt=null,bestScore=-Infinity;
+  const t=performance.now()/1000;
+  cloud.forEach(pt=>{
+    const bw=ballisticWaveform(pt,t%10);
+    const k=Math.sqrt(pt.x*pt.x+pt.y*pt.y);
+    const omega=dispersionRelation(k);
+    const ic=ironCondorCircuit(pt.theta,lo,hi);
+    const depth=Math.abs(pt.z);
+    const magnetism=Math.cos(pt.phi)*depth;
+    const score=bw*omega*ic.position+magnetism;
+    if(score>bestScore){bestScore=score;bestPt={...pt,score,bw,omega,ic,magnetism};}
+  });
+  return bestPt;
+}
+
+function updateScanStats(){
+  const el=document.getElementById('scan-cloud-stats');
+  if(!SCAN.cloud||SCAN.cloud.length===0){el.textContent='Points: 0 · Bounds: — · Source: none';return;}
+  const c=SCAN.cloud;
+  const bounds={x:[Infinity,-Infinity],y:[Infinity,-Infinity],z:[Infinity,-Infinity]};
+  c.forEach(p=>{
+    bounds.x[0]=Math.min(bounds.x[0],p.x);bounds.x[1]=Math.max(bounds.x[1],p.x);
+    bounds.y[0]=Math.min(bounds.y[0],p.y);bounds.y[1]=Math.max(bounds.y[1],p.y);
+    bounds.z[0]=Math.min(bounds.z[0],p.z);bounds.z[1]=Math.max(bounds.z[1],p.z);
+  });
+  const bw=SCAN.MODALITY_BANDWIDTH[SCAN.modality]||{speed:'—',code:'—',bandwidth:'—'};
+  el.innerHTML=`Points: <span style="color:#58a6ff">${c.length}</span> · ` +
+    `Bounds: [${bounds.x[0].toFixed(2)},${bounds.x[1].toFixed(2)}] × [${bounds.y[0].toFixed(2)},${bounds.y[1].toFixed(2)}] × [${bounds.z[0].toFixed(2)},${bounds.z[1].toFixed(2)}] · ` +
+    `Source: <span style="color:#a78bfa">${SCAN.modality}</span> · Speed: ${bw.speed} · BW: ${bw.bandwidth} · Code: ${bw.code}`;
+}
+
+function showLocateResult(pt){
+  const el=document.getElementById('locate-result');
+  if(!pt){el.textContent='No convergent point found';return;}
+  el.innerHTML=`<span style="color:#3fb950">LOCATED</span> idx:${pt.idx} · ` +
+    `Bloch(θ=${(pt.theta*180/Math.PI).toFixed(1)}° φ=${(pt.phi*180/Math.PI).toFixed(1)}°) · ` +
+    `Score: <span style="color:#58a6ff">${pt.score.toFixed(4)}</span> · ` +
+    `BW: ${pt.bw.toFixed(3)} · ω: ${pt.omega.toFixed(3)} · Mag: ${pt.magnetism.toFixed(3)} · ` +
+    `IC: ${pt.ic.position.toFixed(3)} · ` +
+    `XYZ(${pt.x.toFixed(3)},${pt.y.toFixed(3)},${pt.z.toFixed(3)})`;
+}
+
+function drawBulletFrame(angle){
+  const cv=document.getElementById('cv-mesh');if(!cv)return;
+  const saved={ax:M3.ax,ay:M3.ay};
+  M3.ax=saved.ax+Math.cos(angle)*0.3;
+  M3.ay=saved.ay+Math.sin(angle)*0.3;
+  drawMesh3D();
+  if(SCAN.cloud){
+    const ctx=cv.getContext('2d');
+    const W=cv.width,H=cv.height;
+    SCAN.cloud.forEach(pt=>{
+      const p=proj3d(pt.x*30,pt.y*30+35,pt.z*30+35,W,H);
+      if(p.d<0)return;
+      ctx.fillStyle=`hsla(${pt.v*3.6},80%,60%,0.7)`;
+      ctx.beginPath();ctx.arc(p.x,p.y,2/p.d*M3.zoom,0,Math.PI*2);ctx.fill();
+    });
+  }
+  M3.ax=saved.ax;M3.ay=saved.ay;
+}
+
+function startBulletTime(){
+  if(SCAN.bulletAnim){cancelAnimationFrame(SCAN.bulletAnim);SCAN.bulletAnim=null;return;}
+  let frame=0;
+  function tick(){
+    SCAN.bulletAngle=frame*Math.PI*2/90;
+    drawBulletFrame(SCAN.bulletAngle);
+    frame=(frame+1)%90;
+    SCAN.bulletAnim=requestAnimationFrame(tick);
+  }
+  tick();
+}
+
+function drawUltrasonic(){
+  const cv=document.getElementById('cv-ultrasonic');if(!cv)return;
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height;
+  ctx.fillStyle='#0d1117';ctx.fillRect(0,0,W,H);
+  const layers=[0,1,3,4,6,7];
+  const layerH=H/layers.length;
+  layers.forEach((l,i)=>{
+    const y=i*layerH;
+    ctx.strokeStyle=SCAN.LAYER_COLORS[l];ctx.lineWidth=1;
+    ctx.beginPath();
+    for(let x=0;x<W;x++){
+      const idx=(SCAN.ultraIdx+x)%SCAN.ultraBuf.length;
+      const freq=40000+l*2000;
+      const amp=SCAN.ultraBuf[idx]*Math.sin(x*freq/44100*Math.PI*2)*layerH*0.3;
+      const py=y+layerH/2+amp;
+      x===0?ctx.moveTo(x,py):ctx.lineTo(x,py);
+    }
+    ctx.stroke();
+    ctx.fillStyle=SCAN.LAYER_COLORS[l];ctx.font='9px monospace';
+    ctx.fillText('L'+l,W-20,y+10);
+  });
+}
+
+function feedUltrasonic(amplitude){
+  SCAN.ultraBuf[SCAN.ultraIdx%SCAN.ultraBuf.length]=amplitude;
+  SCAN.ultraIdx++;
+  const ids=['l0','l1','l3','l4','l6','l7'];
+  ids.forEach((id,i)=>{
+    const el=document.getElementById('us-'+id);
+    if(el)el.textContent=(amplitude*Math.sin(i*0.7)*100).toFixed(1)+'dB';
+  });
+}
+
+(function initScanPipeline(){
+  const drop=document.getElementById('scan-drop');
+  const fileIn=document.getElementById('scan-file');
+  drop.addEventListener('click',()=>fileIn.click());
+  drop.addEventListener('dragover',e=>{e.preventDefault();drop.style.borderColor='#58a6ff';});
+  drop.addEventListener('dragleave',()=>{drop.style.borderColor='#30363d';});
+  drop.addEventListener('drop',e=>{e.preventDefault();drop.style.borderColor='#30363d';
+    if(e.dataTransfer.files.length)ingestFile(e.dataTransfer.files[0]);
+  });
+  fileIn.addEventListener('change',()=>{if(fileIn.files.length)ingestFile(fileIn.files[0]);});
+
+  document.getElementById('btn-locate').addEventListener('click',()=>{
+    if(!SCAN.cloud){
+      SCAN.cloud=normalizeToCloud(null,'qpu');
+      SCAN.modality='qpu';updateScanStats();
+    }
+    const pt=quantumLocate(SCAN.cloud);
+    showLocateResult(pt);
+    if(pt&&window.qbitCodec){
+      const locData={type:'quantum-locate',point:pt,cloud:{count:SCAN.cloud.length,modality:SCAN.modality},
+        ironCondor:SCAN.ironCondor,timestamp:Date.now()};
+      const encoded=qbitCodec.encode(JSON.stringify(locData,null,2),'json','scan-pipeline');
+      new BroadcastChannel('iron-line').postMessage({type:'scan-locate',layer:3,point:pt,encoded:encoded.length});
+    }
+  });
+
+  document.getElementById('btn-bullet').addEventListener('click',startBulletTime);
+
+  ['ic-low','ic-high','ic-j','ic-a'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    const key={low:'lo',high:'hi',j:'J',a:'a'}[id.split('-')[1]];
+    el.addEventListener('input',()=>{SCAN.ironCondor[key]=+el.value;});
+  });
+
+  const bc=new BroadcastChannel('kbatch-training');
+  bc.onmessage=e=>{
+    if(e.data&&e.data.contrail){
+      const cPts=e.data.contrail.map((v,i)=>({x:Math.cos(i/10),y:Math.sin(i/10),z:v/100,v:v,theta:0,phi:0,src:'contrail',idx:i}));
+      SCAN.cloud=(SCAN.cloud||[]).concat(cPts);
+      SCAN.modality='contrail';updateScanStats();
+      feedUltrasonic(Math.abs(cPts[0]?.v||0)/100);
+    }
+  };
+
+  setInterval(()=>{feedUltrasonic(Math.random()*0.3);drawUltrasonic();},50);
+  SCAN.cloud=normalizeToCloud(null,'qpu');SCAN.modality='qpu';updateScanStats();
+})();
+
+function ingestFile(file){
+  const ext=file.name.split('.').pop().toLowerCase();
+  const moSel=document.getElementById('scan-modality').value;
+  let mod=moSel!=='auto'?moSel:({ply:'photogrammetry',obj:'photogrammetry',stl:'photogrammetry',xyz:'lidar',splat:'gsplat',
+    json:'sam2',csv:'wifi3d',wav:'audio',png:'irflir',jpg:'irflir',gltf:'sam2',glb:'sam2'}[ext]||'auto');
+  document.getElementById('scan-status').textContent=`Loading ${file.name} (${(file.size/1024).toFixed(0)}KB) as ${mod}...`;
+  const reader=new FileReader();
+  reader.onload=function(){
+    let data=reader.result;
+    if(ext==='json'||ext==='csv'||ext==='xyz'||ext==='ply'||ext==='obj')data=reader.result;
+    else if(ext==='wav'){data=parseWavToPoints(reader.result);mod='audio';}
+    else if(ext==='png'||ext==='jpg'){data=parseImageToPoints(reader.result);mod='irflir';}
+    else if(ext==='splat'){data=parseSplatToPoints(reader.result);mod='gsplat';}
+    try{if(typeof data==='string'&&data.trim().startsWith('{'))data=JSON.parse(data);
+      else if(typeof data==='string'&&data.trim().startsWith('['))data=JSON.parse(data);}catch(e){}
+    SCAN.cloud=normalizeToCloud(data,mod);SCAN.modality=mod;updateScanStats();
+    document.getElementById('scan-status').textContent=`Ingested ${file.name}: ${SCAN.cloud.length} points · ${mod}`;
+    drawMesh3D();
+  };
+  if(ext==='wav'||ext==='splat'||ext==='png'||ext==='jpg'||ext==='glb')reader.readAsArrayBuffer(file);
+  else reader.readAsText(file);
+}
+
+function parseWavToPoints(buf){
+  const view=new DataView(buf);const pts=[];
+  const sampleRate=view.getUint32(24,true);const bps=view.getUint16(34,true);
+  let offset=44;const step=Math.max(1,Math.floor((buf.byteLength-44)/(bps/8)/2000));
+  for(let i=0;offset+2<=buf.byteLength&&i<2000;i++){
+    const s=bps===16?view.getInt16(offset,true)/32768:view.getUint8(offset)/128-1;
+    pts.push({x:Math.cos(i*0.1)*s,y:Math.sin(i*0.1)*s,z:i/2000,v:Math.abs(s)*100});
+    offset+=step*(bps/8);
+  }
+  return pts;
+}
+
+function parseImageToPoints(buf){
+  const pts=[];const view=new Uint8Array(buf);
+  for(let i=0;i<Math.min(view.length,6000);i+=3){
+    const r=view[i]||0,g=view[i+1]||0,b=view[i+2]||0;
+    const idx=i/3;const row=Math.floor(idx/100);const col=idx%100;
+    if(r+g+b>30)pts.push({x:col/50-1,y:row/50-1,z:(r-g)/255,v:(r+g+b)/7.65});
+  }
+  return pts;
+}
+
+function parseSplatToPoints(buf){
+  const pts=[];const view=new Float32Array(buf);
+  for(let i=0;i+3<view.length&&pts.length<5000;i+=8){
+    pts.push({x:view[i],y:view[i+1],z:view[i+2],v:50});
+  }
+  return pts;
+}
+
+// ===== CALIBRATION INGESTION + SYSTEM DIRECTORY =====
+const CALIB_FILES=[
+  {name:'ibm_torino',url:'calibrations/ibm_torino.csv'},
+  {name:'ibm_marrakesh',url:'calibrations/ibm_marrakesh.csv'},
+  {name:'ibm_fez',url:'calibrations/ibm_fez.csv'}
+];
+let calibLoaded=0;
+
+function renderSysDir(){
+  if(!window.QbitPreflight)return;
+  const dir=QbitPreflight.systemDirectory();
+  const el=document.getElementById('sys-dir');
+  if(!el)return;
+  let h='<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:8px;margin-bottom:12px">';
+  dir.systems.forEach(s=>{
+    const isCal=s.calibFresh;
+    const border=s.type==='QPU'?(isCal?'#3fb950':'#d29922'):'#58a6ff';
+    const bg2=s.type==='QPU'?'#0d1117':'#161b22';
+    h+='<div style="background:'+bg2+';border:1px solid '+border+';border-radius:6px;padding:8px">';
+    h+='<div style="display:flex;justify-content:space-between;align-items:center">';
+    h+='<span style="color:#c9d1d9;font-weight:600">'+s.name+'</span>';
+    h+='<span style="font-size:9px;padding:1px 6px;border-radius:3px;background:'+(s.status==='ONLINE'?'#238636':s.status==='DEGRADED'?'#d29922':'#f85149')+';color:#fff">'+s.status+'</span>';
+    h+='</div>';
+    h+='<div style="margin-top:4px;font-size:10px;color:#8b949e">';
+    h+=s.type+' · '+s.family+' '+s.generation+' · '+s.qubits+'q';
+    if(s.type==='QPU'){
+      h+='<br>T1: '+s.t1Avg+'μs (med '+s.t1Med+') · T2: '+(s.t2Avg||'—')+'μs';
+      h+='<br>CZ err: '+(s.czMed*100).toFixed(2)+'% med · Readout: '+(s.readoutMed*100).toFixed(2)+'%';
+      h+='<br>Cost: $'+(s.costPerShot*4096).toFixed(0)+'/4096 shots · Gate: '+s.gateLen+'ns';
+      h+='<br>Calib: '+(s.calibDate?new Date(s.calibDate).toLocaleString():'none');
+      if(s.calibAgeMin!==null) h+=' ('+(s.calibAgeMin<60?s.calibAgeMin+'min':Math.floor(s.calibAgeMin/60)+'h')+' ago)';
+      h+='<br>Per-qubit data: '+(s.perQubitData||0)+' qubits loaded';
+    } else {
+      h+='<br>Perfect fidelity · $0 · no decoherence';
+    }
+    h+='</div></div>';
+  });
+  h+='</div>';
+  h+='<div style="display:flex;gap:16px;flex-wrap:wrap;font-size:10px">';
+  h+='<span style="color:#3fb950">■ '+dir.summary.qpuCount+' QPUs ('+dir.summary.totalQubits+'q total)</span>';
+  h+='<span style="color:#58a6ff">■ '+dir.summary.simulatorCount+' Simulators</span>';
+  h+='<span style="color:#c9d1d9">■ '+dir.summary.calibratedCount+'/'+dir.summary.totalSystems+' calibrated</span>';
+  h+='<span style="color:'+(parseFloat(dir.summary.failureRate)<3?'#3fb950':'#f85149')+'">Failure rate: '+dir.summary.failureRate+'% (target: <3%)</span>';
+  h+='<span style="color:#d29922">Cost saved: $'+dir.summary.ledger.costSaved.toFixed(0)+'</span>';
+  h+='</div>';
+  el.innerHTML=h;
+}
+
+CALIB_FILES.forEach(cf=>{
+  fetch(cf.url).then(r=>r.ok?r.text():Promise.reject()).then(csv=>{
+    QbitPreflight.parseCalibrationCSV(csv,cf.name);
+    calibLoaded++;
+    if(calibLoaded>=CALIB_FILES.length) renderSysDir();
+  }).catch(()=>{calibLoaded++;if(calibLoaded>=CALIB_FILES.length) renderSysDir();});
+});
+setTimeout(renderSysDir,500);
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+if(window.QuantumPrefixes){
+  const QP=window.QuantumPrefixes;
+  QP.onStateChange(function(source,state){if(source==='qpu-goldie-results'||!state)return;});
+  QP.broadcastState('qpu-goldie-results',{coverage:0,totalLines:0,classifiedLines:0,prefixCounts:{},role:'qpu-results-dashboard',backend:'ibm_torino',job:'d6co82154hss73b8r0lg'});
+  QP.requestStateSync();
+}
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function(){});
+</script>
+</body>
+</html>

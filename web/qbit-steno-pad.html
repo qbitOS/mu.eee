@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<!-- beyondBINARY quantum-prefixed | uvspeed | {n, +1, -n, +0, 0, -1, +n, +2, -0, +3, 1} -->
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>qbit steno pad</title>
+<link rel="icon" href="../icons/favicon.ico" sizes="any">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:#020408;color:#c9d1d9;font:12px/1.5 'SF Mono','Fira Code',monospace;overflow:hidden;color-scheme:dark}
+#app{display:flex;flex-direction:column;height:100vh}
+#hdr{display:flex;justify-content:space-between;align-items:center;padding:4px 12px;border-bottom:1px solid #0d1117;flex-shrink:0;user-select:none}
+#hdr .t{color:#c9a84c;font-weight:400;font-size:11px}
+#hdr .d{color:#30363d;font-size:10px}
+#hdr button{background:none;border:1px solid #21262d;color:#58a6ff;font:10px/1 inherit;padding:2px 8px;border-radius:3px;cursor:pointer}
+#hdr button:hover{border-color:#58a6ff}
+#panes{display:flex;flex:1;overflow:hidden}
+.pane{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.pane+.pane{border-left:1px solid #0d1117}
+.pane-hdr{display:flex;justify-content:space-between;padding:3px 10px;font-size:9px;color:#30363d;border-bottom:1px solid #0d1117;flex-shrink:0;user-select:none}
+.pane-hdr .on{color:#3fb950}
+.pane-hdr .ch{color:#58a6ff}
+#la{flex:1;width:100%;background:#020408;color:#c9d1d9;border:0;outline:0;resize:none;font:12px/1.5 'SF Mono','Fira Code',monospace;padding:8px 10px;tab-size:2;caret-color:#3fb950}
+#rb{flex:1;overflow-y:auto;padding:8px 10px;contain:content;content-visibility:auto}
+#rb::-webkit-scrollbar{width:2px}#rb::-webkit-scrollbar-thumb{background:#161b22}
+.ml{display:flex;gap:8px;min-height:1.5em;border-bottom:1px solid #080c12}
+.ml-num{min-width:3ch;text-align:right;color:#161b22;user-select:none}
+.ml-sym{min-width:3ch;text-align:right;user-select:none}
+.ml-gate{min-width:4ch;color:#58a6ff;font-size:10px}
+.ml-dep{min-width:2ch;color:#30363d;font-size:10px;text-align:center}
+.ml-cat{color:#30363d;font-size:10px;flex:1}
+.ml-bits{min-width:4ch;color:#0d1117;font-size:9px;text-align:right;user-select:none}
+#footer{display:flex;gap:12px;padding:3px 12px;font-size:9px;color:#30363d;border-top:1px solid #0d1117;flex-shrink:0;user-select:none}
+.g{color:#3fb950}.y{color:#c9a84c}.r{color:#f85149}.c{color:#58a6ff}.d{color:#30363d}.m{color:#bc8cff}.o{color:#d29922}
+#qp-theme-toggle{position:static!important;top:auto!important;right:auto!important;z-index:auto!important}
+@media(max-width:600px){#panes{flex-direction:column}.pane+.pane{border-left:0;border-top:1px solid #0d1117}}
+</style>
+</head>
+<body>
+<div id="app">
+<div id="hdr">
+<span><span class="t">steno pad</span> <span class="d">Channel A → steno encode → Channel B</span></span>
+<span><button id="btn-save">save .steno</button> <button id="btn-load">load</button> <button id="btn-demo">demo</button></span>
+</div>
+<div id="panes">
+<div class="pane">
+<div class="pane-hdr"><span><span class="on">A</span> human-readable code</span><span id="la-stats" class="d">—</span></div>
+<textarea id="la" spellcheck="false" placeholder="paste or type code here — whitespace will carry quantum data"></textarea>
+</div>
+<div class="pane">
+<div class="pane-hdr"><span><span class="ch">B</span> decoded metadata (from whitespace)</span><span id="rb-stats" class="d">—</span></div>
+<div id="rb"></div>
+</div>
+</div>
+<div id="footer">
+<span id="f-lines">lines: 0</span>
+<span id="f-bits">bits: 0</span>
+<span id="f-util">util: —</span>
+<span id="f-cap">capacity: —</span>
+<span id="f-waste">waste: —</span>
+</div>
+</div>
+<input type="file" id="file-in" accept=".js,.ts,.py,.rs,.go,.html,.css,.json,.md,.txt,.steno" style="display:none">
+<script defer src="quantum-prefixes.js"></script>
+<script defer src="qbit-dac.js"></script>
+<script defer src="qbit-steno.js"></script>
+<script>
+(function(){
+var LA=document.getElementById('la'),RB=document.getElementById('rb');
+var LAS=document.getElementById('la-stats'),RBS=document.getElementById('rb-stats');
+var FL=document.getElementById('f-lines'),FB=document.getElementById('f-bits');
+var FU=document.getElementById('f-util'),FC=document.getElementById('f-cap'),FW=document.getElementById('f-waste');
+var FI=document.getElementById('file-in');
+var PCLS={'n:':'o','+1:':'d','-n:':'m','+0:':'c','0:':'c','-1:':'r','+n:':'y','+2:':'g','-0:':'m','+3:':'o','1:':'c'};
+var SYM_GATE={'n:':'SWAP','+1:':'H','-n:':'M','+0:':'Rz','0:':'I','-1:':'X','+n:':'T','+2:':'CZ','-0:':'S','+3:':'Y','1:':'CNOT'};
+var _timer=null,_scrollLock=true;
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function pad(n,l){var s=String(n);while(s.length<l)s=' '+s;return s}
+
+function lang(code){
+if(/^#!/.test(code))return'shell';
+if(/\bdef\s|\bimport\s\w|\bfrom\s\w/.test(code))return'python';
+if(/\bfn\s|\blet\s+mut|\bimpl\s/.test(code))return'rust';
+if(/\bfunc\s|\bpackage\s/.test(code))return'go';
+if(/<[a-z]|<\//.test(code))return'html';
+return'javascript'}
+
+function render(){
+var code=LA.value;if(!code){RB.innerHTML='';resetFooter();return}
+var ST=window.QbitSteno,QP=window.QuantumPrefixes;
+if(!ST){RB.innerHTML='<div class="ml"><span class="d">qbit-steno.js loading…</span></div>';return}
+var lg=lang(code);
+var result=ST.stenoEncode(code,lg,{layer:0});
+var analysis=ST.stenoAnalyze(code);
+var frag=document.createDocumentFragment();
+var lines=code.split('\n');
+for(var i=0;i<lines.length;i++){
+var m=result.meta[i]||{};
+var sym=m.sym||'  ',cls=PCLS[m.sym]||'d';
+var gate=SYM_GATE[m.sym]||'—';
+var depth=m.depth||0;
+var cat=m.category||'—';
+var d=document.createElement('div');d.className='ml';
+d.innerHTML='<span class="ml-num">'+pad(i+1,3)+'</span>'+
+'<span class="ml-sym '+cls+'">'+esc(sym)+'</span>'+
+'<span class="ml-gate">'+gate+'</span>'+
+'<span class="ml-dep">'+depth+'</span>'+
+'<span class="ml-cat">'+cat+'</span>'+
+'<span class="ml-bits">'+(m.sym?'19b':'—')+'</span>';
+frag.appendChild(d)}
+RB.innerHTML='';RB.appendChild(frag);
+LAS.innerHTML=lines.length+' lines · '+lg;
+RBS.innerHTML=result.stats.encodedLines+'/'+lines.length+' encoded · '+result.stats.totalBits+' bits';
+FL.innerHTML='lines: <span class="c">'+lines.length+'</span>';
+FB.innerHTML='bits: <span class="c">'+result.stats.totalBits+'</span>';
+FU.innerHTML='util: <span class="'+(parseFloat(result.stats.utilization)>50?'g':'o')+'">'+result.stats.utilization+'%</span>';
+FC.innerHTML='capacity: <span class="g">'+analysis.capacityBits+'b</span>';
+FW.innerHTML='waste: <span class="'+(parseFloat(analysis.wasteRatio)>20?'r':'g')+'">'+analysis.wasteRatio+'%</span>'}
+
+function resetFooter(){
+LAS.innerHTML='—';RBS.innerHTML='—';
+FL.innerHTML='lines: 0';FB.innerHTML='bits: 0';FU.innerHTML='util: —';
+FC.innerHTML='capacity: —';FW.innerHTML='waste: —'}
+
+function debounceRender(){
+clearTimeout(_timer);_timer=setTimeout(render,120)}
+
+LA.addEventListener('input',debounceRender);
+
+LA.addEventListener('scroll',function(){
+if(!_scrollLock)return;
+var pct=LA.scrollTop/(LA.scrollHeight-LA.clientHeight||1);
+RB.scrollTop=pct*(RB.scrollHeight-RB.clientHeight||1)});
+
+RB.addEventListener('scroll',function(){
+if(!_scrollLock)return;
+var pct=RB.scrollTop/(RB.scrollHeight-RB.clientHeight||1);
+LA.scrollTop=pct*(LA.scrollHeight-LA.clientHeight||1)});
+
+document.getElementById('btn-save').addEventListener('click',function(){
+var code=LA.value;if(!code)return;
+var ST=window.QbitSteno;if(!ST)return;
+var lg=lang(code);
+var result=ST.stenoEncode(code,lg,{layer:0});
+var blob=new Blob([result.code],{type:'text/plain'});
+var a=document.createElement('a');a.href=URL.createObjectURL(blob);
+a.download='code.steno';a.click();URL.revokeObjectURL(a.href)});
+
+document.getElementById('btn-load').addEventListener('click',function(){FI.click()});
+
+FI.addEventListener('change',function(e){
+var file=e.target.files[0];if(!file)return;
+var reader=new FileReader();
+reader.onload=function(ev){
+var text=ev.target.result;
+var ST=window.QbitSteno;
+if(ST&&file.name.endsWith('.steno')){
+var dec=ST.stenoDecode(text);
+LA.value=dec.code;
+}else{LA.value=text}
+render()};
+reader.readAsText(file);FI.value=''});
+
+document.getElementById('btn-demo').addEventListener('click',function(){
+LA.value='#!/usr/bin/env node\n// Quantum measurement module\nimport { Tensor } from \'tinygrad\';\nimport numpy as np;\n\nclass QuantumState {\n  constructor(qubits = 3) {\n    this.n = qubits;\n    this.state = new Float64Array(2 ** qubits);\n  }\n\n  normalize() {\n    const norm = Math.sqrt(this.state.reduce((s, v) => s + v * v, 0));\n    return this.state.map(v => v / norm);\n  }\n\n  measure() {\n    try {\n      const probs = this.state.map(v => v * v);\n      for (let i = 0; i < probs.length; i++) {\n        if (probs[i] > 0.5) {\n          console.log(`State |${i}> with p=${probs[i].toFixed(3)}`);\n          return i;\n        }\n      }\n      return -1;\n    } catch (e) {\n      console.error("Measurement collapsed:", e);\n    }\n  }\n}\n\nconst qs = new QuantumState(4);\nqs.state[0] = 1.0;\nconst result = qs.measure();\nconsole.log("Measured:", result);';
+render()});
+
+// ===== QUANTUM PREFIX LIVE SYNC =====
+var bc=new BroadcastChannel('quantum-prefixes');
+bc.onmessage=function(e){if(e.data&&e.data.type==='state-request'&&window.QuantumPrefixes)
+window.QuantumPrefixes.broadcastState('qbit-steno-pad',{active:true})};
+window.addEventListener('load',function(){
+if(window.QuantumPrefixes){window.QuantumPrefixes.broadcastState('qbit-steno-pad',{active:true});window.QuantumPrefixes.requestStateSync()}
+var tog=document.getElementById('qp-theme-toggle');
+if(tog)document.getElementById('hdr').appendChild(tog)});
+if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(function(){});
+})()
+</script>
+</body>
+</html>
