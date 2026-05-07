@@ -270,6 +270,7 @@ html.qp-embed-chrome #search-dock.embed-min-search{padding:0;border-top:none;min
 .result-strata-connectors .rs-chip--bucket{padding:2px 5px;border-radius:4px;background:var(--bg3);border:1px solid var(--border);color:var(--dim);}
 .result-strata-connectors .rs-chip--bucket[data-bucket="news"]{color:#22c55e;border-color:rgba(34,197,94,.35);}
 .result-strata-connectors .rs-chip--bucket[data-bucket="wiki"]{color:var(--accent);border-color:rgba(124,58,237,.35);}
+.result-strata-connectors .rs-chip--bucket[data-bucket="grokipedia"]{color:#2dd4bf;border-color:rgba(45,212,191,.4);}
 .result-strata-connectors .rs-chip--bucket[data-bucket="history"]{color:var(--orange);border-color:rgba(249,115,22,.35);}
 .result-strata-connectors .rs-chip--bucket[data-bucket="reference"]{color:#38bdf8;border-color:rgba(56,189,248,.35);}
 .result-strata-connectors .rs-chip--bucket[data-bucket="video"]{color:#ef4444;border-color:rgba(239,68,68,.35);}
@@ -379,6 +380,7 @@ html.qp-embed-chrome #search-dock.embed-min-search{padding:0;border-top:none;min
 }
 .result-section--news .result-section-flag{background:rgba(13,148,136,.35);border-color:rgba(20,184,166,.55);}
 .result-section--wiki .result-section-flag{background:rgba(59,130,246,.35);border-color:rgba(59,130,246,.55);}
+.result-section--grokipedia .result-section-flag{background:rgba(20,184,166,.38);border-color:rgba(45,212,191,.6);}
 .result-section--history .result-section-flag{background:rgba(234,88,12,.35);border-color:rgba(249,115,22,.55);}
 .result-section--reference .result-section-flag{background:rgba(16,185,129,.35);border-color:rgba(52,211,153,.55);}
 .result-section--video .result-section-flag{background:rgba(239,68,68,.32);border-color:rgba(248,113,113,.5);}
@@ -396,6 +398,7 @@ html.qp-embed-chrome #search-dock.embed-min-search{padding:0;border-top:none;min
 }
 .result-section--news{background:rgba(13,148,136,.12);border-left:4px solid rgba(13,148,136,.9);}
 .result-section--wiki{background:rgba(59,130,246,.12);border-left:4px solid rgba(59,130,246,.9);}
+.result-section--grokipedia{background:rgba(20,184,166,.11);border-left:4px solid rgba(20,184,166,.92);}
 .result-section--history{background:rgba(234,88,12,.1);border-left:4px solid rgba(234,88,12,.88);}
 .result-section--reference{background:rgba(16,185,129,.11);border-left:4px solid rgba(16,185,129,.88);}
 .result-section--video{background:rgba(239,68,68,.09);border-left:4px solid rgba(239,68,68,.85);}
@@ -403,6 +406,7 @@ html.qp-embed-chrome #search-dock.embed-min-search{padding:0;border-top:none;min
 .result-section--more{background:rgba(100,116,139,.12);border-left:4px solid rgba(100,116,139,.75);}
 :root.light .result-section--news{background:rgba(13,148,136,.08);}
 :root.light .result-section--wiki{background:rgba(59,130,246,.07);}
+:root.light .result-section--grokipedia{background:rgba(20,184,166,.07);}
 :root.light .result-section--history{background:rgba(234,88,12,.07);}
 :root.light .result-section--reference{background:rgba(16,185,129,.07);}
 :root.light .result-section--video{background:rgba(239,68,68,.06);}
@@ -1377,7 +1381,8 @@ html.qp-embed-chrome .mu-agent-config .mu-hint-embed{display:block;color:var(--m
                 </div>
                 <div id="result-strata-connectors" class="result-strata-connectors" title="Connector buckets (same bands as result sections): live vs deep time where marked">
                     <button type="button" class="rs-chip rs-chip--bucket" data-bucket="news" title="Filter to wire &amp; news">Wire / news</button><span class="rs-sep" aria-hidden="true">·</span>
-                    <button type="button" class="rs-chip rs-chip--bucket" data-bucket="wiki" title="Filter to Wikipedia">Wiki / lex</button><span class="rs-sep" aria-hidden="true">·</span>
+                    <button type="button" class="rs-chip rs-chip--bucket" data-bucket="wiki" title="Filter to Wikipedia, Wiktionary, DuckDuckGo">Wiki / lex</button><span class="rs-sep" aria-hidden="true">·</span>
+                    <button type="button" class="rs-chip rs-chip--bucket" data-bucket="grokipedia" title="Filter to Grokipedia (xAI)">Grokipedia</button><span class="rs-sep" aria-hidden="true">·</span>
                     <button type="button" class="rs-chip rs-chip--bucket" data-bucket="history" title="Filter to history band (LOC newspapers + periodicals + photos)">LOC +</button><span class="rs-sep" aria-hidden="true">·</span>
                     <button type="button" class="rs-chip rs-chip--bucket" data-bucket="reference" title="Filter to research">Research</button><span class="rs-sep" aria-hidden="true">·</span>
                     <button type="button" class="rs-chip rs-chip--bucket" data-bucket="video" title="Filter to video">Video</button><span class="rs-sep" aria-hidden="true">·</span>
@@ -3034,6 +3039,7 @@ function spineSpyShortLabel(sectionKey, fullTitle) {
         spotlight: 'Top picks',
         news: 'Wire & news',
         wiki: 'Wiki & lex',
+        grokipedia: 'Grokipedia',
         history: 'History / LOC',
         reference: 'Research',
         video: 'Video',
@@ -3722,7 +3728,8 @@ function pickSpotlightIndices(results, maxN) {
 }
 function bucketForSource(src) {
     const s = (src || '').toLowerCase();
-    if (s === 'wikipedia' || s === 'grokipedia' || s === 'wiktionary' || s === 'duckduckgo') return 'wiki';
+    if (s === 'grokipedia') return 'grokipedia';
+    if (s === 'wikipedia' || s === 'wiktionary' || s === 'duckduckgo') return 'wiki';
     if (s === 'wire-news') return 'news';
     if (s === 'history-archive' || s === 'loc-periodicals' || s === 'loc-photos') return 'history';
     if (s === 'youtube' || s === 'video-transcript' || s.indexOf('youtube') >= 0) return 'video';
@@ -3735,13 +3742,14 @@ function bucketForSource(src) {
 var RESULT_SECTION_CATALOG = [
     { key: 'news', title: 'Wire & news desk (Wikinews) — live / fast', cls: 'result-section--news', axis: 'human', strata: 'sig', tempo: 'live' },
     { key: 'wiki', title: 'Wikipedia & lexicon', cls: 'result-section--wiki', axis: 'human', strata: 'atom' },
+    { key: 'grokipedia', title: 'Grokipedia (xAI)', cls: 'result-section--grokipedia', axis: 'human', strata: 'atom' },
     { key: 'history', title: 'History — LOC newspapers, periodicals, photos', cls: 'result-section--history', axis: 'history', strata: 'hist', tempo: 'past' },
     { key: 'reference', title: 'Research & data (arXiv, PubChem, GenBank, …)', cls: 'result-section--reference', axis: 'human', strata: 'qu' },
     { key: 'video', title: 'YouTube & video — live / stream', cls: 'result-section--video', axis: 'human', strata: 'photo', tempo: 'live' },
     { key: 'archives', title: 'Archives & libraries (Wayback, IA, Open Library, …)', cls: 'result-section--archives', axis: 'history', strata: 'hist', tempo: 'past' },
     { key: 'more', title: 'More connectors (FRED, CoinGecko, …)', cls: 'result-section--more', axis: 'human', strata: 'dig' }
 ];
-var SECTION_TAB_LABELS = { news: 'Wire', wiki: 'Wiki', history: 'LOC', reference: 'Research', video: 'Video', archives: 'Archives', more: 'More' };
+var SECTION_TAB_LABELS = { news: 'Wire', wiki: 'Wiki', grokipedia: 'Grokipedia', history: 'LOC', reference: 'Research', video: 'Video', archives: 'Archives', more: 'More' };
 /** Short labels for scroll-spy mirror (parent mueee bar) — matches legend bands. */
 var SCROLL_SPY_STRATA_LABELS = {
     subq: 'sub-q',
@@ -3818,6 +3826,7 @@ function notifyParentSearchFilter() {
                 var bmap = {
                     news: 'Wire / news',
                     wiki: 'Wiki / lex',
+                    grokipedia: 'Grokipedia',
                     history: 'LOC +',
                     reference: 'Research',
                     video: 'Video',
@@ -4110,7 +4119,7 @@ function renderResults(results){
         el.appendChild(spotWrap);
         anyRendered = true;
     }
-    const buckets = { wiki: [], news: [], history: [], reference: [], video: [], archives: [], more: [] };
+    const buckets = { wiki: [], grokipedia: [], news: [], history: [], reference: [], video: [], archives: [], more: [] };
     results.forEach((item, idx) => {
         if (spotSet.has(idx)) return;
         const b = bucketForSource(item.source);

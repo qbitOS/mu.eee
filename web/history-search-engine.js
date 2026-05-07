@@ -5,7 +5,7 @@
 
 (function(root) {
 
-const VERSION = '2.10.4';
+const VERSION = '2.10.5';
 
 /**
  * Optional same-origin / Worker proxy so connectors work when APIs omit CORS (Safari, localhost).
@@ -211,6 +211,109 @@ function mapLocSearchResults(d, q, meta) {
     });
 }
 
+/**
+ * Turn Grokipedia full-text hits into richer cards: deduped URLs, merged snippet variants,
+ * view counts + relevance line, optional top-of-list digest when 2+ articles.
+ * @param {string} q
+ * @param {object[]} rawRows — API `results`
+ * @param {{searchUrl?:string,maxArticles?:number}} opts
+ */
+function mapGrokipediaSearchRows(q, rawRows, opts) {
+    opts = opts || {};
+    var searchUrl = opts.searchUrl || ('https://grokipedia.com/search?q=' + encodeURIComponent(q));
+    var maxArticles = typeof opts.maxArticles === 'number' ? opts.maxArticles : 14;
+    function cleanSnippet(s) {
+        s = String(s || '').replace(/''/g, "'").replace(/<[^>]+>/g, '');
+        return s.length > 520 ? s.substring(0, 520) + '…' : s;
+    }
+    function formatViews(vc) {
+        if (vc == null || vc === '') return '';
+        var n = Number(String(vc).replace(/,/g, ''));
+        if (!isFinite(n) || n <= 0) return String(vc).trim();
+        if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B views';
+        if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M views';
+        if (n >= 1e3) return Math.round(n / 1e3) + 'k views';
+        return String(Math.round(n)) + ' views';
+    }
+    function mergeSnippetVariants(it) {
+        var parts = [];
+        var base = cleanSnippet(it.snippet || it.scrollAnchorText || '');
+        if (base) parts.push(base);
+        var vars = it.snippetVariants || [];
+        for (var vi = 0; vi < vars.length; vi++) {
+            var t = cleanSnippet((vars[vi] && vars[vi].text) || '');
+            if (t && parts.indexOf(t) === -1) parts.push(t);
+        }
+        return parts.join(' — ').substring(0, 720);
+    }
+    var seenUrl = {};
+    var pages = [];
+    (rawRows || []).slice(0, maxArticles).forEach(function (it) {
+        var slug = (it.slug != null ? String(it.slug) : '').trim();
+        var title = (it.title && String(it.title).trim()) || slug || q;
+        var url = slug ? ('https://grokipedia.com/page/' + slug) : searchUrl;
+        if (seenUrl[url]) return;
+        seenUrl[url] = 1;
+        var headBits = [];
+        var vw = formatViews(it.viewCount);
+        if (vw) headBits.push(vw);
+        if (it.relevanceScore != null && isFinite(Number(it.relevanceScore))) {
+            headBits.push('match ' + Number(it.relevanceScore).toFixed(0));
+        }
+        var head = headBits.length ? headBits.join(' · ') + '\n\n' : '';
+        pages.push({
+            title: title,
+            source: 'grokipedia',
+            url: url,
+            snippet: head + mergeSnippetVariants(it)
+        });
+    });
+    if (pages.length < 2) return pages;
+    var lines = pages.slice(0, 12).map(function (r, i) {
+        var sn = String(r.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 140);
+        return (i + 1) + '. **' + String(r.title || '').slice(0, 88) + '**\n   ' + r.url + (sn ? '\n   _' + sn + '_' : '');
+    });
+    var digest = {
+        title: 'Grokipedia — ' + pages.length + ' articles for “' + q + '”',
+        source: 'grokipedia',
+        url: searchUrl,
+        snippet:
+            'Full-text index overview — each row below is a separate article (hero images load when a **fetch proxy** is set).\n\n' +
+            lines.join('\n\n'),
+        grokDigest: true
+    };
+    return [digest].concat(pages);
+}
+
+/** When `uvspeed-fetch-proxy-url` is set, pull first `assets.grokipedia.com/wiki/images/*` from HTML for top article rows. */
+function enrichGrokipediaThumbnailsFromPageHtml(rows) {
+    if (!getFetchProxyBase() || !rows || !rows.length) return Promise.resolve(rows);
+    var jobs = [];
+    for (var i = 0; i < rows.length && jobs.length < 6; i++) {
+        var row = rows[i];
+        if (!row || row.grokDigest || row.source !== 'grokipedia') continue;
+        var u = String(row.url || '');
+        if (u.indexOf('grokipedia.com/page/') === -1) continue;
+        jobs.push(
+            corsFetch(u)
+                .then(function (res) {
+                    return res.text();
+                })
+                .then(function (html) {
+                    var m = html.match(
+                        /https:\/\/assets\.grokipedia\.com\/wiki\/images\/[a-f0-9]{8,}\.(?:png|jpe?g|webp)/i
+                    );
+                    if (m) row.thumbnail = m[0];
+                })
+                .catch(function () {})
+        );
+    }
+    if (!jobs.length) return Promise.resolve(rows);
+    return Promise.all(jobs).then(function () {
+        return rows;
+    });
+}
+
 /* ══════════════════════════════════════════════════════
    CONNECTORS
    ══════════════════════════════════════════════════════ */
@@ -250,7 +353,7 @@ const CONNECTORS = [
             .catch(() => [])
     },
     {
-        /** Grokipedia — `/api/full-text-search?query=` (JSON). No browser CORS header observed; uses corsFetch / optional Worker proxy. */
+        /** Grokipedia — `/api/full-text-search?query=` (JSON). CORS often blocks direct fetch; corsFetch + Worker proxy. Rich rows + digest + optional HTML hero images (proxy). */
         name: 'Grokipedia', icon: 'GK', enabled: true,
         search: function (q) {
             var eq = encodeURIComponent(q);
@@ -259,14 +362,12 @@ const CONNECTORS = [
                 return [{
                     title: 'Grokipedia — search: ' + q,
                     source: 'grokipedia',
-                    snippet: 'Open Grokipedia search (JSON API blocked by CORS in strict browsers — set uvspeed-fetch-proxy-url or open link).',
+                    snippet:
+                        'Could not load Grokipedia JSON in this browser context (CORS). Set **uvspeed-fetch-proxy-url** (or `window.__UVSPEED_FETCH_PROXY__`) so the search API and article HTML are reachable — you will then get many article rows, an overview digest, and hero thumbnails from article pages.\n\nOpen Grokipedia: ' +
+                        searchUrl,
                     url: searchUrl
                 }];
             };
-            function cleanSnippet(s) {
-                s = String(s || '').replace(/''/g, "'").replace(/<[^>]+>/g, '');
-                return s.length > 300 ? s.substring(0, 300) + '…' : s;
-            }
             return corsFetch('https://grokipedia.com/api/full-text-search?query=' + eq)
                 .then(function (r) {
                     if (!r.ok) throw new Error('grokipedia http');
@@ -275,17 +376,8 @@ const CONNECTORS = [
                 .then(function (d) {
                     var rows = (d && d.results) || [];
                     if (!rows.length) return linkFallback();
-                    return rows.slice(0, 8).map(function (it) {
-                        var slug = (it.slug != null ? String(it.slug) : '').trim();
-                        var title = (it.title && String(it.title).trim()) || slug || q;
-                        var sn = cleanSnippet(it.snippet || it.scrollAnchorText || '');
-                        return {
-                            title: title,
-                            source: 'grokipedia',
-                            url: slug ? ('https://grokipedia.com/page/' + slug) : searchUrl,
-                            snippet: sn
-                        };
-                    });
+                    var mapped = mapGrokipediaSearchRows(q, rows, { searchUrl: searchUrl, maxArticles: 14 });
+                    return enrichGrokipediaThumbnailsFromPageHtml(mapped);
                 })
                 .catch(function () {
                     return linkFallback();

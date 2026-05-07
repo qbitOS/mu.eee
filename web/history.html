@@ -856,13 +856,79 @@ function searchLocal(query) {
     }).filter(Boolean);
 }
 
+/** Grokipedia: expand API hits into deduped article rows + digest (history lane; no HTML thumb fetch). */
+function grokipediaConnectorMap(q, rows, searchUrl) {
+    const max = 14;
+    const clean = s => {
+        let t = String(s || '').replace(/''/g, "'").replace(/<[^>]+>/g, '');
+        return t.length > 520 ? t.slice(0, 520) + '…' : t;
+    };
+    const views = vc => {
+        if (vc == null || vc === '') return '';
+        const n = Number(String(vc).replace(/,/g, ''));
+        if (!Number.isFinite(n) || n <= 0) return String(vc).trim();
+        if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B views';
+        if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M views';
+        if (n >= 1e3) return Math.round(n / 1e3) + 'k views';
+        return String(Math.round(n)) + ' views';
+    };
+    const mergeSn = it => {
+        const parts = [];
+        const a = clean(it.snippet || it.scrollAnchorText || '');
+        if (a) parts.push(a);
+        (it.snippetVariants || []).forEach(v => {
+            const t = clean((v && v.text) || '');
+            if (t && !parts.includes(t)) parts.push(t);
+        });
+        return parts.join(' — ').slice(0, 720);
+    };
+    const seen = {};
+    const pages = [];
+    rows.slice(0, max).forEach(it => {
+        const slug = String(it.slug || '').trim();
+        const title = (it.title && String(it.title).trim()) || slug || q;
+        const url = slug ? ('https://grokipedia.com/page/' + slug) : searchUrl;
+        if (seen[url]) return;
+        seen[url] = 1;
+        const vn = views(it.viewCount);
+        const rs =
+            it.relevanceScore != null && Number.isFinite(Number(it.relevanceScore))
+                ? 'match ' + Number(it.relevanceScore).toFixed(0)
+                : '';
+        const head = vn || rs ? [vn, rs].filter(Boolean).join(' · ') + '\n\n' : '';
+        pages.push({ title, source: 'grokipedia', url, snippet: head + mergeSn(it) });
+    });
+    if (pages.length < 2) return pages;
+    const lines = pages.slice(0, 12).map((r, i) => {
+        const one = (r.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 140);
+        return (
+            i + 1 +
+            '. **' +
+            (r.title || '').slice(0, 88) +
+            '**\n   ' +
+            r.url +
+            (one ? '\n   _' + one + '_' : '')
+        );
+    });
+    return [
+        {
+            title: 'Grokipedia — ' + pages.length + ' articles for “' + q + '”',
+            source: 'grokipedia',
+            url: searchUrl,
+            snippet: 'Search overview — open rows below for full articles.\n\n' + lines.join('\n\n'),
+            grokDigest: true
+        },
+        ...pages
+    ];
+}
+
 /* ══════════════════════════════════════════════════════
    SEARCH CONNECTORS — pluggable external sources
    ══════════════════════════════════════════════════════ */
 const CONNECTORS = [
     { name: 'Local', icon: 'L', enabled: true, search: q => Promise.resolve(searchLocal(q).map(r => ({ title: r.block.title, source: 'local', id: r.block.id, score: r.score }))) },
     { name: 'Wikipedia', icon: 'W', enabled: true, search: q => fetch('https://en.wikipedia.org/w/api.php?action=opensearch&search=' + encodeURIComponent(q) + '&limit=8&format=json&origin=*').then(r => r.json()).then(d => (d[1] || []).map((t, i) => ({ title: t, source: 'wikipedia', url: d[3][i], snippet: d[2][i] }))).catch(() => []) },
-    { name: 'Grokipedia', icon: 'GK', enabled: true, search: q => { const eq = encodeURIComponent(q); const searchUrl = 'https://grokipedia.com/search?q=' + eq; const linkFallback = () => [{ title: 'Grokipedia — search: ' + q, source: 'grokipedia', snippet: 'Open Grokipedia search (JSON may be CORS-blocked — use Search fetch proxy or this link).', url: searchUrl }]; const cleanSnippet = s => { let t = String(s || '').replace(/''/g, "'").replace(/<[^>]+>/g, ''); return t.length > 300 ? t.substring(0, 300) + '…' : t; }; return fetch('https://grokipedia.com/api/full-text-search?query=' + eq).then(r => { if (!r.ok) throw new Error('gk'); return r.json(); }).then(d => { const rows = (d && d.results) || []; if (!rows.length) return linkFallback(); return rows.slice(0, 8).map(it => { const slug = String(it.slug || '').trim(); const title = (it.title && String(it.title).trim()) || slug || q; return { title, source: 'grokipedia', url: slug ? ('https://grokipedia.com/page/' + slug) : searchUrl, snippet: cleanSnippet(it.snippet || it.scrollAnchorText) }; }); }).catch(() => linkFallback()); } },
+    { name: 'Grokipedia', icon: 'GK', enabled: true, search: q => { const eq = encodeURIComponent(q); const searchUrl = 'https://grokipedia.com/search?q=' + eq; const linkFallback = () => [{ title: 'Grokipedia — search: ' + q, source: 'grokipedia', snippet: 'Open Grokipedia search (JSON may be CORS-blocked — use Search fetch proxy or this link).', url: searchUrl }]; return fetch('https://grokipedia.com/api/full-text-search?query=' + eq).then(r => { if (!r.ok) throw new Error('gk'); return r.json(); }).then(d => { const rows = (d && d.results) || []; if (!rows.length) return linkFallback(); return grokipediaConnectorMap(q, rows, searchUrl); }).catch(() => linkFallback()); } },
     { name: 'Open Library', icon: 'OL', enabled: true, search: q => fetch('https://openlibrary.org/search.json?q=' + encodeURIComponent(q) + '&limit=6').then(r => r.json()).then(d => (d.docs || []).slice(0, 6).map(doc => ({ title: doc.title, source: 'openlibrary', author: (doc.author_name || [])[0] || '', year: doc.first_publish_year, url: 'https://openlibrary.org' + doc.key }))).catch(() => []) },
     { name: 'Wayback', icon: 'WB', enabled: true, search: q => Promise.resolve([{ title: 'Wayback / Archive.org — search: ' + q, source: 'wayback', snippet: 'CDX API not CORS-safe in browser', url: 'https://archive.org/search.php?query=' + encodeURIComponent(q) }]) },
     { name: 'Sacred Texts', icon: 'ST', enabled: true, search: q => Promise.resolve([{ title: 'Search sacred-texts.com for: ' + q, source: 'sacred-texts', url: 'https://www.sacred-texts.com/search.htm?q=' + encodeURIComponent(q) }]) },
