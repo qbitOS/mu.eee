@@ -1504,7 +1504,7 @@ async function processCommand(raw) {
             term.writeln('  bench roundtrip          — full loop latency');
             term.writeln('');
             term.writeln('\x1b[36m  Universal Search:\x1b[0m');
-            term.writeln('  search <query>   — search 14 connectors (Wikipedia, arXiv, etc.)');
+            term.writeln('  search <query>   — multi-connector search (Wikipedia, Grokipedia, arXiv, etc.)');
             term.writeln('  q <query>        — alias for search');
             term.writeln('  open history     — full History timeline knowledge graph');
             term.writeln('  open search      — mobile search PWA');
@@ -3130,7 +3130,7 @@ async function processCommand(raw) {
             const query = args.join(' ');
             if (!query) {
                 term.writeln('\x1b[33m  Usage: search <query>\x1b[0m');
-                term.writeln('\x1b[90m  Searches 14 connectors: Wikipedia, arXiv, Sacred Texts, PubChem, etc.\x1b[0m');
+                term.writeln('\x1b[90m  Connectors include Wikipedia, Grokipedia, arXiv, Sacred Texts, PubChem, etc.\x1b[0m');
                 break;
             }
             term.writeln(`\x1b[36m  \u2315 Searching ${query}...\x1b[0m`);

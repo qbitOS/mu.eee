@@ -9821,7 +9821,7 @@ kbatch.setLayout('qwerty');`;
                 termPrint('<b>dict &lt;word&gt;</b>   \u2014 dictionary lookup');
                 termPrint('<b>quantum</b>       \u2014 build + run quantum circuit');
                 termPrint('<b>qasm</b>          \u2014 show current QASM');
-                termPrint('<b>search &lt;q&gt;</b>    \u2014 universal search (14 connectors)');
+                termPrint('<b>search &lt;q&gt;</b>    \u2014 universal search (Wikipedia, Grokipedia, arXiv, \u2026)');
                 termPrint('<b>uterm &lt;text&gt;</b>   \u2014 send payload to new quantum terminal bus');
                 termPrint('<b>musica [text]</b>  \u2014 emit BPM + qBPM/QHz/ns payload to DAW bridges');
                 termPrint('<b>blocks [text]</b>  \u2014 emit prefix-tagged block payload to quantum-gutter');

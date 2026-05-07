@@ -1235,7 +1235,7 @@ html.qp-embed-chrome .mu-agent-config .mu-hint-embed{display:block;color:var(--m
                 <div id="search-media-strip" class="search-media-strip" hidden role="region" aria-label="Media and waveform quick picks"></div>
                 <div id="results-scroll-progress" class="results-scroll-progress" aria-hidden="true"></div>
                 <div id="results">
-                    <div class="empty"><div class="empty-hero-icon" aria-hidden="true"><img src="vendor/heroicons/24/outline/document-magnifying-glass.svg" width="56" height="56" alt="" /></div>Search across Wikipedia, arXiv, Sacred Texts,<br>PubChem, Wayback Machine, Open Library & more.<br><br><span style="font-family:var(--mono);font-size:10px;color:var(--accent);">Works offline-first. No account needed.</span></div>
+                    <div class="empty"><div class="empty-hero-icon" aria-hidden="true"><img src="vendor/heroicons/24/outline/document-magnifying-glass.svg" width="56" height="56" alt="" /></div>Search across Wikipedia, Grokipedia, arXiv, Sacred Texts,<br>PubChem, Wayback Machine, Open Library & more.<br><br><span style="font-family:var(--mono);font-size:10px;color:var(--accent);">Works offline-first. No account needed.</span></div>
                 </div>
                 </div>
                 </div>
@@ -2143,7 +2143,7 @@ function parseDisplayTitle(title, source) {
 }
 
 var SOURCE_FAVICON_DOMAIN = {
-    wikipedia: 'wikipedia.org', openlibrary: 'openlibrary.org', wayback: 'archive.org',
+    wikipedia: 'wikipedia.org', grokipedia: 'grokipedia.com', openlibrary: 'openlibrary.org', wayback: 'archive.org',
     'loc-periodicals': 'loc.gov', 'loc-photos': 'loc.gov',
     'sacred-texts': 'sacred-texts.com', yale: 'library.yale.edu', arda: 'religiondata.org',
     arxiv: 'arxiv.org', pubchem: 'pubchem.ncbi.nlm.nih.gov', genbank: 'ncbi.nlm.nih.gov',
@@ -3702,7 +3702,7 @@ function pickSpotlightIndices(results, maxN) {
     const n = results.length;
     const used = new Array(n).fill(false);
     const out = [];
-    const prefer = ['duckduckgo','wikipedia','wire-news','history-archive','youtube','arxiv','meta-research','openlibrary','wayback','internet-archive','wiktionary'];
+    const prefer = ['duckduckgo','wikipedia','grokipedia','wire-news','history-archive','youtube','arxiv','meta-research','openlibrary','wayback','internet-archive','wiktionary'];
     prefer.forEach(ps => {
         for (let i = 0; i < n && out.length < maxN; i++) {
             if (used[i]) continue;
@@ -3722,7 +3722,7 @@ function pickSpotlightIndices(results, maxN) {
 }
 function bucketForSource(src) {
     const s = (src || '').toLowerCase();
-    if (s === 'wikipedia' || s === 'wiktionary' || s === 'duckduckgo') return 'wiki';
+    if (s === 'wikipedia' || s === 'grokipedia' || s === 'wiktionary' || s === 'duckduckgo') return 'wiki';
     if (s === 'wire-news') return 'news';
     if (s === 'history-archive' || s === 'loc-periodicals' || s === 'loc-photos') return 'history';
     if (s === 'youtube' || s === 'video-transcript' || s.indexOf('youtube') >= 0) return 'video';

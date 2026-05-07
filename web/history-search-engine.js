@@ -5,7 +5,7 @@
 
 (function(root) {
 
-const VERSION = '2.10.3';
+const VERSION = '2.10.4';
 
 /**
  * Optional same-origin / Worker proxy so connectors work when APIs omit CORS (Safari, localhost).
@@ -110,6 +110,8 @@ const SRC_COLORS = {
     fred: '#e11d48', worldbank: '#0ea5e9', coingecko: '#10b981',
     wiktionary: '#9333ea', datamuse: '#d946ef', youtube: '#ff0000',
     duckduckgo: '#de5833',
+    /** Grokipedia (xAI) — full-text JSON search; CORS may require fetch proxy */
+    grokipedia: '#14b8a6',
     'video-transcript': '#f59e0b',
     /** Wikinews — neutral wire-style articles (Wikimedia; CORS-safe in browser) */
     'wire-news': '#0d9488',
@@ -213,7 +215,7 @@ function mapLocSearchResults(d, q, meta) {
    CONNECTORS
    ══════════════════════════════════════════════════════ */
 /** Data connectors (expand: push a new object with { name, icon, enabled, search: async (q) => [...] }).
- *  Current count: 37 — Wikipedia, Wikinews, DuckDuckGo, LOC Newspapers, LOC Periodicals, LOC Photos, Open Library, Wayback, Sacred Texts,
+ *  Current count: 38 — Wikipedia, Grokipedia, Wikinews, DuckDuckGo, LOC Newspapers, LOC Periodicals, LOC Photos, Open Library, Wayback, Sacred Texts,
  *  Yale, ARDA, arXiv, PubChem, GenBank, LGBTQ Archives, Meta Research, HathiTrust, Internet Archive,
  *  FRED, World Bank, CoinGecko, Wiktionary, Datamuse, YouTube, Video Transcripts,
  *  Agency wires, Agency live TX (world wires + live CC / captions), Hacker News (Algolia), Substack + YC/HN portals, Crunchbase, Sequoia,
@@ -246,6 +248,49 @@ const CONNECTORS = [
                     });
             })
             .catch(() => [])
+    },
+    {
+        /** Grokipedia — `/api/full-text-search?query=` (JSON). No browser CORS header observed; uses corsFetch / optional Worker proxy. */
+        name: 'Grokipedia', icon: 'GK', enabled: true,
+        search: function (q) {
+            var eq = encodeURIComponent(q);
+            var searchUrl = 'https://grokipedia.com/search?q=' + eq;
+            var linkFallback = function () {
+                return [{
+                    title: 'Grokipedia — search: ' + q,
+                    source: 'grokipedia',
+                    snippet: 'Open Grokipedia search (JSON API blocked by CORS in strict browsers — set uvspeed-fetch-proxy-url or open link).',
+                    url: searchUrl
+                }];
+            };
+            function cleanSnippet(s) {
+                s = String(s || '').replace(/''/g, "'").replace(/<[^>]+>/g, '');
+                return s.length > 300 ? s.substring(0, 300) + '…' : s;
+            }
+            return corsFetch('https://grokipedia.com/api/full-text-search?query=' + eq)
+                .then(function (r) {
+                    if (!r.ok) throw new Error('grokipedia http');
+                    return r.json();
+                })
+                .then(function (d) {
+                    var rows = (d && d.results) || [];
+                    if (!rows.length) return linkFallback();
+                    return rows.slice(0, 8).map(function (it) {
+                        var slug = (it.slug != null ? String(it.slug) : '').trim();
+                        var title = (it.title && String(it.title).trim()) || slug || q;
+                        var sn = cleanSnippet(it.snippet || it.scrollAnchorText || '');
+                        return {
+                            title: title,
+                            source: 'grokipedia',
+                            url: slug ? ('https://grokipedia.com/page/' + slug) : searchUrl,
+                            snippet: sn
+                        };
+                    });
+                })
+                .catch(function () {
+                    return linkFallback();
+                });
+        }
     },
     {
         /** Wire desk: Wikinews (editorial, date-stamped; same-origin-friendly as Wikipedia). */
@@ -2180,6 +2225,7 @@ var DEFAULT_GOVERNANCE = {
 
 var GOVERNANCE_BY_CONNECTOR = {
     wikipedia: { biasLabel: 'center', biasAxis: 0, factuality: 0.88, longevity: 0.98, ownership: 'Wikimedia', transparency: 0.75, pipeline: 'wiki-community' },
+    grokipedia: { biasLabel: 'org', biasAxis: 0, factuality: 0.65, longevity: 0.55, ownership: 'xAI', transparency: 0.5, pipeline: 'llm-encyclopedia' },
     wiktionary: { biasLabel: 'center', biasAxis: 0, factuality: 0.85, longevity: 0.96, ownership: 'Wikimedia', transparency: 0.75, pipeline: 'wiki-community' },
     'wire-news': { biasLabel: 'center', biasAxis: 0, factuality: 0.72, longevity: 0.75, ownership: 'Wikinews', transparency: 0.6, pipeline: 'editorial-wiki' },
     'history-archive': { biasLabel: 'center', biasAxis: 0, factuality: 0.85, longevity: 0.95, ownership: 'Library of Congress', transparency: 0.9, pipeline: 'federal-archive' },
@@ -2240,6 +2286,7 @@ var GOVERNANCE_BY_HOST = {
     'sequoiacap.com': { biasLabel: 'vc-surface', biasAxis: 0, factuality: 0.5, longevity: 0.88, ownership: 'Sequoia Capital', transparency: 0.45, pipeline: 'vc-pr' },
     'crunchbase.com': { biasLabel: 'commercial-db', biasAxis: 0, factuality: 0.65, longevity: 0.72, ownership: 'Crunchbase', transparency: 0.55, pipeline: 'startup-db' },
     'wikipedia.org': { biasLabel: 'center', biasAxis: 0, factuality: 0.88, longevity: 0.98, ownership: 'Wikimedia', transparency: 0.75, pipeline: 'wiki-community' },
+    'grokipedia.com': { biasLabel: 'org', biasAxis: 0, factuality: 0.65, longevity: 0.55, ownership: 'xAI', transparency: 0.5, pipeline: 'llm-encyclopedia' },
     'wiktionary.org': { biasLabel: 'center', biasAxis: 0, factuality: 0.85, longevity: 0.96, ownership: 'Wikimedia', transparency: 0.75, pipeline: 'wiki-community' },
     'wikinews.org': { biasLabel: 'center', biasAxis: 0, factuality: 0.72, longevity: 0.75, ownership: 'Wikimedia', transparency: 0.6, pipeline: 'editorial-wiki' },
     'noaa.gov': { biasLabel: 'gov', biasAxis: 0, factuality: 0.92, longevity: 0.98, ownership: 'NOAA', transparency: 0.9, pipeline: 'gov-climate-weather' },

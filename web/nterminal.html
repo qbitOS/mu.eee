@@ -3992,7 +3992,7 @@ document.getElementById('btn-nuke').onclick=function(){
   var connRow=document.getElementById('s-connectors');
   if(!input||!resultsEl) return;
 
-  var TYPE_COLORS={QPU:'#c9a84c',Command:'#3fb950',Unit:'#58a6ff',Gate:'#d2a8ff',Prefix:'#f0883e',Wikipedia:'#3b82f6',arXiv:'#8b5cf6',PubChem:'#06b6d4',OpenLibrary:'#f97316','Sacred Texts':'#a78bfa',ARDA:'#ef4444',GenBank:'#22d3ee',HathiTrust:'#84cc16',Wiktionary:'#9333ea',FRED:'#e11d48',WorldBank:'#0ea5e9',YouTube:'#ff0000'};
+  var TYPE_COLORS={QPU:'#c9a84c',Command:'#3fb950',Unit:'#58a6ff',Gate:'#d2a8ff',Prefix:'#f0883e',Wikipedia:'#3b82f6',Grokipedia:'#14b8a6',arXiv:'#8b5cf6',PubChem:'#06b6d4',OpenLibrary:'#f97316','Sacred Texts':'#a78bfa',ARDA:'#ef4444',GenBank:'#22d3ee',HathiTrust:'#84cc16',Wiktionary:'#9333ea',FRED:'#e11d48',WorldBank:'#0ea5e9',YouTube:'#ff0000'};
   var TONE_COLORS={academic:'#3b82f6',marketing:'#f97316',educational:'#34d399',narrative:'#a78bfa',legal:'#fbbf24',crisis:'#ef4444'};
   var activeFilter='all';
   var SEARCH_INDEX=[];
@@ -4000,6 +4000,7 @@ document.getElementById('btn-nuke').onclick=function(){
   // ── Connector pills ──
   var CONNECTORS=[
     {name:'Wikipedia',icon:'W',color:'#3b82f6',enabled:true},
+    {name:'Grokipedia',icon:'GK',color:'#14b8a6',enabled:true},
     {name:'Open Library',icon:'OL',color:'#f97316',enabled:true},
     {name:'arXiv',icon:'aX',color:'#8b5cf6',enabled:true},
     {name:'PubChem',icon:'PC',color:'#06b6d4',enabled:true},
