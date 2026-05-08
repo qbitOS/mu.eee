@@ -867,6 +867,18 @@ html.qp-embed-chrome #mu-answer-pane.mu-answer-pane--collapsed{
   box-shadow:none!important;
   overflow:hidden!important;
 }
+/* Belt-and-suspenders: hide rail body when sheet collapses (some WebKit flex sheets still paint children). */
+html.qp-embed-chrome #mu-answer-pane.mu-answer-pane--collapsed #mu-rail-pane-body,
+html.qp-embed-chrome #mu-answer-pane.mu-answer-pane--collapsed .mu-rail-pane-body{
+  display:none!important;
+  max-height:0!important;
+  margin:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  visibility:hidden!important;
+  flex:none!important;
+  pointer-events:none!important;
+}
 html.qp-embed-chrome #mu-answer-pane:not(.mu-answer-pane--collapsed) .mu-rail-pane-body{
   flex:1 1 auto;
   min-height:0;
@@ -5350,13 +5362,36 @@ function fuQuickConvert(val, fromSym, toSym){
 /* ══════════════════════════════════════════════════════
    EVENTS
    ══════════════════════════════════════════════════════ */
-$('search-btn').addEventListener('click', () => doSearch($('search-input').value));
-$('search-input').addEventListener('keydown', function (e) {
-    if (e.key !== 'Enter') return;
-    if (e.shiftKey) return;
-    e.preventDefault();
-    doSearch($('search-input').value);
-});
+var _searchBtn = $('search-btn');
+if (_searchBtn) {
+    _searchBtn.addEventListener('click', function () {
+        var si = $('search-input');
+        doSearch(si ? si.value : '');
+    });
+} else {
+    try {
+        console.warn('search.html: #search-btn not found — bind Search via delegation');
+    } catch (eSb) {}
+    var _appForSearch = $('app');
+    if (_appForSearch && !_appForSearch.dataset.searchBtnBound) {
+        _appForSearch.dataset.searchBtnBound = '1';
+        _appForSearch.addEventListener('click', function (ev) {
+            var sb = ev.target && ev.target.closest ? ev.target.closest('#search-btn') : null;
+            if (!sb) return;
+            var si = $('search-input');
+            doSearch(si ? si.value : '');
+        });
+    }
+}
+var _searchInput = $('search-input');
+if (_searchInput) {
+    _searchInput.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter') return;
+        if (e.shiftKey) return;
+        e.preventDefault();
+        doSearch(this.value);
+    });
+}
 (function initSearchMediaStripLive() {
     var si = $('search-input');
     if (!si) return;
@@ -5505,13 +5540,23 @@ function syncMuRailCollapseUi() {
         }
     } catch (e0) {}
     syncMuRailCollapseUi();
-    btn.addEventListener('click', function () {
-        pane.classList.toggle('mu-answer-pane--collapsed');
-        syncMuRailCollapseUi();
-        try {
-            localStorage.setItem(key, pane.classList.contains('mu-answer-pane--collapsed') ? '1' : '0');
-        } catch (e1) {}
-    });
+    /* Delegated toggle: survives embed reparenting (chevron → status bar) and img-inside-button clicks. */
+    var appRoot = $('app');
+    if (appRoot && !appRoot.dataset.muRailToggleBound) {
+        appRoot.dataset.muRailToggleBound = '1';
+        appRoot.addEventListener('click', function (ev) {
+            var t = ev.target && ev.target.closest ? ev.target.closest('#mu-rail-collapse-toggle') : null;
+            if (!t) return;
+            ev.preventDefault();
+            var p = $('mu-answer-pane');
+            if (!p) return;
+            p.classList.toggle('mu-answer-pane--collapsed');
+            syncMuRailCollapseUi();
+            try {
+                localStorage.setItem(key, p.classList.contains('mu-answer-pane--collapsed') ? '1' : '0');
+            } catch (e1) {}
+        });
+    }
 })();
 (function initMueeeRailFeedMirrorOnInput() {
     var si = $('search-input');
