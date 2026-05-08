@@ -1388,10 +1388,12 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
       }
     });
     promptInput.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        if (promptForm) promptForm.requestSubmit();
-      }
+      if (e.shiftKey) return;
+      if (e.isComposing === true || e.keyCode === 229) return;
+      var isEnter = e.key === 'Enter' || e.key === 'NumpadEnter' || e.keyCode === 13 || e.which === 13;
+      if (!isEnter) return;
+      e.preventDefault();
+      if (promptForm) promptForm.requestSubmit();
     });
     var fieldWrap = document.querySelector('.mueee-prompt-field-wrap');
     function syncMueeePromptSearchBrand() {

@@ -1698,6 +1698,16 @@ if (!HS) { console.error('HistorySearch engine not loaded'); return; }
 const $ = id => document.getElementById(id);
 const esc = s => (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
+/** Enter (not Shift+Enter) for submit — IME-safe; covers Numpad Enter and legacy keyCode. */
+function isSearchSubmitEnter(e) {
+    if (!e || e.shiftKey) return false;
+    if (e.isComposing === true || e.keyCode === 229) return false;
+    var k = e.key;
+    if (k === 'Enter' || k === 'NumpadEnter') return true;
+    if (e.keyCode === 13 || e.which === 13) return true;
+    return false;
+}
+
 /** Populated by doSearch — must exist before saved tab mode runs .click() → aiRefresh(). */
 let _lastResults = [];
 
@@ -5386,8 +5396,7 @@ if (_searchBtn) {
 var _searchInput = $('search-input');
 if (_searchInput) {
     _searchInput.addEventListener('keydown', function (e) {
-        if (e.key !== 'Enter') return;
-        if (e.shiftKey) return;
+        if (!isSearchSubmitEnter(e)) return;
         e.preventDefault();
         doSearch(this.value);
     });
