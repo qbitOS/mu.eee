@@ -5999,8 +5999,12 @@ window.addEventListener('message', function (ev) {
             for (var ai = 0; ai < att.length; ai++) {
                 var a = att[ai];
                 if (!a) continue;
-                if (a.url) parts.push(String(a.url).trim());
-                else if (a.dataUrl && (a.type === 'image' || a.type === 'audio')) parts.push(a.dataUrl);
+                if (a.url) {
+                    parts.push(String(a.url).trim());
+                    if (a.youtubeCanonical && String(a.youtubeCanonical).trim() !== String(a.url).trim()) {
+                        parts.push(String(a.youtubeCanonical).trim());
+                    }
+                } else if (a.dataUrl && (a.type === 'image' || a.type === 'audio')) parts.push(a.dataUrl);
                 else if (a.name) parts.push('[file: ' + a.name + ']');
             }
         }

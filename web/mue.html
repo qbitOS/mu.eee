@@ -525,7 +525,7 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
 <dialog id="mueee-link-dialog" class="mueee-shell-dialog" aria-labelledby="mueee-link-dialog-title">
   <div class="mueee-dialog-inner">
     <h3 id="mueee-link-dialog-title">Add link or reference</h3>
-    <p class="mueee-dialog-hint">Paste from any app: <code>http(s)</code>, IP / IPv6, <code>ble://</code> <code>nfc://</code> <code>airdrop://</code> <code>ipfs://</code> … One URL per line.</p>
+    <p class="mueee-dialog-hint">Paste from any app: <code>http(s)</code>, IP / IPv6, <code>ble://</code> <code>nfc://</code> <code>airdrop://</code> <code>ipfs://</code> … One URL per line. YouTube links normalize to <code>youtube.com/watch?v=…</code>; set <code>localStorage</code> key <code>mueee-yt-stream-url-template</code> to a URL containing <code>{{id}}</code> to attach your direct stream first and keep the watch URL as fallback.</p>
     <textarea id="mueee-link-dialog-input" rows="5" placeholder="https://example.com/path&#10;ble://device/&#10;192.168.1.10/status"></textarea>
     <div class="mueee-dialog-row">
       <button type="button" class="mueee-dialog-paste" id="mueee-link-dialog-paste">Paste from clipboard</button>
@@ -562,6 +562,12 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
 (function(){
   var b = window.__MUEEE_PANE_BASE__ || '';
   document.write('<script src="' + (b ? b + 'mueee-staged-blob-mse.js' : 'mueee-staged-blob-mse.js') + '"><\/script>');
+})();
+</script>
+<script>
+(function(){
+  var b = window.__MUEEE_PANE_BASE__ || '';
+  document.write('<script src="' + (b ? b + 'mueee-youtube-stream-link.js' : 'mueee-youtube-stream-link.js') + '"><\/script>');
 })();
 </script>
 <script>
@@ -1031,6 +1037,7 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
     return mueeePromptAttachments.map(function (a) {
       var o = { type: a.type, name: a.name };
       if (a.url) o.url = a.url;
+      if (a.youtubeCanonical) o.youtubeCanonical = a.youtubeCanonical;
       if (a.dataUrl) o.dataUrl = a.dataUrl;
       return o;
     });
@@ -1095,6 +1102,16 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
   function mueeeLinkDisplayName(href) {
     return String(href || '').replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').split(/[?#]/)[0].slice(0, 48);
   }
+  function mueeeAttachLinkFromHref(href) {
+    if (window.MueeeYouTubeStreamLink && typeof window.MueeeYouTubeStreamLink.buildLinkAttachment === 'function') {
+      var b = window.MueeeYouTubeStreamLink.buildLinkAttachment(href);
+      var att = { type: 'link', name: mueeeLinkDisplayName(b.url), url: b.url };
+      if (b.youtubeCanonical) att.youtubeCanonical = b.youtubeCanonical;
+      mueeeAddAttachment(att);
+      return;
+    }
+    mueeeAddAttachment({ type: 'link', name: mueeeLinkDisplayName(href), url: href });
+  }
   function mueeeOpenLinkDialog() {
     mueeeDialogClose(document.getElementById('mueee-audio-dialog'));
     if (mueeeLinkDialogInput) mueeeLinkDialogInput.value = '';
@@ -1114,10 +1131,10 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
     lines.forEach(function (line) {
       var href = mueeeParseExternalRef(line);
       if (href) {
-        mueeeAddAttachment({ type: 'link', name: mueeeLinkDisplayName(href), url: href });
+        mueeeAttachLinkFromHref(href);
         added += 1;
       } else if (/^[a-z][a-z0-9+.-]*:/i.test(line)) {
-        mueeeAddAttachment({ type: 'link', name: line.slice(0, 48), url: line });
+        mueeeAttachLinkFromHref(line);
         added += 1;
       }
     });
@@ -1384,12 +1401,12 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
         var href = mueeeParseExternalRef(tm);
         if (href) {
           e.preventDefault();
-          mueeeAddAttachment({ type: 'link', name: mueeeLinkDisplayName(href), url: href });
+          mueeeAttachLinkFromHref(href);
           return;
         }
         if (/^[a-z][a-z0-9+.-]*:/i.test(tm)) {
           e.preventDefault();
-          mueeeAddAttachment({ type: 'link', name: tm.slice(0, 48), url: tm });
+          mueeeAttachLinkFromHref(tm);
         }
       }
     });

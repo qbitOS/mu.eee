@@ -34,6 +34,8 @@
   "version": "1.1.0",
   "shellStreaming": {
     "stagedBlobMse": "web/mueee-staged-blob-mse.js",
-    "ffmpegDocs": "https://ffmpeg.org/download.html#repositories"
+    "ffmpegDocs": "https://ffmpeg.org/download.html#repositories",
+    "youtubeStreamTemplateKey": "mueee-yt-stream-url-template",
+    "youtubeStreamLink": "web/mueee-youtube-stream-link.js"
   }
 }
