@@ -413,6 +413,18 @@ html.qp-embed-chrome #search-dock.embed-min-search{padding:0;border-top:none;min
 :root.light .result-section--archives{background:rgba(245,158,11,.07);}
 :root.light .result-section--more{background:rgba(100,116,139,.08);}
 :root.light .result-spotlight{background:rgba(124,58,237,.06);}
+/* News bucket: up to five auto story threads (token overlap on title + snippet) */
+.result.result--accordion.result--news-cluster{border-left:4px solid transparent;box-sizing:border-box;}
+.result--news-cluster-0{border-left-color:#0f766e!important;background:rgba(20,184,166,.12);}
+.result--news-cluster-1{border-left-color:#4f46e5!important;background:rgba(99,102,241,.11);}
+.result--news-cluster-2{border-left-color:#b45309!important;background:rgba(251,191,36,.1);}
+.result--news-cluster-3{border-left-color:#be185d!important;background:rgba(236,72,153,.09);}
+.result--news-cluster-4{border-left-color:#0e7490!important;background:rgba(6,182,212,.11);}
+:root.light .result--news-cluster-0{background:rgba(20,184,166,.07);}
+:root.light .result--news-cluster-1{background:rgba(99,102,241,.07);}
+:root.light .result--news-cluster-2{background:rgba(251,191,36,.07);}
+:root.light .result--news-cluster-3{background:rgba(236,72,153,.06);}
+:root.light .result--news-cluster-4{background:rgba(6,182,212,.07);}
 .result-filter-strip{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:6px 10px;font:600 9px var(--mono);color:var(--muted);background:rgba(124,58,237,.08);border-bottom:1px solid rgba(124,58,237,.22);flex-shrink:0;}
 html.qp-embed-chrome .result-filter-strip{
   position:sticky;top:0;z-index:32;
@@ -425,6 +437,28 @@ html.qp-embed-chrome .result-filter-strip{
 .result-filter-strip-label{color:var(--text);}
 .result-filter-clear{background:var(--bg2);border:1px solid var(--border);color:var(--cyan);font:600 9px var(--mono);padding:4px 10px;border-radius:6px;cursor:pointer;}
 .result-filter-clear:hover{border-color:var(--cyan);}
+.result-timestamps-hud,.result-set-timestamps-strip{
+  font:600 9px var(--mono);
+  color:var(--dim);
+  padding:6px 10px;
+  line-height:1.45;
+  flex-shrink:0;
+  word-break:break-word;
+  background:rgba(15,23,42,.42);
+  border-bottom:1px solid rgba(100,116,139,.28);
+}
+:root.light .result-timestamps-hud,:root.light .result-set-timestamps-strip{background:rgba(248,250,252,.92);border-bottom-color:rgba(148,163,184,.35);}
+.result-set-timestamps-strip{color:var(--muted);}
+html.qp-embed-chrome .result-timestamps-hud{
+  position:sticky;top:0;z-index:31;
+  backdrop-filter:saturate(1.05) blur(5px);
+  -webkit-backdrop-filter:saturate(1.05) blur(5px);
+  box-shadow:0 1px 0 rgba(15,23,42,.2);
+}
+.r-timestamps-lead{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 0;margin-top:5px;font:600 9px var(--mono);color:var(--cyan);line-height:1.4;}
+.r-timestamps-lead .r-ts-lbl{opacity:.78;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);}
+.r-timestamps-lead .r-ts-val{color:var(--text);}
+.r-timestamps-lead .r-ts-sep{opacity:.45;padding:0 4px;color:var(--muted);}
 .rs-chip--filter-active{box-shadow:0 0 0 2px rgba(124,58,237,.45);border-color:rgba(124,58,237,.55)!important;}
 .rainbow-vertical span[role="button"]{cursor:pointer;transition:box-shadow .15s,filter .15s;}
 .rainbow-vertical span[role="button"]:focus-visible{outline:2px solid var(--cyan);outline-offset:1px;}
@@ -936,6 +970,15 @@ html.qp-embed-chrome #app{height:100%;min-height:100%;flex:1 1 0%;min-height:0;}
 /* Heatmap view */
 .ai-heatmap-wrap{padding:12px 16px;flex:1;overflow-y:auto;}
 .ai-heatmap-info{font-family:var(--mono);font-size:10px;color:var(--muted);margin-bottom:8px;}
+.ai-heat-lens-toolbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px;}
+.ai-heat-lens-tab{font:600 9px var(--mono);padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:var(--bg2);color:var(--muted);cursor:pointer;}
+.ai-heat-lens-tab:hover{color:var(--text);border-color:var(--cyan);}
+.ai-heat-lens-tab[aria-selected="true"]{border-color:rgba(124,58,237,.55);color:var(--cyan);box-shadow:0 0 0 1px rgba(124,58,237,.25);}
+.ai-heat-lens-pane{display:none;}
+.ai-heat-lens-pane--active{display:block;}
+.ai-echarts-host{width:100%;min-height:360px;border-radius:8px;border:1px solid var(--border);background:var(--bg2);}
+.ai-echarts-host--sm{min-height:200px;margin-top:8px;}
+.ai-heat-lens-hint{font:500 9px var(--mono);color:var(--dim);margin:6px 0 8px;line-height:1.45;max-width:90ch;}
 /* Weights table */
 .ai-weights{padding:12px 16px;flex:1;overflow-y:auto;}
 .ai-weights table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:10px;}
@@ -1058,6 +1101,8 @@ html.qp-embed-chrome #connectors-wrap{display:none!important;}
   html.qp-embed-chrome .result-strata-details > summary.result-strata-summary{padding:5px 8px;font-size:8px;}
   html.qp-embed-chrome .result-strata-legend,
   html.qp-embed-chrome .result-strata-connectors{max-height:32px;padding:2px 6px;}
+  html.qp-embed-chrome .result-set-timestamps-strip{font-size:8px;padding:4px 6px;max-height:44px;overflow-y:auto;}
+  html.qp-embed-chrome .result-timestamps-hud{font-size:8px;padding:4px 8px;}
   /* Rail stream sheet height: set by html.qp-embed-chrome #mu-answer-pane + :has() padding on .search-mu-split */
   html.qp-embed-chrome .mu-md-stream{max-height:min(20vh,200px);}
   html.qp-embed-chrome #results{padding:6px 8px 10px;gap:6px;}
@@ -1234,6 +1279,7 @@ html.qp-embed-chrome .mu-agent-config .mu-hint-embed{display:block;color:var(--m
                 <div class="search-mu-split">
                 <div class="search-mu-results-col">
                 <div class="results-scroll-wrap">
+                <div id="result-timestamps-hud" class="result-timestamps-hud" hidden aria-live="polite" title="Posted and last-updated coverage for visible cards"></div>
                 <div id="result-filter-strip" class="result-filter-strip" hidden aria-live="polite"></div>
                 <div class="results-inner-wrap">
                 <div id="search-media-strip" class="search-media-strip" hidden role="region" aria-label="Media and waveform quick picks"></div>
@@ -1298,13 +1344,28 @@ html.qp-embed-chrome .mu-agent-config .mu-hint-embed{display:block;color:var(--m
         <div class="ai-board" id="ai-board"></div>
         <!-- Weights View -->
         <div class="ai-weights" id="ai-weights" style="display:none;"></div>
-        <!-- Heatmap View -->
+        <!-- Heatmap View — engagement canvas + Apache ECharts lenses (cluster graph, geo, agency race) -->
         <div class="ai-heatmap-wrap" id="ai-heatmap" style="display:none;">
             <div class="ai-heatmap-info" id="ai-heat-info">Click results to build engagement heatmap</div>
-            <canvas id="ai-heat-canvas" style="width:100%;border-radius:8px;border:1px solid var(--border);"></canvas>
-            <div style="margin-top:8px;">
-                <canvas id="ai-vision-canvas" style="width:100%;border-radius:8px;border:1px solid var(--border);"></canvas>
-                <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px;">Vision Zone Analysis — page structure importance mapping</div>
+            <div class="ai-heat-lens-toolbar" role="tablist" aria-label="Heatmap lens">
+                <button type="button" class="ai-heat-lens-tab" role="tab" data-ai-heat-lens="engage" aria-selected="true">Engagement</button>
+                <button type="button" class="ai-heat-lens-tab" role="tab" data-ai-heat-lens="cluster">Cluster graph</button>
+                <button type="button" class="ai-heat-lens-tab" role="tab" data-ai-heat-lens="geo">Geo map</button>
+                <button type="button" class="ai-heat-lens-tab" role="tab" data-ai-heat-lens="race">Agency race</button>
+            </div>
+            <p class="ai-heat-lens-hint" id="ai-heat-lens-hint">Cluster graph: force layout on fused hits (story cluster + token links). Geo: approximate pins from <code>location</code> / URL host heuristics. Agency race: participation-weighted pecking order (wire vs independent vs editorial lean) + bias-axis gauge — inspired by <a href="https://echarts.apache.org/examples/en/editor.html?c=graph-webkit-dep" target="_blank" rel="noopener noreferrer">ECharts graph</a>, <a href="https://echarts.apache.org/examples/en/editor.html?c=geo-graph" target="_blank" rel="noopener noreferrer">geo + graph</a>, and <a href="https://dojo.amcharts.com/chart-race/" target="_blank" rel="noopener noreferrer">chart-race</a> pacing.</p>
+            <div id="ai-heat-pane-engage" class="ai-heat-lens-pane ai-heat-lens-pane--active">
+                <canvas id="ai-heat-canvas" style="width:100%;border-radius:8px;border:1px solid var(--border);"></canvas>
+                <div style="margin-top:8px;">
+                    <canvas id="ai-vision-canvas" style="width:100%;border-radius:8px;border:1px solid var(--border);"></canvas>
+                    <div style="font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:4px;">Vision Zone Analysis — page structure importance mapping</div>
+                </div>
+            </div>
+            <div id="ai-heat-pane-cluster" class="ai-heat-lens-pane"><div id="ai-echarts-cluster" class="ai-echarts-host" role="img" aria-label="Result cluster graph"></div></div>
+            <div id="ai-heat-pane-geo" class="ai-heat-lens-pane"><div id="ai-echarts-geo" class="ai-echarts-host" role="img" aria-label="Geo pins for results"></div></div>
+            <div id="ai-heat-pane-race" class="ai-heat-lens-pane">
+                <div id="ai-echarts-race" class="ai-echarts-host" style="min-height:280px;" role="img" aria-label="Agency participation race"></div>
+                <div id="ai-echarts-lean" class="ai-echarts-host ai-echarts-host--sm" role="img" aria-label="Weighted editorial lean"></div>
             </div>
         </div>
         <!-- Export View -->
@@ -1389,6 +1450,7 @@ html.qp-embed-chrome .mu-agent-config .mu-hint-embed{display:block;color:var(--m
                     <button type="button" class="rs-chip rs-chip--bucket" data-bucket="archives" title="Filter to archives">Archives</button><span class="rs-sep" aria-hidden="true">·</span>
                     <button type="button" class="rs-chip rs-chip--bucket" data-bucket="more" title="Filter to more">More</button>
                 </div>
+                <div id="result-set-timestamps-strip" class="result-set-timestamps-strip" hidden aria-live="polite" title="Posted and last-updated coverage for the visible result cards"></div>
                     </div>
                 </details>
     </div>
@@ -1588,6 +1650,7 @@ html.qp-embed-chrome .mu-agent-config .mu-hint-embed{display:block;color:var(--m
 <script src="qbit-steno.js"></script>
 <script src="isomorphic-export-facet.js"></script>
 <script src="history-search-engine.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js" crossorigin="anonymous"></script>
 <script src="search-transcript-pipelines.js"></script>
 <script src="spine-hub-catalog.js"></script>
 <script src="search-spine-concepts.js"></script>
@@ -2085,9 +2148,88 @@ function formatResultDateDisplay(raw) {
     return t.length > 48 ? t.slice(0, 45) + '…' : t;
 }
 
+function parseResultDateMs(raw) {
+    if (raw == null || raw === '') return NaN;
+    var d = new Date(String(raw).trim());
+    return isNaN(d.getTime()) ? NaN : d.getTime();
+}
+
+function formatResultDateFromMs(ms) {
+    if (!isFinite(ms)) return '';
+    return new Date(ms).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+/** Date + time when the source string looks time-qualified; otherwise date only. */
+function formatResultTimestampDisplay(raw) {
+    if (raw == null || raw === '') return '';
+    var t = String(raw).trim();
+    if (!t) return '';
+    var d = new Date(t);
+    if (isNaN(d.getTime())) {
+        return t.length > 48 ? t.slice(0, 45) + '…' : t;
+    }
+    var hasTime = /T\d{1,2}:\d{2}/.test(t) || /\d{1,2}:\d{2}/.test(t);
+    if (hasTime) {
+        return d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    }
+    return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
+
+function getResultPublishedRaw(item) {
+    return item.publishedAt || item.date || item.published || null;
+}
+
+function getResultUpdatedRaw(item) {
+    return item.updatedAt || item.updated || null;
+}
+
+function appendResultTimestampsLead(leadEl, item) {
+    var pub = getResultPublishedRaw(item);
+    var upd = getResultUpdatedRaw(item);
+    if (!pub && !upd) return;
+    var wrap = document.createElement('div');
+    wrap.className = 'r-timestamps-lead';
+    if (pub) {
+        var lp = document.createElement('span');
+        lp.className = 'r-ts-item';
+        var lb = document.createElement('span');
+        lb.className = 'r-ts-lbl';
+        lb.textContent = 'Posted ';
+        var v = document.createElement('span');
+        v.className = 'r-ts-val';
+        v.textContent = formatResultTimestampDisplay(pub);
+        v.title = String(pub);
+        lp.appendChild(lb);
+        lp.appendChild(v);
+        wrap.appendChild(lp);
+    }
+    if (upd && String(upd).trim() !== String(pub || '').trim()) {
+        if (pub) {
+            var sep = document.createElement('span');
+            sep.className = 'r-ts-sep';
+            sep.textContent = '·';
+            sep.setAttribute('aria-hidden', 'true');
+            wrap.appendChild(sep);
+        }
+        var lu = document.createElement('span');
+        lu.className = 'r-ts-item';
+        var lb2 = document.createElement('span');
+        lb2.className = 'r-ts-lbl';
+        lb2.textContent = 'Updated ';
+        var v2 = document.createElement('span');
+        v2.className = 'r-ts-val';
+        v2.textContent = formatResultTimestampDisplay(upd);
+        v2.title = String(upd);
+        lu.appendChild(lb2);
+        lu.appendChild(v2);
+        wrap.appendChild(lu);
+    }
+    leadEl.appendChild(wrap);
+}
+
 function appendResultDateRow(main, item) {
-    var pub = item.publishedAt || item.date || item.published;
-    var upd = item.updatedAt || item.updated;
+    var pub = getResultPublishedRaw(item);
+    var upd = getResultUpdatedRaw(item);
     if (!pub && !upd) return;
     var row = document.createElement('div');
     row.className = 'r-date-row';
@@ -2096,10 +2238,10 @@ function appendResultDateRow(main, item) {
         line.className = 'r-date-line';
         var lab = document.createElement('span');
         lab.className = 'r-date-label';
-        lab.textContent = 'Published';
+        lab.textContent = 'Posted';
         var val = document.createElement('span');
         val.className = 'r-date-val';
-        val.textContent = formatResultDateDisplay(pub);
+        val.textContent = formatResultTimestampDisplay(pub);
         val.title = String(pub);
         line.appendChild(lab);
         line.appendChild(val);
@@ -2113,7 +2255,7 @@ function appendResultDateRow(main, item) {
         lab2.textContent = 'Updated';
         var val2 = document.createElement('span');
         val2.className = 'r-date-val';
-        val2.textContent = formatResultDateDisplay(upd);
+        val2.textContent = formatResultTimestampDisplay(upd);
         val2.title = String(upd);
         line2.appendChild(lab2);
         line2.appendChild(val2);
@@ -2157,11 +2299,18 @@ var SOURCE_FAVICON_DOMAIN = {
     worldbank: 'worldbank.org', coingecko: 'coingecko.com', wiktionary: 'wiktionary.org',
     datamuse: 'datamuse.com', youtube: 'youtube.com', duckduckgo: 'duckduckgo.com',
     'video-transcript': 'youtube.com', 'wire-news': 'wikinews.org', 'history-archive': 'loc.gov',
+    'news-aggregator': 'news.google.com',
     hn: 'news.ycombinator.com', substack: 'substack.com', 'openlibrary-search': 'openlibrary.org'
 };
 
-function getSourceFaviconUrl(sourceKey) {
+function getSourceFaviconUrl(sourceKey, item) {
     var k = (sourceKey || '').toLowerCase();
+    if (item && item.url && (k === 'news-aggregator' || k === 'press-wire' || k === 'wire-live-tx')) {
+        try {
+            var u = new URL(item.url, typeof location !== 'undefined' ? location.href : 'https://example.com');
+            if (u.hostname) return 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(u.hostname) + '&sz=64';
+        } catch (e) {}
+    }
     var domain = SOURCE_FAVICON_DOMAIN[k] || 'wikipedia.org';
     return 'https://www.google.com/s2/favicons?domain=' + encodeURIComponent(domain) + '&sz=64';
 }
@@ -2634,11 +2783,11 @@ function buildGroundingSnippet(results, max) {
     if (!results || !results.length) return '(no results yet)';
     return results.slice(0, max).map(function (r, i) {
         var sn = (r.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 160);
-        var pub = r.publishedAt || r.date || r.published;
-        var upd = r.updatedAt || r.updated;
+        var pub = getResultPublishedRaw(r);
+        var upd = getResultUpdatedRaw(r);
         var bits = [];
-        if (pub) bits.push('pub ' + formatResultDateDisplay(pub));
-        if (upd && String(upd).trim() !== String(pub || '').trim()) bits.push('upd ' + formatResultDateDisplay(upd));
+        if (pub) bits.push('pub ' + formatResultTimestampDisplay(pub));
+        if (upd && String(upd).trim() !== String(pub || '').trim()) bits.push('upd ' + formatResultTimestampDisplay(upd));
         var dateStr = bits.length ? ' · ' + bits.join(', ') : '';
         return '[' + (i + 1) + '] ' + (r.source || '') + ' — ' + (r.title || '') + dateStr + (sn ? ' — ' + sn : '');
     }).join('\n');
@@ -3444,6 +3593,12 @@ function renderResultCard(item, idx, extraClass, weightedMap) {
     const root = document.createElement('div');
     root.className = 'result result--accordion' + (extraClass ? ' ' + extraClass : '');
     root.dataset.ridx = String(idx);
+    if (bucketForSource(item.source) === 'news' && item.newsStoryCluster != null) {
+        var cidx = Number(item.newsStoryCluster);
+        if (!isNaN(cidx)) {
+            root.classList.add('result--news-cluster', 'result--news-cluster-' + (cidx % 5));
+        }
+    }
     const w = weightedMap && weightedMap.get(item);
     const scores = w ? w.scores : null;
     const rank = w ? w.rank : (idx + 1);
@@ -3465,6 +3620,7 @@ function renderResultCard(item, idx, extraClass, weightedMap) {
         agLine.textContent = disp.secondary;
         lead.appendChild(agLine);
     }
+    appendResultTimestampsLead(lead, item);
     const snLead = document.createElement('div');
     snLead.className = 'r-snippet r-snippet--lead';
     var skipSnip = false;
@@ -3486,7 +3642,7 @@ function renderResultCard(item, idx, extraClass, weightedMap) {
     expandBtn.setAttribute('aria-label', 'Expand result details');
     var favImg = document.createElement('img');
     favImg.className = 'r-expand-avatar';
-    favImg.src = getSourceFaviconUrl(item.source);
+    favImg.src = getSourceFaviconUrl(item.source, item);
     favImg.alt = '';
     favImg.loading = 'lazy';
     var expandMark = document.createElement('span');
@@ -3708,7 +3864,7 @@ function pickSpotlightIndices(results, maxN) {
     const n = results.length;
     const used = new Array(n).fill(false);
     const out = [];
-    const prefer = ['duckduckgo','wikipedia','grokipedia','wire-news','history-archive','youtube','arxiv','meta-research','openlibrary','wayback','internet-archive','wiktionary'];
+    const prefer = ['duckduckgo','wikipedia','grokipedia','wire-news','news-aggregator','press-wire','wire-live-tx','history-archive','youtube','arxiv','meta-research','openlibrary','wayback','internet-archive','wiktionary'];
     prefer.forEach(ps => {
         for (let i = 0; i < n && out.length < maxN; i++) {
             if (used[i]) continue;
@@ -3730,7 +3886,7 @@ function bucketForSource(src) {
     const s = (src || '').toLowerCase();
     if (s === 'grokipedia') return 'grokipedia';
     if (s === 'wikipedia' || s === 'wiktionary' || s === 'duckduckgo') return 'wiki';
-    if (s === 'wire-news') return 'news';
+    if (s === 'wire-news' || s === 'news-aggregator' || s === 'press-wire' || s === 'wire-live-tx') return 'news';
     if (s === 'history-archive' || s === 'loc-periodicals' || s === 'loc-photos') return 'history';
     if (s === 'youtube' || s === 'video-transcript' || s.indexOf('youtube') >= 0) return 'video';
     if (['arxiv','meta-research','pubchem','genbank','hathitrust','datamuse','noaa-climate','usgs-earth','earth-cycles','iana-icann'].indexOf(s) >= 0) return 'reference';
@@ -3738,9 +3894,94 @@ function bucketForSource(src) {
     if (['wayback','openlibrary','internet-archive','sacred-texts','yale','arda','lgbtq-archives'].indexOf(s) >= 0) return 'archives';
     return 'more';
 }
+
+/** Stopwords for lightweight title/snippet clustering in the news bucket. */
+var NEWS_CLUSTER_STOP = {
+    the: 1, and: 1, for: 1, with: 1, from: 1, this: 1, that: 1, are: 1, was: 1, has: 1, have: 1, had: 1, not: 1, but: 1, its: 1, his: 1, her: 1, they: 1, you: 1, all: 1, can: 1, out: 1, new: 1, news: 1, wire: 1, search: 1, site: 1, web: 1, www: 1, com: 1, live: 1, day: 1, says: 1, say: 1, get: 1, one: 1, two: 1, year: 1, over: 1, more: 1, than: 1, into: 1, also: 1, will: 1, our: 1, who: 1, how: 1, may: 1, now: 1, use: 1, any: 1, way: 1, set: 1, per: 1, via: 1, off: 1, top: 1
+};
+
+function newsStoryTokenList(item) {
+    var raw = ((item.title || '') + ' ' + String(item.snippet || '').slice(0, 140)).toLowerCase();
+    return raw.split(/[^a-z0-9]+/g).filter(function (w) {
+        return w.length > 2 && !NEWS_CLUSTER_STOP[w];
+    });
+}
+
+function jaccardTokensToClusterMap(tokens, clusterTokMap) {
+    var setA = {};
+    tokens.forEach(function (t) {
+        setA[t] = 1;
+    });
+    var inter = 0;
+    for (var k in clusterTokMap) {
+        if (clusterTokMap[k] && setA[k]) inter++;
+    }
+    var uni = {};
+    tokens.forEach(function (t) {
+        uni[t] = 1;
+    });
+    for (var k2 in clusterTokMap) {
+        if (clusterTokMap[k2]) uni[k2] = 1;
+    }
+    var ucount = 0;
+    for (var u in uni) ucount++;
+    return ucount ? inter / ucount : 0;
+}
+
+/** Group wire + aggregator + broadcast link-outs into up to five loose story threads (token overlap). */
+function attachNewsStoryClusters(results) {
+    if (!results || !results.length) return;
+    for (var z = 0; z < results.length; z++) {
+        delete results[z].newsStoryCluster;
+    }
+    var idxs = [];
+    for (var j = 0; j < results.length; j++) {
+        if (bucketForSource(results[j].source) === 'news') idxs.push(j);
+    }
+    if (idxs.length < 2) {
+        if (idxs.length === 1) results[idxs[0]].newsStoryCluster = 0;
+        return;
+    }
+    var clusters = [];
+    var MAXC = 5;
+    function addToks(map, tokens) {
+        tokens.forEach(function (t) {
+            map[t] = (map[t] || 0) + 1;
+        });
+    }
+    idxs.forEach(function (ii) {
+        var r = results[ii];
+        var tokens = newsStoryTokenList(r);
+        var best = -1;
+        var bi = -1;
+        for (var c = 0; c < clusters.length; c++) {
+            var sc = jaccardTokensToClusterMap(tokens, clusters[c].sumTok);
+            if (sc > best) {
+                best = sc;
+                bi = c;
+            }
+        }
+        if (best >= 0.12 && bi >= 0) {
+            clusters[bi].ids.push(ii);
+            addToks(clusters[bi].sumTok, tokens);
+            r.newsStoryCluster = bi;
+        } else if (clusters.length < MAXC) {
+            var m = {};
+            addToks(m, tokens);
+            clusters.push({ sumTok: m, ids: [ii] });
+            r.newsStoryCluster = clusters.length - 1;
+        } else {
+            var use = bi >= 0 ? bi : 0;
+            clusters[use].ids.push(ii);
+            addToks(clusters[use].sumTok, tokens);
+            r.newsStoryCluster = use;
+        }
+    });
+}
+
 /** Catalog: human = connector bands; history = deep time; Geo/cos = future surface hooks */
 var RESULT_SECTION_CATALOG = [
-    { key: 'news', title: 'Wire & news desk (Wikinews) — live / fast', cls: 'result-section--news', axis: 'human', strata: 'sig', tempo: 'live' },
+    { key: 'news', title: 'Wire & news — Wikinews, wires, live desks & web aggregators (card tints = up to 5 auto story threads)', cls: 'result-section--news', axis: 'human', strata: 'sig', tempo: 'live' },
     { key: 'wiki', title: 'Wikipedia & lexicon', cls: 'result-section--wiki', axis: 'human', strata: 'atom' },
     { key: 'grokipedia', title: 'Grokipedia (xAI)', cls: 'result-section--grokipedia', axis: 'human', strata: 'atom' },
     { key: 'history', title: 'History — LOC newspapers, periodicals, photos', cls: 'result-section--history', axis: 'history', strata: 'hist', tempo: 'past' },
@@ -3797,6 +4038,129 @@ function spotlightPassesFilter(active) {
     if (active.kind === 'bucket') return active.value === 'spotlight';
     if (active.kind === 'strata') return sectionStrataMatchesFilter(active.value, 'sig');
     return true;
+}
+
+/** Same ordering as renderResults — used for aggregate posted/updated HUD. */
+function collectVisibleSearchResults(results, active) {
+    if (!results || !results.length) return [];
+    var out = [];
+    var spotIdx = pickSpotlightIndices(results, 10);
+    var spotSet = new Set(spotIdx);
+    if (spotlightPassesFilter(active) && spotIdx.length) {
+        for (var si = 0; si < spotIdx.length; si++) {
+            out.push(results[spotIdx[si]]);
+        }
+    }
+    var buckets = { wiki: [], grokipedia: [], news: [], history: [], reference: [], video: [], archives: [], more: [] };
+    results.forEach(function (item, idx) {
+        if (spotSet.has(idx)) return;
+        var b = bucketForSource(item.source);
+        (buckets[b] || buckets.more).push({ item: item, idx: idx });
+    });
+    for (var ci = 0; ci < RESULT_SECTION_CATALOG.length; ci++) {
+        var sec = RESULT_SECTION_CATALOG[ci];
+        var rows = buckets[sec.key];
+        if (!rows || !rows.length) continue;
+        if (!sectionPassesFilter(sec, active)) continue;
+        for (var ri = 0; ri < rows.length; ri++) {
+            out.push(rows[ri].item);
+        }
+    }
+    return out;
+}
+
+function buildVisibleSetDateSummaryLine(visibleItems) {
+    if (!visibleItems || !visibleItems.length) return '';
+    var n = visibleItems.length;
+    var pubParsed = [];
+    var updParsed = [];
+    var pubAny = 0;
+    var updAny = 0;
+    for (var i = 0; i < visibleItems.length; i++) {
+        var it = visibleItems[i];
+        var pr = getResultPublishedRaw(it);
+        var ur = getResultUpdatedRaw(it);
+        if (pr) {
+            pubAny++;
+            var pm = parseResultDateMs(pr);
+            if (!isNaN(pm)) pubParsed.push(pm);
+        }
+        if (ur && String(ur).trim() !== String(pr || '').trim()) {
+            updAny++;
+            var um = parseResultDateMs(ur);
+            if (!isNaN(um)) updParsed.push(um);
+        }
+    }
+    var parts = ['Visible: ' + n + ' cards'];
+    if (pubAny) {
+        var seg = 'Posted on ' + pubAny + '/' + n;
+        if (pubParsed.length) {
+            seg += ' · span ' + formatResultDateFromMs(Math.min.apply(null, pubParsed)) + ' — ' + formatResultDateFromMs(Math.max.apply(null, pubParsed));
+        }
+        parts.push(seg);
+    }
+    if (updAny) {
+        var seg2 = 'Last updated on ' + updAny + '/' + n;
+        if (updParsed.length) {
+            seg2 += ' · span ' + formatResultDateFromMs(Math.min.apply(null, updParsed)) + ' — ' + formatResultDateFromMs(Math.max.apply(null, updParsed));
+        }
+        parts.push(seg2);
+    }
+    if (!pubAny && !updAny) return '';
+    return parts.join(' · ');
+}
+
+function syncResultSetTimestampsHud(visibleItems, totalHits, active) {
+    var dock = $('result-set-timestamps-strip');
+    var hud = $('result-timestamps-hud');
+    function hideBoth() {
+        if (dock) {
+            dock.hidden = true;
+            dock.textContent = '';
+        }
+        if (hud) {
+            hud.hidden = true;
+            hud.textContent = '';
+        }
+    }
+    if (!totalHits) {
+        hideBoth();
+        return;
+    }
+    if (!visibleItems || !visibleItems.length) {
+        var emptyMsg =
+            active && totalHits
+                ? 'No cards match the current Strata / Buckets filter — clear the filter to see posted and last-updated ranges.'
+                : '';
+        if (emptyMsg) {
+            if (dock) {
+                dock.hidden = false;
+                dock.textContent = emptyMsg;
+            }
+            if (hud) {
+                hud.hidden = false;
+                hud.textContent = emptyMsg;
+            }
+        } else {
+            hideBoth();
+        }
+        return;
+    }
+    var summary = buildVisibleSetDateSummaryLine(visibleItems);
+    if (!summary) {
+        summary =
+            'Visible: ' +
+            visibleItems.length +
+            ' cards — no posted/updated metadata on these hits (connectors vary; many still show dates in the reader).';
+    }
+    if (dock) {
+        dock.hidden = false;
+        dock.textContent = summary;
+    }
+    if (hud) {
+        hud.hidden = false;
+        hud.textContent = summary;
+    }
 }
 function spineNodeMatchesFilter(target, active) {
     if (!active) return false;
@@ -4088,9 +4452,10 @@ function renderResults(results){
     updateSearchMediaStrip();
     const el = $('results');
     el.innerHTML = '';
-    if(!results.length){ el.innerHTML = '<div class="empty">No results found.</div>'; syncResultFilterUi(); return; }
+    if(!results.length){ el.innerHTML = '<div class="empty">No results found.</div>'; syncResultSetTimestampsHud([], 0, null); syncResultFilterUi(); return; }
     const weightedMap = buildWeightedResultMap(results);
     const active = _activeResultFilter;
+    attachNewsStoryClusters(results);
     const spotIdx = pickSpotlightIndices(results, 10);
     const spotSet = new Set(spotIdx);
     const spotWrap = document.createElement('div');
@@ -4129,6 +4494,14 @@ function renderResults(results){
         const rows = buckets[sec.key];
         if (!rows || !rows.length) return;
         if (!sectionPassesFilter(sec, active)) return;
+        if (sec.key === 'news' && rows.length > 1) {
+            rows.sort(function (a, b) {
+                var ca = a.item.newsStoryCluster != null ? Number(a.item.newsStoryCluster) : 99;
+                var cb = b.item.newsStoryCluster != null ? Number(b.item.newsStoryCluster) : 99;
+                if (ca !== cb) return ca - cb;
+                return a.idx - b.idx;
+            });
+        }
         anyRendered = true;
         const section = document.createElement('section');
         section.className = 'result-section ' + sec.cls;
@@ -4172,9 +4545,9 @@ function renderResults(results){
             else el.appendChild(aiCard);
         } catch (eAiCard) {}
     }
+    var visibleForHud = collectVisibleSearchResults(results, active);
+    syncResultSetTimestampsHud(visibleForHud, results.length, active);
     syncResultFilterUi();
-    updateResultsScrollProgress();
-}
 
 /* ══════════════════════════════════════════════════════
    DOCUMENT VIEWER
@@ -5322,6 +5695,7 @@ initStrataNavButtons();
 initRainbowStrataFilters();
 initTranscriptPipelineUi();
 initSearchRankSettings();
+initAiHeatLensToolbar();
 syncSearchStatusBar();
 (function initVideoFloatOverlay() {
     var c = $('video-float-close');
@@ -5692,8 +6066,17 @@ var _aiLastStructure = null;
 /** Weights tab: substring filter + column sort (click thead buttons). */
 var _aiWeightsFilter = '';
 var _aiWeightsSort = { key: 'rank', dir: 1 };
+/** AI Lens heatmap sub-view: engagement canvas vs ECharts cluster / geo / race. */
+var _aiHeatLensTab = 'engage';
+var _aiEChartsCluster = null;
+var _aiEChartsGeo = null;
+var _aiEChartsRace = null;
+var _aiEChartsLean = null;
+var _aiWorldMapJsonPromise = null;
+var _aiLensResizeTimer = null;
 
 function setAiView(view, btn) {
+    if (_aiCurrentView === 'heatmap' && view !== 'heatmap') disposeAiLensEcharts();
     _aiCurrentView = view;
     document.querySelectorAll('.ai-vtab').forEach(function(t) { t.classList.toggle('active', t.dataset.aiv === view); });
     ['ai-board', 'ai-weights', 'ai-heatmap', 'ai-export', 'ai-suggest', 'ai-typing', 'ai-context', 'ai-transcript'].forEach(function(id) {
@@ -5877,56 +6260,595 @@ function renderAiWeights() {
 }
 
 function renderAiHeatmap() {
-    var wrap = $('ai-heatmap'); if (!wrap) return;
+    var wrap = $('ai-heatmap');
+    if (!wrap) return;
+    if (_aiHeatLensTab === 'engage') disposeAiLensEcharts();
     var heatData = HS.getHeatmapData();
     var entries = Object.keys(heatData);
     var info = $('ai-heat-info');
-    if (info) info.textContent = entries.length + ' items tracked | clicks: ' + entries.reduce(function(s, k) { return s + heatData[k].clicks; }, 0) + ' | total dwell: ' + Math.round(entries.reduce(function(s, k) { return s + heatData[k].dwellMs; }, 0) / 1000) + 's';
-
-    // Draw engagement heatmap
-    var heatCv = $('ai-heat-canvas');
-    if (heatCv) {
-        var w = heatCv.parentElement.clientWidth || 300;
-        var h = Math.max(120, entries.length * 20 + 40);
-        var dpr = devicePixelRatio || 1;
-        heatCv.width = w * dpr; heatCv.height = h * dpr;
-        heatCv.style.width = w + 'px'; heatCv.style.height = h + 'px';
-        var ctx = heatCv.getContext('2d');
-        ctx.scale(dpr, dpr);
-        var isLight = document.documentElement.classList.contains('light');
-        ctx.fillStyle = isLight ? '#f0f2f5' : '#0a0f1a'; ctx.fillRect(0, 0, w, h);
-
-        if (entries.length === 0) {
-            ctx.fillStyle = isLight ? '#656d76' : '#64748b'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
-            ctx.fillText('Interact with results to build heatmap data', w / 2, h / 2);
-        } else {
-            ctx.font = '9px monospace'; ctx.textAlign = 'left';
-            var maxClicks = Math.max.apply(null, entries.map(function(k) { return heatData[k].clicks; }));
-            entries.sort(function(a, b) { return heatData[b].clicks - heatData[a].clicks; });
-            entries.forEach(function(key, idx) {
-                var d = heatData[key];
-                var y = 20 + idx * 20;
-                var barW = maxClicks ? (d.clicks / maxClicks) * (w * 0.5) : 0;
-                // Bar
-                var grad = ctx.createLinearGradient(100, y, 100 + barW, y);
-                grad.addColorStop(0, '#7c3aed'); grad.addColorStop(1, '#22d3ee');
-                ctx.fillStyle = grad; ctx.fillRect(100, y - 5, barW, 10); ctx.fillStyle = isLight ? '#1f2328' : '#e2e8f0';
-                // Label
-                var result = _lastResults[parseInt(key)] || {};
-                ctx.fillText((result.title || 'Item ' + key).substring(0, 15), 4, y + 3);
-                ctx.fillStyle = isLight ? '#656d76' : '#64748b';
-                ctx.fillText(d.clicks + ' clicks', 100 + barW + 6, y + 3);
-            });
-        }
+    if (info) {
+        info.textContent =
+            entries.length +
+            ' items tracked | clicks: ' +
+            entries.reduce(function (s, k) {
+                return s + heatData[k].clicks;
+            }, 0) +
+            ' | total dwell: ' +
+            Math.round(
+                entries.reduce(function (s, k) {
+                    return s + heatData[k].dwellMs;
+                }, 0) / 1000
+            ) +
+            's';
     }
 
-    // Draw vision zone analysis
-    var visCv = $('ai-vision-canvas');
-    if (visCv && _aiLastStructure) {
-        var zones = HS.computeVisionZones(_aiLastStructure);
-        HS.drawHeatmap(visCv, zones, { height: 180 });
-    } else if (visCv) {
-        HS.drawHeatmap(visCv, [], { height: 120 });
+    document.querySelectorAll('.ai-heat-lens-tab').forEach(function (bt) {
+        bt.setAttribute('aria-selected', bt.getAttribute('data-ai-heat-lens') === _aiHeatLensTab ? 'true' : 'false');
+    });
+    document.querySelectorAll('.ai-heat-lens-pane').forEach(function (p) {
+        var id = p.id || '';
+        var want =
+            (_aiHeatLensTab === 'engage' && id === 'ai-heat-pane-engage') ||
+            (_aiHeatLensTab === 'cluster' && id === 'ai-heat-pane-cluster') ||
+            (_aiHeatLensTab === 'geo' && id === 'ai-heat-pane-geo') ||
+            (_aiHeatLensTab === 'race' && id === 'ai-heat-pane-race');
+        p.classList.toggle('ai-heat-lens-pane--active', !!want);
+    });
+
+    if (_aiHeatLensTab === 'engage') {
+        var heatCv = $('ai-heat-canvas');
+        if (heatCv) {
+            var w = heatCv.parentElement.clientWidth || 300;
+            var h = Math.max(120, entries.length * 20 + 40);
+            var dpr = devicePixelRatio || 1;
+            heatCv.width = w * dpr;
+            heatCv.height = h * dpr;
+            heatCv.style.width = w + 'px';
+            heatCv.style.height = h + 'px';
+            var ctx = heatCv.getContext('2d');
+            ctx.scale(dpr, dpr);
+            var isLight = document.documentElement.classList.contains('light');
+            ctx.fillStyle = isLight ? '#f0f2f5' : '#0a0f1a';
+            ctx.fillRect(0, 0, w, h);
+
+            if (entries.length === 0) {
+                ctx.fillStyle = isLight ? '#656d76' : '#64748b';
+                ctx.font = '11px sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Interact with results to build heatmap data', w / 2, h / 2);
+            } else {
+                ctx.font = '9px monospace';
+                ctx.textAlign = 'left';
+                var maxClicks = Math.max.apply(
+                    null,
+                    entries.map(function (k) {
+                        return heatData[k].clicks;
+                    })
+                );
+                entries.sort(function (a, b) {
+                    return heatData[b].clicks - heatData[a].clicks;
+                });
+                entries.forEach(function (key, idx) {
+                    var d = heatData[key];
+                    var y = 20 + idx * 20;
+                    var barW = maxClicks ? (d.clicks / maxClicks) * (w * 0.5) : 0;
+                    var grad = ctx.createLinearGradient(100, y, 100 + barW, y);
+                    grad.addColorStop(0, '#7c3aed');
+                    grad.addColorStop(1, '#22d3ee');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(100, y - 5, barW, 10);
+                    ctx.fillStyle = isLight ? '#1f2328' : '#e2e8f0';
+                    var result = _lastResults[parseInt(key, 10)] || {};
+                    ctx.fillText((result.title || 'Item ' + key).substring(0, 15), 4, y + 3);
+                    ctx.fillStyle = isLight ? '#656d76' : '#64748b';
+                    ctx.fillText(d.clicks + ' clicks', 100 + barW + 6, y + 3);
+                });
+            }
+        }
+
+        var visCv = $('ai-vision-canvas');
+        if (visCv && _aiLastStructure) {
+            var zones = HS.computeVisionZones(_aiLastStructure);
+            HS.drawHeatmap(visCv, zones, { height: 180 });
+        } else if (visCv) {
+            HS.drawHeatmap(visCv, [], { height: 120 });
+        }
+    } else {
+        requestAnimationFrame(function () {
+            requestAnimationFrame(function () {
+                try {
+                    renderAiLensEchartsPanes();
+                } catch (eL) {}
+            });
+        });
+    }
+}
+
+function disposeAiLensEcharts() {
+    try {
+        if (_aiEChartsCluster) {
+            _aiEChartsCluster.dispose();
+            _aiEChartsCluster = null;
+        }
+        if (_aiEChartsGeo) {
+            _aiEChartsGeo.dispose();
+            _aiEChartsGeo = null;
+        }
+        if (_aiEChartsRace) {
+            _aiEChartsRace.dispose();
+            _aiEChartsRace = null;
+        }
+        if (_aiEChartsLean) {
+            _aiEChartsLean.dispose();
+            _aiEChartsLean = null;
+        }
+    } catch (eD) {}
+}
+
+function getAiLensThemeText() {
+    var light = document.documentElement.classList.contains('light');
+    return {
+        fg: light ? '#1e293b' : '#e2e8f0',
+        sub: light ? '#64748b' : '#94a3b8',
+        bg: light ? '#f8fafc' : '#0f172a',
+        split: light ? 'rgba(15,23,42,.08)' : 'rgba(148,163,184,.15)',
+    };
+}
+
+var AI_LENS_HOST_LONLAT = {
+    'apnews.com': [-80.2, 25.8],
+    'reuters.com': [-0.13, 51.5],
+    'bbc.co.uk': [-0.13, 51.5],
+    'bbc.com': [-0.13, 51.5],
+    'nytimes.com': [-73.98, 40.75],
+    'washingtonpost.com': [-77.04, 38.9],
+    'theguardian.com': [-0.1, 51.5],
+    'cnn.com': [-84.4, 33.75],
+    'foxnews.com': [-73.98, 40.75],
+    'bloomberg.com': [-73.98, 40.75],
+    'ft.com': [-0.13, 51.5],
+    'economist.com': [-0.13, 51.5],
+    'politico.com': [-77.04, 38.9],
+    'npr.org': [-77.04, 38.9],
+    'france24.com': [2.35, 48.86],
+    'dw.com': [13.4, 52.52],
+    'euronews.com': [2.35, 48.86],
+    'aljazeera.com': [51.53, 25.29],
+    'wikinews.org': [-122.4, 37.8],
+    'wikipedia.org': [-122.4, 37.8],
+    'news.google.com': [-122.1, 37.4],
+    'msn.com': [-122.1, 47.6],
+    'yahoo.com': [-122.1, 37.4],
+    'bing.com': [-122.1, 47.6],
+    'reddit.com': [-122.4, 37.8],
+    'ground.news': [-79.4, 43.7],
+};
+
+function lensTitleTokens(title) {
+    var raw = String(title || '')
+        .toLowerCase()
+        .replace(/https?:\/\/\S+/g, ' ');
+    return raw.split(/[^a-z0-9]+/g).filter(function (w) {
+        return w.length > 2;
+    });
+}
+
+function lensTokenJaccard(a, b) {
+    var A = {};
+    a.forEach(function (t) {
+        A[t] = 1;
+    });
+    var inter = 0;
+    var uni = {};
+    a.forEach(function (t) {
+        uni[t] = 1;
+    });
+    b.forEach(function (t) {
+        if (uni[t] && A[t]) inter++;
+        uni[t] = 1;
+    });
+    var u = Object.keys(uni).length;
+    return u ? inter / u : 0;
+}
+
+function approxLonLatForResult(r, idx) {
+    if (r && r.location && typeof r.location === 'string') {
+        var loc = r.location.toLowerCase();
+        if (/\buk\b|united kingdom|england|london|scotland|wales/.test(loc)) return [-2.5, 54.5];
+        if (/germany|berlin|munich|frankfurt/.test(loc)) return [10.45, 51.16];
+        if (/france|paris|lyon/.test(loc)) return [2.35, 48.86];
+        if (/japan|tokyo|osaka/.test(loc)) return [139.69, 35.68];
+        if (/china|beijing|shanghai/.test(loc)) return [116.4, 39.9];
+        if (/india|delhi|mumbai/.test(loc)) return [77.2, 28.6]);
+        if (/brazil|são paulo|rio/.test(loc)) return [-46.63, -23.55];
+        if (/australia|sydney|melbourne/.test(loc)) return [151.2, -33.9]);
+        if (/canada|toronto|vancouver|montreal/.test(loc)) return [-106.35, 56.13];
+        if (/\b(us|u\.s\.|united states|usa|california|texas|new york|florida|washington)\b/.test(loc)) return [-98.35, 39.5];
+    }
+    if (r && r.url) {
+        try {
+            var h = new URL(r.url, 'https://example.com').hostname.replace(/^www\./, '').toLowerCase();
+            var parts = h.split('.');
+            var key = parts.length >= 2 ? parts[parts.length - 2] + '.' + parts[parts.length - 1] : h;
+            if (AI_LENS_HOST_LONLAT[h]) return AI_LENS_HOST_LONLAT[h].slice();
+            if (AI_LENS_HOST_LONLAT[key]) return AI_LENS_HOST_LONLAT[key].slice();
+        } catch (eU) {}
+    }
+    var jitter = (idx % 17) * 0.9;
+    return [-35 + jitter * 0.4, 15 + (idx % 9) * 2];
+}
+
+function lensParticipationLane(w) {
+    var src = (w.result && w.result.source ? w.result.source : '').toLowerCase();
+    var pipe = (w.governance && w.governance.pipeline) || '';
+    var lab = ((w.governance && w.governance.biasLabel) || '').toLowerCase();
+    var axis = Number((w.governance && w.governance.biasAxis) || 0);
+    if (src === 'press-wire' || src === 'wire-live-tx' || /wire|wholesale|broadcast/.test(pipe)) return 'agency';
+    if (Math.abs(axis) >= 0.22 || /left|right|partisan|tabloid/.test(lab)) return 'slant';
+    return 'independent';
+}
+
+function lensParticipationWeight(w, heatmap) {
+    var id = w.id != null ? String(w.id) : '';
+    var heat = id && heatmap ? heatmap[id] || {} : {};
+    var eng = Number((w.scores && w.scores.engagement) || 0);
+    var tot = Number((w.scores && w.scores.total) || 0);
+    var clicks = Number(heat.clicks || 0);
+    return Math.max(0.05, tot + eng * 1.8 + clicks * 0.35);
+}
+
+function ensureWorldMapRegistered(ec) {
+    if (window.__aiLensWorldRegistered) return Promise.resolve();
+    if (_aiWorldMapJsonPromise) return _aiWorldMapJsonPromise;
+    _aiWorldMapJsonPromise = fetch('https://cdn.jsdelivr.net/npm/echarts@5.5.1/map/json/world.json')
+        .then(function (r) {
+            return r.json();
+        })
+        .then(function (json) {
+            ec.registerMap('world', json);
+            window.__aiLensWorldRegistered = true;
+        })
+        .catch(function () {
+            _aiWorldMapJsonPromise = null;
+        });
+    return _aiWorldMapJsonPromise;
+}
+
+function buildLensClusterOption(weighted, theme) {
+    var slice = (weighted || []).slice(0, 42);
+    var cats = [
+        { name: 'Thread A' },
+        { name: 'Thread B' },
+        { name: 'Thread C' },
+        { name: 'Thread D' },
+        { name: 'Thread E' },
+        { name: 'Other' },
+    ];
+    var nodes = [];
+    var links = [];
+    var tokByIdx = [];
+    slice.forEach(function (w, i) {
+        var r = w.result || {};
+        var cl = r.newsStoryCluster != null ? Number(r.newsStoryCluster) : null;
+        var cat = cl != null && !isNaN(cl) ? Math.min(5, Math.max(0, cl)) : 5;
+        var title = (r.title || r.source || 'hit').slice(0, 48);
+        tokByIdx[i] = lensTitleTokens(r.title || '');
+        var heat = HS.getHeatmapData()[w.id] || {};
+        var pulse = 1 + (heat.clicks || 0) * 0.35 + (heat.hovers || 0) * 0.08;
+        nodes.push({
+            id: 'n' + i,
+            name: title,
+            value: Math.round(pulse * 10) / 10,
+            symbolSize: Math.min(42, 14 + pulse * 5),
+            category: cat,
+            label: { show: true, fontSize: 9 },
+        });
+    });
+    var edgeSeen = {};
+    for (var i = 0; i < slice.length; i++) {
+        for (var j = i + 1; j < slice.length; j++) {
+            var a = slice[i].result || {};
+            var b = slice[j].result || {};
+            var sameCluster =
+                a.newsStoryCluster != null &&
+                b.newsStoryCluster != null &&
+                Number(a.newsStoryCluster) === Number(b.newsStoryCluster);
+            var jac = lensTokenJaccard(tokByIdx[i], tokByIdx[j]);
+            if (sameCluster || jac > 0.09) {
+                var key = i < j ? i + '-' + j : j + '-' + i;
+                if (edgeSeen[key]) continue;
+                edgeSeen[key] = 1;
+                links.push({
+                    source: 'n' + i,
+                    target: 'n' + j,
+                    value: sameCluster ? 2 : 1,
+                    lineStyle: { width: sameCluster ? 1.4 : 0.6, opacity: 0.55 },
+                });
+            }
+        }
+    }
+    return {
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'item', textStyle: { fontSize: 10 } },
+        legend: {
+            data: cats.map(function (c) {
+                return c.name;
+            }),
+            textStyle: { color: theme.sub, fontSize: 9 },
+            bottom: 0,
+        },
+        series: [
+            {
+                type: 'graph',
+                layout: 'force',
+                roam: true,
+                draggable: true,
+                categories: cats,
+                data: nodes,
+                links: links,
+                label: { color: theme.fg },
+                lineStyle: { color: theme.sub, curveness: 0.12 },
+                emphasis: { focus: 'adjacency', lineStyle: { width: 2 } },
+                force: {
+                    repulsion: 140,
+                    edgeLength: [36, 120],
+                    gravity: 0.08,
+                },
+            },
+        ],
+    };
+}
+
+function buildLensGeoOption(weighted, theme) {
+    var data = [];
+    (weighted || []).slice(0, 80).forEach(function (w, idx) {
+        var r = w.result || {};
+        var ll = approxLonLatForResult(r, idx);
+        data.push({
+            name: (r.title || r.source || 'hit').slice(0, 40),
+            value: [ll[0], ll[1], lensParticipationWeight(w, HS.getHeatmapData())],
+            itemStyle: {
+                color:
+                    lensParticipationLane(w) === 'agency'
+                        ? '#14b8a6'
+                        : lensParticipationLane(w) === 'slant'
+                          ? '#f97316'
+                          : '#6366f1',
+            },
+        });
+    });
+    return {
+        backgroundColor: 'transparent',
+        tooltip: {
+            trigger: 'item',
+            formatter: function (p) {
+                var v = p.value || [];
+                return (p.data && p.data.name) + '<br/>lng ' + v[0] + ' · lat ' + v[1];
+            },
+            textStyle: { fontSize: 10 },
+        },
+        geo: {
+            map: 'world',
+            roam: true,
+            silent: false,
+            itemStyle: {
+                areaColor: theme.bg,
+                borderColor: theme.split,
+            },
+            emphasis: { label: { show: false } },
+        },
+        series: [
+            {
+                name: 'hits',
+                type: 'scatter',
+                coordinateSystem: 'geo',
+                symbolSize: function (val) {
+                    return Math.max(6, Math.min(28, Math.sqrt((val && val[2]) || 1) * 5));
+                },
+                data: data,
+            },
+        ],
+    };
+}
+
+function buildLensRaceAndLean(weighted, theme) {
+    var heat = HS.getHeatmapData();
+    var lanes = { agency: 0, independent: 0, slant: 0 };
+    var leanNum = 0;
+    var leanDen = 0;
+    (weighted || []).forEach(function (w) {
+        var lane = lensParticipationLane(w);
+        var wt = lensParticipationWeight(w, heat);
+        lanes[lane] += wt;
+        var ax = Number((w.governance && w.governance.biasAxis) || 0);
+        leanNum += ax * wt;
+        leanDen += wt;
+    });
+    var lean = leanDen ? leanNum / leanDen : 0;
+    var order = [
+        { k: 'agency', name: 'Agency & wire / broadcast', v: lanes.agency, color: '#14b8a6' },
+        { k: 'independent', name: 'Independent & reference', v: lanes.independent, color: '#6366f1' },
+        { k: 'slant', name: 'Editorial / lean signal', v: lanes.slant, color: '#ea580c' },
+    ].sort(function (a, b) {
+        return b.v - a.v;
+    });
+    var raceOpt = {
+        backgroundColor: 'transparent',
+        title: {
+            text: 'Participation pecking order (weighted score + heat)',
+            left: 8,
+            top: 4,
+            textStyle: { color: theme.sub, fontSize: 11, fontWeight: 600 },
+        },
+        grid: { left: 150, right: 24, top: 36, bottom: 16 },
+        xAxis: { type: 'value', max: 'dataMax', axisLabel: { color: theme.sub, fontSize: 9 }, splitLine: { lineStyle: { color: theme.split } } },
+        yAxis: {
+            type: 'category',
+            inverse: true,
+            data: order.map(function (o) {
+                return o.name;
+            }),
+            axisLabel: { color: theme.fg, fontSize: 9, width: 130, overflow: 'truncate' },
+        },
+        animationDuration: 900,
+        animationDurationUpdate: 650,
+        series: [
+            {
+                type: 'bar',
+                realtimeSort: true,
+                data: order.map(function (o) {
+                    return { value: Math.round(o.v * 100) / 100, itemStyle: { color: o.color } };
+                }),
+                label: { show: true, position: 'right', color: theme.sub, fontSize: 9 },
+            },
+        ],
+    };
+    var leanOpt = {
+        backgroundColor: 'transparent',
+        title: {
+            text: 'Weighted bias axis (neg = left lean · pos = right lean)',
+            left: 8,
+            top: 4,
+            textStyle: { color: theme.sub, fontSize: 10, fontWeight: 600 },
+        },
+        series: [
+            {
+                type: 'gauge',
+                center: ['50%', '58%'],
+                radius: '78%',
+                min: -1,
+                max: 1,
+                splitNumber: 8,
+                axisLine: {
+                    lineStyle: {
+                        width: 14,
+                        color: [
+                            [0.25, '#3b82f6'],
+                            [0.5, '#64748b'],
+                            [0.75, '#f97316'],
+                            [1, '#ef4444'],
+                        ],
+                    },
+                },
+                pointer: { length: '62%', width: 5 },
+                axisTick: { distance: -14, length: 6 },
+                splitLine: { distance: -16, length: 14 },
+                axisLabel: { color: theme.sub, distance: -32, fontSize: 8 },
+                detail: {
+                    valueAnimation: true,
+                    formatter: '{value}',
+                    color: theme.fg,
+                    fontSize: 16,
+                    offsetCenter: [0, '68%'],
+                },
+                data: [{ value: Math.round(lean * 1000) / 1000, name: 'lean' }],
+            },
+        ],
+    };
+    return { race: raceOpt, lean: leanOpt, leanVal: lean };
+}
+
+function renderAiLensEchartsPanes() {
+    if (typeof echarts === 'undefined') {
+        var elc = $('ai-echarts-cluster');
+        if (elc) elc.textContent = 'Apache ECharts did not load (check network / CDN).';
+        return;
+    }
+    disposeAiLensEcharts();
+    var theme = getAiLensThemeText();
+    var weighted =
+        _aiWeighted && _aiWeighted.length
+            ? _aiWeighted
+            : HS.weightResults(_lastResults || [], {
+                  analyses: _aiAnalyses,
+                  goal: ($('ai-goal') && $('ai-goal').value) || 'research',
+                  promptModel: getPromptModelValue(),
+                  biasPreference: getSearchBiasPreference(),
+              });
+    if (!_lastResults || !_lastResults.length) {
+        ['ai-echarts-cluster', 'ai-echarts-geo', 'ai-echarts-race', 'ai-echarts-lean'].forEach(function (id) {
+            var n = $(id);
+            if (n) n.textContent = 'Run a search to populate charts.';
+        });
+        return;
+    }
+    if (_aiHeatLensTab === 'cluster') {
+        var domC = $('ai-echarts-cluster');
+        if (!domC) return;
+        domC.textContent = '';
+        _aiEChartsCluster = echarts.init(domC, null, { renderer: 'canvas' });
+        _aiEChartsCluster.setOption(buildLensClusterOption(weighted, theme));
+    } else if (_aiHeatLensTab === 'geo') {
+        var domG = $('ai-echarts-geo');
+        if (!domG) return;
+        domG.textContent = '';
+        _aiEChartsGeo = echarts.init(domG, null, { renderer: 'canvas' });
+        ensureWorldMapRegistered(echarts)
+            .then(function () {
+                _aiEChartsGeo.setOption(buildLensGeoOption(weighted, theme));
+            })
+            .catch(function () {
+                _aiEChartsGeo.setOption({
+                    title: {
+                        text: 'World map JSON unavailable — try again on network',
+                        left: 'center',
+                        top: 'middle',
+                        textStyle: { color: theme.sub, fontSize: 11 },
+                    },
+                });
+            });
+    } else if (_aiHeatLensTab === 'race') {
+        var domR = $('ai-echarts-race');
+        var domL = $('ai-echarts-lean');
+        var pairRL = buildLensRaceAndLean(weighted, theme);
+        if (domR) {
+            domR.textContent = '';
+            _aiEChartsRace = echarts.init(domR, null, { renderer: 'canvas' });
+            _aiEChartsRace.setOption(pairRL.race);
+        }
+        if (domL) {
+            domL.textContent = '';
+            _aiEChartsLean = echarts.init(domL, null, { renderer: 'canvas' });
+            _aiEChartsLean.setOption(pairRL.lean);
+        }
+    }
+    scheduleAiLensResize();
+}
+
+function scheduleAiLensResize() {
+    clearTimeout(_aiLensResizeTimer);
+    _aiLensResizeTimer = setTimeout(function () {
+        _aiLensResizeTimer = null;
+        if (_aiCurrentView !== 'heatmap' || _aiHeatLensTab === 'engage') return;
+        try {
+            if (_aiEChartsCluster) _aiEChartsCluster.resize();
+            if (_aiEChartsGeo) _aiEChartsGeo.resize();
+            if (_aiEChartsRace) _aiEChartsRace.resize();
+            if (_aiEChartsLean) _aiEChartsLean.resize();
+        } catch (eR) {}
+    }, 200);
+}
+
+function setAiHeatLensTab(tab) {
+    _aiHeatLensTab = tab || 'engage';
+    renderAiHeatmap();
+}
+window.setAiHeatLensTab = setAiHeatLensTab;
+
+function initAiHeatLensToolbar() {
+    var wrap = $('ai-heatmap');
+    if (!wrap || wrap.dataset.aiLensToolbar === '1') return;
+    wrap.dataset.aiLensToolbar = '1';
+    wrap.addEventListener('click', function (e) {
+        var t = e.target && e.target.closest ? e.target.closest('.ai-heat-lens-tab') : null;
+        if (!t) return;
+        var tab = t.getAttribute('data-ai-heat-lens');
+        if (!tab) return;
+        setAiHeatLensTab(tab);
+    });
+    if (!window.__aiLensResizeBound) {
+        window.__aiLensResizeBound = true;
+        window.addEventListener('resize', scheduleAiLensResize);
     }
 }
 

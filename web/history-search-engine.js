@@ -131,6 +131,8 @@ const SRC_COLORS = {
     'press-wire': '#64748b',
     /** World wires + live CC / TTY-adjacent surfaces (link-out; no wholesale API in browser) */
     'wire-live-tx': '#ea580c',
+    /** Web news aggregators + multi-outlet search (link-out) */
+    'news-aggregator': '#14b8a6',
     /** NOAA / NCEI — climate & historical weather portals */
     'noaa-climate': '#0ea5e9',
     /** USGS — earthquakes + water + science */
@@ -318,10 +320,10 @@ function enrichGrokipediaThumbnailsFromPageHtml(rows) {
    CONNECTORS
    ══════════════════════════════════════════════════════ */
 /** Data connectors (expand: push a new object with { name, icon, enabled, search: async (q) => [...] }).
- *  Current count: 38 — Wikipedia, Grokipedia, Wikinews, DuckDuckGo, LOC Newspapers, LOC Periodicals, LOC Photos, Open Library, Wayback, Sacred Texts,
+ *  Current count: 39 — Wikipedia, Grokipedia, Wikinews, DuckDuckGo, LOC Newspapers, LOC Periodicals, LOC Photos, Open Library, Wayback, Sacred Texts,
  *  Yale, ARDA, arXiv, PubChem, GenBank, LGBTQ Archives, Meta Research, HathiTrust, Internet Archive,
  *  FRED, World Bank, CoinGecko, Wiktionary, Datamuse, YouTube, Video Transcripts,
- *  Agency wires, Agency live TX (world wires + live CC / captions), Hacker News (Algolia), Substack + YC/HN portals, Crunchbase, Sequoia,
+ *  Agency wires, News aggregates (Google/MSN/Yahoo/Ground +), Agency live TX (world wires + live CC / captions), Hacker News (Algolia), Substack + YC/HN portals, Crunchbase, Sequoia,
  *  NOAA Climate, USGS, Earth cycles (USDA / moon / seasons / solar), BBB, DNS governance (IANA / ICANN / RDAP). */
 const CONNECTORS = [
     {
@@ -867,6 +869,117 @@ const CONNECTORS = [
                     source: 'press-wire',
                     snippet: 'Official EU legal database — directives, regs, decisions.',
                     url: 'https://eur-lex.europa.eu/search.html?type=simple&lang=en&text=' + encodeURIComponent(q)
+                }
+            ]);
+        }
+    },
+    {
+        /** Major web aggregators + multi-outlet rivers (browser link-out; no wholesale JSON in-page). */
+        name: 'News aggregates', icon: 'Na', enabled: true,
+        search: function (q) {
+            var eq = encodeURIComponent(q);
+            return Promise.resolve([
+                {
+                    title: 'Google News — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Headline clusters across publishers (Google News search).',
+                    url: 'https://news.google.com/search?q=' + eq + '&hl=en&gl=US&ceid=US:en'
+                },
+                {
+                    title: 'Microsoft Start / MSN — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'MSN / Start news search (multi-source layout).',
+                    url: 'https://www.msn.com/en-us/news/search?q=' + eq
+                },
+                {
+                    title: 'Yahoo News — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Yahoo News search index.',
+                    url: 'https://news.search.yahoo.com/search?p=' + eq
+                },
+                {
+                    title: 'Bing News — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Bing news vertical.',
+                    url: 'https://www.bing.com/news/search?q=' + eq
+                },
+                {
+                    title: 'Brave News — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Brave Search news tab.',
+                    url: 'https://search.brave.com/news?q=' + eq
+                },
+                {
+                    title: 'Ground News — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Cross-outlet comparison + coverage map (bias-aware).',
+                    url: 'https://ground.news/search?q=' + eq
+                },
+                {
+                    title: 'Flipboard — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Topic magazines + RSS-style bundles.',
+                    url: 'https://flipboard.com/search?q=' + eq
+                },
+                {
+                    title: 'SmartNews — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Aggregation + local lanes (regional deep links vary).',
+                    url: 'https://www.smartnews.com/en/search?q=' + eq
+                },
+                {
+                    title: 'Politico — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'U.S. / EU politics desk search (editorial, not raw wire).',
+                    url: 'https://www.politico.com/search?q=' + eq
+                },
+                {
+                    title: 'Feedly — feed discovery — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Find feeds to follow (RSS reader).',
+                    url: 'https://feedly.com/i/discover/sources/search/feed?q=' + eq
+                },
+                {
+                    title: 'Inoreader — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'RSS search + rules (power-reader).',
+                    url: 'https://www.inoreader.com/search/all_articles?q=' + eq
+                },
+                {
+                    title: 'Reddit r/worldnews — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Community-ranked world headlines.',
+                    url: 'https://www.reddit.com/r/worldnews/search/?q=' + eq + '&restrict_sr=1&sort=relevance&t=week'
+                },
+                {
+                    title: 'Reddit r/news — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'General U.S. / global discussion thread.',
+                    url: 'https://www.reddit.com/r/news/search/?q=' + eq + '&restrict_sr=1&sort=relevance&t=week'
+                },
+                {
+                    title: 'Techmeme — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Tech headline river + blogs.',
+                    url: 'https://www.techmeme.com/search/query?q=' + eq
+                },
+                {
+                    title: 'Mediagazer — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Media-industry headline cluster.',
+                    url: 'https://www.mediagazer.com/search/query?q=' + eq
+                },
+                {
+                    title: 'RealClearPolitics — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Politics story aggregation + polls desk.',
+                    url: 'https://www.realclearpolitics.com/search/?q=' + eq
+                },
+                {
+                    title: 'AOL News — ' + q,
+                    source: 'news-aggregator',
+                    snippet: 'Classic portal news search.',
+                    url: 'https://search.aol.com/aol/news?q=' + eq
                 }
             ]);
         }
@@ -2330,6 +2443,7 @@ var GOVERNANCE_BY_CONNECTOR = {
     hn: { biasLabel: 'tech-forum', biasAxis: 0, factuality: 0.55, longevity: 0.7, ownership: 'Y Combinator', transparency: 0.55, pipeline: 'forum-vote' },
     'press-wire': { biasLabel: 'varies', biasAxis: 0, factuality: 0.85, longevity: 0.92, ownership: 'wire agency', transparency: 0.7, pipeline: 'wholesale-wire' },
     'wire-live-tx': { biasLabel: 'varies', biasAxis: 0, factuality: 0.55, longevity: 0.75, ownership: 'broadcast + wire', transparency: 0.5, pipeline: 'live-cc-linkout' },
+    'news-aggregator': { biasLabel: 'aggregator', biasAxis: 0, factuality: 0.5, longevity: 0.65, ownership: 'varies', transparency: 0.45, pipeline: 'web-aggregator' },
     'yc-portal': { biasLabel: 'startup-ecosystem', biasAxis: 0, factuality: 0.5, longevity: 0.85, ownership: 'Y Combinator', transparency: 0.55, pipeline: 'yc-surface' },
     substack: { biasLabel: 'varies', biasAxis: 0, factuality: 0.45, longevity: 0.55, ownership: 'authors', transparency: 0.45, pipeline: 'newsletter' },
     crunchbase: { biasLabel: 'commercial-db', biasAxis: 0, factuality: 0.65, longevity: 0.7, ownership: 'Crunchbase', transparency: 0.55, pipeline: 'startup-db' },
