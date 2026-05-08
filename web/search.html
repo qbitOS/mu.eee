@@ -3550,7 +3550,8 @@ async function doSearch(rawQuery){
         const toSym = convMatch[3];
         const fuResult = fuQuickConvert(val, fromSym, toSym);
         if (fuResult !== null) {
-            document.querySelector('.mode-tab[data-mode="freya"]').click();
+            var tabFr = document.querySelector('.mode-tab[data-mode="freya"]');
+            if (tabFr) tabFr.click();
             const fromUnit = FU_UNITS.find(u => u.sym.toLowerCase() === fromSym.toLowerCase() || u.name.toLowerCase().includes(fromSym.toLowerCase()));
             const toUnit = FU_UNITS.find(u => u.sym.toLowerCase() === toSym.toLowerCase() || u.name.toLowerCase().includes(toSym.toLowerCase()));
             if (fromUnit && toUnit) {
@@ -3567,8 +3568,12 @@ async function doSearch(rawQuery){
         }
     }
 
-    // Normal search
-    if (activeMode !== 'search') document.querySelector('.mode-tab[data-mode="search"]').click();
+    // Normal search — null-safe (embed / stripped chrome must not throw before HS.search)
+    if (activeMode !== 'search') {
+        var tabGo = document.querySelector('.mode-tab[data-mode="search"]');
+        if (tabGo) tabGo.click();
+        else activeMode = 'search';
+    }
 
     var modelMu = getPromptModelValue() === 'mistral-mu';
     syncMuSearchUi();
@@ -3592,6 +3597,12 @@ async function doSearch(rawQuery){
     }
 
     const res = $('results');
+    if (!res) {
+        try {
+            console.error('search.html: #results missing — cannot render search');
+        } catch (eRes) {}
+        return;
+    }
     res.innerHTML = '<div class="shimmer"></div><div class="shimmer"></div><div class="shimmer"></div>';
     if ($('sb-res')) $('sb-res').textContent = '...';
     updateSearchLatencyDisplay('...');
@@ -5883,12 +5894,25 @@ if (modelParam && $('prompt-model')) {
     try { localStorage.setItem('search-prompt-model', modelParam); } catch (e) {}
     refreshStPrompt();
 }
-if(mode === 'freya') document.querySelector('.mode-tab[data-mode="freya"]').click();
-if (q && q.trim()) {
-    $('search-input').value = q.trim();
-    doSearch(q.trim());
-} else {
-    clearSearchComposer({ skipUrl: true });
+try {
+    if (mode === 'freya') {
+        var tabFq = document.querySelector('.mode-tab[data-mode="freya"]');
+        if (tabFq) tabFq.click();
+    }
+    if (q && q.trim()) {
+        var siBoot = $('search-input');
+        if (siBoot) siBoot.value = q.trim();
+        doSearch(q.trim());
+    } else {
+        clearSearchComposer({ skipUrl: true });
+    }
+} catch (eBoot) {
+    try {
+        console.error('search boot (?q= / ?mode=):', eBoot);
+    } catch (eLog) {}
+    try {
+        clearSearchComposer({ skipUrl: true });
+    } catch (eClr) {}
 }
 
 // P0b.5: Listen for kbatch transcript DCA pushes

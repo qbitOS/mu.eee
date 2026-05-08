@@ -3,7 +3,7 @@
 // Phase 4.82 · Caches all 35 web apps + shared modules for full offline operation
 
 // Bump when search shell / critical JS changes so stale precache cycles clear after deploy.
-const CACHE_NAME = 'uvspeed-v4.337-youtube-stream-link';
+const CACHE_NAME = 'uvspeed-v4.338-search-hardening';
 const OFFLINE_URLS = [
     './',
     'quantum-notepad.html',
