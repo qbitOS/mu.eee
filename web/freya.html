@@ -1322,6 +1322,9 @@ document.getElementById('geo-map').addEventListener('click',function(e){
     updateQuantumDisplay();
 });
 
+// Geo position state (must exist before first drawGeoVis — avoid TDZ with `let`)
+let geoGranted=false, lastGeoLat, lastGeoLng;
+
 // Geo position canvas
 function drawGeoVis(lat,lng){
     const canvas=document.getElementById('q-geo');
@@ -1408,7 +1411,6 @@ document.getElementById('q-geo').addEventListener('click',function(e){
 });
 
 // Request geolocation with graceful fallback
-let geoGranted=false, lastGeoLat, lastGeoLng;
 function updateGeoDisplay(lat,lng,alt,acc,source){
     geoGranted=true;
     lastGeoLat=lat; lastGeoLng=lng;
