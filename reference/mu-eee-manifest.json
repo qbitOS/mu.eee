@@ -31,5 +31,9 @@
     "qbitos-gameHUB",
     "qbitos-kbatch"
   ],
-  "version": "1.1.0"
+  "version": "1.1.0",
+  "shellStreaming": {
+    "stagedBlobMse": "web/mueee-staged-blob-mse.js",
+    "ffmpegDocs": "https://ffmpeg.org/download.html#repositories"
+  }
 }

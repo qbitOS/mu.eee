@@ -3,7 +3,7 @@
 // Phase 4.82 · Caches all 35 web apps + shared modules for full offline operation
 
 // Bump when search shell / critical JS changes so stale precache cycles clear after deploy.
-const CACHE_NAME = 'uvspeed-v4.335-renderResults-close';
+const CACHE_NAME = 'uvspeed-v4.336-staged-blob-mse';
 const OFFLINE_URLS = [
     './',
     'quantum-notepad.html',
@@ -86,6 +86,7 @@ const OFFLINE_URLS = [
     'spine-hub-catalog.js',
     'mueee-throughline-spine.js',
     'mueee-mu-context.js',
+    'mueee-staged-blob-mse.js',
     'mueee-mistral-bridge.js',
     'qbit-steno-term.html',
     'qbit-steno-pad.html',

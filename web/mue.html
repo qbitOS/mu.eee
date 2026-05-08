@@ -559,6 +559,12 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
 })();
 </script>
 <script>
+(function(){
+  var b = window.__MUEEE_PANE_BASE__ || '';
+  document.write('<script src="' + (b ? b + 'mueee-staged-blob-mse.js' : 'mueee-staged-blob-mse.js') + '"><\/script>');
+})();
+</script>
+<script>
 (function () {
   'use strict';
   var themeBtn = document.getElementById('mueee-theme-toggle');
