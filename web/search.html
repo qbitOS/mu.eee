@@ -1261,7 +1261,7 @@ html.qp-embed-chrome .mu-agent-config .mu-hint-embed{display:block;color:var(--m
                             </div>
                             <p class="search-compute-foot" id="search-compute-foot"></p>
                         </div>
-                        <details class="mu-answer-hint">
+                        <details class="mu-answer-hint" id="mu-answer-hint-details">
                             <summary><span class="mu-hint-chevron" aria-hidden="true"><img class="rs-ico rs-ico-open" src="vendor/heroicons/24/outline/chevron-down.svg" width="12" height="12" alt="" /><img class="rs-ico rs-ico-closed" src="vendor/heroicons/24/outline/chevron-right.svg" width="12" height="12" alt="" /></span>Grounded search + Mistral setup</summary>
                             <div class="mu-answer-hint-body">
                                 <p class="mu-hint-lead">Two lanes:</p>
@@ -1269,6 +1269,7 @@ html.qp-embed-chrome .mu-agent-config .mu-hint-embed{display:block;color:var(--m
                                     <li><strong>Connectors (below)</strong> — live grounded search; always on.</li>
                                     <li><strong>Rail stream (this panel)</strong> — <em>Local digest</em> summarizes staged hits from the last run.</li>
                                     <li><strong>Mμ synthesis</strong> — runs only when Model = Mμ and the Mμ proxy + agent fields are filled. Tuning: <strong>Mμ agent → Mistral tuning</strong>.</li>
+                                    <li><strong>Liquid AI / LEAP / offline</strong> — connector <strong>Liquid AI / LEAP</strong> adds LEAP, model library, playground, and Hugging Face rows. Point the playground or <strong>offline gateway</strong> URL at <em>your</em> host (self-hosted LEAP stack or an OpenAI-compatible proxy); any API keys stay on <strong>that server</strong>, not in this page. Settings: <strong>Edge &amp; Liquid AI</strong> (<code>localStorage</code>).</li>
                                     <li><strong>CORS</strong> — some APIs block the browser on <code>localhost</code>. Use a fetch proxy (e.g. set <code>localStorage uvspeed-fetch-proxy-url</code>) or open connector links in a new tab.</li>
                                 </ul>
                             </div>
@@ -1465,6 +1466,7 @@ html.qp-embed-chrome .mu-agent-config .mu-hint-embed{display:block;color:var(--m
                     <option value="balanced" title="Balanced — default depth">equal</option>
                     <option value="deep" title="Deep — slower, richer snippets">deep</option>
                     <option value="code" title="Code &amp; technical">code</option>
+                    <option value="liquid-edge" title="Liquid / edge — slight depth boost for on-device + vendor LLM workflows">Liquid / edge</option>
                     <option value="mistral-mu" title="Mμ — Mistral Agents (mueee shell; instructions + guardrails below)">Mμ</option>
                 </select>
                 <button type="button" class="sc-btn-attach" id="prompt-add-doc" title="Attach plain text or Markdown">+ Add document</button>
@@ -1590,6 +1592,22 @@ html.qp-embed-chrome .mu-agent-config .mu-hint-embed{display:block;color:var(--m
                 <div class="mu-field">
                     <label for="uvspeed-fetch-proxy-url">Proxy base URL</label>
                     <input type="url" id="uvspeed-fetch-proxy-url" placeholder="https://your-account.workers.dev/api/fetch-proxy" autocomplete="off">
+                </div>
+            </details>
+            <details id="search-edge-liquid-settings" class="mu-agent-config">
+                <summary>Edge &amp; Liquid AI (LEAP, playground, offline gateway)</summary>
+                <p class="mu-hint-embed" style="display:block;">This shell does not store vendor secrets in <code>localStorage</code> (same idea as the Mistral Worker). You <strong>can</strong> run Liquid / LFM / LEAP <strong>self-hosted</strong> or behind <strong>your</strong> reverse proxy: put API keys and auth only on that host, then set the playground base URL or offline gateway below to your origin (e.g. <code>https://playground.your.internal/chat</code> or <code>http://127.0.0.1:8080</code>). The <strong>Liquid AI / LEAP</strong> connector still adds public link-outs to <a href="https://leap.liquid.ai/?utm_source=liquid&amp;utm_medium=referral" target="_blank" rel="noopener noreferrer">LEAP</a>, the <a href="https://leap.liquid.ai/models" target="_blank" rel="noopener noreferrer">model library</a>, optional <a href="https://playground.liquid.ai/chat" target="_blank" rel="noopener noreferrer">Liquid cloud playground</a>, and Hugging Face.</p>
+                <div class="mu-field">
+                    <label for="search-liquid-playground-base">Liquid playground base URL</label>
+                    <input type="url" id="search-liquid-playground-base" placeholder="https://playground.liquid.ai/chat" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="mu-field">
+                    <label for="search-liquid-playground-model">Playground model id</label>
+                    <input type="text" id="search-liquid-playground-model" placeholder="cmk0wefde000204jp2knb2qr8" autocomplete="off" spellcheck="false" maxlength="80" title="Alphanumeric id from Liquid playground URL (?model=…)">
+                </div>
+                <div class="mu-field">
+                    <label for="search-user-offline-llm-base">Your offline / local LLM base URL (optional)</label>
+                    <input type="url" id="search-user-offline-llm-base" placeholder="https://your-gateway.internal/v1 — jump link in Liquid connector rows" autocomplete="off">
                 </div>
             </details>
             <details id="search-rank-settings" class="mu-agent-config">
@@ -2715,6 +2733,49 @@ function initStrataDetailsPanel() {
             localStorage.setItem(k, d.open ? '1' : '0');
         } catch (e1) {}
     });
+}
+
+/** Grounded search + Mistral setup — collapsed on wide / embed; open on small for onboarding; closes when crossing up to wide. */
+function initMuAnswerHintPanel() {
+    var el = $('mu-answer-hint-details') || document.querySelector('.mu-answer-hint');
+    if (!el || el.dataset.muHintInit === '1') return;
+    el.dataset.muHintInit = '1';
+    var mqWide =
+        typeof window.matchMedia === 'function' ? window.matchMedia('(min-width: 960px)') : { matches: false, addEventListener: function () {} };
+    function collapseIfWide() {
+        var embed = document.documentElement.classList.contains('qp-embed-chrome');
+        if (embed || mqWide.matches) el.removeAttribute('open');
+    }
+    function openForSmallOnboarding() {
+        if (document.documentElement.classList.contains('qp-embed-chrome')) return;
+        if (mqWide.matches) return;
+        try {
+            var v = localStorage.getItem('search-mu-answer-hint-open');
+            if (v === '0') el.removeAttribute('open');
+            else if (v === '1') el.setAttribute('open', '');
+            else el.setAttribute('open', '');
+        } catch (e0) {
+            el.setAttribute('open', '');
+        }
+    }
+    collapseIfWide();
+    openForSmallOnboarding();
+    el.addEventListener('toggle', function () {
+        try {
+            localStorage.setItem('search-mu-answer-hint-open', el.open ? '1' : '0');
+        } catch (e1) {}
+    });
+    if (mqWide.addEventListener) {
+        mqWide.addEventListener('change', function () {
+            if (mqWide.matches) collapseIfWide();
+            else openForSmallOnboarding();
+        });
+    } else if (typeof mqWide.addListener === 'function') {
+        mqWide.addListener(function () {
+            if (mqWide.matches) collapseIfWide();
+            else openForSmallOnboarding();
+        });
+    }
 }
 
 function initStrataNavButtons() {
@@ -3889,7 +3950,8 @@ function bucketForSource(src) {
     if (s === 'wire-news' || s === 'news-aggregator' || s === 'press-wire' || s === 'wire-live-tx') return 'news';
     if (s === 'history-archive' || s === 'loc-periodicals' || s === 'loc-photos') return 'history';
     if (s === 'youtube' || s === 'video-transcript' || s.indexOf('youtube') >= 0) return 'video';
-    if (['arxiv','meta-research','pubchem','genbank','hathitrust','datamuse','noaa-climate','usgs-earth','earth-cycles','iana-icann'].indexOf(s) >= 0) return 'reference';
+    if (['arxiv','meta-research','pubchem','genbank','hathitrust','datamuse','noaa-climate','usgs-earth','earth-cycles','iana-icann','liquid-ai'].indexOf(s) >= 0) return 'reference';
+    if (s === 'offline-llm-user') return 'more';
     if (s === 'bbb') return 'more';
     if (['wayback','openlibrary','internet-archive','sacred-texts','yale','arda','lgbtq-archives'].indexOf(s) >= 0) return 'archives';
     return 'more';
@@ -5607,6 +5669,49 @@ initMistralDocumentAiControls();
     inp.addEventListener('change', function () { apply(inp.value); });
     inp.addEventListener('blur', function () { apply(inp.value); });
 })();
+(function initLiquidEdgeLlmSettings() {
+    var baseIn = $('search-liquid-playground-base');
+    var modelIn = $('search-liquid-playground-model');
+    var offIn = $('search-user-offline-llm-base');
+    if (!baseIn || !modelIn || !offIn) return;
+    var KB = 'search-liquid-playground-base';
+    var KM = 'search-liquid-playground-model';
+    var KO = 'search-user-offline-llm-base';
+    function sanitizeModelId(raw) {
+        var t = String(raw || '').trim();
+        if (!t) return '';
+        return t.replace(/[^a-zA-Z0-9_-]/g, '');
+    }
+    function persist() {
+        var b = String(baseIn.value || '').trim();
+        var m = sanitizeModelId(modelIn.value);
+        var o = String(offIn.value || '').trim();
+        try {
+            if (b) localStorage.setItem(KB, b);
+            else localStorage.removeItem(KB);
+        } catch (e1) {}
+        try {
+            if (m) localStorage.setItem(KM, m);
+            else localStorage.removeItem(KM);
+        } catch (e2) {}
+        try {
+            if (o) localStorage.setItem(KO, o);
+            else localStorage.removeItem(KO);
+        } catch (e3) {}
+    }
+    try {
+        var sb = localStorage.getItem(KB);
+        if (sb) baseIn.value = sb;
+        var sm = localStorage.getItem(KM);
+        if (sm) modelIn.value = sm;
+        var so = localStorage.getItem(KO);
+        if (so) offIn.value = so;
+    } catch (e0) {}
+    [baseIn, modelIn, offIn].forEach(function (el) {
+        el.addEventListener('change', persist);
+        el.addEventListener('blur', persist);
+    });
+})();
 (function initMuAmbientControls() {
     var stack = $('search-mu-stack');
     var btn = $('mu-bg-toggle');
@@ -5691,6 +5796,7 @@ initConnectorsRowIdle();
 initResultsScrollProgress();
 buildPills();
 initStrataDetailsPanel();
+initMuAnswerHintPanel();
 initStrataNavButtons();
 initRainbowStrataFilters();
 initTranscriptPipelineUi();
@@ -6076,7 +6182,11 @@ var _aiWorldMapJsonPromise = null;
 var _aiLensResizeTimer = null;
 
 function setAiView(view, btn) {
-    if (_aiCurrentView === 'heatmap' && view !== 'heatmap') disposeAiLensEcharts();
+    if (_aiCurrentView === 'heatmap' && view !== 'heatmap') {
+        try {
+            disposeAiLensEcharts();
+        } catch (eDisp) {}
+    }
     _aiCurrentView = view;
     document.querySelectorAll('.ai-vtab').forEach(function(t) { t.classList.toggle('active', t.dataset.aiv === view); });
     ['ai-board', 'ai-weights', 'ai-heatmap', 'ai-export', 'ai-suggest', 'ai-typing', 'ai-context', 'ai-transcript'].forEach(function(id) {
@@ -6505,8 +6615,13 @@ function ensureWorldMapRegistered(ec) {
             return r.json();
         })
         .then(function (json) {
-            ec.registerMap('world', json);
-            window.__aiLensWorldRegistered = true;
+            try {
+                ec.registerMap('world', json);
+                window.__aiLensWorldRegistered = true;
+            } catch (regErr) {
+                _aiWorldMapJsonPromise = null;
+                throw regErr;
+            }
         })
         .catch(function () {
             _aiWorldMapJsonPromise = null;
@@ -6566,6 +6681,17 @@ function buildLensClusterOption(weighted, theme) {
                 });
             }
         }
+    }
+    if (!nodes.length) {
+        return {
+            backgroundColor: 'transparent',
+            title: {
+                text: 'No hits to cluster — run a search first',
+                left: 'center',
+                top: 'middle',
+                textStyle: { color: theme.sub, fontSize: 12 },
+            },
+        };
     }
     return {
         backgroundColor: 'transparent',
@@ -6665,6 +6791,9 @@ function buildLensRaceAndLean(weighted, theme) {
         leanDen += wt;
     });
     var lean = leanDen ? leanNum / leanDen : 0;
+    if (!isFinite(lean)) lean = 0;
+    lean = Math.max(-1, Math.min(1, lean));
+    var leanGaugeVal = Math.round((lean + 1) * 50 * 10) / 10;
     var order = [
         { k: 'agency', name: 'Agency & wire / broadcast', v: lanes.agency, color: '#14b8a6' },
         { k: 'independent', name: 'Independent & reference', v: lanes.independent, color: '#6366f1' },
@@ -6695,7 +6824,6 @@ function buildLensRaceAndLean(weighted, theme) {
         series: [
             {
                 type: 'bar',
-                realtimeSort: true,
                 data: order.map(function (o) {
                     return { value: Math.round(o.v * 100) / 100, itemStyle: { color: o.color } };
                 }),
@@ -6716,16 +6844,17 @@ function buildLensRaceAndLean(weighted, theme) {
                 type: 'gauge',
                 center: ['50%', '58%'],
                 radius: '78%',
-                min: -1,
-                max: 1,
-                splitNumber: 8,
+                min: 0,
+                max: 100,
+                splitNumber: 10,
                 axisLine: {
                     lineStyle: {
                         width: 14,
                         color: [
-                            [0.25, '#3b82f6'],
-                            [0.5, '#64748b'],
-                            [0.75, '#f97316'],
+                            [0.2, '#3b82f6'],
+                            [0.4, '#64748b'],
+                            [0.6, '#64748b'],
+                            [0.8, '#f97316'],
                             [1, '#ef4444'],
                         ],
                     },
@@ -6733,15 +6862,29 @@ function buildLensRaceAndLean(weighted, theme) {
                 pointer: { length: '62%', width: 5 },
                 axisTick: { distance: -14, length: 6 },
                 splitLine: { distance: -16, length: 14 },
-                axisLabel: { color: theme.sub, distance: -32, fontSize: 8 },
+                axisLabel: {
+                    color: theme.sub,
+                    distance: -32,
+                    fontSize: 8,
+                    formatter: function (v) {
+                        if (v <= 0) return '';
+                        var x = (v - 50) / 50;
+                        if (Math.abs(x) < 0.06) return '0';
+                        if (v <= 15) return String(-1);
+                        if (v >= 85) return '+1';
+                        return '';
+                    },
+                },
                 detail: {
                     valueAnimation: true,
-                    formatter: '{value}',
+                    formatter: function () {
+                        return String(Math.round(lean * 1000) / 1000);
+                    },
                     color: theme.fg,
                     fontSize: 16,
                     offsetCenter: [0, '68%'],
                 },
-                data: [{ value: Math.round(lean * 1000) / 1000, name: 'lean' }],
+                data: [{ value: leanGaugeVal, name: 'lean' }],
             },
         ],
     };
@@ -6777,7 +6920,11 @@ function renderAiLensEchartsPanes() {
         if (!domC) return;
         domC.textContent = '';
         _aiEChartsCluster = echarts.init(domC, null, { renderer: 'canvas' });
-        _aiEChartsCluster.setOption(buildLensClusterOption(weighted, theme));
+        try {
+            _aiEChartsCluster.setOption(buildLensClusterOption(weighted, theme));
+        } catch (eCl) {
+            domC.textContent = 'Cluster chart failed to render.';
+        }
     } else if (_aiHeatLensTab === 'geo') {
         var domG = $('ai-echarts-geo');
         if (!domG) return;
@@ -6785,17 +6932,25 @@ function renderAiLensEchartsPanes() {
         _aiEChartsGeo = echarts.init(domG, null, { renderer: 'canvas' });
         ensureWorldMapRegistered(echarts)
             .then(function () {
-                _aiEChartsGeo.setOption(buildLensGeoOption(weighted, theme));
+                if (!_aiEChartsGeo) return;
+                try {
+                    _aiEChartsGeo.setOption(buildLensGeoOption(weighted, theme));
+                } catch (eGeo) {
+                    domG.textContent = 'Geo chart failed to render.';
+                }
             })
             .catch(function () {
-                _aiEChartsGeo.setOption({
-                    title: {
-                        text: 'World map JSON unavailable — try again on network',
-                        left: 'center',
-                        top: 'middle',
-                        textStyle: { color: theme.sub, fontSize: 11 },
-                    },
-                });
+                if (!_aiEChartsGeo) return;
+                try {
+                    _aiEChartsGeo.setOption({
+                        title: {
+                            text: 'World map JSON unavailable — try again on network',
+                            left: 'center',
+                            top: 'middle',
+                            textStyle: { color: theme.sub, fontSize: 11 },
+                        },
+                    });
+                } catch (eF) {}
             });
     } else if (_aiHeatLensTab === 'race') {
         var domR = $('ai-echarts-race');
@@ -6804,12 +6959,20 @@ function renderAiLensEchartsPanes() {
         if (domR) {
             domR.textContent = '';
             _aiEChartsRace = echarts.init(domR, null, { renderer: 'canvas' });
-            _aiEChartsRace.setOption(pairRL.race);
+            try {
+                _aiEChartsRace.setOption(pairRL.race);
+            } catch (eRace) {
+                domR.textContent = 'Participation chart failed to render.';
+            }
         }
         if (domL) {
             domL.textContent = '';
             _aiEChartsLean = echarts.init(domL, null, { renderer: 'canvas' });
-            _aiEChartsLean.setOption(pairRL.lean);
+            try {
+                _aiEChartsLean.setOption(pairRL.lean);
+            } catch (eLean) {
+                domL.textContent = 'Bias gauge failed to render.';
+            }
         }
     }
     scheduleAiLensResize();

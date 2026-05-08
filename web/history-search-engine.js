@@ -143,6 +143,10 @@ const SRC_COLORS = {
     bbb: '#f59e0b',
     /** IANA / ICANN / DNS root & RDAP */
     'iana-icann': '#6366f1',
+    /** Liquid AI — LEAP edge platform + cloud playground link-outs */
+    'liquid-ai': '#06b6d4',
+    /** User-saved local / OpenAI-compatible gateway */
+    'offline-llm-user': '#22c55e',
 };
 
 /** Compact book record for corpus / L2 ingest (search hit — no full work fetch). */
@@ -320,10 +324,10 @@ function enrichGrokipediaThumbnailsFromPageHtml(rows) {
    CONNECTORS
    ══════════════════════════════════════════════════════ */
 /** Data connectors (expand: push a new object with { name, icon, enabled, search: async (q) => [...] }).
- *  Current count: 39 — Wikipedia, Grokipedia, Wikinews, DuckDuckGo, LOC Newspapers, LOC Periodicals, LOC Photos, Open Library, Wayback, Sacred Texts,
+ *  Current count: 40 — Wikipedia, Grokipedia, Wikinews, DuckDuckGo, LOC Newspapers, LOC Periodicals, LOC Photos, Open Library, Wayback, Sacred Texts,
  *  Yale, ARDA, arXiv, PubChem, GenBank, LGBTQ Archives, Meta Research, HathiTrust, Internet Archive,
  *  FRED, World Bank, CoinGecko, Wiktionary, Datamuse, YouTube, Video Transcripts,
- *  Agency wires, News aggregates (Google/MSN/Yahoo/Ground +), Agency live TX (world wires + live CC / captions), Hacker News (Algolia), Substack + YC/HN portals, Crunchbase, Sequoia,
+ *  Agency wires, News aggregates (Google/MSN/Yahoo/Ground +), Liquid AI / LEAP + playground, Agency live TX (world wires + live CC / captions), Hacker News (Algolia), Substack + YC/HN portals, Crunchbase, Sequoia,
  *  NOAA Climate, USGS, Earth cycles (USDA / moon / seasons / solar), BBB, DNS governance (IANA / ICANN / RDAP). */
 const CONNECTORS = [
     {
@@ -982,6 +986,77 @@ const CONNECTORS = [
                     url: 'https://search.aol.com/aol/news?q=' + eq
                 }
             ]);
+        }
+    },
+    {
+        /** Liquid AI — LEAP + playground + HF link-outs. Keys belong on your self-hosted gateway or server proxy, not in this static client. */
+        name: 'Liquid AI / LEAP', icon: 'Lq', enabled: true,
+        search: function (q) {
+            var eq = encodeURIComponent(q);
+            var modelId = 'cmk0wefde000204jp2knb2qr8';
+            var pBase = 'https://playground.liquid.ai/chat';
+            var userOffline = '';
+            try {
+                if (typeof localStorage !== 'undefined') {
+                    var mid = localStorage.getItem('search-liquid-playground-model');
+                    if (mid && String(mid).trim()) {
+                        modelId = String(mid).trim().replace(/[^a-zA-Z0-9_-]/g, '') || modelId;
+                    }
+                    var pb = localStorage.getItem('search-liquid-playground-base');
+                    if (pb && String(pb).trim()) {
+                        var u = String(pb).trim().replace(/\/+$/, '');
+                        if (/^https?:\/\//i.test(u)) pBase = u;
+                    }
+                    userOffline = (localStorage.getItem('search-user-offline-llm-base') || '').trim();
+                }
+            } catch (eLS) {}
+            var sep = pBase.indexOf('?') >= 0 ? '&' : '?';
+            var chatUrl = pBase + sep + 'model=' + encodeURIComponent(modelId);
+            var rows = [
+                {
+                    title: 'Liquid LEAP — edge AI platform',
+                    source: 'liquid-ai',
+                    snippet:
+                        'Discover, specialize, and deploy on-device models (LEAP). Pair with local Apollo / workbench flows — see docs on site.',
+                    url: 'https://leap.liquid.ai/?utm_source=liquid&utm_medium=referral'
+                },
+                {
+                    title: 'LEAP — model library',
+                    source: 'liquid-ai',
+                    snippet: 'Browse LiquidAI and partner checkpoints (text, image, audio, RAG tasks).',
+                    url: 'https://leap.liquid.ai/models'
+                },
+                {
+                    title: 'Liquid playground — model ' + modelId,
+                    source: 'liquid-ai',
+                    snippet:
+                        'Open UI for chat (cloud or your self-hosted playground URL). Model id + base URL: Search → Edge & Liquid AI. Context: `' +
+                        q +
+                        '`.',
+                    url: chatUrl
+                },
+                {
+                    title: 'Hugging Face — search LiquidAI / LFM',
+                    source: 'liquid-ai',
+                    snippet: 'Open-weight LFM family checkpoints (Base, Instruct, VLM, audio) — run locally or bundle via LEAP.',
+                    url: 'https://huggingface.co/models?search=liquidai+lfm'
+                }
+            ];
+            if (userOffline) {
+                try {
+                    var ou = new URL(userOffline, typeof location !== 'undefined' ? location.href : 'https://example.com');
+                    if (ou.protocol === 'http:' || ou.protocol === 'https:') {
+                        rows.push({
+                            title: 'Your offline / local LLM gateway',
+                            source: 'offline-llm-user',
+                            snippet:
+                                'Saved base URL (vLLM, llama.cpp server, self-hosted OpenAI-compatible stack, etc.). Keep API keys on that host; this page only stores the base URL for a quick jump.',
+                            url: ou.href
+                        });
+                    }
+                } catch (eU) {}
+            }
+            return Promise.resolve(rows);
         }
     },
     {
@@ -2466,6 +2541,8 @@ var GOVERNANCE_BY_CONNECTOR = {
     'earth-cycles': { biasLabel: 'varies', biasAxis: 0, factuality: 0.75, longevity: 0.9, ownership: 'USDA / USNO / USGS / NOAA', transparency: 0.75, pipeline: 'agri-astro-landsat' },
     bbb: { biasLabel: 'registry', biasAxis: 0, factuality: 0.68, longevity: 0.88, ownership: 'Better Business Bureau', transparency: 0.72, pipeline: 'business-trust' },
     'iana-icann': { biasLabel: 'governance', biasAxis: 0, factuality: 0.96, longevity: 0.99, ownership: 'IANA / ICANN', transparency: 0.88, pipeline: 'dns-root-rdap' },
+    'liquid-ai': { biasLabel: 'vendor-edge', biasAxis: 0, factuality: 0.7, longevity: 0.75, ownership: 'Liquid AI', transparency: 0.72, pipeline: 'edge-llm-platform' },
+    'offline-llm-user': { biasLabel: 'local-runtime', biasAxis: 0, factuality: 0.55, longevity: 0.5, ownership: 'user gateway', transparency: 0.4, pipeline: 'local-openai-compat' },
 };
 
 var GOVERNANCE_BY_HOST = {
@@ -2586,6 +2663,7 @@ function weightResults(results, opts) {
     else if (promptModel === 'fast') depthMod = 0.88;
     else if (promptModel === 'code') depthMod = 1.08;
     else if (promptModel === 'balanced') depthMod = 1;
+    else if (promptModel === 'liquid-edge') depthMod = 1.03;
 
     var goalWeights = {
         research:      { depth: 0.15, breadth: 0.12, authority: 0.1, fresh: 0.1, reliability: 0.18, longevity: 0.15, engagement: 0.2 },
