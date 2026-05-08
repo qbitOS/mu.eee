@@ -234,6 +234,43 @@
       font-size: 11px;
       color: var(--qp-fg-muted);
     }
+    .lane-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 10px;
+    }
+    .lane-card {
+      text-align: left;
+      border-radius: 12px;
+      padding: 10px 12px;
+      display: grid;
+      gap: 6px;
+      min-height: 112px;
+    }
+    .lane-card.active {
+      border-color: rgba(88, 166, 255, 0.55);
+      background: rgba(88, 166, 255, 0.1);
+      box-shadow: inset 0 0 0 1px rgba(88, 166, 255, 0.18);
+    }
+    .lane-kicker {
+      font: 700 9px ui-monospace, monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--qp-fg-muted);
+    }
+    .lane-title {
+      font: 700 12px ui-sans-serif, system-ui, sans-serif;
+      color: var(--qp-fg-body);
+    }
+    .lane-meta {
+      font: 600 10px ui-monospace, monospace;
+      color: var(--qp-fg-muted);
+    }
+    .lane-copy {
+      font-size: 11px;
+      color: var(--qp-fg-body);
+      line-height: 1.45;
+    }
     .chat-shell {
       border: 1px solid var(--qp-border);
       border-radius: 14px;
@@ -334,6 +371,23 @@
       </div>
     </div>
 
+    <section class="panel" id="growth-lanes">
+      <div class="flow-head">
+        <div class="flow-title">Tensor growth lanes</div>
+        <span class="small-note">offline-first free models + local launch path</span>
+      </div>
+      <div class="small-note">Load a lane to set provider defaults, seed the tensor-growth prompt pack, and surface the current local or online launch commands.</div>
+      <div class="lane-grid" id="lane-grid"></div>
+      <div class="row">
+        <label>Free model inventory</label>
+        <div class="pane" id="lane-manifest">manifest pending...</div>
+      </div>
+      <div class="row">
+        <label>Launch commands</label>
+        <div class="pane" id="launch-pane">launch lane pending...</div>
+      </div>
+    </section>
+
     <section class="chat-shell" id="model-lab-chat">
       <div class="chat-head">
         <div class="chat-title">Model Lab Chat Prompt</div>
@@ -374,12 +428,13 @@
             </div>
             <div class="row">
               <label for="setup-profile">Auto-calibration profile</label>
-              <select id="setup-profile">
-                <option value="ollama_offline">Offline Ollama Fast</option>
-                <option value="uvmis_runtime">uvmis Runtime Main</option>
-                <option value="mistral_cloud">Mistral Cloud Parity</option>
-                <option value="mathstral_quantum">Mathstral Quantum Math Eval</option>
-              </select>
+               <select id="setup-profile">
+                 <option value="ollama_offline">Offline Ollama Fast</option>
+                 <option value="nanochat_growth">Nanochat Growth + Ollama Teacher</option>
+                 <option value="uvmis_runtime">uvmis Runtime Main</option>
+                 <option value="mistral_cloud">Mistral Cloud Parity</option>
+                 <option value="mathstral_quantum">Mathstral Quantum Math Eval</option>
+               </select>
             </div>
             <div class="step-actions">
               <button id="auto-calibrate" type="button">Auto Calibrate Setup</button>
@@ -466,14 +521,15 @@
           <div class="step-controls">
             <div class="row">
               <label for="prompt-pack">Prompt pack</label>
-              <select id="prompt-pack">
-                <option value="custom">Custom</option>
-                <option value="cold_baseline">Cold Baseline 10</option>
-                <option value="ops_calibration">Ops Calibration 12</option>
-                <option value="agent_policy">Agent Policy + Action 10</option>
-                <option value="quantum_math">Quantum Math Probe 10</option>
-              </select>
-            </div>
+               <select id="prompt-pack">
+                 <option value="custom">Custom</option>
+                 <option value="cold_baseline">Cold Baseline 10</option>
+                 <option value="ops_calibration">Ops Calibration 12</option>
+                 <option value="agent_policy">Agent Policy + Action 10</option>
+                 <option value="tensor_growth">Tensor Growth Loop 10</option>
+                 <option value="quantum_math">Quantum Math Probe 10</option>
+               </select>
+             </div>
             <div class="step-actions">
               <button id="load-pack" type="button">Load Prompt Pack</button>
             </div>
@@ -639,6 +695,9 @@
     var raceBoardEl = $('race-board');
     var racePromptIndexEl = $('race-prompt-index');
     var raceDiffEl = $('race-diff');
+    var laneGridEl = $('lane-grid');
+    var laneManifestEl = $('lane-manifest');
+    var launchPaneEl = $('launch-pane');
     var tweakPrefixEl = $('tweak-prefix');
     var tweakSuffixEl = $('tweak-suffix');
     var tweakTempDeltaEl = $('tweak-temp-delta');
@@ -660,6 +719,7 @@
     var lastRaceReport = (report && report.type === 'race') ? report : null;
     var tweakIteration = Number(loadJson('ugrad-model-lab-tweak-iteration-v1', 0) || 0);
     var chatRows = loadJson('ugrad-model-lab-chat-v1', []);
+    var activeLaneId = String(loadJson('ugrad-model-lab-lane-v1', 'nanochat_growth') || 'nanochat_growth');
 
     function loadJson(key, fallback) {
       try {
@@ -808,6 +868,18 @@
         'Summarize in one executive sentence.',
         'List required approvals before production.'
       ],
+      tensor_growth: [
+        'Given a tiny tensor learner, propose the next offline-first training step and the exact success signal.',
+        'Compare an offline Ollama teacher lane vs an online parity lane for the same tensor-growth prompt.',
+        'Write a compact curriculum for xor-lane -> parity-count -> go-board with one acceptance check per stage.',
+        'Produce a JSON object with keys: lane, dataset, prompt, next_action, risk.',
+        'Summarize how to distill grounded local data into a nanochat localdemo checkpoint.',
+        'Recommend one race setup for mistral:latest, devstral, codestral, and mathstral.',
+        'State which artifacts should be exported after a cold pass for replay and fine-tune reuse.',
+        'Describe how to keep the model roster free-model-first as local mirrors evolve.',
+        'Give the shortest operator handoff note for launching local quickstart and chat_web.',
+        'Return strict JSON: {provider, model, prompt_pack, train_lane, launch_cmd}.'
+      ],
       quantum_math: [
         'Explain the difference between a state vector and density matrix in 5 lines.',
         'Given |psi> = (|0> + i|1>)/sqrt(2), compute measurement probabilities in Z basis.',
@@ -821,6 +893,94 @@
         'Return strict JSON: {topic, derivation_steps, final_result, confidence}.'
       ]
     };
+
+    var FREE_MODEL_LANES = [
+      {
+        id: 'nanochat_growth',
+        kicker: 'offline growth',
+        title: 'Nanochat + Ollama Teacher',
+        summary: 'Train locally, distill from offline Ollama, then reopen chat on the updated localdemo checkpoint.',
+        setupProfile: 'nanochat_growth',
+        promptPack: 'tensor_growth',
+        engineTag: 'nanochat-localdemo',
+        launch: [
+          'cd /Volumes/qbitOS/00.dev/cursor/karpathy/nanochat-master',
+          'bash runs/local_quickstart.sh',
+          'OLLAMA_MODEL=auto SOURCE_DIR=/Volumes/qbitOS/03.models/training_data bash runs/local_distill.sh',
+          'source .venv/bin/activate && python -m scripts.chat_web --device-type=mps -g localdemo'
+        ]
+      },
+      {
+        id: 'ollama_offline',
+        kicker: 'offline infer',
+        title: 'Ollama Fast Race',
+        summary: 'Lowest-friction local inference lane for prompt races, telemetry, and exportable benchmark reports.',
+        setupProfile: 'ollama_offline',
+        promptPack: 'tensor_growth',
+        engineTag: 'ollama-offline-fast',
+        launch: [
+          'ollama serve',
+          'ollama run mistral:latest',
+          'open /Volumes/qbitOS/00.dev/mu.eee/web/ugrad-model-lab.html'
+        ]
+      },
+      {
+        id: 'uvmis_runtime',
+        kicker: 'online parity',
+        title: 'uvmis Runtime Main',
+        summary: 'Compare the local tensor-growth prompts against the evolving hosted runtime.',
+        setupProfile: 'uvmis_runtime',
+        promptPack: 'tensor_growth',
+        engineTag: 'uvmis-runtime-main',
+        launch: [
+          'provider: https://uvmis.ugrad.ai/v1',
+          'model: mistral-medium-2508',
+          'purpose: parity check against the local offline lane'
+        ]
+      },
+      {
+        id: 'mistral_cloud',
+        kicker: 'cloud fallback',
+        title: 'Mistral Cloud Parity',
+        summary: 'Hosted compare lane when you want cloud-side behavior next to local results.',
+        setupProfile: 'mistral_cloud',
+        promptPack: 'tensor_growth',
+        engineTag: 'mistral-cloud-parity',
+        launch: [
+          'set API key in the form',
+          'provider: https://api.mistral.ai/v1',
+          'run suite or race for parity telemetry'
+        ]
+      }
+    ];
+
+    var FREE_MODEL_INVENTORY = [
+      {
+        name: 'mistral:latest',
+        type: 'Ollama local',
+        note: 'default fast offline inference lane'
+      },
+      {
+        name: 'devstral / codestral / mathstral / mistral-small:latest',
+        type: 'Ollama race set',
+        note: 'comparison set already wired into the race A/B/C/D selectors'
+      },
+      {
+        name: 'LiquidAI LFM2-1.2B-Tool-Q4_K_M.gguf',
+        type: 'hf-mirror GGUF',
+        note: '/Volumes/qbitOS/03.models/01-ollama/hf-mirror/LiquidAI/LFM2-1.2B-Tool-GGUF/LFM2-1.2B-Tool-Q4_K_M.gguf'
+      },
+      {
+        name: 'LiquidAI LFM2-2.6B-Q4_K_M.gguf',
+        type: 'hf-mirror GGUF',
+        note: '/Volumes/qbitOS/03.models/01-ollama/hf-mirror/LiquidAI/LFM2-2.6B-GGUF/LFM2-2.6B-Q4_K_M.gguf'
+      },
+      {
+        name: 'LiquidAI LFM2-350M / 700M / 1.2B / 2.6B',
+        type: 'hf-mirror base checkpoints',
+        note: 'seed inventory for future local import/runtime adapters as the mirror grows'
+      }
+    ];
 
     function loadPromptPack() {
       var key = String((promptPackEl && promptPackEl.value) || 'custom');
