@@ -1003,6 +1003,19 @@
         raceModelDEl.value = 'mistral-small:latest';
         tempEl.value = '0.2';
         maxTokensEl.value = '512';
+      } else if (p === 'nanochat_growth') {
+        providerEl.value = 'ollama';
+        baseUrlEl.value = 'http://127.0.0.1:11434';
+        modelIdEl.value = 'mistral:latest';
+        raceModelAEl.value = 'mistral:latest';
+        raceModelBEl.value = 'devstral';
+        raceModelCEl.value = 'codestral';
+        raceModelDEl.value = 'mathstral';
+        if (engineTagEl) engineTagEl.value = 'nanochat-localdemo';
+        tempEl.value = '0.2';
+        maxTokensEl.value = '384';
+        if (promptPackEl) promptPackEl.value = 'tensor_growth';
+        loadPromptPack();
       } else if (p === 'uvmis_runtime') {
         providerEl.value = 'uvmis';
         baseUrlEl.value = 'https://uvmis.ugrad.ai/v1';
@@ -1038,6 +1051,72 @@
       }
       maybeCompleteSetup();
       outEl.textContent = 'auto-calibrated setup: ' + p;
+    }
+
+    function laneById(id) {
+      for (var i = 0; i < FREE_MODEL_LANES.length; i++) {
+        if (FREE_MODEL_LANES[i].id === id) return FREE_MODEL_LANES[i];
+      }
+      return FREE_MODEL_LANES[0];
+    }
+
+    function renderLaneButtons() {
+      if (!laneGridEl) return;
+      laneGridEl.innerHTML = '';
+      for (var i = 0; i < FREE_MODEL_LANES.length; i++) {
+        var lane = FREE_MODEL_LANES[i];
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'lane-card' + (lane.id === activeLaneId ? ' active' : '');
+        btn.setAttribute('data-lane-id', lane.id);
+        btn.innerHTML = '' +
+          '<span class="lane-kicker">' + lane.kicker + '</span>' +
+          '<span class="lane-title">' + lane.title + '</span>' +
+          '<span class="lane-copy">' + lane.summary + '</span>' +
+          '<span class="lane-meta">' + lane.setupProfile + ' · ' + lane.engineTag + '</span>';
+        laneGridEl.appendChild(btn);
+      }
+    }
+
+    function renderLaneManifest() {
+      if (!laneManifestEl) return;
+      var lane = laneById(activeLaneId);
+      var lines = [
+        'active lane: ' + lane.title,
+        'provider profile: ' + lane.setupProfile,
+        '',
+        'seed free-model inventory'
+      ];
+      for (var i = 0; i < FREE_MODEL_INVENTORY.length; i++) {
+        var item = FREE_MODEL_INVENTORY[i];
+        lines.push((i + 1) + '. ' + item.name + ' | ' + item.type);
+        lines.push('   ' + item.note);
+      }
+      laneManifestEl.textContent = lines.join('\n');
+    }
+
+    function renderLaunchPane() {
+      if (!launchPaneEl) return;
+      var lane = laneById(activeLaneId);
+      var lines = [lane.title, lane.summary, ''].concat(lane.launch || []);
+      launchPaneEl.textContent = lines.join('\n');
+    }
+
+    function applyGrowthLane(id, silent) {
+      var lane = laneById(id);
+      activeLaneId = lane.id;
+      saveJson('ugrad-model-lab-lane-v1', activeLaneId);
+      if (setupProfileEl) setupProfileEl.value = lane.setupProfile;
+      applySetupProfile(lane.setupProfile);
+      if (engineTagEl) engineTagEl.value = lane.engineTag;
+      if (promptPackEl && lane.promptPack) {
+        promptPackEl.value = lane.promptPack;
+        loadPromptPack();
+      }
+      renderLaneButtons();
+      renderLaneManifest();
+      renderLaunchPane();
+      if (!silent) outEl.textContent = 'loaded tensor growth lane: ' + lane.title;
     }
 
     function updateProviderDefaults() {
@@ -1504,6 +1583,13 @@
         applySetupProfile(setupProfileEl.value);
       });
     }
+    if (laneGridEl) {
+      laneGridEl.addEventListener('click', function (event) {
+        var target = event.target && event.target.closest ? event.target.closest('[data-lane-id]') : null;
+        if (!target) return;
+        applyGrowthLane(target.getAttribute('data-lane-id'));
+      });
+    }
     $('auto-calibrate').addEventListener('click', function () {
       applySetupProfile((setupProfileEl && setupProfileEl.value) || 'ollama_offline');
     });
@@ -1596,6 +1682,10 @@
     renderFlow();
     renderRacePromptSelector();
     renderChat();
+    renderLaneButtons();
+    renderLaneManifest();
+    renderLaunchPane();
+    applyGrowthLane(activeLaneId, true);
   })();
   </script>
 <script src="ugrad-numsy-footer.js"></script>
