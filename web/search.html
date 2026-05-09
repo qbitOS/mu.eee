@@ -3114,6 +3114,57 @@ function notifyParentSearchMode() {
     } catch (e) {}
 }
 
+/** Apply Search vs AI vs Hub … panel visibility (tabs optional — embed hides header chips). */
+function setActiveSearchShellMode(modeStr) {
+    if (!modeStr) modeStr = 'search';
+    var allowed = { search: 1, ai: 1, freya: 1, kbatch: 1, hexcast: 1, hub: 1 };
+    if (!allowed[modeStr]) modeStr = 'search';
+    activeMode = modeStr;
+    document.querySelectorAll('.mode-tab').forEach(function (t) {
+        t.classList.toggle('active', t.dataset.mode === modeStr);
+    });
+    var sp = $('search-panel');
+    if (sp) sp.classList.toggle('active', activeMode === 'search');
+    var fp = $('freya-panel');
+    if (fp) fp.classList.toggle('active', activeMode === 'freya');
+    var ap = $('ai-panel');
+    if (ap) ap.classList.toggle('active', activeMode === 'ai');
+    var kp = $('kbatch-panel');
+    if (kp) kp.classList.toggle('active', activeMode === 'kbatch');
+    var hp = $('hexcast-panel');
+    if (hp) hp.classList.toggle('active', activeMode === 'hexcast');
+    var hubp = $('hub-panel');
+    if (hubp) hubp.classList.toggle('active', activeMode === 'hub');
+    applySearchModeUi();
+    try {
+        localStorage.setItem('search-active-mode', activeMode);
+    } catch (e) {}
+    if (activeMode === 'hub') initHubCatalog();
+    if (activeMode === 'ai') aiRefresh();
+    var cwrap = $('connectors-wrap');
+    if (cwrap) cwrap.style.display = activeMode === 'search' ? '' : 'none';
+    var srr = $('spine-rail');
+    if (srr) srr.style.display = activeMode === 'search' ? '' : 'none';
+    var si = $('search-input');
+    if (si) {
+        si.placeholder =
+            activeMode === 'freya'
+                ? 'Convert: "5 km to miles" or search… (Enter to run)'
+                : activeMode === 'ai'
+                  ? 'Optional: refine terms for AI Lens…'
+                  : activeMode === 'hub'
+                    ? 'Use Search tab to query connectors…'
+                    : activeMode === 'kbatch' || activeMode === 'hexcast'
+                      ? 'Switch to Search for queries — or use full page link above.'
+                      : 'Ask or paste keywords. Attach .txt/.md for context (~2.5k chars/file); model tunes AI Lens. Enter — search · Shift+Enter — new line.';
+    }
+    if (activeMode === 'freya') {
+        var ff = $('freya-frame');
+        if (ff && ff.contentWindow) try { ff.contentWindow.dispatchEvent(new Event('resize')); } catch (e) {}
+    }
+    notifyParentSearchMode();
+}
+
 function applySearchModeUi() {
     var m = activeMode;
     var embed = document.documentElement.classList.contains('qp-embed-chrome');
@@ -3146,51 +3197,24 @@ function initHubCatalog() {
 
 document.querySelectorAll('.mode-tab').forEach(tab => {
     tab.addEventListener('click', () => {
-        activeMode = tab.dataset.mode;
-        document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t === tab));
-        $('search-panel').classList.toggle('active', activeMode === 'search');
-        $('freya-panel').classList.toggle('active', activeMode === 'freya');
-        $('ai-panel').classList.toggle('active', activeMode === 'ai');
-        $('kbatch-panel').classList.toggle('active', activeMode === 'kbatch');
-        $('hexcast-panel').classList.toggle('active', activeMode === 'hexcast');
-        $('hub-panel').classList.toggle('active', activeMode === 'hub');
-        applySearchModeUi();
-        try { localStorage.setItem('search-active-mode', activeMode); } catch (e) {}
-        if (activeMode === 'hub') initHubCatalog();
-        // Show/hide search-specific elements
-        if (activeMode === 'ai') aiRefresh();
-        var cwrap = $('connectors-wrap');
-        if (cwrap) cwrap.style.display = activeMode === 'search' ? '' : 'none';
-        var srr = $('spine-rail');
-        if (srr) srr.style.display = activeMode === 'search' ? '' : 'none';
-        var si = $('search-input');
-        if (si) {
-            si.placeholder = activeMode === 'freya'
-                ? 'Convert: "5 km to miles" or search… (Enter to run)'
-                : (activeMode === 'ai'
-                    ? 'Optional: refine terms for AI Lens…'
-                    : (activeMode === 'hub'
-                        ? 'Use Search tab to query connectors…'
-                        : (activeMode === 'kbatch' || activeMode === 'hexcast'
-                            ? 'Switch to Search for queries — or use full page link above.'
-                            : 'Ask or paste keywords. Attach .txt/.md for context (~2.5k chars/file); model tunes AI Lens. Enter — search · Shift+Enter — new line.')));
-        }
-        if (activeMode === 'freya') {
-            var ff = $('freya-frame');
-            if (ff && ff.contentWindow) try { ff.contentWindow.dispatchEvent(new Event('resize')); } catch (e) {}
-        }
-        notifyParentSearchMode();
+        setActiveSearchShellMode(tab.dataset.mode);
     });
 });
 
 try {
     var qpMode = new URLSearchParams(location.search).get('mode');
+    var embedChrome = document.documentElement.classList.contains('qp-embed-chrome');
     if (qpMode && document.querySelector('.mode-tab[data-mode="' + qpMode + '"]')) {
-        document.querySelector('.mode-tab[data-mode="' + qpMode + '"]').click();
+        setActiveSearchShellMode(qpMode);
+    } else if (embedChrome) {
+        /* Shell iframe: header mode chips are hidden — restoring Hub/AI from localStorage left
+           #search-panel inactive and connectors-wrap display:none, so only rail/history-adjacent
+           UI looked alive while wiki/news buckets never mounted. Default to Search. */
+        setActiveSearchShellMode('search');
     } else {
         var savedMode = localStorage.getItem('search-active-mode');
         if (savedMode && document.querySelector('.mode-tab[data-mode="' + savedMode + '"]')) {
-            document.querySelector('.mode-tab[data-mode="' + savedMode + '"]').click();
+            setActiveSearchShellMode(savedMode);
         }
     }
 } catch (e) {}
@@ -3550,8 +3574,7 @@ async function doSearch(rawQuery){
         const toSym = convMatch[3];
         const fuResult = fuQuickConvert(val, fromSym, toSym);
         if (fuResult !== null) {
-            var tabFr = document.querySelector('.mode-tab[data-mode="freya"]');
-            if (tabFr) tabFr.click();
+            setActiveSearchShellMode('freya');
             const fromUnit = FU_UNITS.find(u => u.sym.toLowerCase() === fromSym.toLowerCase() || u.name.toLowerCase().includes(fromSym.toLowerCase()));
             const toUnit = FU_UNITS.find(u => u.sym.toLowerCase() === toSym.toLowerCase() || u.name.toLowerCase().includes(toSym.toLowerCase()));
             if (fromUnit && toUnit) {
@@ -3568,11 +3591,9 @@ async function doSearch(rawQuery){
         }
     }
 
-    // Normal search — null-safe (embed / stripped chrome must not throw before HS.search)
+    // Normal search — ensure Search tab + panels (embed can hide chips while localStorage left on Hub/AI)
     if (activeMode !== 'search') {
-        var tabGo = document.querySelector('.mode-tab[data-mode="search"]');
-        if (tabGo) tabGo.click();
-        else activeMode = 'search';
+        setActiveSearchShellMode('search');
     }
 
     var modelMu = getPromptModelValue() === 'mistral-mu';
@@ -4546,6 +4567,7 @@ function renderResults(results){
     _lastResults = results;
     updateSearchMediaStrip();
     const el = $('results');
+    if (!el) return;
     el.innerHTML = '';
     if(!results.length){ el.innerHTML = '<div class="empty">No results found.</div>'; syncResultSetTimestampsHud([], 0, null); syncResultFilterUi(); return; }
     const weightedMap = buildWeightedResultMap(results);
@@ -5799,7 +5821,7 @@ initMistralDocumentAiControls();
     if (fs) {
         fs.addEventListener('click', function () {
             var t = document.querySelector('.mode-tab[data-mode="hexcast"]');
-            if (t) t.click();
+            if (t) setActiveSearchShellMode('hexcast');
         });
     }
 })();
@@ -5896,8 +5918,7 @@ if (modelParam && $('prompt-model')) {
 }
 try {
     if (mode === 'freya') {
-        var tabFq = document.querySelector('.mode-tab[data-mode="freya"]');
-        if (tabFq) tabFq.click();
+        setActiveSearchShellMode('freya');
     }
     if (q && q.trim()) {
         var siBoot = $('search-input');
@@ -6000,8 +6021,7 @@ window.addEventListener('message', function (ev) {
         try {
             localStorage.setItem('search-active-mode', 'search');
         } catch (eM) {}
-        var tabS = document.querySelector('.mode-tab[data-mode="search"]');
-        if (tabS) tabS.click();
+        setActiveSearchShellMode('search');
         if (ev.data.expandSpineRail) {
             var railEl = $('spine-rail');
             if (railEl) railEl.classList.remove('spine-rail--collapsed');
@@ -6054,8 +6074,7 @@ window.addEventListener('message', function (ev) {
         return;
     }
     if (ev.data.type === 'mueee-open-mu-config' && ev.source === window.parent) {
-        var tabAi = document.querySelector('.mode-tab[data-mode="ai"]');
-        if (tabAi) tabAi.click();
+        setActiveSearchShellMode('ai');
         var det = $('mu-agent-config');
         if (det) {
             det.hidden = false;
@@ -6068,8 +6087,7 @@ window.addEventListener('message', function (ev) {
         var allowed = { search: 1, ai: 1, freya: 1, kbatch: 1, hexcast: 1, hub: 1 };
         var modeTab = ev.data.mode;
         if (!modeTab || !allowed[modeTab]) return;
-        var tabMode = document.querySelector('.mode-tab[data-mode="' + modeTab + '"]');
-        if (tabMode) tabMode.click();
+        setActiveSearchShellMode(modeTab);
         return;
     }
     if (ev.data.type === 'mueee-request-search-mode-sync' && ev.source === window.parent) {
