@@ -214,6 +214,9 @@ html:not(.mue-chat) .mueee-topbar-main{padding:max(10px,env(safe-area-inset-top,
 .mueee-dialog-row button{margin:0;padding:8px 12px;border-radius:8px;border:1px solid var(--qp-border);background:var(--qp-bg-tertiary);color:var(--qp-text);cursor:pointer;font:500 13px system-ui,sans-serif;}
 .mueee-dialog-row button.mueee-dialog-primary{background:var(--qp-accent);border-color:var(--qp-accent);color:#fff;}
 #mueee-audio-rec-status{font:500 11px ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;margin:8px 0;color:var(--qp-text-muted);}
+#mueee-video-rec-status{font:500 11px ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;margin:8px 0;color:var(--qp-text-muted);}
+#mueee-video-preview{display:block;width:100%;max-height:min(36vh,200px);margin:0 0 8px;border-radius:8px;background:#0f172a;object-fit:contain;}
+#mueee-video-preview[hidden]{display:none!important;}
 .mueee-prompt-chip .mueee-chip-ico{width:14px;height:14px;opacity:.88;flex-shrink:0;}
 
 html.mue-chat{--mue-chat-accent:var(--qp-accent);--mue-chat-accent-dim:rgba(124,58,237,0.12);--mue-chat-prompt-bar-h:88px;--mue-chat-sheet-radius:12px;--mue-chat-font-ui:'Inter',ui-sans-serif,system-ui,sans-serif;--mue-chat-row-h:32px;--mue-chat-row-radius:6px;scrollbar-gutter:stable;}
@@ -488,6 +491,9 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
                       <button type="button" role="menuitem" id="mueee-prompt-audio-rec" class="mueee-prompt-audio-rec mueee-prompt-menu-item" aria-label="Record audio" title="Microphone">
                         <img src="vendor/heroicons/24/outline/microphone.svg" width="16" height="16" alt="" /><span class="mueee-prompt-menu-txt">Record audio</span>
                       </button>
+                      <button type="button" role="menuitem" id="mueee-prompt-video-rec" class="mueee-prompt-video-rec mueee-prompt-menu-item" aria-label="Record video" title="Camera or screen (getUserMedia / display capture)">
+                        <img src="vendor/heroicons/24/outline/video-camera.svg" width="16" height="16" alt="" /><span class="mueee-prompt-menu-txt">Record video</span>
+                      </button>
                       <button type="button" role="menuitem" id="mueee-prompt-go" class="mueee-prompt-menu-item" title="Send to Search" aria-label="Send to Search">
                         <img class="mueee-go-ico" src="vendor/heroicons/24/outline/paper-airplane.svg" width="16" height="16" alt="" /><span class="mueee-prompt-menu-txt">Send</span>
                       </button>
@@ -542,6 +548,22 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
     <div class="mueee-dialog-row">
       <button type="button" id="mueee-audio-rec-toggle">Record</button>
       <button type="button" id="mueee-audio-dialog-close">Close</button>
+    </div>
+  </div>
+</dialog>
+<dialog id="mueee-video-dialog" class="mueee-shell-dialog" aria-labelledby="mueee-video-dialog-title">
+  <div class="mueee-dialog-inner">
+    <h3 id="mueee-video-dialog-title">Record video</h3>
+    <p class="mueee-dialog-hint">Linux: allow camera or screen in the browser (PipeWire / xdg-desktop-portal). If the camera path fails, use Screen, pick a window or monitor, then Record. Clips are capped (~4 MB) for the prompt payload.</p>
+    <video id="mueee-video-preview" playsinline muted hidden></video>
+    <p id="mueee-video-rec-status" class="mueee-audio-status" aria-live="polite">Ready</p>
+    <div class="mueee-dialog-row" style="margin-top:8px;justify-content:flex-start;">
+      <button type="button" id="mueee-video-source-cam">Camera</button>
+      <button type="button" id="mueee-video-source-screen">Screen</button>
+    </div>
+    <div class="mueee-dialog-row">
+      <button type="button" id="mueee-video-rec-toggle">Record</button>
+      <button type="button" id="mueee-video-dialog-close">Close</button>
     </div>
   </div>
 </dialog>
@@ -952,6 +974,7 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
   function mueeeCloseAllShellDialogs() {
     mueeeDialogClose(document.getElementById('mueee-link-dialog'));
     mueeeDialogClose(document.getElementById('mueee-audio-dialog'));
+    mueeeDialogClose(document.getElementById('mueee-video-dialog'));
   }
   function mueeeSyncPromptDockHeight() {
     var pb = document.getElementById('mueee-prompt-bar');
@@ -998,6 +1021,12 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
         mic.src = 'vendor/heroicons/24/outline/microphone.svg';
         mic.alt = '';
         chip.appendChild(mic);
+      } else if (a.type === 'video') {
+        var vid = document.createElement('img');
+        vid.className = 'mueee-chip-ico';
+        vid.src = 'vendor/heroicons/24/outline/video-camera.svg';
+        vid.alt = '';
+        chip.appendChild(vid);
       } else if (a.type === 'link' && a.url) {
         var lk = document.createElement('img');
         lk.className = 'mueee-chip-ico';
@@ -1006,7 +1035,7 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
         chip.appendChild(lk);
       }
       var lab = document.createElement('span');
-      lab.textContent = a.name || a.url || (a.type === 'image' ? 'image' : a.type === 'audio' ? 'audio' : 'file');
+      lab.textContent = a.name || a.url || (a.type === 'image' ? 'image' : a.type === 'audio' ? 'audio' : a.type === 'video' ? 'video' : 'file');
       lab.style.overflow = 'hidden';
       lab.style.textOverflow = 'ellipsis';
       lab.style.whiteSpace = 'nowrap';
@@ -1058,6 +1087,7 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
   var mueeePromptLink = document.getElementById('mueee-prompt-link');
   var mueeePromptPhoto = document.getElementById('mueee-prompt-photo');
   var mueeePromptAudioRec = document.getElementById('mueee-prompt-audio-rec');
+  var mueeePromptVideoRec = document.getElementById('mueee-prompt-video-rec');
   var mueeeLinkDialog = document.getElementById('mueee-link-dialog');
   var mueeeLinkDialogInput = document.getElementById('mueee-link-dialog-input');
   var mueeeAudioDialog = document.getElementById('mueee-audio-dialog');
@@ -1099,6 +1129,7 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
   }
   var MUEE_MAX_INLINE = 1048576;
   var MUEE_MAX_AUDIO = 2097152;
+  var MUEE_MAX_VIDEO = 4194304;
   function mueeeLinkDisplayName(href) {
     return String(href || '').replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').split(/[?#]/)[0].slice(0, 48);
   }
@@ -1114,6 +1145,7 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
   }
   function mueeeOpenLinkDialog() {
     mueeeDialogClose(document.getElementById('mueee-audio-dialog'));
+    mueeeDialogClose(document.getElementById('mueee-video-dialog'));
     if (mueeeLinkDialogInput) mueeeLinkDialogInput.value = '';
     mueeeDialogShow(mueeeLinkDialog);
     window.setTimeout(function () {
@@ -1271,6 +1303,237 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
       mueeeDialogClose(mueeeAudioDialog);
     });
   }
+  var mueeeVideoDialog = document.getElementById('mueee-video-dialog');
+  var mueeeVideoRecStatus = document.getElementById('mueee-video-rec-status');
+  var mueeeVideoPreview = document.getElementById('mueee-video-preview');
+  var mueeeVideoRecState = { stream: null, recorder: null, chunks: [], recording: false, discard: false };
+  function mueeePickVideoRecorderMime() {
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+    var c = ['video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm;codecs=vp8', 'video/webm'];
+    for (var vi = 0; vi < c.length; vi++) {
+      if (MediaRecorder.isTypeSupported(c[vi])) return c[vi];
+    }
+    return '';
+  }
+  function mueeeResetVideoRec() {
+    if (mueeeVideoRecState.recording && mueeeVideoRecState.recorder) {
+      mueeeVideoRecState.discard = true;
+      try { mueeeVideoRecState.recorder.stop(); } catch (eR) {}
+      return;
+    }
+    mueeeVideoRecState.recorder = null;
+    mueeeVideoRecState.chunks = [];
+    mueeeVideoRecState.recording = false;
+    mueeeVideoRecState.discard = false;
+    if (mueeeVideoRecState.stream) {
+      try {
+        mueeeVideoRecState.stream.getTracks().forEach(function (tr) { tr.stop(); });
+      } catch (eT) {}
+    }
+    mueeeVideoRecState.stream = null;
+    if (mueeeVideoPreview) {
+      try { mueeeVideoPreview.srcObject = null; } catch (eP) {}
+      mueeeVideoPreview.hidden = true;
+    }
+    var vbtn = document.getElementById('mueee-video-rec-toggle');
+    if (vbtn) vbtn.textContent = 'Record';
+    if (mueeeVideoRecStatus) mueeeVideoRecStatus.textContent = 'Ready';
+  }
+  function mueeeVideoAcquireCamera(onReady) {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      window.alert('Camera capture is not available in this context.');
+      return;
+    }
+    if (mueeeVideoRecState.stream) {
+      try {
+        mueeeVideoRecState.stream.getTracks().forEach(function (tr) { tr.stop(); });
+      } catch (e0) {}
+      mueeeVideoRecState.stream = null;
+    }
+    navigator.mediaDevices.getUserMedia({
+      video: { width: { ideal: 960 }, height: { ideal: 540 }, facingMode: { ideal: 'user' } },
+      audio: true
+    }).then(function (stream) {
+      mueeeVideoRecState.stream = stream;
+      if (mueeeVideoPreview) {
+        mueeeVideoPreview.srcObject = stream;
+        mueeeVideoPreview.hidden = false;
+        mueeeVideoPreview.muted = true;
+        try { mueeeVideoPreview.play(); } catch (e1) {}
+      }
+      if (mueeeVideoRecStatus) mueeeVideoRecStatus.textContent = 'Camera preview (muted in this panel)';
+      if (typeof onReady === 'function') onReady(stream);
+    }).catch(function () {
+      if (mueeeVideoRecStatus) mueeeVideoRecStatus.textContent = 'Camera unavailable';
+      window.alert('Camera permission denied or unavailable. Try Screen, or check PipeWire / browser site settings.');
+    });
+  }
+  function mueeeVideoAcquireScreen() {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+      window.alert('Screen capture is not available in this context.');
+      return;
+    }
+    if (mueeeVideoRecState.stream) {
+      try {
+        mueeeVideoRecState.stream.getTracks().forEach(function (tr) { tr.stop(); });
+      } catch (e0) {}
+      mueeeVideoRecState.stream = null;
+    }
+    navigator.mediaDevices.getDisplayMedia({ video: true, audio: true }).then(function (stream) {
+      mueeeVideoRecState.stream = stream;
+      if (mueeeVideoPreview) {
+        mueeeVideoPreview.srcObject = stream;
+        mueeeVideoPreview.hidden = false;
+        mueeeVideoPreview.muted = true;
+        try { mueeeVideoPreview.play(); } catch (e1) {}
+      }
+      var vt = stream.getVideoTracks && stream.getVideoTracks()[0];
+      if (vt) {
+        vt.onended = function () {
+          if (mueeeVideoRecState.recording && mueeeVideoRecState.recorder) {
+            mueeeVideoRecState.discard = true;
+            try { mueeeVideoRecState.recorder.stop(); } catch (e2) {}
+          } else {
+            mueeeResetVideoRec();
+          }
+        };
+      }
+      if (mueeeVideoRecStatus) mueeeVideoRecStatus.textContent = 'Screen share — stop from the browser or OS when done';
+    }).catch(function () {
+      window.alert('Screen capture was cancelled or denied.');
+    });
+  }
+  function mueeeStartVideoRecording() {
+    if (!window.MediaRecorder) {
+      window.alert('MediaRecorder is not supported in this browser.');
+      return;
+    }
+    function runWithStream(stream) {
+      if (!stream) return;
+      mueeeVideoRecState.chunks = [];
+      var mime = mueeePickVideoRecorderMime();
+      var recOpts = { videoBitsPerSecond: 800000 };
+      if (mime) recOpts.mimeType = mime;
+      var rec;
+      try {
+        rec = new MediaRecorder(stream, recOpts);
+      } catch (e0) {
+        try {
+          rec = new MediaRecorder(stream);
+        } catch (e1) {
+          window.alert('Could not start MediaRecorder for this stream.');
+          return;
+        }
+      }
+      mueeeVideoRecState.recorder = rec;
+      rec.ondataavailable = function (ev) {
+        if (ev.data && ev.data.size) mueeeVideoRecState.chunks.push(ev.data);
+      };
+      rec.onstop = function () {
+        try {
+          stream.getTracks().forEach(function (tr) { tr.stop(); });
+        } catch (e2) {}
+        var blob = new Blob(mueeeVideoRecState.chunks, { type: rec.mimeType || 'video/webm' });
+        var discard = mueeeVideoRecState.discard;
+        mueeeVideoRecState.discard = false;
+        mueeeVideoRecState.stream = null;
+        mueeeVideoRecState.recorder = null;
+        mueeeVideoRecState.chunks = [];
+        mueeeVideoRecState.recording = false;
+        if (mueeeVideoPreview) {
+          try { mueeeVideoPreview.srcObject = null; } catch (eP) {}
+          mueeeVideoPreview.hidden = true;
+        }
+        var vbtn2 = document.getElementById('mueee-video-rec-toggle');
+        if (vbtn2) vbtn2.textContent = 'Record';
+        if (discard) {
+          if (mueeeVideoRecStatus) mueeeVideoRecStatus.textContent = 'Ready';
+          return;
+        }
+        if (!blob.size) {
+          if (mueeeVideoRecStatus) mueeeVideoRecStatus.textContent = 'Ready';
+          return;
+        }
+        if (blob.size > MUEE_MAX_VIDEO) {
+          window.alert('Recording is too large (max ~4 MB). Try a shorter clip or a smaller screen area.');
+          if (mueeeVideoRecStatus) mueeeVideoRecStatus.textContent = 'Ready';
+          return;
+        }
+        var reader = new FileReader();
+        reader.onload = function () {
+          var ext = (blob.type && blob.type.indexOf('mp4') >= 0) ? 'mp4' : 'webm';
+          mueeeAddAttachment({ type: 'video', name: 'video-' + Date.now() + '.' + ext, dataUrl: reader.result });
+          mueeeDialogClose(mueeeVideoDialog);
+        };
+        reader.readAsDataURL(blob);
+      };
+      try {
+        rec.start(500);
+      } catch (eS) {
+        window.alert('Could not start recording.');
+        mueeeVideoRecState.recorder = null;
+        return;
+      }
+      mueeeVideoRecState.recording = true;
+      var vbtn = document.getElementById('mueee-video-rec-toggle');
+      if (vbtn) vbtn.textContent = 'Stop';
+      if (mueeeVideoRecStatus) mueeeVideoRecStatus.textContent = 'Recording…';
+    }
+    if (mueeeVideoRecState.stream) {
+      runWithStream(mueeeVideoRecState.stream);
+    } else {
+      mueeeVideoAcquireCamera(function () {
+        runWithStream(mueeeVideoRecState.stream);
+      });
+    }
+  }
+  function mueeeStopVideoRecording() {
+    var vrec = mueeeVideoRecState.recorder;
+    if (vrec && mueeeVideoRecState.recording) {
+      try { vrec.stop(); } catch (e) {}
+    } else {
+      mueeeResetVideoRec();
+    }
+  }
+  var mueeeVideoCamBtn = document.getElementById('mueee-video-source-cam');
+  var mueeeVideoScreenBtn = document.getElementById('mueee-video-source-screen');
+  var mueeeVideoToggle = document.getElementById('mueee-video-rec-toggle');
+  var mueeeVideoCloseBtn = document.getElementById('mueee-video-dialog-close');
+  if (mueeeVideoCamBtn) {
+    mueeeVideoCamBtn.addEventListener('click', function () {
+      mueeeVideoAcquireCamera(null);
+    });
+  }
+  if (mueeeVideoScreenBtn) mueeeVideoScreenBtn.addEventListener('click', function () { mueeeVideoAcquireScreen(); });
+  if (mueeeVideoToggle) {
+    mueeeVideoToggle.addEventListener('click', function () {
+      if (mueeeVideoRecState.recording) mueeeStopVideoRecording();
+      else mueeeStartVideoRecording();
+    });
+  }
+  if (mueeeVideoCloseBtn) {
+    mueeeVideoCloseBtn.addEventListener('click', function () {
+      if (mueeeVideoRecState.recording && mueeeVideoRecState.recorder) {
+        mueeeVideoRecState.discard = true;
+        try { mueeeVideoRecState.recorder.stop(); } catch (e) {}
+      } else {
+        mueeeResetVideoRec();
+      }
+      mueeeDialogClose(mueeeVideoDialog);
+    });
+  }
+  if (mueeeVideoDialog) {
+    mueeeVideoDialog.addEventListener('cancel', function (e) {
+      e.preventDefault();
+      if (mueeeVideoRecState.recording && mueeeVideoRecState.recorder) {
+        mueeeVideoRecState.discard = true;
+        try { mueeeVideoRecState.recorder.stop(); } catch (e2) {}
+      } else {
+        mueeeResetVideoRec();
+      }
+      mueeeDialogClose(mueeeVideoDialog);
+    });
+  }
   if (mueeePromptClip && mueeePromptFile) {
     mueeePromptClip.addEventListener('click', function () {
       mueeeClosePromptMenu();
@@ -1295,8 +1558,20 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
     mueeePromptAudioRec.addEventListener('click', function () {
       mueeeClosePromptMenu();
       mueeeDialogClose(document.getElementById('mueee-link-dialog'));
+      mueeeDialogClose(document.getElementById('mueee-video-dialog'));
+      mueeeResetVideoRec();
       mueeeResetAudioRec();
       mueeeDialogShow(mueeeAudioDialog);
+    });
+  }
+  if (mueeePromptVideoRec && mueeeVideoDialog) {
+    mueeePromptVideoRec.addEventListener('click', function () {
+      mueeeClosePromptMenu();
+      mueeeDialogClose(document.getElementById('mueee-link-dialog'));
+      mueeeDialogClose(mueeeAudioDialog);
+      mueeeResetAudioRec();
+      mueeeResetVideoRec();
+      mueeeDialogShow(mueeeVideoDialog);
     });
   }
   if (mueeePromptGoBtn && promptForm) {
@@ -1337,6 +1612,14 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
             };
             ra.onerror = function () { doneOne(); };
             ra.readAsDataURL(file);
+          } else if (file.type.indexOf('video/') === 0 && file.size > 0 && file.size <= MUEE_MAX_VIDEO) {
+            var rv = new FileReader();
+            rv.onload = function () {
+              mueeeAddAttachment({ type: 'video', name: file.name, dataUrl: rv.result });
+              doneOne();
+            };
+            rv.onerror = function () { doneOne(); };
+            rv.readAsDataURL(file);
           } else {
             mueeeAddAttachment({ type: 'file', name: file.name + (file.type ? ' (' + file.type + ')' : '') });
             doneOne();
@@ -1388,6 +1671,12 @@ html.mue-chat #mueee-pane-tools-drawer #mueee-spine-hint{display:block!important
                 mueeeAddAttachment({ type: 'audio', name: file.name, dataUrl: ra.result });
               };
               ra.readAsDataURL(file);
+            } else if (file.type.indexOf('video/') === 0 && file.size > 0 && file.size <= MUEE_MAX_VIDEO) {
+              var rv = new FileReader();
+              rv.onload = function () {
+                mueeeAddAttachment({ type: 'video', name: file.name, dataUrl: rv.result });
+              };
+              rv.readAsDataURL(file);
             } else {
               mueeeAddAttachment({ type: 'file', name: file.name });
             }
