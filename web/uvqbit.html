@@ -4427,6 +4427,15 @@ var activeJobIdx=0;
         if(window.QbitPreflight){var selB=(typeof selectedQPU!=='undefined'&&selectedQPU)?selectedQPU.name:'ibm_torino';var pf=QbitPreflight.preflight(src,selB,{shots:4096});var vc=pf.verdict==='GO'?'#39d353':pf.verdict==='WARN'?'#f0c040':'#f85149';loadInfo+=' · <span style="color:'+vc+';font-weight:700">'+pf.verdict+'</span> <span style="color:var(--muted)">'+pf.scorePct+'% · '+pf.qubitCount+'/'+pf.backendQubits+'q · depth '+pf.circuitDepth+' · ~'+pf.estimatedFidelity.toFixed(1)+'% fidelity</span>';window._lastPreflight=pf}
         gateInfoEl.innerHTML=loadInfo;
     });
+    window.loadQasmFromExternal=function(src,label){
+        if(!src||typeof src!=='string')return;
+        var ops=parseOps(src);
+        if(!ops.length){gateInfoEl.textContent='Loopback QASM: no gates parsed ('+(label||'?')+')';return;}
+        var maxQ=0;ops.forEach(function(op){op.q.forEach(function(q){maxQ=Math.max(maxQ,q);});});
+        NQ=Math.max(NQ,maxQ+1);if(NQ<=3)qSel.value='3';else if(NQ<=5)qSel.value='5';else qSel.value='8';
+        loadOpsToGrid(ops);setTimeout(resize,50);
+        gateInfoEl.textContent='Composer loopback · loaded '+ops.length+' gates ('+(label||'composer')+')';
+    };
     $('qasm-close-btn').addEventListener('click',function(e){e.stopPropagation();$('qasm-overlay').classList.remove('show');});
 
     // Run full circuit (instant=true for instant sim, false for animated)
@@ -7321,10 +7330,42 @@ window._broadcastPreflight=function(report){pfCh.postMessage({type:'preflight-re
         financialSignals: { rsi: 50, macd: { signal: 0, histogram: 0 }, ironCondor: { lower: 0.3, upper: 0.7 } }
     };
 
-    // Channel: quantum-loopback (from kbatch contrail→spin chain)
+    // Channel: quantum-loopback (from kbatch contrail→spin chain, composerIBM, mueee hub)
     var qlCh = new BroadcastChannel('quantum-loopback');
     qlCh.onmessage = function(e) {
         var d = e.data;
+        if (!d || !d.type) return;
+
+        if (d.source === 'composerIBM' || d.type === 'composer-state' || d.type === 'qpu-calibration' || d.type === 'qpu-calibration-all') {
+            externalState.lastComposer = d;
+            if (d.type === 'composer-state' && d.qasm) {
+                externalState.lastComposerQasm = d.qasm;
+                try { localStorage.setItem('composerIBM.lastQasm', d.qasm); } catch (e0) {}
+                console.log('[quantum-loopback] composer state · verdict=' + (d.verdict || '?') +
+                    ' qasm=' + (d.qasm ? d.qasm.split('\n').length : 0) + ' lines');
+            }
+            if (d.type === 'qpu-calibration' && d.snapshot) {
+                externalState.lastComposerCalibration = d;
+                console.log('[quantum-loopback] composer calibration · ' + (d.backend || '?') +
+                    ' 1Q≈' + (d.snapshot.median1Q != null ? d.snapshot.median1Q : '?'));
+            }
+            if (d.type === 'qpu-calibration-all' && d.blob) {
+                externalState.composerCalibrationBlob = d.blob;
+                console.log('[quantum-loopback] composer calibration-all · backends=' +
+                    (d.blob.backends ? Object.keys(d.blob.backends).length : '?'));
+            }
+            return;
+        }
+
+        if (d.type === 'composerIBM-set-qasm' && d.qasm && typeof loadQasmFromExternal === 'function') {
+            loadQasmFromExternal(d.qasm, d.source || 'loopback');
+            return;
+        }
+
+        if (d.type === 'qpu-calibration-request' || d.type === 'qpu-calibration-all-request') {
+            return;
+        }
+
         if (d.type === 'contrail-quantum-state' && d.source === 'kbatch') {
             externalState.lastKbatch = d;
             externalState.financialSignals = d.financialWeight || externalState.financialSignals;
@@ -7449,6 +7490,22 @@ window._broadcastPreflight=function(report){pfCh.postMessage({type:'preflight-re
         console.log('[live-camera] ' + (liveCameraActive ? 'ON — circuit auto-updates from hexcast' : 'OFF'));
     };
     window.uvqbit.getLiveCameraState = function() { return liveCameraActive; };
+
+    window.uvqbit.openComposer = function(opts) {
+        if (window.parent !== window && window.parent.MueeeComposerLoopback) {
+            return window.parent.MueeeComposerLoopback.openComposer(opts);
+        }
+        var base = 'https://fornevercollective.github.io/composer/';
+        var u = base + '?mueee=1';
+        return window.open(u, 'composerIBM');
+    };
+    window.uvqbit.requestComposerCalibration = function(backend) {
+        if (window.parent !== window && window.parent.MueeeComposerLoopback) {
+            window.parent.MueeeComposerLoopback.requestCalibration(backend);
+            return;
+        }
+        qlCh.postMessage({ type: 'qpu-calibration-request', source: 'uvqbit', backend: backend || null, ts: Date.now() });
+    };
 
     // AI growth signal listener
     var aiGrowthCh;

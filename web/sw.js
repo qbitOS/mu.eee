@@ -85,6 +85,7 @@ const OFFLINE_URLS = [
     'isomorphic-export-facet.js',
     'spine-hub-catalog.js',
     'mueee-throughline-spine.js',
+    'mueee-composer-loopback.js',
     'mueee-mu-context.js',
     'mueee-staged-blob-mse.js',
     'mueee-youtube-stream-link.js',
